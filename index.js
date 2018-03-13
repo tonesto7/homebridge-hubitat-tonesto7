@@ -20,7 +20,7 @@ module.exports = function(homebridge) {
 function HubitatPlatform(log, config) {
     // Load Wink Authentication From Config File
     this.app_url = config['app_url'];
-    this.app_id = config['app_id'];
+    // this.app_id = config['app_id'];
     this.access_token = config['access_token'];
 
     // This is how often it does a full refresh
@@ -46,7 +46,7 @@ function HubitatPlatform(log, config) {
     }
     this.direct_port = config['direct_port'];
     if (this.direct_port === undefined || this.direct_port === '') {
-        this.direct_port = 8000;
+        this.direct_port = 8005;
     }
 
     this.direct_ip = config['direct_ip'];
@@ -159,7 +159,7 @@ HubitatPlatform.prototype = {
         ];
         this.temperature_unit = 'F';
 
-        hubitat.init(this.app_url, this.app_id, this.access_token);
+        hubitat.init(this.app_url, this.access_token);
         that.log('update_method: ' + that.update_method);
         this.reloadData(function(foundAccessories) {
             that.log('Unknown Capabilities: ' + JSON.stringify(that.unknownCapabilities));

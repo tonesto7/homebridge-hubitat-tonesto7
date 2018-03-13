@@ -178,10 +178,9 @@ def renderConfig() {
         description: "JSON API",
         platforms: [
             [
-                platform: "hubitat",
+                platform: "Hubitat",
                 name: "Hubitat",
-                app_url: getLocalApiServerUrl(),
-                app_id: app.id,
+                app_url: "${fullLocalApiServerUrl('')}",
                 access_token:  state?.accessToken
             ]
         ],
@@ -192,6 +191,9 @@ def renderConfig() {
 }
 
 def renderLocation() {
+    def hub = location.hubs[0]
+    // log.debug "hub: $hub"
+    
     return [
     	latitude: location.latitude,
     	longitude: location.longitude,
@@ -199,7 +201,7 @@ def renderLocation() {
     	name: location.name,
     	temperature_scale: location.temperatureScale,
     	zip_code: location.zipCode,
-        hubIP: location.hubs[0].localIP,
+        hubIP: hub.getDataValue("localIP"),
         smartapp_version: appVersion()
   	]
 }
@@ -497,7 +499,7 @@ mappings {
 
     // } else {
         path("/devices")                        { action: [GET: "getAllData"] }
-        path("/config")                          { action: [GET: "renderConfig"]  }
+        path("/config")                         { action: [GET: "renderConfig"]  }
         path("/location")                       { action: [GET: "renderLocation"] }
         path("/:id/command/:command")     		{ action: [POST: "deviceCommand"] }
         path("/:id/query")						{ action: [GET: "deviceQuery"] }
