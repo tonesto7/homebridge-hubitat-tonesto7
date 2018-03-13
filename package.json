@@ -1,0 +1,19 @@
+{
+    "name": "homebridge-hubitat",
+    "description": "HomeBridge plugin for Hubitat",
+    "version": "0.1.0",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/tonesto7/homebridge-hubitat.git"
+    },
+    "license": "ISC",
+    "preferGlobal": true,
+    "keywords": [
+        "homebridge-plugin",
+        "sensibo"
+    ],
+    "engines": {
+        "node": ">=0.12.0",
+        "homebridge": ">=0.3.1"
+    }
+}
