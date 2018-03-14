@@ -603,29 +603,29 @@ function HubitatAccessory(platform, device) {
         that.platform.addAttributeUsage('coolingSetpoint', that.deviceid, thisCharacteristic);
     }
 
-    if (device.attributes['alarmSystemStatus'] !== undefined) {
+    if (device.attributes['hsmStatus'] !== undefined) {
         that.deviceGroup = 'alarm';
         thisCharacteristic = that.getaddService(Service.SecuritySystem).getCharacteristic(Characteristic.SecuritySystemCurrentState);
         thisCharacteristic.on('get', function(callback) {
-            that.platform.log(that.deviceid + ' check 1: ' + that.device.attributes.alarmSystemStatus);
+            that.platform.log(that.deviceid + ' check 1: ' + that.device.attributes.hsmStatus);
 
-            callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
+            callback(null, convertAlarmState(that.device.attributes.hsmStatus.toLowerCase(), true));
         });
-        that.platform.addAttributeUsage('alarmSystemStatus', that.deviceid, thisCharacteristic);
+        that.platform.addAttributeUsage('hsmStatus', that.deviceid, thisCharacteristic);
 
         thisCharacteristic = that.getaddService(Service.SecuritySystem).getCharacteristic(Characteristic.SecuritySystemTargetState);
         thisCharacteristic.on('get', function(callback) {
-            that.platform.log(that.deviceid + ' check 2: ' + that.device.attributes.alarmSystemStatus);
-            callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
+            that.platform.log(that.deviceid + ' check 2: ' + that.device.attributes.hsmStatus);
+            callback(null, convertAlarmState(that.device.attributes.hsmStatus.toLowerCase(), true));
         });
         thisCharacteristic.on('set', function(value, callback) {
             that.platform.log(that.deviceid + ' set value : ' + value);
             let val = convertAlarmState(value);
-            that.platform.api.runCommand(callback, 'alarmSystemStatus', val);
+            that.platform.api.runCommand(callback, 'hsmStatus', val);
 
-            that.device.attributes.alarmSystemStatus = val;
+            that.device.attributes.hsmStatus = val;
         });
-        that.platform.addAttributeUsage('alarmSystemStatus', that.deviceid, thisCharacteristic);
+        that.platform.addAttributeUsage('hsmStatus', that.deviceid, thisCharacteristic);
     }
 
     this.loadData(device, that);

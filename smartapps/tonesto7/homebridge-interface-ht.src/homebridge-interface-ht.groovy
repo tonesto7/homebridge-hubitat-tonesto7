@@ -78,11 +78,11 @@ def renderDevices() {
                         basename: dev?.name,
                         deviceid: dev?.id, 
                         status: dev?.status,
-                        manufacturerName: dev?.getManufacturerName() ?: "SmartThings",
-                        modelName: dev?.getModelName() ?: dev?.getTypeName(),
+                        manufacturerName: dev?.getDataValue("manufacturer") ?: "SmartThings",
+                        modelName: dev?.getDataValue("model") ?: dev?.getTypeName(),
                         serialNumber: dev?.getDeviceNetworkId(),
                         firmwareVersion: "1.0.0",
-                        lastTime: dev?.getLastActivity(),
+                        lastTime: null, //dev?.getLastActivity(),
                         capabilities: deviceCapabilityList(dev), 
                         commands: deviceCommandList(dev), 
                         attributes: deviceAttributeList(dev)
@@ -92,25 +92,26 @@ def renderDevices() {
                 }
             }    
         }
-        if(settings?.addShmDevice != false) { deviceData.push(getShmDevice()) }
+        // def shmStatus = getShmStatus()
+        // if(settings?.addShmDevice != false && shmStatus != null) { deviceData.push(getShmDevice(shmStatus)) }
     }
     return deviceData
 }
 
-def getShmDevice() {
+def getShmDevice(status) {
     return [
         name: "Security Alarm",
         basename: "Security Alarm",
-        deviceid: "alarmSystemStatus", 
+        deviceid: "hsmStatus", 
         status: "ACTIVE",
         manufacturerName: "SmartThings",
         modelName: "Security System",
         serialNumber: "SHM",
         firmwareVersion: "1.0.0",
         lastTime: null,
-        capabilities: ["Alarm System Status":1, "Alarm":1], 
+        capabilities: ["HSM Status":1, "Alarm":1], 
         commands: [], 
-        attributes: ["alarmSystemStatus": getShmStatus()]
+        attributes: ["hsmStatus": status]
     ]
 }
 
@@ -146,7 +147,7 @@ def initialize() {
     runIn(8, "registerSwitches", [overwrite: true])
 	state?.subscriptionRenewed = 0
     subscribe(location, null, HubResponseEvent, [filterEvents:false])
-    subscribe(location, "alarmSystemStatus", changeHandler)
+    if(settings?.addShmDevice) { subscribe(location, "hsmStatus", changeHandler) }
 }
 
 def authError() {
@@ -154,7 +155,8 @@ def authError() {
 }
 
 def getShmStatus(retInt=false) {
-    def cur = location.currentState("alarmSystemStatus")?.value
+    def cur = location.currentValue("hsmStatus")
+    if(cur == null) { return null }
     def inc = getShmIncidents()
     if(inc != null && inc?.size()) { cur = 'alarm_active' }
     if(retInt) {
@@ -389,10 +391,7 @@ def registerChangeHandler(devices) {
 def changeHandler(evt) {
     def device = evt?.name == 'alarmSystemStatus' ? evt.name : evt.deviceId
 	if (state?.directIP!="") {
-    	//Send Using the Direct Mechanism
-        // if(evt.name == 'alarmSystemStatus') {
-            log.debug "Sending (${evt?.name.toUpperCase()}: ${evt?.value}${evt?.unit ?: ""}) [${evt?.source ?: ""}] Event to Homebridge at (${state?.directIP}:${state?.directPort})"
-        // }
+        log.debug "Sending (${evt?.name.toUpperCase()}: ${evt?.value}${evt?.unit ?: ""}) [${evt?.source ?: ""}] Event to Homebridge at (${state?.directIP}:${state?.directPort})"
         def result = new hubitat.device.HubAction(
     		method: "GET",
     		path: "/update",
@@ -409,7 +408,7 @@ def changeHandler(evt) {
     
 	//Only add to the state's devchanges if the endpoint has renewed in the last 10 minutes.
     if (state?.subscriptionRenewed>(now()-(1000*60*10))) {
-  		if (evt.isStateChange()) {
+  		if (evt.getIsStateChange()) {
 			state?.devchanges << [device: device, attribute: evt.name, value: evt.value, date: evt.date]
       }
     } else if (state?.subscriptionRenewed>0) { //Otherwise, clear it
@@ -442,10 +441,10 @@ def getChangeEvents() {
 }
 
 def enableDirectUpdates() {
-	log.debug("Command Request: ($params)")
-	state?.directIP = params.ip
-    state?.directPort = params.port
-	log.debug("Trying ${state?.directIP}:${state?.directPort}")
+	// log.debug "Command Request: ($params)"
+	state?.directIP = params?.ip
+    state?.directPort = params?.port
+	// log.debug("Trying ${state?.directIP}:${state?.directPort}")
 	def result = new hubitat.device.HubAction(
     		method: "GET",
     		path: "/initial",
@@ -458,7 +457,7 @@ def enableDirectUpdates() {
 }
 
 def HubResponseEvent(evt) {
-	// log.debug(evt.description)
+	log.debug(evt.description)
 }
 
 def locationHandler(evt) {

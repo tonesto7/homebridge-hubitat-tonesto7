@@ -64,7 +64,7 @@ function HubitatPlatform(log, config) {
 HubitatPlatform.prototype = {
     reloadData: function(callback) {
         var that = this;
-        that.log('config: ', JSON.stringify(this.config));
+        // that.log('config: ', JSON.stringify(this.config));
         var foundAccessories = [];
         that.log.debug('Refreshing All Device Data');
         hubitat.getDevices(function(myList) {
@@ -155,7 +155,7 @@ HubitatPlatform.prototype = {
             'Thermostat Setpoint',
             'Indicator',
             'Alarm',
-            'Alarm System Status'
+            'HSM Status'
         ];
         this.temperature_unit = 'F';
 
@@ -247,13 +247,14 @@ function hubitat_SetupHTTPServer(myHubitat) {
             myHubitat.log('something bad happened', err);
             return '';
         }
-        myHubitat.log(`Direct Connect Is Listening On ${ip}:${myHubitat.direct_port}`);
+        myHubitat.log(`Direct Connect Active On: ( ${ip}:${myHubitat.direct_port})`);
     });
     return 'good';
 }
 
 function hubitat_HandleHTTPResponse(request, response, myHubitat) {
-    if (request.url === '/initial') myHubitat.log('Hubitat Hub Communication Established');
+    myHubitat.log(request.headers);
+    if (request.url === '/initial') { myHubitat.log('Hubitat Hub Communication Established'); }
     if (request.url === '/update') {
         var newChange = {
             device: request.headers['change_device'],
