@@ -122,15 +122,42 @@ HubitatPlatform.prototype = {
         this.knownCapabilities = [
             'Switch',
             'Light',
-            'Color Control',
+            'ColorControl',
             'Battery',
             'Polling',
             'Lock',
             'Refresh',
-            'Lock Codes',
+            'LockCodes',
             'Sensor',
             'Actuator',
             'Configuration',
+            'SwitchLevel',
+            'TemperatureMeasurement',
+            'MotionSensor',
+            'ColorTemperature',
+            'IlluminanceMeasurement',
+            'ContactSensor',
+            'ThreeAxis',
+            'AccelerationSensor',
+            'Momentary',
+            'DoorControl',
+            'GarageDoorControl',
+            'RelativeHumidityMeasurement',
+            'PresenceSensor',
+            'Thermostat',
+            'EnergyMeter',
+            'PowerMeter',
+            'ThermostatCoolingSetpoint',
+            'ThermostatMode',
+            'ThermostatFanMode',
+            'ThermostatOperatingState',
+            'ThermostatHeatingSetpoint',
+            'ThermostatSetpoint',
+            'Indicator',
+            'Alarm',
+            'HSMStatus',
+            'Color Control',
+            'Lock Codes',
             'Switch Level',
             'Temperature Measurement',
             'Motion Sensor',
@@ -139,12 +166,10 @@ HubitatPlatform.prototype = {
             'Contact Sensor',
             'Three Axis',
             'Acceleration Sensor',
-            'Momentary',
             'Door Control',
             'Garage Door Control',
             'Relative Humidity Measurement',
             'Presence Sensor',
-            'Thermostat',
             'Energy Meter',
             'Power Meter',
             'Thermostat Cooling Setpoint',
@@ -153,8 +178,6 @@ HubitatPlatform.prototype = {
             'Thermostat Operating State',
             'Thermostat Heating Setpoint',
             'Thermostat Setpoint',
-            'Indicator',
-            'Alarm',
             'HSM Status'
         ];
         this.temperature_unit = 'F';
@@ -253,17 +276,26 @@ function hubitat_SetupHTTPServer(myHubitat) {
 }
 
 function hubitat_HandleHTTPResponse(request, response, myHubitat) {
-    myHubitat.log(request.headers);
+    // myHubitat.log(request.headers);
     if (request.url === '/initial') { myHubitat.log('Hubitat Hub Communication Established'); }
     if (request.url === '/update') {
-        var newChange = {
-            device: request.headers['change_device'],
-            attribute: request.headers['change_attribute'],
-            value: request.headers['change_value'],
-            date: request.headers['change_date']
-        };
-        myHubitat.log('Change Event:', '(' + request.headers['change_device'] + ') [' + request.headers['change_attribute'].toUpperCase() + '] is ' + request.headers['change_value']);
-        myHubitat.processFieldUpdate(newChange, myHubitat);
+        let body = [];
+        request.on('data', (chunk) => {
+            body.push(chunk);
+        }).on('end', () => {
+            body = Buffer.concat(body).toString();
+            let data = JSON.parse(body);
+            if (Object.keys(data).length > 3) {
+                var newChange = {
+                    device: data.change_device,
+                    attribute: data.change_attribute,
+                    value: data.change_value,
+                    date: data.change_date
+                };
+                myHubitat.log('Change Event:', '(' + data.change_device + ') [' + (data.change_attribute ? data.change_attribute.toUpperCase() : 'unknown') + '] is ' + data.change_value);
+                myHubitat.processFieldUpdate(newChange, myHubitat);
+            }
+        });
     }
     response.end('OK');
 }
