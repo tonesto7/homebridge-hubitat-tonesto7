@@ -30,30 +30,32 @@ def mainPage() {
         createAccessToken()
     }
     dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
-        // section("") {
-            // paragraph "${app?.name}\nv${appVersion()}", image: appIconUrl()
-        // }
-        section("") {
-            paragraph "Any Device Changes will require a restart of the Homebridge Service"
+        //section("") {
+        //    paragraph '<span><img src="${appIconUrl()}"></img> ${app?.name}\nv${appVersion()}</span>'
+        //}
+        section("""<h2><span style="color: black;">Device Selection (Total Devices: ${getDeviceCnt()})</span></h2>""") {
+            paragraph '<h4 style="color: red;">Notice: Any Device Changes will require a restart of the Homebridge Service to take effect</h4>'
             input "sensorList", "capability.sensor", title: "Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: "Switch Devices: (${switchList ? switchList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "deviceList", "capability.refresh", title: "Other Devices (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            paragraph "Total Devices: ${getDeviceCnt()}"
         }
-        section("") {
-            input "addShmDevice", "bool", title: "Hubitat Safety Monitor Alarm Support in HomeKit?", required: false, defaultValue: true, submitOnChange: true
+        section("<h2>Hubitat Safety Monitor Support</h2>") {
+            input "addShmDevice", "bool", title: "Add Alarm Control in Homekit?", required: false, defaultValue: true, submitOnChange: true
         }
-        section() {
+        section("<h2>View Data</h2>") {
             href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: "View the Configuration Data for Homebridge", description: "Tap, select, copy, then click \"Done\""
             href url: getAppEndpointUrl("devices"), style: "embedded", required: false, title: "View Selected Device Data", description: "View Accessory Data (JSON)"
         }
-        section() {
+        section("<h2>Options</h2>") {
         	input "showLogs", "bool", title: "Show Events in Live Logs?", required: false, defaultValue: true, submitOnChange: true
         	label title: "App Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false 
         }
     }
 }
 
+def imgTitle(imgSrc, imgPxSize, titleStr) {
+    return """<img width="${imgPxSize}px" src="${imgSrc}"> ${titleStr}</img>"""
+}
 def getDeviceCnt() {
     def allDevices = []
     allDevices = allDevices + settings?.deviceList ?: []
