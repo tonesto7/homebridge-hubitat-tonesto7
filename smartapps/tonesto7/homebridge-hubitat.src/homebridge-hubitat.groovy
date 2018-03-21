@@ -21,7 +21,7 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVersion() { return "1.0.0" }
+def appVersion() { return "1.0.1" }
 
 def appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" }
 
@@ -40,7 +40,7 @@ def mainPage() {
             input "deviceList", "capability.refresh", title: "Other Devices (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
         }
         section("<h2>Hubitat Safety Monitor Support</h2>") {
-            input "addShmDevice", "bool", title: "Add Alarm Control in Homekit?", required: false, defaultValue: true, submitOnChange: true
+            input "addShmDevice", "bool", title: "Add Alarm Control in Homekit?", required: false, defaultValue: false, submitOnChange: true
         }
         section("<h2>View Data</h2>") {
             href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: "View the Configuration Data for Homebridge", description: "Tap, select, copy, then click \"Done\""
