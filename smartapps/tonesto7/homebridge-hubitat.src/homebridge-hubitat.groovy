@@ -23,7 +23,7 @@ preferences {
 
 def appVersion() { return "1.0.0" }
 
-def appIconUrl() { return "https://raw.githubusercontent.com/pdlove/homebridge-smartthings/master/smartapps/JSON%401.png" }
+def appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" }
 
 def mainPage() {
     if (!state?.accessToken) {
