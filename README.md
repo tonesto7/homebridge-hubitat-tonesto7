@@ -3,7 +3,7 @@
 This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
-Current Smartapp version - 1.0.0
+Current Smartapp version - 1.0.1
 
 ### Direct Updates
 This method is nearly instant.
