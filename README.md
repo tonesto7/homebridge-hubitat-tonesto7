@@ -1,6 +1,6 @@
 # homebridge-hubitat-tonesto7
 
-This is based off of @pdlove Homebridge-Hubitat
+This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
 Current Smartapp version - 1.0.0

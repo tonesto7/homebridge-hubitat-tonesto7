@@ -6,7 +6,9 @@
     "preferGlobal": true,
     "keywords": [
         "homebridge-plugin",
-        "sensibo"
+        "hubitat",
+        "homekit",
+        "homebridge"
     ],
     "repository": {
         "type": "git",
