@@ -24,14 +24,11 @@ When properly setup, you should see something like this in your Homebridge start
 
 Installation comes in two parts:
 
-### Hubitat API installation
-A custom JSON API has been written to interface with Hubitat.
-
-If you installed the previous update that doesn't allow selecting devices, you need to goto "My Locations" and then "List Smartapps" to remove the multiple installation.
+### Hubitat App Installation
 
 * Open your Hubitat web interface
 * Goto "Apps Code"
-* Copy/Paste the code from [https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/tonesto7/homebridge-hubitat.src/homebridge-hubitat.groovy] 
+* Copy/Paste the code from [Hubitat App Code](https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/tonesto7/homebridge-hubitat.src/homebridge-hubitat.groovy) 
 * Press Save
 * Press Oauth and Enable it 
 * Press Save
@@ -41,21 +38,21 @@ If you installed the previous update that doesn't allow selecting devices, you n
 * Scroll down to the OAuth section and click "Enable OAuth in Smartapp"
 * Select "Update" at the bottom.
 
-* In the Hubitat Interface, goto "Apps" and select "add new app". 
-* At the top right and select "Homebridge-Hubitat"
-* Tap the plus next to an appropriate device group and then check off each device you would like to use.
- * There are several categories because of the way Hubitat assigns capabilities.
-  * Almost all devices contain the Refresh capability and are under the "Most Devices" group
+* In the Hubitat Interface, goto "Apps" and select "+ Load New App". 
+* Select "Homebridge (Hubitat)" from the list of User Apps
+* Tap on the input next to an appropriate device group and then select each device you would like to use (The same devices can be in any of the 3 inputs)
+ * There are several categories because of the way Hubitat assigns capabilities. So you might not see your device in one, but might in another.
+  * Almost all devices contain the Refresh capability and are under the "Other Devices" group
   * Some sensors don't have a refresh and are under the "Sensor Devices" group.
-  * Some devices, mainly Virtual Switches, only have the Switch Capability and are in the "All Switches".
+  * Some devices, mainly Virtual Switches, only have the Switch Capability and are in the "Switch Devices".
  * If you select the same device in multiple categories it will only be shown once in HomeKit, so you can safely check them all in all groups.
  * If a device isn't listed, let me know by submitting an issue on GitHub.
 * Tap Done and then Done.
 
 ### Homebridge Installation
 
-1. Install homebridge using: npm install -g homebridge
-2. Install this plugin using: npm install -g homebridge-hubitat-tonesto7
+1. Install homebridge using: npm i -g homebridge (See [Homebridge Instructions](https://github.com/nfarina/homebridge/blob/master/README.md)
+2. Install this plugin using: npm i -g homebridge-hubitat-tonesto7
 3. Update your configuration file. See sample config.json snippet below.
 
 ### Config.json Settings
@@ -63,37 +60,22 @@ If you installed the previous update that doesn't allow selecting devices, you n
 Example of all settings. Not all ssettings are required. Read the breakdown below.
 ```
 	{
-	   "platform": "homebridge-hubitat",
+	    "platform": "Hubitat",
     	"name": "Hubitat",
         "app_url": "10.0.0.40/api/app/15/",
-        "app_id": "THIS-SHOULD-BE-YOUR-APPID",
         "access_token": "THIS-SHOULD-BE-YOUR-TOKEN",
-        "polling_seconds": 3600,
-        "update_method": "direct",
         "direct_ip": "192.168.0.45",
         "direct_port": 8000,
-        "api_seconds": 30
 	}
 ```
 * "platform" and "name"
 **_Required_**
  * This information is used by homebridge to identify the plugin and should be the settings above.
 
-* "app_url", "app_id" and "access_token"
+* "app_url" and "access_token"
 **_Required_**
- * To get this information, open Hubitat on your phone, goto "Automation">"SmartApps">"JSON Complete API" and tap on Config
+ * To get this information, open Hubitat web interface in your browser, goto "Apps"> "Homebridge (Hubitat)" and tap on "View Configuration Data for Homebridge"
  * The app_url in the example may be different for you.
-
-* "polling_seconds"
-**_Optional_** Defaults to 3600
- * Identifies how often to get full updates. At this interval, homebridge-Hubitat will request a complete device dump from the API just in case any subscription events have been missed.
- * This defaults to once every hour. I have had it set to daily in my installation with no noticable issues.
-
-* "update_method"
-**_Optional_** Defaults to direct
- * See *Device Updates from Hubitat* for more information.
- * Options are: "direct", "pubnub", "api" and a recommended in that order.
-
 
 * "direct_ip"
 **_Optional_** Defaults to first available IP on your computer
@@ -105,26 +87,11 @@ Example of all settings. Not all ssettings are required. Read the breakdown belo
  * This setting only applies if update_method is direct.
  * This is the port that homebridge-Hubitat will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address.
 
-* "api_seconds"
-**_Optional_** Defaults to 30
- * This setting only applies if update_method is api.
- * This is how often the api will poll for updates. This update method is not recommended.
-
-##Reporting Devices for Development
-
-* The first step is to install the smartapp to the device
- * This is done by opening Hubitat on your phone and going to "My Home">"SmartApps">"JSON Complete API". Tap all devices and make sure it is enabled in the list.
- * If you cannot find the device in this list, please submit an Issue on Github with the make/model of the device. More information will be needed, but that will be a good start.
-* The next step is to start Homebridge and watch the first part of the initialization where it says "Device Added"/"Device Skipped"
- * If it says "Device Skipped", copy/paste that entire line to an Issue on Github. It supplies all the information needed to get the device up an working if HomeKit can support it.
- * If it says "Device Added" then the device should appear in HomeKit. If specific function is missing, post the Device Added line and identify what you are missing from it.
-* If a large number of similar devices are Skipped or missing functionality, it may just be a Capability that is missing. If so, it will be listed in the "Unknown Capabilities" line item.
-
- 
 ## What's New
 
 * 1.0.0
- * [SmartApp] Ported app over from my SmartThings version.
+ * [Hubitat App] Ported app over from my SmartThings version.
  * [Homebridge] Reworked alot of the code to allow for better direct communication with Hubitat
 
-
+* 1.0.1
+ * [Hubitat App] Set Hubitat Safety Monitor Support to Off by Default.
