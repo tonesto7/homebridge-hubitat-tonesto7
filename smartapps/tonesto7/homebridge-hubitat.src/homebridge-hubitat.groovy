@@ -1,7 +1,6 @@
 /**
  *  Homebridge Hubitat
  *  Modelled off of Paul Lovelace's JSON API
- *
  *  Copyright 2018 Anthony Santilli
  */
 
@@ -11,9 +10,9 @@ definition(
     author: "Anthony Santilli",
     description: "Provides API interface between Homebridge Service (HomeKit) and Hubitat",
     category: "My Apps",
-    iconUrl:   appIconUrl(),
-    iconX2Url: appIconUrl(),
-    iconX3Url: appIconUrl(),
+    iconUrl:   "",
+    iconX2Url: "",
+    iconX3Url: "",
     oauth: true)
 
 
@@ -23,21 +22,34 @@ preferences {
 
 def appVersion() { return "1.0.1" }
 
-def appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" }
+def appInfoSect()	{
+	section() {
+		def str = """
+		<div class="appInfoSect" style="width: 250px; height: 70px; display: inline-table;">
+			<ul style=" margin: 0 auto; padding: 0; list-style-type: none;">
+			  <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" width="60px"/>
+			  <li style="padding-top: 2px;"><b>${app?.name}</b></li>
+			  <li><small style="color: darkgray !important;">Copyright© 2018 Anthony Santilli</small></li>
+			  <li><small style="color: darkgray !important;">Version: ${appVersion()}</small></li>
+			</ul>
+		</div>
+		<script>\$('.appInfoSect').parent().css("cssText", "font-family: Arial !important; white-space: inherit !important;")</script>
+		"""
+		paragraph "${str}"
+	}
+}
 
 def mainPage() {
     if (!state?.accessToken) {
         createAccessToken()
     }
     dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
-        //section("") {
-        //    paragraph '<span><img src="${appIconUrl()}"></img> ${app?.name}\nv${appVersion()}</span>'
-        //}
+        appInfoSect()
         section("""<h2><span style="color: black;">Device Selection (Total Devices: ${getDeviceCnt()})</span></h2>""") {
             paragraph '<h4 style="color: red;">Notice: Any Device Changes will require a restart of the Homebridge Service to take effect</h4>'
             input "sensorList", "capability.sensor", title: "Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: "Switch Devices: (${switchList ? switchList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            input "deviceList", "capability.refresh", title: "Other Devices (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+            input "otherList", "capability.refresh", title: "Other Devices: (${otherList ? otherList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
         }
         section("<h2>Hubitat Safety Monitor Support</h2>") {
             input "addShmDevice", "bool", title: "Add Alarm Control in Homekit?", required: false, defaultValue: false, submitOnChange: true
@@ -56,44 +68,46 @@ def mainPage() {
 def imgTitle(imgSrc, imgPxSize, titleStr) {
     return """<img width="${imgPxSize}px" src="${imgSrc}"> ${titleStr}</img>"""
 }
+
+def getAllDevices() {
+	def allDevices = []
+	allDevices = allDevices + settings?.otherList ?: []
+	allDevices = allDevices + settings?.sensorList ?: []
+	allDevices = allDevices + settings?.switchList ?: []
+	return allDevices?.unique()
+}
+
 def getDeviceCnt() {
-    def allDevices = []
-    allDevices = allDevices + settings?.deviceList ?: []
-    allDevices = allDevices + settings?.sensorList ?: []
-    allDevices = allDevices + settings?.switchList ?: []
-    state?.deviceCount = allDevices?.unique()?.size() ?: 0
-    return allDevices?.unique()?.size() ?: 0
+	state?.deviceCount = getAllDevices()?.unique()?.size() ?: 0
+	return getAllDevices()?.unique()?.size() ?: 0
 }
 
 def renderDevices() {
     def deviceData = []
-    def items = ["deviceList", "sensorList", "switchList"]
-    items?.each { item ->   
-        if(settings[item]?.size()) {     
-            settings[item]?.each { dev->
-                try {
-                    deviceData?.push([
-                        name: dev?.displayName,
-                        basename: dev?.name,
-                        deviceid: dev?.id, 
-                        status: dev?.status,
-                        manufacturerName: dev?.getDataValue("manufacturer") ?: "Hubitat",
-                        modelName: dev?.getDataValue("model") ?: dev?.getTypeName(),
-                        serialNumber: dev?.getDeviceNetworkId(),
-                        firmwareVersion: "1.0.0",
-                        lastTime: null, //dev?.getLastActivity(),
-                        capabilities: deviceCapabilityList(dev), 
-                        commands: deviceCommandList(dev), 
-                        attributes: deviceAttributeList(dev)
-                    ])
-                } catch (e) {
-                    log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e)
-                }
-            }    
+    def items = ["otherList", "sensorList", "switchList"]
+    def devs = getAllDevices()
+	devs?.each { dev ->
+        try {
+            deviceData?.push([
+                name: dev?.displayName,
+                basename: dev?.name,
+                deviceid: dev?.id, 
+                status: dev?.status,
+                manufacturerName: dev?.getDataValue("manufacturer") ?: "Hubitat",
+                modelName: dev?.getDataValue("model") ?: dev?.getTypeName(),
+                serialNumber: dev?.getDeviceNetworkId(),
+                firmwareVersion: "1.0.0",
+                lastTime: null, //dev?.getLastActivity(),
+                capabilities: deviceCapabilityList(dev), 
+                commands: deviceCommandList(dev), 
+                attributes: deviceAttributeList(dev)
+            ])
+        } catch (e) {
+            log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e)
         }
-        // def shmStatus = getShmStatus()
-        // if(settings?.addShmDevice != false && shmStatus != null) { deviceData.push(getShmDevice(shmStatus)) }
     }
+    def shmStatus = getShmStatus()
+    if(settings?.addShmDevice != false && shmStatus != null) { deviceData.push(getShmDevice(shmStatus)) }
     return deviceData
 }
 
@@ -115,16 +129,9 @@ def getShmDevice(status) {
 }
 
 def findDevice(paramid) {
-	def device = deviceList.find { it.id == paramid }
-  	if (device) return device
-	device = sensorList.find { it.id == paramid }
-	if (device) return device
-  	device = switchList.find { it.id == paramid }
-
-	return device
+	def device = getAllDevices()?.find { it?.id == paramid }
+	return device ?: null
  }
-//No more individual device group definitions after here.
-
 
 def installed() {
 	log.debug "Installed with settings: ${settings}"
@@ -141,7 +148,7 @@ def initialize() {
 	if(!state?.accessToken) {
          createAccessToken()
     }
-	runIn(3, "registerDevices", [overwrite: true])
+	runIn(3, "registerOthers", [overwrite: true])
    	runIn(6, "registerSensors", [overwrite: true])
     runIn(8, "registerSwitches", [overwrite: true])
 	state?.subscriptionRenewed = 0
@@ -196,31 +203,26 @@ def renderLocation() {
     // log.debug "hub: $hub"
     
     return [
-    	latitude: location.latitude,
-    	longitude: location.longitude,
-    	mode: location.mode,
-    	name: location.name,
-    	temperature_scale: location.temperatureScale,
-    	zip_code: location.zipCode,
+    	latitude: location?.latitude,
+    	longitude: location?.longitude,
+    	mode: location?.mode,
+    	name: location?.name,
+    	temperature_scale: location?.temperatureScale,
+    	zip_code: location?.zipCode,
         hubIP: hub.getDataValue("localIP"),
         app_version: appVersion()
   	]
 }
 
 def CommandReply(statusOut, messageOut) {
-	def replyData = [
-        	status: statusOut,
-            message: messageOut
-        ]
-
-    def replyJson = new groovy.json.JsonOutput().toJson(replyData)
-    render contentType: "application/json", data: replyJson
+	def replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
+	render contentType: "application/json", data: replyJson
 }
 
 def deviceCommand() {
 	log.info("Command Request: $params")
-	def device = findDevice(params.id)    
-    def command = params.command
+	def device = findDevice(params?.id)    
+    def command = params?.command
     if(settings?.addShmDevice != false && params?.id == "alarmSystemStatus") {
         setShmMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
@@ -257,32 +259,31 @@ def setShmMode(mode) {
 }
 
 def deviceAttribute() {
-	def device = findDevice(params.id)    
+	def device = findDevice(params?.id)    
     def attribute = params.attribute
   	if (!device) {
     	httpError(404, "Device not found")
   	} else {
       	def currentValue = device.currentValue(attribute)
-      	[currentValue: currentValue]
+      	return [currentValue: currentValue]
   	}
 }
 
 def deviceQuery() {
-	def device = findDevice(params.id)    
+	def device = findDevice(params?.id)    
     if (!device) { 
     	device = null
         httpError(404, "Device not found")
     } 
     
     if (result) {
-    	def jsonData =
-        	[
-         		name: device.displayName,
-            	deviceid: device.id,
-            	capabilities: deviceCapabilityList(device),
-            	commands: deviceCommandList(device),
-            	attributes: deviceAttributeList(device)
-         	]
+    	def jsonData = [
+            name: device.displayName,
+            deviceid: device.id,
+            capabilities: deviceCapabilityList(device),
+            commands: deviceCommandList(device),
+            attributes: deviceAttributeList(device)
+        ]
     	def resultJson = new groovy.json.JsonOutput().toJson(jsonData)
     	render contentType: "application/json", data: resultJson
     }
@@ -290,7 +291,7 @@ def deviceQuery() {
 
 def deviceCapabilityList(device) {
     device?.capabilities?.collectEntries { capability->
-    	[ (capability?.name):1 ]
+    	return [ (capability?.name):1 ]
   	}
 }
 
@@ -345,11 +346,11 @@ def endSubscription() {
     render contentType: "application/json", data: deviceJson     
 }
 
-def registerDevices() {
+def registerOthers() {
 //This has to be done at startup because it takes too long for a normal command.
-	log.debug "Registering All Devices"
+	log.debug "Registering All Other Devices"
     state?.devchanges = []
-	registerChangeHandler(settings?.deviceList)
+	registerChangeHandler(settings?.otherList)
 }
 
 def registerSensors() {
@@ -369,9 +370,11 @@ def registerSwitches() {
 def ignoreTheseAttributes() {
     return [
         'DeviceWatch-DeviceStatus', 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
-        'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage',
-        'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
-        'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes'
+		'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage', 'minEnergyReading',
+		'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
+		'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
+		'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
+		'arrivingAtPlace'
     ]
 }
 
