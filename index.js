@@ -115,72 +115,77 @@ HubitatPlatform.prototype = {
     accessories: function(callback) {
         this.log('Fetching Hubitat devices.');
 
+        // IMPORTANT Links:
+        // https://developer.apple.com/documentation/homekit/hmaccessory
+        // https://developer.apple.com/documentation/homekit/hmcharacteristic/characteristic_types
+        // https://developer.apple.com/documentation/homekit/hmcharacteristic/characteristic_values
+        // https://github.com/KhaosT/HAP-NodeJS/blob/master/lib/gen/HomeKitTypes.js
+
         var that = this;
-        var foundAccessories = [];
+        // var foundAccessories = [];
         this.deviceLookup = [];
         this.unknownCapabilities = [];
         this.knownCapabilities = [
             'Switch',
             'Light',
-            'ColorControl',
+            'Bulb',
+            'Color Control',
             'Battery',
             'Polling',
             'Lock',
             'Refresh',
-            'LockCodes',
+            'Lock Codes',
             'Sensor',
             'Actuator',
             'Configuration',
-            'SwitchLevel',
-            'TemperatureMeasurement',
-            'MotionSensor',
-            'ColorTemperature',
-            'IlluminanceMeasurement',
-            'ContactSensor',
-            'ThreeAxis',
-            'AccelerationSensor',
-            'Momentary',
-            'DoorControl',
-            'GarageDoorControl',
-            'RelativeHumidityMeasurement',
-            'PresenceSensor',
-            'Thermostat',
-            'EnergyMeter',
-            'PowerMeter',
-            'ThermostatCoolingSetpoint',
-            'ThermostatMode',
-            'ThermostatFanMode',
-            'ThermostatOperatingState',
-            'ThermostatHeatingSetpoint',
-            'ThermostatSetpoint',
-            'Indicator',
-            'Alarm',
-            'HSMStatus',
-            'Color Control',
-            'Lock Codes',
             'Switch Level',
             'Temperature Measurement',
             'Motion Sensor',
             'Color Temperature',
             'Illuminance Measurement',
             'Contact Sensor',
-            'Three Axis',
+            // 'Three Axis',
             'Acceleration Sensor',
+            // 'Air Quality Sensor',
+            'Momentary',
             'Door Control',
             'Garage Door Control',
+            'Tamper Alert',
             'Relative Humidity Measurement',
             'Presence Sensor',
+            'Carbon Dioxide Measurement',
+            'Carbon Monoxide Detector',
+            'Water Sensor',
+            'Window Shade',
+            'Valve',
+            'Irrigation',
             'Energy Meter',
             'Power Meter',
+            // 'Power Source',
+            'Thermostat',
             'Thermostat Cooling Setpoint',
             'Thermostat Mode',
             'Thermostat Fan Mode',
             'Thermostat Operating State',
             'Thermostat Heating Setpoint',
             'Thermostat Setpoint',
-            'HSM Status'
+            // 'Fan Speed',
+            'Indicator',
+            // 'Video Stream',
+            // 'Music Player',
+            'Audio Mute',
+            'Audio Notification',
+            'Audio Volume',
+            'Media Playback',
+            'Media Playback Repeat',
+            'Media Playback Shuffle',
+            'Media Track Control',
+            'Alarm',
+            'Alarm System Status',
+            'Timed Session'
         ];
         this.temperature_unit = 'F';
+
 
         hubitat.init(this.app_url, this.access_token);
         that.log('update_method: ' + that.update_method);

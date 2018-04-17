@@ -20,7 +20,7 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVersion() { return "1.0.1" }
+def appVersion() { return "1.1.0" }
 
 def appInfoSect()	{
 	section() {
@@ -49,8 +49,18 @@ def mainPage() {
             paragraph '<h4 style="color: red;">Notice: Any Device Changes will require a restart of the Homebridge Service to take effect</h4>'
             input "sensorList", "capability.sensor", title: "Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: "Switch Devices: (${switchList ? switchList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            input "otherList", "capability.refresh", title: "Other Devices: (${otherList ? otherList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+            input "deviceList", "capability.refresh", title: "Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
         }
+        section("<h2>Define Categories:</h2>") {
+            paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
+            input "lightList", "capability.switch", title: "Lights: (${lightList ? lightList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+            input "fanList", "capability.switch", title: "Fans: (${fanList ? fanList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+            input "speakerList", "capability.switch", title: "Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+        }
+        section("<h2>Irrigation Devices:</h2>") {
+            paragraph '<h4 style="color: red;">Notice: Only Tested with Rachio Devices</h4>'
+			input "irrigationList", "capability.valve", title: "Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+		}
         section("<h2>Hubitat Safety Monitor Support</h2>") {
             input "addShmDevice", "bool", title: "Add Alarm Control in Homekit?", required: false, defaultValue: false, submitOnChange: true
         }
@@ -69,45 +79,52 @@ def imgTitle(imgSrc, imgPxSize, titleStr) {
     return """<img width="${imgPxSize}px" src="${imgSrc}"> ${titleStr}</img>"""
 }
 
-def getAllDevices() {
-	def allDevices = []
-	allDevices = allDevices + settings?.otherList ?: []
-	allDevices = allDevices + settings?.sensorList ?: []
-	allDevices = allDevices + settings?.switchList ?: []
-	return allDevices?.unique()
+def getDeviceCnt() {
+    def allDevices = []
+    allDevices = allDevices + settings?.deviceList ?: []
+    allDevices = allDevices + settings?.sensorList ?: []
+    allDevices = allDevices + settings?.switchList ?: []
+    allDevices = allDevices + settings?.lightList ?: []
+    allDevices = allDevices + settings?.fanList ?: []
+    allDevices = allDevices + settings?.speakerList ?: []
+    allDevices = allDevices + settings?.irrigationList ?: []
+    state?.deviceCount = allDevices?.unique()?.size() ?: 0
+    return allDevices?.unique()?.size() ?: 0
 }
 
-def getDeviceCnt() {
-	state?.deviceCount = getAllDevices()?.unique()?.size() ?: 0
-	return getAllDevices()?.unique()?.size() ?: 0
-}
 
 def renderDevices() {
     def deviceData = []
-    def items = ["otherList", "sensorList", "switchList"]
-    def devs = getAllDevices()
-	devs?.each { dev ->
-        try {
-            deviceData?.push([
-                name: dev?.displayName,
-                basename: dev?.name,
-                deviceid: dev?.id, 
-                status: dev?.status,
-                manufacturerName: dev?.getDataValue("manufacturer") ?: "Hubitat",
-                modelName: dev?.getDataValue("model") ?: dev?.getTypeName(),
-                serialNumber: dev?.getDeviceNetworkId(),
-                firmwareVersion: "1.0.0",
-                lastTime: null, //dev?.getLastActivity(),
-                capabilities: deviceCapabilityList(dev), 
-                commands: deviceCommandList(dev), 
-                attributes: deviceAttributeList(dev)
-            ])
-        } catch (e) {
-            log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e)
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList"]
+    items?.each { item ->   
+        if(settings[item]?.size()) {     
+            settings[item]?.each { dev->
+                try {
+                    deviceData?.push([
+                        name: dev?.displayName,
+                        basename: dev?.name,
+                        deviceid: dev?.id, 
+                        status: dev?.status,
+                        manufacturerName: dev?.getDataValue("manufacturer") ?: "Hubitat",
+                        modelName: dev?.getDataValue("model") ?: dev?.getTypeName(),
+                        serialNumber: dev?.getDeviceNetworkId(),
+                        firmwareVersion: "1.0.0",
+                        lastTime: null, //dev?.getLastActivity(),
+                        capabilities: deviceCapabilityList(dev), 
+                        commands: deviceCommandList(dev), 
+                        attributes: deviceAttributeList(dev)
+                    ])
+                } catch (e) {
+                    log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e)
+                }
+            }
         }
     }
-    def shmStatus = getShmStatus()
-    if(settings?.addShmDevice != false && shmStatus != null) { deviceData.push(getShmDevice(shmStatus)) }
+    
+    if(settings?.addShmDevice != false) { 
+        def shmStatus = getShmStatus()
+        if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
+    }
     return deviceData
 }
 
@@ -129,8 +146,20 @@ def getShmDevice(status) {
 }
 
 def findDevice(paramid) {
-	def device = getAllDevices()?.find { it?.id == paramid }
-	return device ?: null
+	def device = deviceList.find { it.id == paramid }
+  	if (device) return device
+	device = sensorList.find { it.id == paramid }
+	if (device) return device
+  	device = switchList.find { it.id == paramid }
+    if (device) return device
+    device = lightList.find { it.id == paramid }
+    if (device) return device
+    device = fanList.find { it.id == paramid }
+    if (device) return device
+    device = speakerList.find { it.id == paramid }
+    if (device) return device
+    device = irrigationList.find { it.id == paramid }
+	return device
  }
 
 def installed() {
@@ -148,9 +177,9 @@ def initialize() {
 	if(!state?.accessToken) {
          createAccessToken()
     }
-	runIn(3, "registerOthers", [overwrite: true])
-   	runIn(6, "registerSensors", [overwrite: true])
-    runIn(8, "registerSwitches", [overwrite: true])
+	runIn(2, "registerDevices", [overwrite: true])
+   	runIn(4, "registerSensors", [overwrite: true])
+    runIn(6, "registerSwitches", [overwrite: true])
 	state?.subscriptionRenewed = 0
     subscribe(location, null, HubResponseEvent, [filterEvents:false])
     if(settings?.addShmDevice) { subscribe(location, "hsmStatus", changeHandler) }
@@ -161,7 +190,7 @@ def authError() {
 }
 
 def getShmStatus(retInt=false) {
-    def cur = location.currentValue("hsmStatus")
+    def cur = location?.currentState("hsmStatus")?.value ?: null
     if(cur == null) { return null }
     def inc = getShmIncidents()
     if(inc != null && inc?.size()) { cur = 'alarm_active' }
@@ -255,7 +284,7 @@ def deviceCommand() {
 }
 
 def setShmMode(mode) {
-    sendLocationEvent(name: 'alarmSystemStatus', value: mode.toString())
+    sendLocationEvent(name: 'shmStatus', value: mode.toString())
 }
 
 def deviceAttribute() {
@@ -290,13 +319,23 @@ def deviceQuery() {
 }
 
 def deviceCapabilityList(device) {
-    device?.capabilities?.collectEntries { capability->
-    	return [ (capability?.name):1 ]
-  	}
+    def items = device?.capabilities?.collectEntries { capability-> [ (capability?.name):1 ] }
+    if(settings?.irrigationList?.find { it?.id == device?.id }) { 
+		items["Irrigation"] = 1
+    }
+    if(settings?.lightList.find { it?.id == device?.id }) {
+        items["LightBulb"] = 1
+    }
+    if(settings?.fanList.find { it?.id == device?.id }) {
+        items["Fan"] = 1
+    }
+    if(settings?.speakerList.find { it?.id == device?.id }) {
+        items["Speaker"] = 1
+    }
+	return items
 }
 
 def deviceCommandList(device) {
-  	def i=0
   	device.supportedCommands.collectEntries { command->
     	[ (command?.name): (command?.arguments) ]
   	}
@@ -346,25 +385,33 @@ def endSubscription() {
     render contentType: "application/json", data: deviceJson     
 }
 
-def registerOthers() {
+def registerDevices() {
 //This has to be done at startup because it takes too long for a normal command.
-	log.debug "Registering All Other Devices"
     state?.devchanges = []
-	registerChangeHandler(settings?.otherList)
+    log.debug "Registering (${settings?.deviceList?.size() ?: 0}) Other Devices"
+	registerChangeHandler(settings?.deviceList)
+    log.debug "Registering (${settings?.irrigationList?.size() ?: 0}) Sprinklers"
+    registerChangeHandler(settings?.irrigationList)
 }
 
 def registerSensors() {
 //This has to be done at startup because it takes too long for a normal command.
-	log.debug "Registering All Sensors"
     state?.devchanges = []
+    log.debug "Registering (${settings?.sensorList?.size() ?: 0}) Sensors"
     registerChangeHandler(settings?.sensorList)
+    log.debug "Registering (${settings?.speakerList?.size() ?: 0}) Speakers"
+    registerChangeHandler(settings?.speakerList)
 }
 
 def registerSwitches() {
 //This has to be done at startup because it takes too long for a normal command.
-	log.debug "Registering All Switches"
     state?.devchanges = []
+    log.debug "Registering (${settings?.switchList?.size() ?: 0}) Switches"
 	registerChangeHandler(settings?.switchList)
+    log.debug "Registering (${settings?.lightList?.size() ?: 0}) Lights"
+    registerChangeHandler(settings?.lightList)
+    log.debug "Registering (${settings?.fanList?.size() ?: 0}) Fans"
+    registerChangeHandler(settings?.fanList)
 }
 
 def ignoreTheseAttributes() {
@@ -374,14 +421,14 @@ def ignoreTheseAttributes() {
 		'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
 		'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
 		'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
-		'arrivingAtPlace'
+		'arrivingAtPlace', 'lastUpdatedDt'
     ]
 }
 
 def registerChangeHandler(devices) {
 	devices?.each { device ->
 		def theAtts = device?.supportedAttributes
-		theAtts?.each {att ->
+		theAtts?.each { att ->
             if(!(ignoreTheseAttributes().contains(att?.name))) {
 		        subscribe(device, att?.name, "changeHandler")
     		    log.debug "Registering ${device?.displayName}.${att?.name}"

@@ -40,8 +40,8 @@ function HubitatAccessory(platform, device) {
 
     Accessory.call(this, this.name, id);
     var that = this;
-    that
-        .getService(Service.AccessoryInformation)
+    that.getService(Service.AccessoryInformation)
+        .setCharacteristic(Characteristic.Identify, (that.device.capabilities['Switch'] !== undefined))
         .setCharacteristic(Characteristic.FirmwareRevision, that.device.firmwareVersion)
         .setCharacteristic(Characteristic.Manufacturer, that.device.manufacturerName)
         .setCharacteristic(Characteristic.Model, `${toTitleCase(that.device.modelName)}`)
