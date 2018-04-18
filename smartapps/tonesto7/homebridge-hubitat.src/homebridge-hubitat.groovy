@@ -121,10 +121,10 @@ def renderDevices() {
         }
     }
     
-    if(settings?.addShmDevice != false) { 
-        def shmStatus = getShmStatus()
-        if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
-    }
+    // if(settings?.addShmDevice != false) { 
+    //     def shmStatus = getShmStatus()
+    //     if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
+    // }
     return deviceData
 }
 
@@ -182,7 +182,7 @@ def initialize() {
     runIn(6, "registerSwitches", [overwrite: true])
 	state?.subscriptionRenewed = 0
     subscribe(location, null, HubResponseEvent, [filterEvents:false])
-    if(settings?.addShmDevice) { subscribe(location, "hsmStatus", changeHandler) }
+    // if(settings?.addShmDevice) { subscribe(location, "hsmStatus", changeHandler) }
 }
 
 def authError() {

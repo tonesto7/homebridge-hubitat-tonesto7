@@ -122,7 +122,7 @@ HubitatPlatform.prototype = {
         // https://github.com/KhaosT/HAP-NodeJS/blob/master/lib/gen/HomeKitTypes.js
 
         var that = this;
-        // var foundAccessories = [];
+        var foundAccessories = [];
         this.deviceLookup = [];
         this.unknownCapabilities = [];
         this.knownCapabilities = [
@@ -186,7 +186,6 @@ HubitatPlatform.prototype = {
             'TimedSession'
         ];
         this.temperature_unit = 'F';
-
 
         hubitat.init(this.app_url, this.access_token);
         that.log('update_method: ' + that.update_method);
