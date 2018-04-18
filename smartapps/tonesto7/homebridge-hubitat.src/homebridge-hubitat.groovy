@@ -45,13 +45,15 @@ def mainPage() {
     }
     dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
         appInfoSect()
-        section("""<h2><span style="color: black;">Device Selection (Total Devices: ${getDeviceCnt()})</span></h2>""") {
+        section() {
             paragraph '<h4 style="color: red;">Notice: Any Device Changes will require a restart of the Homebridge Service to take effect</h4>'
+        }
+        section("""<h2><span style="color: black;">General Device Selection (Total Devices: ${getDeviceCnt()})</span></h2>""") {
             input "sensorList", "capability.sensor", title: "Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: "Switch Devices: (${switchList ? switchList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "deviceList", "capability.refresh", title: "Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
         }
-        section("<h2>Define Categories:</h2>") {
+        section("<h2>Specific Categories:</h2>") {
             paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
             input "lightList", "capability.switch", title: "Lights: (${lightList ? lightList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "fanList", "capability.switch", title: "Fans: (${fanList ? fanList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
@@ -118,7 +120,6 @@ def renderDevices() {
             }
         }
     }
-    
     if(settings?.addHsmDevice != false) { 
         def shmStatus = getShmStatus()
         if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
