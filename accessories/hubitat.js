@@ -336,7 +336,7 @@ function HubitatAccessory(platform, device) {
                     // that.platform.log(that.deviceid + ' set remainingDuration value : ' + zoneDur);
                     that.platform.api.runCommand(callback, 'setZoneWaterTime', parseInt(zoneDur));
                 });
-                that.platform.addAttributeUsage('SetDuration', that.deviceid, thisCharacteristic);
+                that.platform.addAttributeUsage('setDuration', that.deviceid, thisCharacteristic);
             }
         }
 
@@ -640,7 +640,7 @@ function HubitatAccessory(platform, device) {
             that.platform.addAttributeUsage('illuminance', that.deviceid, thisCharacteristic);
         }
 
-        if (device.capabilities['ContactSensor'] !== undefined && device.capabilities['Garage Door Control'] === undefined) {
+        if (device.capabilities['ContactSensor'] !== undefined && device.capabilities['GarageDoorControl'] === undefined) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
@@ -774,7 +774,7 @@ function HubitatAccessory(platform, device) {
             });
             that.platform.addAttributeUsage('thermostatMode', that.deviceid, thisCharacteristic);
 
-            if (device.capabilities['Relative Humidity Measurement'] !== undefined) {
+            if (device.capabilities['RelativeHumidityMeasurement'] !== undefined) {
                 thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CurrentRelativeHumidity);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, parseInt(that.device.attributes.humidity));
@@ -929,45 +929,42 @@ function HubitatAccessory(platform, device) {
             that.deviceGroup = 'alarm';
             thisCharacteristic = that.getaddService(Service.SecuritySystem).getCharacteristic(Characteristic.SecuritySystemCurrentState);
             thisCharacteristic.on('get', function(callback) {
-                that.platform.log(that.deviceid + ' check 1: ' + that.device.attributes.alarmSystemStatus);
-
-                callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
+                // that.platform.log(that.deviceid + ' check 1: ' + that.device.attributes.hsmStatus);
+                callback(null, convertAlarmState(that.device.attributes.hsmStatus, true));
             });
             that.platform.addAttributeUsage('hsmStatus', that.deviceid, thisCharacteristic);
 
             thisCharacteristic = that.getaddService(Service.SecuritySystem).getCharacteristic(Characteristic.SecuritySystemTargetState);
             thisCharacteristic.on('get', function(callback) {
-                that.platform.log(that.deviceid + ' check 2: ' + that.device.attributes.alarmSystemStatus);
-                callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
+                // that.platform.log(that.deviceid + ' check 2: ' + that.device.attributes.hsmStatus);
+                callback(null, convertAlarmState(that.device.attributes.hsmStatus, true));
             });
             thisCharacteristic.on('set', function(value, callback) {
-                that.platform.log(that.deviceid + ' set value : ' + value);
+                // that.platform.log(that.deviceid + ' set value : ' + value);
                 let val = convertAlarmState(value);
-                that.platform.api.runCommand(callback, 'hsmStatus', val);
-
-                that.device.attributes.alarmSystemStatus = val;
+                that.platform.api.runCommand(callback, 'hsmSetArm', val);
+                that.device.attributes.hsmStatus = val;
             });
             that.platform.addAttributeUsage('hsmStatus', that.deviceid, thisCharacteristic);
         }
     }
     this.loadData(device, that);
-
 }
 
 function convertAlarmState(value, valInt = false) {
     switch (value) {
-        case 'stay':
+        case 'armedHome':
         case 0:
-            return valInt ? Characteristic.SecuritySystemCurrentState.STAY_ARM : 'armedHome';
-        case 'away':
+            return valInt ? Characteristic.SecuritySystemCurrentState.STAY_ARM : 'armHome';
+        case 'armedAway':
         case 1:
-            return valInt ? Characteristic.SecuritySystemCurrentState.AWAY_ARM : 'armedAway';
-        case 'night':
+            return valInt ? Characteristic.SecuritySystemCurrentState.AWAY_ARM : 'armAway';
+        case 'armedNight':
         case 2:
-            return valInt ? Characteristic.SecuritySystemCurrentState.NIGHT_ARM : 'night';
-        case 'off':
+            return valInt ? Characteristic.SecuritySystemCurrentState.NIGHT_ARM : 'armHome';
+        case 'disarmed':
         case 3:
-            return valInt ? Characteristic.SecuritySystemCurrentState.DISARMED : 'disarmed';
+            return valInt ? Characteristic.SecuritySystemCurrentState.DISARMED : 'disarm';
         case 'alarm_active':
         case 4:
             return valInt ? Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED : 'alarm_active';

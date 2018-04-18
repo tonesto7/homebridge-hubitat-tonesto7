@@ -148,7 +148,7 @@ HubitatPlatform.prototype = {
             'ContactSensor',
             // 'ThreeAxis',
             'AccelerationSensor',
-            // 'AirQualitySensor',
+            'AirQualitySensor',
             'Momentary',
             'DoorControl',
             'GarageDoorControl',
@@ -184,7 +184,7 @@ HubitatPlatform.prototype = {
             'MediaPlaybackShuffle',
             'MediaTrackControl',
             'Alarm',
-            'AlarmSystemStatus',
+            'HSMStatus',
             'TimedSession'
         ];
         this.temperature_unit = 'F';
@@ -196,9 +196,7 @@ HubitatPlatform.prototype = {
             callback(foundAccessories);
             setInterval(that.reloadData.bind(that), that.polling_seconds * 1000);
             // Initialize Update Mechanism for realtime-ish updates.
-            if (that.update_method === 'api') {
-                setInterval(that.doIncrementalUpdate.bind(that), that.update_seconds * 1000);
-            } else if (that.update_method === 'direct') {
+            if (that.update_method === 'direct') {
                 // The Hub sends updates to this module using http
                 hubitat_SetupHTTPServer(that);
                 hubitat.startDirect(null, that.direct_ip, that.direct_port);
@@ -214,23 +212,6 @@ HubitatPlatform.prototype = {
         }
         this.attributeLookup[attribute][deviceid].push(mycharacteristic);
     },
-
-    doIncrementalUpdate: function() {
-        var that = this;
-        hubitat.getUpdates(function(data) {
-            that.processIncrementalUpdate(data, that);
-        });
-    },
-
-    processIncrementalUpdate: function(data, that) {
-        that.log('new data: ' + data);
-        if (data && data.attributes && data.attributes instanceof Array) {
-            for (var i = 0; i < data.attributes.length; i++) {
-                that.processFieldUpdate(data.attributes[i], that);
-            }
-        }
-    },
-
     processFieldUpdate: function(attributeSet, that) {
         // that.log("Processing Update");
         // that.log(attributeSet);
