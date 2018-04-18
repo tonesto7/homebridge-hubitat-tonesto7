@@ -128,6 +128,8 @@ HubitatPlatform.prototype = {
         this.knownCapabilities = [
             'Switch',
             'Light',
+            'LightBulb',
+            'Fan',
             'Bulb',
             'ColorControl',
             'Battery',
