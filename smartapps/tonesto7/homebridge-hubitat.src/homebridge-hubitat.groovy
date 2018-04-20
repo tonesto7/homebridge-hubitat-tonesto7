@@ -46,29 +46,33 @@ def mainPage() {
     dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
         appInfoSect()
         section() {
-            paragraph '<h4 style="color: red;">Notice: Any Device Changes will require a restart of the Homebridge Service to take effect</h4>'
+            paragraph '<h4 style="color: red;">NOTICE: Any Device Changes will require a restart of the Homebridge Service</h4>'
         }
-        section("""<h2><span style="color: black;">General Device Selection (Total Devices: ${getDeviceCnt()})</span></h2>""") {
+        section("""<h2><span style="color: black;">Select Devices to make available in Homekit (Total Devices: ${getDeviceCnt()})</span></h2>""") {
             input "sensorList", "capability.sensor", title: "Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: "Switch Devices: (${switchList ? switchList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "deviceList", "capability.refresh", title: "Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
         }
-        section("<h2>Specific Categories:</h2>") {
+        section("<h2>Define Categories:</h2>") {
             paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
             input "lightList", "capability.switch", title: "Lights: (${lightList ? lightList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "fanList", "capability.switch", title: "Fans: (${fanList ? fanList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
             input "speakerList", "capability.switch", title: "Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
         }
         section("<h2>Irrigation Devices:</h2>") {
-            paragraph '<h4 style="color: red;">Notice: Only Tested with Rachio Devices</h4>'
+            paragraph '<h4 style="color: orange;">Notice: Only Tested with Rachio Devices</h4>'
 			input "irrigationList", "capability.valve", title: "Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
 		}
         section("<h2>Hubitat Safety Monitor Support</h2>") {
             input "addHsmDevice", "bool", title: "Allow Hubitat Safety Monitor Control in Homekit?", required: false, defaultValue: false, submitOnChange: true
         }
+        section("Create Mode/Routine Devices in HomeKit?") {
+            paragraph title: "What are these for?", "HomeKit will create a switch device for each mode.  The switch will be for active mode.", state: "complete"
+            def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
+            input "modeList", "enum", title: "Create Devices for these Modes", required: false, multiple: true, options: modes, submitOnChange: true
+        }
         section("<h2>View Data</h2>") {
             href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: "View the Configuration Data for Homebridge", description: "Tap, select, copy, then click \"Done\""
-            href url: getAppEndpointUrl("devices"), style: "embedded", required: false, title: "View Selected Device Data", description: "View Accessory Data (JSON)"
         }
         section("<h2>Options</h2>") {
         	input "showLogs", "bool", title: "Show Events in Live Logs?", required: false, defaultValue: true, submitOnChange: true
@@ -92,12 +96,43 @@ def getDeviceCnt() {
     return devices?.unique()?.size() ?: 0
 }
 
+def installed() {
+	log.debug "Installed with settings: ${settings}"
+	initialize()
+}
+
+def updated() {
+	log.debug "Updated with settings: ${settings}"
+	unsubscribe()
+	initialize()
+}
+
+def initialize() {
+	if(!state?.accessToken) {
+         createAccessToken()
+    }
+	runIn(2, "registerDevices", [overwrite: true])
+   	runIn(4, "registerSensors", [overwrite: true])
+    runIn(6, "registerSwitches", [overwrite: true])
+    // subscribe(location, null, HubResponseEvent, [filterEvents:false])
+    if(settings?.addHsmDevice) { 
+        subscribe(location, "hsmStatus", changeHandler) 
+        subscribe(location, "hsmRules", changeHandler) 
+        subscribe(location, "hsmAlert", changeHandler) 
+        subscribe(location, "hsmSetArm", changeHandler) 
+    }
+    if(settings?.modeList) { 
+        subscribe(location, "mode", changeHandler)
+        if(state.lastMode == null) { state?.lastMode = location.mode?.toString() }
+    }
+}
 
 def renderDevices() {
     def deviceData = []
     def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList"]
+    def virtItems = ["modeList"]
     items?.each { item ->   
-        if(settings[item]?.size()) {     
+        if(settings[item]?.size()) {
             settings[item]?.each { dev->
                 try {
                     deviceData?.push([
@@ -115,15 +150,48 @@ def renderDevices() {
                         attributes: deviceAttributeList(dev)
                     ])
                 } catch (e) {
-                    log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e)
+                    log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e.message)
                 }
-            }
+            }    
         }
     }
+
+    virtItems?.each { item ->   
+        if(settings[item]?.size()) {
+            settings[item]?.each { vDev->
+                def isRoutine = (item == "routineList")
+                def obj = isRoutine ? getRoutineById(vDev) : getModeById(vDev)
+                if(!obj) { return }
+                def name = isRoutine ? obj?.label : obj?.name
+                def type = isRoutine ? "Routine" : "Mode"
+                def attrVal = isRoutine ? "off" : modeSwitchState(obj?.name)
+                try {
+                    deviceData?.push([
+                        name: name,
+                        basename: name,
+                        deviceid: vDev, 
+                        status: "Online",
+                        manufacturerName: "Hubitat",
+                        modelName: "${type} Device",
+                        serialNumber: "${type}",
+                        firmwareVersion: "1.0.0",
+                        lastTime: now(),
+                        capabilities: ["${type}": 1], 
+                        commands: [on:[]], 
+                        attributes: ["switch": attrVal]
+                    ])
+                } catch (e) {
+                    log.error("Error Occurred Parsing ${item} ${type} ${name}, Error " + e.message)
+                }
+            }    
+        }
+    }
+
     if(settings?.addHsmDevice != false) { 
         def shmStatus = getShmStatus()
         if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
     }
+
     return deviceData
 }
 
@@ -159,37 +227,10 @@ def findDevice(paramid) {
     if (device) return device
     device = irrigationList.find { it?.id == paramid }
 	return device
- }
-
-def installed() {
-	log.debug "Installed with settings: ${settings}"
-	initialize()
-}
-
-def updated() {
-	log.debug "Updated with settings: ${settings}"
-	unsubscribe()
-	initialize()
-}
-
-def initialize() {
-	if(!state?.accessToken) {
-         createAccessToken()
-    }
-	runIn(2, "registerDevices", [overwrite: true])
-   	runIn(4, "registerSensors", [overwrite: true])
-    runIn(6, "registerSwitches", [overwrite: true])
-    // subscribe(location, null, HubResponseEvent, [filterEvents:false])
-    if(settings?.addHsmDevice) { 
-        subscribe(location, "hsmStatus", changeHandler) 
-        subscribe(location, "hsmRules", changeHandler) 
-        subscribe(location, "hsmAlert", changeHandler) 
-        subscribe(location, "hsmSetArm", changeHandler) 
-    }
 }
 
 def authError() {
-    [error: "Permission denied"]
+    return [error: "Permission denied"]
 }
 
 def getShmStatus() {
@@ -202,7 +243,6 @@ def setShmMode(mode) {
 
 def renderConfig() {
     def configJson = new groovy.json.JsonOutput().toJson([
-        description: "JSON API",
         platforms: [
             [
                 platform: "Hubitat",
@@ -219,8 +259,6 @@ def renderConfig() {
 
 def renderLocation() {
     def hub = location.hubs[0]
-    // log.debug "hub: $hub"
-    
     return [
     	latitude: location?.latitude,
     	longitude: location?.longitude,
@@ -245,6 +283,10 @@ def deviceCommand() {
     if(settings?.addHsmDevice != false && params?.id == "hsmSetArm") {
         setShmMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
+    } else if (settings?.modeList && command == "mode") {
+        def value1 = request.JSON?.value1
+        if(value1) { changeMode(value1) }
+        CommandReply("Success", "Mode Device, Command $command")
     } else {
         if (!device) {
             log.error("Device Not Found")
@@ -273,6 +315,14 @@ def deviceCommand() {
     }
 }
 
+def changeMode(mode) {
+    if(mode) {
+        log.info "Setting the Location Mode to (${mode})..."
+        setLocationMode(mode)
+        state.lastMode = mode
+    }
+}
+
 def deviceAttribute() {
 	def device = findDevice(params?.id)    
     def attribute = params.attribute
@@ -284,11 +334,35 @@ def deviceAttribute() {
   	}
 }
 
+def findVirtModeDevice(id) {
+    if(getModeById(id)) {
+        return getModeById(id)
+    } 
+    return null
+}
+
 def deviceQuery() {
-	def device = findDevice(params?.id)    
+	log.trace "deviceQuery(${params?.id}"
+	def device = findDevice(params?.id)
     if (!device) { 
-    	device = null
-        httpError(404, "Device not found")
+        def mode = findVirtModeDevice(params?.id)
+        def obj = mode ? mode : null
+        if(!obj) { 
+            device = null
+            httpError(404, "Device not found")
+        } else {
+            try {
+                deviceData?.push([
+                    name: obj?.name,
+                    deviceid: params?.id, 
+                    capabilities: ["Mode": 1], 
+                    commands: [on:[]], 
+                    attributes: ["switch": modeSwitchState(obj?.name)]
+                ])
+            } catch (e) {
+                log.error("Error Occurred Parsing ${item} Mode ${obj?.name}, Error " + e.message)
+            }
+        }
     } 
     
     if (result) {
@@ -322,13 +396,13 @@ def deviceCapabilityList(device) {
 }
 
 def deviceCommandList(device) {
-  	device.supportedCommands.collectEntries { command->
+  	return device.supportedCommands.collectEntries { command->
     	[ (command?.name): (command?.arguments) ]
   	}
 }
 
 def deviceAttributeList(device) {
-  	device.supportedAttributes.collectEntries { attribute->
+  	return device.supportedAttributes.collectEntries { attribute->
         // if(!(ignoreTheseAttributes()?.contains(attribute?.name))) {
             try {
                 [(attribute?.name): device?.currentValue(attribute?.name)]
@@ -340,7 +414,7 @@ def deviceAttributeList(device) {
 }
 
 def getAppEndpointUrl(subPath)	{ return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}" }
-def getLocalEndpointUrl(subPath)	{ return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}" }
+def getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}" }
 
 def getAllData() {
     def deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
@@ -397,12 +471,21 @@ def registerChangeHandler(devices) {
 }
 
 def changeHandler(evt) {
-    def device = evt?.deviceId
+    def sendItems = []
+    def sendNum = 1
+    def src = evt?.source
+    def deviceid = evt?.deviceId
+    def deviceName = evt?.displayName
+    def attr = evt?.name
+    def value = evt?.value
+    def dt = evt?.date
     def sendEvt = true
+
     switch(evt?.name) {
         case "hsmStatus":
-            device = evt?.name
-            state?.hsmStatus = evt?.value
+            deviceid = evt?.name
+            state?.hsmStatus = value
+            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             break
         case "hsmAlert":
             if(evt?.value == "intrusion") {
@@ -418,30 +501,52 @@ def changeHandler(evt) {
             state?.hsmSetArm = evt?.value
             sendEvt = false
             break
+        case "mode":
+            settings?.modeList?.each { id->
+                def md = getModeById(id)
+                if(md && md?.id ) { sendItems?.push([evtSource: "MODE", evtDeviceName: md?.name, evtDeviceId: md?.id, evtAttr: "switch", evtValue: modeSwitchState(md?.name), evtUnit: "", evtDate: dt]) }
+            }
+            break
+        default:
+            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            break
     }
 
-    if (sendEvt && state?.directIP != "") {
-        if(settings?.showLogs) { log.debug "Sending${" ${evt?.source}" ?: ""} Event (${evt?.name.toUpperCase()}: ${evt?.value}${evt?.unit ?: ""}) to Homebridge at (${state?.directIP}:${state?.directPort})" }
-        def result = new hubitat.device.HubAction(
-    		method: "POST",
-    		path: "/update",
-    		headers: [
-        		HOST: "${state?.directIP}:${state?.directPort}",
-                'Content-Type': 'application/json'
-    		],
-            body: [
-                change_device: device,
-                change_attribute: evt.name,
-                change_value: evt.value,
-                change_date: evt.date
-            ]
-		)
-        sendHubCommand(result)
+    if (sendEvt && state?.directIP != "" && sendItems?.size()) {
+    	//Send Using the Direct Mechanism
+        sendItems?.each { send->
+            if(settings?.showLogs) { 
+                log.debug "Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${send?.evtUnit}) to Homebridge at (${state?.directIP}:${state?.directPort})" 
+            }
+            def result = new hubitat.device.HubAction(
+                method: "POST",
+                path: "/update",
+                headers: [
+                    HOST: "${state?.directIP}:${state?.directPort}",
+                    'Content-Type': 'application/json'
+                ],
+                body: [
+                    change_device: send?.evtDeviceId,
+                    change_attribute: send?.evtAttr,
+                    change_value: send?.evtValue,
+                    change_date: send?.evtDate
+                ]
+            )
+            sendHubCommand(result)
+        }
     }
 }
 
+def getModeById(mId) {
+    return location?.getModes()?.find{it?.id == mId}
+}
+
+def getModeByName(name) {
+    return location?.getModes()?.find{it?.name == name}
+}
+
 def enableDirectUpdates() {
-	// log.debug "Command Request: ($params)"
+	log.trace "Command Request: ($params)"
 	state?.directIP = params?.ip
     state?.directPort = params?.port
 	def result = new hubitat.device.HubAction(
@@ -456,7 +561,7 @@ def enableDirectUpdates() {
 }
 
 def HubResponseEvent(evt) {
-	log.trace "HubResponseEvent(${evt.description})"
+	// log.trace "HubResponseEvent(${evt.description})"
 }
 
 def locationHandler(evt) {

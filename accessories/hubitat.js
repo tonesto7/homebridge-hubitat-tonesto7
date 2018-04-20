@@ -415,6 +415,23 @@ function HubitatAccessory(platform, device) {
             }
         }
 
+        if (device.capabilities['Mode'] !== undefined) {
+            that.deviceGroup = 'mode';
+            that.platform.log('Mode: (' + that.name + ')');
+            thisCharacteristic = that.getaddService(Service.Switch).getCharacteristic(Characteristic.On);
+            thisCharacteristic.on('get', function(callback) {
+                callback(null, that.device.attributes.switch === 'on');
+            });
+            thisCharacteristic.on('set', function(value, callback) {
+                if (value && that.device.attributes.switch === 'off') {
+                    that.platform.api.runCommand(callback, that.deviceid, 'mode', {
+                        value1: that.name.toString()
+                    });
+                }
+            });
+            that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
+        }
+
         if (device.capabilities['Switch'] !== undefined && that.deviceGroup === 'unknown') {
             //Handles Standalone Fan with no levels
             if (isLight === true) {

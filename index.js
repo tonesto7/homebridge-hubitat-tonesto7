@@ -129,7 +129,6 @@ HubitatPlatform.prototype = {
             'Switch',
             'Light',
             'LightBulb',
-            'Fan',
             'Bulb',
             'ColorControl',
             'Battery',
@@ -172,6 +171,7 @@ HubitatPlatform.prototype = {
             'ThermostatHeatingSetpoint',
             'ThermostatSetpoint',
             'FanSpeed',
+            'Fan',
             'FanControl',
             'Indicator',
             // 'VideoStream',
@@ -185,7 +185,8 @@ HubitatPlatform.prototype = {
             'MediaTrackControl',
             'Alarm',
             'HSMStatus',
-            'TimedSession'
+            'TimedSession',
+            'Mode'
         ];
         this.temperature_unit = 'F';
 
