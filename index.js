@@ -281,7 +281,7 @@ function hubitat_HandleHTTPResponse(request, response, myHubitat) {
                     value: data.change_value,
                     date: data.change_date
                 };
-                myHubitat.log('Change Event:', '(' + data.change_device + ') [' + (data.change_attribute ? data.change_attribute.toUpperCase() : 'unknown') + '] is ' + data.change_value);
+                myHubitat.log('Change Event:', '(' + data.change_name + ') [' + (data.change_attribute ? data.change_attribute.toUpperCase() : 'unknown') + '] is ' + data.change_value);
                 myHubitat.processFieldUpdate(newChange, myHubitat);
             }
         });

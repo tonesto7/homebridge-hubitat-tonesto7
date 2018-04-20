@@ -46,36 +46,46 @@ def mainPage() {
     dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
         appInfoSect()
         section() {
-            paragraph '<h4 style="color: red;">NOTICE: Any Device Changes will require a restart of the Homebridge Service</h4>'
+            paragraph '<small style="color: red !important;"><i><b>Notice:</b></small><small style="color: red !important;"> Any Device Changes will require a restart of the Homebridge Service</i></small>'
         }
-        section("""<h2><span style="color: black;">Select Devices to make available in Homekit (Total Devices: ${getDeviceCnt()})</span></h2>""") {
-            input "sensorList", "capability.sensor", title: "Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            input "switchList", "capability.switch", title: "Switch Devices: (${switchList ? switchList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            input "deviceList", "capability.refresh", title: "Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-        }
-        section("<h2>Define Categories:</h2>") {
+        section("<h2>Define Specific Categories:</h2>") {
             paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
-            input "lightList", "capability.switch", title: "Lights: (${lightList ? lightList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            input "fanList", "capability.switch", title: "Fans: (${fanList ? fanList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
-            input "speakerList", "capability.switch", title: "Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+            input "lightList", "capability.switch", title: "<u>Lights: (${lightList ? lightList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+            input "fanList", "capability.switch", title: "<u>Fans: (${fanList ? fanList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+            input "speakerList", "capability.switch", title: "<u>Speakers: (${speakerList ? speakerList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
         }
         section("<h2>Irrigation Devices:</h2>") {
-            paragraph '<h4 style="color: orange;">Notice: Only Tested with Rachio Devices</h4>'
-			input "irrigationList", "capability.valve", title: "Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false
+			input "irrigationList", "capability.valve", title: """<u>Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)</u><br/><small style="color: orange !important;"><i><b>Notice:</b></small><small style="color: orange !important;"> Only Tested with Rachio Devices</i></small>""", multiple: true, submitOnChange: true, required: false
 		}
-        section("<h2>Hubitat Safety Monitor Support</h2>") {
-            input "addHsmDevice", "bool", title: "Allow Hubitat Safety Monitor Control in Homekit?", required: false, defaultValue: false, submitOnChange: true
+        section("<h2>Fan/Light Combo Devices:</h2>") {
+			input "hunterFanLightList", "capability.switch", title: "<u>Hunter Fan/Light Devices (${hunterFanList ? hunterFanList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+		}
+        section("<h2>All Other Devices:</h2>") {
+            input "sensorList", "capability.sensor", title: "<u>Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+            input "switchList", "capability.switch", title: "<u>Switch Devices: (${switchList ? switchList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+            input "deviceList", "capability.refresh", title: "<u>Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
         }
-        section("Create Mode/Routine Devices in HomeKit?") {
-            paragraph title: "What are these for?", "HomeKit will create a switch device for each mode.  The switch will be for active mode.", state: "complete"
+        section() {
+            paragraph "<h3>Total Devices: ${getDeviceCnt()}</h3>"
+        }
+        section("<br/><h2>Create Devices that Simulate Buttons in HomeKit?</h2>") {
+            paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">HomeKit will create a switch device for each item selected.<br/>The switch will change state to off after it fires.</i></small>', state: "complete"
+            input "buttonList", "capability.button", title: "<u>Select Buttons Devices:  (${buttonList ? buttonList?.size() : 0} Selected)</u>", required: false, multiple: true, submitOnChange: true
+            input "momentaryList", "capability.momentary", title: "<u>Select Momentary Devices:  (${momentaryList ? momentaryList?.size() : 0} Selected)</u>", required: false, multiple: true, submitOnChange: true
+        }
+        section("<h2>Create Mode Devices in HomeKit?</h2>") {
+            paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">HomeKit will create a switch device for each mode.<br/>The switch will be ON for active mode.</i></small>', state: "complete"
             def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
-            input "modeList", "enum", title: "Create Devices for these Modes", required: false, multiple: true, options: modes, submitOnChange: true
+            input "modeList", "enum", title: "<u>Create Devices for these Modes</u>", required: false, multiple: true, options: modes, submitOnChange: true
         }
-        section("<h2>View Data</h2>") {
-            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: "View the Configuration Data for Homebridge", description: "Tap, select, copy, then click \"Done\""
+        section("<br/><h2>Hubitat Safety Monitor Support</h2>") {
+            input "addHsmDevice", "bool", title: "<u>Allow Hubitat Safety Monitor Control in Homekit?</u>", required: false, defaultValue: false, submitOnChange: true
+        }
+        section("<br/><h2>Plug-In Configuration Data</h2>") {
+            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: "<u>View the Configuration Data for Homebridge</u>", description: "Tap, select, copy, then click \"Done\""
         }
         section("<h2>Options</h2>") {
-        	input "showLogs", "bool", title: "Show Events in Live Logs?", required: false, defaultValue: true, submitOnChange: true
+        	input "showLogs", "bool", title: "<u>Show Events in Live Logs?</u>", required: false, defaultValue: true, submitOnChange: true
         	label title: "App Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false 
         }
     }
@@ -87,7 +97,7 @@ def imgTitle(imgSrc, imgPxSize, titleStr) {
 
 def getDeviceCnt() {
     def devices = []
-    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList"]
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList", "hunterFanLightList"]
     items?.each { item ->   
         if(settings[item]?.size() > 0) {     
             devices = devices + settings[item]
@@ -121,78 +131,89 @@ def initialize() {
         subscribe(location, "hsmAlert", changeHandler) 
         subscribe(location, "hsmSetArm", changeHandler) 
     }
-    if(settings?.modeList) { 
-        subscribe(location, "mode", changeHandler)
-        if(state.lastMode == null) { state?.lastMode = location.mode?.toString() }
-    }
+    if(settings?.modeList) { subscribe(location, "mode", changeHandler) }
 }
 
 def renderDevices() {
     def deviceData = []
-    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList"]
-    def virtItems = ["modeList"]
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList", "hunterFanLightList", "modeList", "momentaryList", "buttonList"]
     items?.each { item ->   
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
                 try {
-                    deviceData?.push([
-                        name: dev?.displayName,
-                        basename: dev?.name,
-                        deviceid: dev?.id, 
-                        status: dev?.status,
-                        manufacturerName: dev?.getDataValue("manufacturer") ?: "Hubitat",
-                        modelName: dev?.getDataValue("model") ?: dev?.getTypeName(),
-                        serialNumber: dev?.getDeviceNetworkId(),
-                        firmwareVersion: "1.0.0",
-                        lastTime: null, //dev?.getLastActivity(),
-                        capabilities: deviceCapabilityList(dev), 
-                        commands: deviceCommandList(dev), 
-                        attributes: deviceAttributeList(dev)
-                    ])
+                    def dData = getDeviceData(item, dev)
+                    if(dData && dData?.size()) { deviceData?.push(dData) }
                 } catch (e) {
                     log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e.message)
                 }
             }    
         }
     }
-
-    virtItems?.each { item ->   
-        if(settings[item]?.size()) {
-            settings[item]?.each { vDev->
-                def isRoutine = (item == "routineList")
-                def obj = isRoutine ? getRoutineById(vDev) : getModeById(vDev)
-                if(!obj) { return }
-                def name = isRoutine ? obj?.label : obj?.name
-                def type = isRoutine ? "Routine" : "Mode"
-                def attrVal = isRoutine ? "off" : modeSwitchState(obj?.name)
-                try {
-                    deviceData?.push([
-                        name: name,
-                        basename: name,
-                        deviceid: vDev, 
-                        status: "Online",
-                        manufacturerName: "Hubitat",
-                        modelName: "${type} Device",
-                        serialNumber: "${type}",
-                        firmwareVersion: "1.0.0",
-                        lastTime: now(),
-                        capabilities: ["${type}": 1], 
-                        commands: [on:[]], 
-                        attributes: ["switch": attrVal]
-                    ])
-                } catch (e) {
-                    log.error("Error Occurred Parsing ${item} ${type} ${name}, Error " + e.message)
-                }
-            }    
-        }
-    }
-
     if(settings?.addHsmDevice != false) { 
         def shmStatus = getShmStatus()
         if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
     }
 
     return deviceData
+}
+
+def getDeviceData(type, sItem) {
+    def curType = null
+    def devId = sItem
+    def obj = null
+    def name = null
+    def attrVal = null
+    def isVirtual = false
+    switch(type) {
+        case "routineList":
+            isVirtual = true
+            curType = "Routine"
+            obj = getRoutineById(sItem)
+            if(obj) {
+                name = obj?.label
+                attrVal = "off"
+            }
+            break
+        case "modeList":
+            isVirtual = true
+            curType = "Mode"
+            obj = getModeById(sItem)
+            if(obj) {
+                name = obj?.name
+                attrVal = modeSwitchState(obj?.name)
+            }
+            break
+        case "momentaryList":
+        case "buttonList":
+            isVirtual = true
+            curType = "Button"
+            obj = sItem
+            if(obj) {
+                name = obj?.displayName
+                attrVal = "off"
+            }
+            break
+        default:
+            curType = "device"
+            obj = sItem
+            break
+    }
+    if(curType && obj) {
+        return [
+            name: !isVirtual ? sItem?.displayName : name,
+            basename:  !isVirtual ? sItem?.name : name,
+            deviceid: !isVirtual ? sItem?.id : devId,
+            status: !isVirtual ? sItem?.status : "Online",
+            manufacturerName: !isVirtual ? dev?.getDataValue("manufacturer") : "Hubitat",
+            modelName: !isVirtual ? (sItem?.getDataValue("model") ?: sItem?.getTypeName()) : "${type} Device",
+            serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : "${type}",
+            firmwareVersion: "1.0.0",
+            lastTime: !isVirtual ? null : now(),
+            capabilities: !isVirtual ? deviceCapabilityList(sItem) : ["${type}": 1], 
+            commands: !isVirtual ? deviceCommandList(sItem) : [on:[]], 
+            attributes: !isVirtual ? deviceAttributeList(sItem) : ["switch": attrVal]
+        ]
+    } else { return null }
 }
 
 def getShmDevice(status) {
@@ -226,11 +247,21 @@ def findDevice(paramid) {
     device = speakerList.find { it?.id == paramid }
     if (device) return device
     device = irrigationList.find { it?.id == paramid }
+    if (device) return device
+    device = momentaryList.find { it?.id == paramid }
+    if (device) return device
+    device = buttonList.find { it?.id == paramid }
+    if (device) return device
+    device = hunterFanLightList.find { it?.id == paramid }
 	return device
 }
 
 def authError() {
     return [error: "Permission denied"]
+}
+
+def modeSwitchState(String mode) {
+    return location.mode.toString() == mode ? "on" : "off"
 }
 
 def getShmStatus() {
@@ -287,6 +318,9 @@ def deviceCommand() {
         def value1 = request.JSON?.value1
         if(value1) { changeMode(value1) }
         CommandReply("Success", "Mode Device, Command $command")
+    } else if ((settings?.buttonList || settings?.momentaryList) && command == "button") {
+        device.on()
+        CommandReply("Success", "Button Device, Command ON")
     } else {
         if (!device) {
             log.error("Device Not Found")
@@ -392,6 +426,11 @@ def deviceCapabilityList(device) {
     if(settings?.speakerList.find { it?.id == device?.id }) {
         items["Speaker"] = 1
     }
+    if(settings?.hunterFanLightList.find { it?.id == device?.id }) {
+        items["FanAndLight"] = 1
+        items["LightBulb"] = 1
+        items["Fan"] = 1
+    }
 	return items
 }
 
@@ -435,6 +474,8 @@ def registerSensors() {
     registerChangeHandler(settings?.sensorList)
     log.debug "Registering (${settings?.speakerList?.size() ?: 0}) Speakers"
     registerChangeHandler(settings?.speakerList)
+    log.debug "Registering (${settings?.hunterFanLightList?.size() ?: 0}) FanLights"
+    registerChangeHandler(settings?.hunterFanLightList)
 }
 
 def registerSwitches() {
@@ -489,7 +530,10 @@ def changeHandler(evt) {
             break
         case "hsmAlert":
             if(evt?.value == "intrusion") {
-                device = "alarm_active"
+                deviceid = evt?.name
+                state?.hsmStatus = "alarm_active"
+                value = "alarm_active"
+                sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             } else { sendEvt = false }
             state?.hsmAlert = evt?.value
             break
@@ -526,6 +570,7 @@ def changeHandler(evt) {
                     'Content-Type': 'application/json'
                 ],
                 body: [
+                    change_name: send?.evtDeviceName,
                     change_device: send?.evtDeviceId,
                     change_attribute: send?.evtAttr,
                     change_value: send?.evtValue,
@@ -537,12 +582,12 @@ def changeHandler(evt) {
     }
 }
 
-def getModeById(mId) {
-    return location?.getModes()?.find{it?.id == mId}
+def getModeById(String mId) {
+    return location?.modes?.find{it?.id?.toString() == mId}
 }
 
-def getModeByName(name) {
-    return location?.getModes()?.find{it?.name == name}
+def getModeByName(String name) {
+    return location?.modes?.find{it?.name?.toString() == name}
 }
 
 def enableDirectUpdates() {
