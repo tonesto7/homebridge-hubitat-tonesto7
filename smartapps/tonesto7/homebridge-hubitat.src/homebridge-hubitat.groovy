@@ -59,7 +59,7 @@ def mainPage() {
 		}
         section("<h2>Fan/Light Combo Devices:</h2>") {
             paragraph """<h4 style="color: blue;">This will create two devices in homekit one light and one fan</h4>"""
-			input "hamptonBayFanLightList", "capability.switch", title: "<u>Hunter Fan/Light Devices (${hunterFanList ? hunterFanList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+			input "hamptonBayFanLightList", "capability.switch", title: "<u>Hampton Bay Fan/Light Devices (${hamptonBayFanLightList ? hamptonBayFanLightList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
 		}
         section("<h2>All Other Devices:</h2>") {
             input "sensorList", "capability.sensor", title: "<u>Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
