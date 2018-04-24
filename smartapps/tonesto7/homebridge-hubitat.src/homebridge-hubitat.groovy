@@ -20,7 +20,7 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVersion() { return "1.1.0" }
+def appVersion() { return "1.1.1" }
 
 def appInfoSect()	{
 	section() {
