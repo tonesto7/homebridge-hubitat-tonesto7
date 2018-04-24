@@ -429,7 +429,7 @@ def deviceCapabilityList(device) {
         items["Speaker"] = 1
     }
     if(settings?.hamptonBayFanLightList.find { it?.id == device?.id } && items["SwitchLevel"] && items["FanSpeed"]) {
-        items["FanAndLight"] = 1
+        items["FanLight"] = 1
         items["LightBulb"] = 1
         items["Fan"] = 1
     }
