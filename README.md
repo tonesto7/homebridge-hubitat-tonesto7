@@ -24,6 +24,8 @@ This is based off of @pdlove homebridge-smartthings
 
 ***v1.1.2*** - Added Native support for Window Shades
 
+***v1.1.3*** - Readme Update test
+
 
 
 <br>
