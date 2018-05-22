@@ -1,7 +1,6 @@
 var inherits = require('util').inherits;
 
-var Accessory, Service, Characteristic, uuid, EnergyCharacteristics;
-//, customCharacteristics, customServices;
+var Accessory, Service, Characteristic, uuid, CommunityTypes;
 
 /*
  *   Hubitat Accessory
@@ -12,9 +11,7 @@ module.exports = function(oAccessory, oService, oCharacteristic, ouuid) {
         Accessory = oAccessory;
         Service = oService;
         Characteristic = oCharacteristic;
-        EnergyCharacteristics = require('../lib/customCharacteristics').EnergyCharacteristics(Characteristic);
-        // customCharacteristics = require('../lib/communityCharacteristics').customCharacteristics(Characteristic);
-        // customServices = require('../lib/communityServices').customServices(Service);
+        CommunityTypes = require('../lib/communityTypes')(Service, Characteristic);
         uuid = ouuid;
 
         inherits(HubitatAccessory, Accessory);
@@ -75,26 +72,66 @@ function HubitatAccessory(platform, device) {
 
     if (device && device.capabilities) {
         if (device.capabilities['SwitchLevel'] !== undefined && !isSpeaker && !isFan) {
-            if (device.commands.levelOpenClose) {
+            if (device.commands.levelOpenClose || device.capabilities['WindowShade'] !== undefined) {
                 // This is a Window Shade
                 that.deviceGroup = 'shades';
-
-                thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
-                thisCharacteristic.on('get', function(callback) {
-                    callback(null, parseInt(that.device.attributes.level));
-                });
-                thisCharacteristic.on('set', function(value, callback) {
-                    that.platform.api.runCommand(callback, that.deviceid, 'setLevel', {
-                        value1: value
+                if (device.commands.levelOpenClose) {
+                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
+                    thisCharacteristic.on('get', function(callback) {
+                        callback(null, parseInt(that.device.attributes.level));
                     });
-                });
-                that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
+                    thisCharacteristic.on('set', function(value, callback) {
+                        that.platform.api.runCommand(callback, that.deviceid, 'setLevel', {
+                            value1: value
+                        });
+                    });
+                    that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
 
-                thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
-                thisCharacteristic.on('get', function(callback) {
-                    callback(null, parseInt(that.device.attributes.level));
-                });
-                that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
+                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
+                    thisCharacteristic.on('get', function(callback) {
+                        callback(null, parseInt(that.device.attributes.level));
+                    });
+                    that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
+                } else {
+                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
+                    thisCharacteristic.on('get', function(callback) {
+                        callback(null, parseInt(that.device.attributes.position));
+                    });
+                    thisCharacteristic.on('set', function(value, callback) {
+                        that.platform.api.runCommand(callback, that.deviceid, 'setPosition', {
+                            value1: value
+                        });
+                    });
+                    that.platform.addAttributeUsage('position', that.deviceid, thisCharacteristic);
+
+                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
+                    thisCharacteristic.on('get', function(callback) {
+                        callback(null, parseInt(that.device.attributes.position));
+                    });
+                    that.platform.addAttributeUsage('position', that.deviceid, thisCharacteristic);
+
+                    if (device.attributes.windowShade !== null) {
+                        thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.PositionState);
+                        var posState = device.attributes.windowShade;
+                        switch (posState) {
+
+                            case "closing":
+                                posState = 1;
+                                break;
+                            case "opening":
+                                posState = 0;
+                                break;
+                            default:
+                                posState = 2;
+                                break;
+                        }
+                        thisCharacteristic.on('get', function(callback) {
+                            callback(null, posState);
+                        });
+                        that.platform.addAttributeUsage('positionState', that.deviceid, thisCharacteristic);
+                    }
+
+                }
             } else if (isLight === true || device.commands.setLevel) {
                 that.deviceGroup = 'lights';
 
@@ -478,14 +515,14 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
 
                 if (that.device.capabilities['EnergyMeter'] !== undefined) {
-                    thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(EnergyCharacteristics.CurrentConsumption1);
+                    thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(CommunityTypes.CurrentConsumption1);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, Math.round(that.device.attributes.power));
                     });
                     that.platform.addAttributeUsage('power', that.deviceid, thisCharacteristic);
                 }
                 if (device.capabilities['PowerMeter'] !== undefined) {
-                    thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(EnergyCharacteristics.CurrentConsumption1);
+                    thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(CommunityTypes.CurrentConsumption1);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, Math.round(that.device.attributes.power));
                     });
@@ -726,7 +763,7 @@ function HubitatAccessory(platform, device) {
 
         // if (device.capabilities['EnergyMeter'] !== undefined) {
         //     that.deviceGroup = 'EnergyMeter';
-        //     thisCharacteristic = that.getaddService(Service.Outlet).addCharacteristic(EnergyCharacteristics.TotalConsumption1);
+        //     thisCharacteristic = that.getaddService(Service.Outlet).addCharacteristic(CommunityTypes.TotalConsumption1);
         //     thisCharacteristic.on('get', function(callback) {
         //         callback(null, Math.round(that.device.attributes.energy));
         //     });
@@ -734,7 +771,7 @@ function HubitatAccessory(platform, device) {
         // }
 
         // if (device.capabilities['PowerMeter'] !== undefined) {
-        //     thisCharacteristic = that.getaddService(Service.Outlet).addCharacteristic(EnergyCharacteristics.CurrentConsumption1);
+        //     thisCharacteristic = that.getaddService(Service.Outlet).addCharacteristic(CommunityTypes.CurrentConsumption1);
         //     thisCharacteristic.on('get', function(callback) {
         //         callback(null, Math.round(that.device.attributes.power));
         //     });

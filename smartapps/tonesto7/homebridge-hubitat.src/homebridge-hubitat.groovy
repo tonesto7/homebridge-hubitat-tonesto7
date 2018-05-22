@@ -20,7 +20,7 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVersion() { return "1.1.2" }
+def appVersion() { return "1.1.3" }
 
 def appInfoSect()	{
 	section() {
@@ -53,10 +53,12 @@ def mainPage() {
             input "lightList", "capability.switch", title: "<u>Lights: (${lightList ? lightList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
             input "fanList", "capability.switch", title: "<u>Fans: (${fanList ? fanList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
             input "speakerList", "capability.switch", title: "<u>Speakers: (${speakerList ? speakerList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+            input "shadesList", "capability.windowShade", title: "<u>Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
         }
         section("<h2>Irrigation Devices:</h2>") {
 			input "irrigationList", "capability.valve", title: """<u>Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)</u><br/><small style="color: orange !important;"><i><b>Notice:</b></small><small style="color: orange !important;"> Only Tested with Rachio Devices</i></small>""", multiple: true, submitOnChange: true, required: false
 		}
+        
         // section("<h2>Fan/Light Combo Devices:</h2>") {
         //     paragraph """<h4 style="color: blue;">This will create two devices in homekit one light and one fan</h4>"""
 		// 	input "hamptonBayFanLightList", "capability.switch", title: "<u>Hampton Bay Fan/Light Devices (${hamptonBayFanLightList ? hamptonBayFanLightList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
@@ -99,7 +101,7 @@ def imgTitle(imgSrc, imgPxSize, titleStr) {
 
 def getDeviceCnt() {
     def devices = []
-    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList", "hamptonBayFanLightList"]
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "shadesList", "irrigationList"]
     items?.each { item ->   
         if(settings[item]?.size() > 0) {     
             devices = devices + settings[item]
@@ -138,7 +140,7 @@ def initialize() {
 
 def renderDevices() {
     def deviceData = []
-    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "irrigationList", "hamptonBayFanLightList", "modeList"]
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "shadesList", "irrigationList", "modeList"]
     items?.each { item ->   
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
@@ -248,9 +250,11 @@ def findDevice(paramid) {
     if (device) return device
     device = speakerList.find { it?.id == paramid }
     if (device) return device
+    device = shadesList.find { it?.id == paramid }
+    if (device) return device
     device = irrigationList.find { it?.id == paramid }
     if (device) return device
-    device = hamptonBayFanLightList.find { it?.id == paramid }
+    // device = hamptonBayFanLightList.find { it?.id == paramid }
 	return device
 }
 
@@ -312,11 +316,13 @@ def deviceCommand() {
     if(settings?.addHsmDevice != false && params?.id == "hsmSetArm") {
         setShmMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
-    } else if (settings?.hamptonBayFanLightList && command == "fanspeed") {
-        def value1 = request.JSON?.value1
-        if(value1 && device?.hasCommand(value1)) { dev?."${value1}"() }
-        CommandReply("Success", "Routine Device, Command $command")
-    } else if (settings?.modeList && command == "mode") {
+    } 
+    // else if (settings?.hamptonBayFanLightList && command == "fanspeed") {
+    //     def value1 = request.JSON?.value1
+    //     if(value1 && device?.hasCommand(value1)) { dev?."${value1}"() }
+    //     CommandReply("Success", "Routine Device, Command $command")
+    // } 
+    else if (settings?.modeList && command == "mode") {
         def value1 = request.JSON?.value1
         if(value1) { changeMode(value1) }
         CommandReply("Success", "Mode Device, Command $command")
@@ -428,11 +434,14 @@ def deviceCapabilityList(device) {
     if(settings?.speakerList.find { it?.id == device?.id }) {
         items["Speaker"] = 1
     }
-    if(settings?.hamptonBayFanLightList.find { it?.id == device?.id } && items["SwitchLevel"] && items["FanSpeed"]) {
-        items["FanLight"] = 1
-        items["LightBulb"] = 1
-        items["Fan"] = 1
+    if(settings?.shadesList.find { it?.id == device?.id }) {
+        items["WindowShade"] = 1
     }
+    // if(settings?.hamptonBayFanLightList.find { it?.id == device?.id } && items["SwitchLevel"] && items["FanSpeed"]) {
+    //     items["FanLight"] = 1
+    //     items["LightBulb"] = 1
+    //     items["Fan"] = 1
+    // }
     if(settings?.noTemp && items["TemperatureMeasurement"] && (items["ContactSensor"] != null || items["WaterSensor"] != null)) {
         items.remove("TemperatureMeasurement")
     }
@@ -479,8 +488,10 @@ def registerSensors() {
     registerChangeHandler(settings?.sensorList)
     log.debug "Registering (${settings?.speakerList?.size() ?: 0}) Speakers"
     registerChangeHandler(settings?.speakerList)
-    log.debug "Registering (${settings?.hamptonBayFanLightList?.size() ?: 0}) FanLights"
-    registerChangeHandler(settings?.hamptonBayFanLightList)
+    log.debug "Registering (${settings?.shadesList?.size() ?: 0}) Window Shades"
+    registerChangeHandler(settings?.shadesList)
+    // log.debug "Registering (${settings?.hamptonBayFanLightList?.size() ?: 0}) FanLights"
+    // registerChangeHandler(settings?.hamptonBayFanLightList)
 }
 
 def registerSwitches() {
