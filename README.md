@@ -3,7 +3,8 @@
 This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
-```Current Smartapp version: 1.0.1```
+
+```Current Smartapp version: 1.1.3```
 
 
 ### Direct Updates
@@ -57,10 +58,10 @@ Installation comes in two parts:
 
 ### Config.json Settings
 
-Example of all settings. Not all ssettings are required. Read the breakdown below.
+Example of all settings. Not all settings are required. Read the breakdown below.
 ```
 	{
-	    "platform": "Hubitat",
+	    "platform": "Hubitat", 
     	"name": "Hubitat",
         "app_url": "10.0.0.40/api/app/15/",
         "access_token": "THIS-SHOULD-BE-YOUR-TOKEN",
