@@ -13,11 +13,10 @@ This option allows the hub to send updates directly to your homebridge-hubitat-t
 The hub must be able to send an http packet to your device so make sure to allow incoming traffic on the applicable port.
 The port used for this can be configured by the "direct_port" setting and defaults to 8000.
 The program will attempt to determine your IP address automatically, but that can be overridden by "direct_ip" which is useful if you have multiple addresses.
-As a note, the hub isn't actual doing any of the processing so if you lose Internet, updates will stop. I'm told it "doesn't currently" support it, so there is hope.
 
 When properly setup, you should see something like this in your Homebridge startup immediately after the PIN:
 ```[1/29/2017, 8:28:45 AM] Homebridge is running on port 51826.
-[1/29/2017, 8:28:45 AM] [Hubitat] Direct Connect Is Listening On 192.168.0.49:8000
+[1/29/2017, 8:28:45 AM] [Hubitat] Direct Connect Is Listening On 10.0.0.70:8000
 [1/29/2017, 8:28:45 AM] [Hubitat] Hubitat Hub Communication Established
 ```
 ## Installation
