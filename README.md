@@ -16,8 +16,7 @@ The program will attempt to determine your IP address automatically, but that ca
 As a note, the hub isn't actual doing any of the processing so if you lose Internet, updates will stop. I'm told it "doesn't currently" support it, so there is hope.
 
 When properly setup, you should see something like this in your Homebridge startup immediately after the PIN:
-```
-[1/29/2017, 8:28:45 AM] Homebridge is running on port 51826.
+```[1/29/2017, 8:28:45 AM] Homebridge is running on port 51826.
 [1/29/2017, 8:28:45 AM] [Hubitat] Direct Connect Is Listening On 192.168.0.49:8000
 [1/29/2017, 8:28:45 AM] [Hubitat] Hubitat Hub Communication Established
 ```
