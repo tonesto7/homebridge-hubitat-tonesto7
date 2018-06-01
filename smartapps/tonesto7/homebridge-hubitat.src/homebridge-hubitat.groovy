@@ -20,17 +20,17 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVersion() { return "1.1.3" }
+def appVer() { return "1.1.4" }
 
 def appInfoSect()	{
 	section() {
 		def str = """
-		<div class="appInfoSect" style="width: 250px; height: 70px; display: inline-table;">
+		<div class="appInfoSect" style="width: 300px; height: 70px; display: inline-table;">
 			<ul style=" margin: 0 auto; padding: 0; list-style-type: none;">
-			  <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" width="60px"/>
+			  <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" width="70px"/>
 			  <li style="padding-top: 2px;"><b>${app?.name}</b></li>
-			  <li><small style="color: darkgray !important;">Copyright© 2018 Anthony Santilli</small></li>
-			  <li><small style="color: darkgray !important;">Version: ${appVersion()}</small></li>
+			  <li><small style="color: black !important;">Copyright\u00A9 2018 Anthony Santilli</small></li>
+			  <li><small style="color: black !important;">Version: ${appVer()}</small></li>
 			</ul>
 		</div>
 		<script>\$('.appInfoSect').parent().css("cssText", "font-family: Arial !important; white-space: inherit !important;")</script>
@@ -48,55 +48,64 @@ def mainPage() {
         section() {
             paragraph '<small style="color: red !important;"><i><b>Notice:</b></small><small style="color: red !important;"> Any Device Changes will require a restart of the Homebridge Service</i></small>'
         }
-        section("<h2>Define Specific Categories:</h2>") {
+        section(sectionTitleStr("Define Specific Categories:")) {
             paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
-            input "lightList", "capability.switch", title: "<u>Lights: (${lightList ? lightList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
-            input "fanList", "capability.switch", title: "<u>Fans: (${fanList ? fanList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
-            input "speakerList", "capability.switch", title: "<u>Speakers: (${speakerList ? speakerList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
-            input "shadesList", "capability.windowShade", title: "<u>Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+            input "lightList", "capability.switch", title: inputTitleStr("Lights: (${lightList ? lightList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
+            input "fanList", "capability.switch", title: inputTitleStr("Fans: (${fanList ? fanList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
+            input "speakerList", "capability.switch", title: inputTitleStr("Speakers: (${speakerList ? speakerList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
+            input "shadesList", "capability.windowShade", title: inputTitleStr("Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
         }
-        section("<h2>Irrigation Devices:</h2>") {
-			input "irrigationList", "capability.valve", title: """<u>Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)</u><br/><small style="color: orange !important;"><i><b>Notice:</b></small><small style="color: orange !important;"> Only Tested with Rachio Devices</i></small>""", multiple: true, submitOnChange: true, required: false
-		}
+        section(sectionTitleStr("Irrigation Devices:")) {
+			input "irrigationList", "capability.valve", title: """<u>Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)</u><br/><small style="color: orange !important;"><i><b>Notice:</b></small><small style="color: orange !important;"> Only Tested with Rachio Devices</i></small>""", description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
+            
+        }
         
-        // section("<h2>Fan/Light Combo Devices:</h2>") {
+        // section(sectionTitleStr("Fan/Light Combo Devices:")) {
         //     paragraph """<h4 style="color: blue;">This will create two devices in homekit one light and one fan</h4>"""
-		// 	input "hamptonBayFanLightList", "capability.switch", title: "<u>Hampton Bay Fan/Light Devices (${hamptonBayFanLightList ? hamptonBayFanLightList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+		// 	input "hamptonBayFanLightList", "capability.switch", title: inputTitleStr("Hampton Bay Fan/Light Devices (${hamptonBayFanLightList ? hamptonBayFanLightList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
 		// }
-        section("<h2>All Other Devices:</h2>") {
-            input "sensorList", "capability.sensor", title: "<u>Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
-            input "switchList", "capability.switch", title: "<u>Switch Devices: (${switchList ? switchList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
-            input "deviceList", "capability.refresh", title: "<u>Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)</u>", multiple: true, submitOnChange: true, required: false
+        section(sectionTitleStr("All Other Devices:")) {
+            input "sensorList", "capability.sensor", title: inputTitleStr("Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
+            input "switchList", "capability.switch", title: inputTitleStr("Switch Devices: (${switchList ? switchList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
+            input "deviceList", "capability.refresh", title: inputTitleStr("Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
         }
         section() {
             paragraph "<h3>Total Devices: ${getDeviceCnt()}</h3>"
         }
         // section("<br/><h2>Create Devices that Simulate Buttons in HomeKit?</h2>") {
         //     paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">HomeKit will create a switch device for each item selected.<br/>The switch will change state to off after it fires.</i></small>', state: "complete"
-        //     input "buttonList", "capability.button", title: "<u>Select Buttons Devices:  (${buttonList ? buttonList?.size() : 0} Selected)</u>", required: false, multiple: true, submitOnChange: true
-        //     input "momentaryList", "capability.momentary", title: "<u>Select Momentary Devices:  (${momentaryList ? momentaryList?.size() : 0} Selected)</u>", required: false, multiple: true, submitOnChange: true
+        //     input "buttonList", "capability.button", title: inputTitleStr("Select Buttons Devices:  (${buttonList ? buttonList?.size() : 0} Selected)"), description: "<i>Tap to Select...</i>", required: false, multiple: true, submitOnChange: true
+        //     input "momentaryList", "capability.momentary", title: inputTitleStr("Select Momentary Devices:  (${momentaryList ? momentaryList?.size() : 0} Selected)"), description: "<i>Tap to Select...</i>", required: false, multiple: true, submitOnChange: true
         // }
-        section("<h2>Create Mode Devices in HomeKit?</h2>") {
+        section("</br>${sectionTitleStr("Create Mode Devices in HomeKit?")}") {
             paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">HomeKit will create a switch device for each mode.<br/>The switch will be ON for active mode.</i></small>', state: "complete"
             def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
-            input "modeList", "enum", title: "<u>Create Devices for these Modes</u>", required: false, multiple: true, options: modes, submitOnChange: true
+            input "modeList", "enum", title: inputTitleStr("Create Devices for these Modes"), required: false, multiple: true, options: modes, submitOnChange: true
         }
-        section("<br/><h2>Hubitat Safety Monitor Support</h2>") {
-            input "addHsmDevice", "bool", title: "<u>Allow Hubitat Safety Monitor Control in Homekit?</u>", required: false, defaultValue: false, submitOnChange: true
+        section("<br/>${sectionTitleStr("Hubitat Safety Monitor Support:")}") {
+            input "addHsmDevice", "bool", title: inputTitleStr("Allow Hubitat Safety Monitor Control in Homekit?"), required: false, defaultValue: false, submitOnChange: true
         }
-        section("<br/><h2>Plug-In Configuration Data</h2>") {
-            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: "<u>View the Configuration Data for Homebridge</u>", description: "Tap, select, copy, then click \"Done\""
+        section("<br/>${sectionTitleStr("Plug-In Configuration Data:")}") {
+            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: inputTitleStr("View the Configuration Data for Homebridge"), description: """</br><small style="color: #1A77C9 !important;"><i>Tap, select, copy, then click <b>Done</b></i></small>"""
         }
-        section("<h2>Options</h2>") {
-            input "noTemp", "bool", title: "Remove Temp from Contact, Water Sensor?", required: false, defaultValue: false, submitOnChange: true
-        	input "showLogs", "bool", title: "<u>Show Events in Live Logs?</u>", required: false, defaultValue: true, submitOnChange: true
-        	label title: "App Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false 
+        section("<br/>${sectionTitleStr("Other Options:")}") {
+            paragraph '<h4 style="color: blue;">This Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
+            input "noTemp", "bool", title: inputTitleStr("Remove Temp from Contacts and Water Sensors?"), description: "<i>Test</i>", required: false, defaultValue: false, submitOnChange: true
+        	input "showLogs", "bool", title: inputTitleStr("Show Events in Live Logs?"), required: false, defaultValue: true, submitOnChange: true
+        	label title: inputTitleStr("App Label (optional)"), description: "<i>Rename App</i>", defaultValue: app?.name, required: false 
         }
     }
 }
 
-def imgTitle(imgSrc, imgPxSize, titleStr) {
-    return """<img width="${imgPxSize}px" src="${imgSrc}"> ${titleStr}</img>"""
+def sectionTitleStr(title) 	{ return "<h2>$title</h2>" }
+def inputTitleStr(title) 	{ return "<u>$title</u>" }
+def pageTitleStr(title) 	{ return "<h1>$title</h1>" }
+def imgTitle(imgSrc, imgWidth, imgHeight, titleStr, color=null) {
+	def imgStyle = ""
+	imgStyle += imgWidth ? "width: ${imgWidth}px !important;" : ""
+	imgStyle += imgHeight ? "${imgWidth ? " " : ""}height: ${imgHeight}px !important;" : ""
+	if(color) { return """<div style="color: ${color}; font-weight: bold;"><img style="${imgStyle}" src="${imgSrc}"> ${titleStr}</img></div>""" }
+	else { return """<img style="${imgStyle}" src="${imgSrc}"> ${titleStr}</img>""" }
 }
 
 def getDeviceCnt() {
@@ -300,7 +309,7 @@ def renderLocation() {
     	temperature_scale: location?.temperatureScale,
     	zip_code: location?.zipCode,
         hubIP: hub.getDataValue("localIP"),
-        app_version: appVersion()
+        app_version: appVer()
   	]
 }
 
