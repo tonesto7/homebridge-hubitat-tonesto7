@@ -4,7 +4,7 @@ This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
 
-**```Current App version: 1.1.3```**
+**```Current App version: 1.1.5```**
 
 <br>
 
@@ -18,6 +18,8 @@ This is based off of @pdlove homebridge-smartthings
 
 ***v1.1.3*** - App Cleanups.  Added Windows Shades support for Native HomeKit control.
 
+***v1.1.5*** - Code Cleanups
+
 #### Homebridge Plugin:
 
 ***v1.0.0*** - Reworked alot of the code to allow for better direct communication with Hubitat
@@ -26,7 +28,7 @@ This is based off of @pdlove homebridge-smartthings
 
 ***v1.1.3*** - Readme Update test
 
-
+***v1.1.7*** - Fixed Shades Support
 
 <br>
 
