@@ -20,7 +20,7 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVer() { return "1.1.4" }
+def appVer() { return "1.1.5" }
 
 def appInfoSect()	{
 	section() {
@@ -59,11 +59,6 @@ def mainPage() {
 			input "irrigationList", "capability.valve", title: """<u>Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)</u><br/><small style="color: orange !important;"><i><b>Notice:</b></small><small style="color: orange !important;"> Only Tested with Rachio Devices</i></small>""", description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
             
         }
-        
-        // section(sectionTitleStr("Fan/Light Combo Devices:")) {
-        //     paragraph """<h4 style="color: blue;">This will create two devices in homekit one light and one fan</h4>"""
-		// 	input "hamptonBayFanLightList", "capability.switch", title: inputTitleStr("Hampton Bay Fan/Light Devices (${hamptonBayFanLightList ? hamptonBayFanLightList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
-		// }
         section(sectionTitleStr("All Other Devices:")) {
             input "sensorList", "capability.sensor", title: inputTitleStr("Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: inputTitleStr("Switch Devices: (${switchList ? switchList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
@@ -92,7 +87,7 @@ def mainPage() {
             paragraph '<h4 style="color: blue;">This Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
             input "noTemp", "bool", title: inputTitleStr("Remove Temp from Contacts and Water Sensors?"), description: "<i>Test</i>", required: false, defaultValue: false, submitOnChange: true
         	input "showLogs", "bool", title: inputTitleStr("Show Events in Live Logs?"), required: false, defaultValue: true, submitOnChange: true
-        	label title: inputTitleStr("App Label (optional)"), description: "<i>Rename App</i>", defaultValue: app?.name, required: false 
+        	label title: inputTitleStr("App Label (optional)"), description: "Rename App", defaultValue: app?.name, required: false 
         }
     }
 }
@@ -262,8 +257,6 @@ def findDevice(paramid) {
     device = shadesList.find { it?.id == paramid }
     if (device) return device
     device = irrigationList.find { it?.id == paramid }
-    if (device) return device
-    // device = hamptonBayFanLightList.find { it?.id == paramid }
 	return device
 }
 
@@ -325,13 +318,7 @@ def deviceCommand() {
     if(settings?.addHsmDevice != false && params?.id == "hsmSetArm") {
         setShmMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
-    } 
-    // else if (settings?.hamptonBayFanLightList && command == "fanspeed") {
-    //     def value1 = request.JSON?.value1
-    //     if(value1 && device?.hasCommand(value1)) { dev?."${value1}"() }
-    //     CommandReply("Success", "Routine Device, Command $command")
-    // } 
-    else if (settings?.modeList && command == "mode") {
+    } else if (settings?.modeList && command == "mode") {
         def value1 = request.JSON?.value1
         if(value1) { changeMode(value1) }
         CommandReply("Success", "Mode Device, Command $command")
@@ -446,11 +433,6 @@ def deviceCapabilityList(device) {
     if(settings?.shadesList.find { it?.id == device?.id }) {
         items["WindowShade"] = 1
     }
-    // if(settings?.hamptonBayFanLightList.find { it?.id == device?.id } && items["SwitchLevel"] && items["FanSpeed"]) {
-    //     items["FanLight"] = 1
-    //     items["LightBulb"] = 1
-    //     items["Fan"] = 1
-    // }
     if(settings?.noTemp && items["TemperatureMeasurement"] && (items["ContactSensor"] != null || items["WaterSensor"] != null)) {
         items.remove("TemperatureMeasurement")
     }
@@ -499,8 +481,6 @@ def registerSensors() {
     registerChangeHandler(settings?.speakerList)
     log.debug "Registering (${settings?.shadesList?.size() ?: 0}) Window Shades"
     registerChangeHandler(settings?.shadesList)
-    // log.debug "Registering (${settings?.hamptonBayFanLightList?.size() ?: 0}) FanLights"
-    // registerChangeHandler(settings?.hamptonBayFanLightList)
 }
 
 def registerSwitches() {
@@ -520,7 +500,7 @@ def ignoreTheseAttributes() {
 		'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
 		'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
 		'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
-		'arrivingAtPlace', 'lastUpdatedDt'
+		'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering'
     ]
 }
 
