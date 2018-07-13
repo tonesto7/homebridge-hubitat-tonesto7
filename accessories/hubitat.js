@@ -72,7 +72,7 @@ function HubitatAccessory(platform, device) {
 
     if (device && device.capabilities) {
         if (device.capabilities['SwitchLevel'] !== undefined && !isSpeaker && !isFan) {
-            if (device.commands.levelOpenClose || device.capabilities['WindowShade'] !== undefined) {
+            if (device.commands.levelOpenClose) {
                 // This is a Window Shade
                 that.deviceGroup = 'shades';
                 if (device.commands.levelOpenClose) {
@@ -92,45 +92,6 @@ function HubitatAccessory(platform, device) {
                         callback(null, parseInt(that.device.attributes.level));
                     });
                     that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
-                } else {
-                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
-                    thisCharacteristic.on('get', function(callback) {
-                        callback(null, parseInt(that.device.attributes.position));
-                    });
-                    thisCharacteristic.on('set', function(value, callback) {
-                        that.platform.api.runCommand(callback, that.deviceid, 'setPosition', {
-                            value1: value
-                        });
-                    });
-                    that.platform.addAttributeUsage('position', that.deviceid, thisCharacteristic);
-
-                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
-                    thisCharacteristic.on('get', function(callback) {
-                        callback(null, parseInt(that.device.attributes.position));
-                    });
-                    that.platform.addAttributeUsage('position', that.deviceid, thisCharacteristic);
-
-                    if (device.attributes.windowShade !== null) {
-                        thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.PositionState);
-                        var posState = device.attributes.windowShade;
-                        switch (posState) {
-
-                            case "closing":
-                                posState = 1;
-                                break;
-                            case "opening":
-                                posState = 0;
-                                break;
-                            default:
-                                posState = 2;
-                                break;
-                        }
-                        thisCharacteristic.on('get', function(callback) {
-                            callback(null, posState);
-                        });
-                        that.platform.addAttributeUsage('positionState', that.deviceid, thisCharacteristic);
-                    }
-
                 }
             } else if (isLight === true || device.commands.setLevel) {
                 that.deviceGroup = 'lights';
@@ -184,7 +145,46 @@ function HubitatAccessory(platform, device) {
                 }
             }
         }
+        if (device.capabilities['WindowShade']) {
+            that.deviceGroup = 'shades';
+            thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
+            thisCharacteristic.on('get', function(callback) {
+                callback(null, parseInt(that.device.attributes.position));
+            });
+            thisCharacteristic.on('set', function(value, callback) {
+                that.platform.api.runCommand(callback, that.deviceid, 'setPosition', {
+                    value1: value
+                });
+            });
+            that.platform.addAttributeUsage('position', that.deviceid, thisCharacteristic);
 
+            thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
+            thisCharacteristic.on('get', function(callback) {
+                callback(null, parseInt(that.device.attributes.position));
+            });
+            that.platform.addAttributeUsage('position', that.deviceid, thisCharacteristic);
+
+            if (device.attributes.windowShade) {
+                thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.PositionState);
+                var posState = device.attributes.windowShade;
+                switch (posState) {
+                    case "closing":
+                        posState = 1;
+                        break;
+                    case "opening":
+                        posState = 0;
+                        break;
+                    default:
+                        posState = 2;
+                        break;
+                }
+                thisCharacteristic.on('get', function(callback) {
+                    callback(null, posState);
+                });
+                that.platform.addAttributeUsage('positionState', that.deviceid, thisCharacteristic);
+            }
+
+        }
         if (device.capabilities['GarageDoorControl'] !== undefined) {
             that.deviceGroup = 'garage_doors';
 
