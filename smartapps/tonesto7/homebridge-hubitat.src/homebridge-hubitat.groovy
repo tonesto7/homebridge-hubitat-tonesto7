@@ -346,10 +346,10 @@ def deviceCommand() {
                     device."$command"()
                     log.info("Command Successful for Device ${device.displayName} | Command ${command}()")
                 }
-                CommandReply("Success", "Device ${device.displayName} | Command $command()")
+                CommandReply("Success", "Device ${device.displayName} | Command ${command}()")
             } catch (e) {
-                log.error("Error Occurred for Device ${device.displayName} | Command $command()")
-                CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command $command()")
+                log.error("Error Occurred for Device ${device.displayName} | Command ${command}()")
+                CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command ${command}()")
             }
         }
     }
