@@ -152,6 +152,8 @@ function HubitatAccessory(platform, device) {
                 callback(null, parseInt(that.device.attributes.position));
             });
             thisCharacteristic.on('set', function(value, callback) {
+                if (value > 99) { value = 99; } else if (value < 0) { value = 0; }
+                that.platform.log('setPosition: ' + value);
                 that.platform.api.runCommand(callback, that.deviceid, 'setPosition', {
                     value1: value
                 });

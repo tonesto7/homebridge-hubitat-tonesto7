@@ -20,7 +20,7 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVer() { return "1.1.5" }
+def appVer() { return "1.1.6" }
 
 def appInfoSect()	{
 	section() {
@@ -338,12 +338,15 @@ def deviceCommand() {
             try {
                 if (value2) {
                     device."$command"(value1,value2)
-                } else if (value1) {
+                    log.info("Command Successful for Device ${device.displayName} | Command ${command}($value1, $value2)")
+                } else if (value1 != null) {
                     device."$command"(value1)
+                    log.info("Command Successful for Device ${device.displayName} | Command ${command}($value1)")
                 } else {
                     device."$command"()
+                    log.info("Command Successful for Device ${device.displayName} | Command ${command}()")
                 }
-                log.info("Command Successful for Device "+device.displayName+", Command "+command)
+                
                 CommandReply("Success", "Device "+device.displayName+", Command "+command)
             } catch (e) {
                 log.error("Error Occurred For Device "+device.displayName+", Command "+command)
