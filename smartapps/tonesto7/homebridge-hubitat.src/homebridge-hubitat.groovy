@@ -336,7 +336,7 @@ def deviceCommand() {
             def value1 = request.JSON?.value1
             def value2 = request.JSON?.value2
             try {
-                if (value2) {
+                if (value2 != null) {
                     device."$command"(value1,value2)
                     log.info("Command Successful for Device ${device.displayName} | Command ${command}($value1, $value2)")
                 } else if (value1 != null) {
