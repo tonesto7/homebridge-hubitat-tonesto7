@@ -5,16 +5,16 @@
  */
 
 String appVersion() { return "1.2.0" }
-String appModified() { return "10-05-2018" }
+String appModified() { return "10-08-2018" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
 Boolean isST() { return (platform() == "SmartThings") }
 definition(
-    name: "Homebridge (Hubitat)",
+    name: "Homebridge (${platform()})",
     namespace: "tonesto7",
     author: "Anthony Santilli",
-    description: "Provides API interface between Homebridge Service (HomeKit) and Hubitat",
+    description: "Provides API interface between Homebridge Service (HomeKit) and ${platform()}",
     category: "My Apps",
     iconUrl:   "",
     iconX2Url: "",
@@ -31,7 +31,7 @@ def appInfoSect()	{
         def str = """
         <div class="appInfoSect" style="width: 300px; height: 70px; display: inline-table;">
             <ul style=" margin: 0 auto; padding: 0; list-style-type: none;">
-            <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" width="70px"/>
+            <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@1x.png" width="70px"/>
             <li style="padding-top: 2px;"><b>${app?.name}</b></li>
             <li><small style="color: black !important;">Copyright\u00A9 2018 Anthony Santilli</small></li>
             <li><small style="color: black !important;">Version: ${appVersion()}</small></li>
@@ -69,17 +69,11 @@ def mainPage() {
                 input "sensorAllowTemp", "capability.sensor", title: inputTitleStr("Allow Temp on these Sensors"), multiple: true, submitOnChange: true, required: false
             }
         }
-
         section("</br>${sectionTitleStr("Create Mode Devices in HomeKit?")}") {
             paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual switch will be created for each mode in HomeKit.</br>The switch will be ON when that mode is active.</i></small>', state: "complete"
             def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
             input "modeList", "enum", title: inputTitleStr("Create Devices for these Modes"), required: false, multiple: true, options: modes, submitOnChange: true
         }
-        // section("</br>${sectionTitleStr("Create Devices for Routines in HomeKit?")}") {
-        //     paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual device will be created for each routine in HomeKit.</br>These are very useful for use in Home Kit scenes</i></small>', state: "complete"
-        //     def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
-        //     input "routineList", "enum", title: "Create Devices for these Routines", required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine.png")
-        // }
         section("<br/>${sectionTitleStr("Hubitat Safety Monitor Support:")}") {
             input "addHsmDevice", "bool", title: inputTitleStr("Allow Hubitat Safety Monitor Control in Homekit?"), required: false, defaultValue: false, submitOnChange: true
         }
