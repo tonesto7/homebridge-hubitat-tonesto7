@@ -76,7 +76,7 @@ function HE_ST_Accessory(platform, device) {
     let isLight = (device.capabilities['LightBulb'] !== undefined || device.capabilities['Bulb'] !== undefined || that.device.capabilities['Fan Light'] !== undefined || device.name.includes('light'));
     let isSpeaker = (device.capabilities['Speaker'] !== undefined);
     if (device && device.capabilities) {
-        if (device.capabilities['Switch Level'] || device.capabilities['SwitchLevel'] && !isSpeaker && !isFan && !isMode && !isRoutine) {
+        if ((device.capabilities['Switch Level'] || device.capabilities['SwitchLevel']) && !isSpeaker && !isFan && !isMode && !isRoutine) {
             if (device.commands.levelOpenClose || device.commands.presetPosition) {
                 // This is a Window Shade
                 that.deviceGroup = 'shades';
@@ -119,7 +119,7 @@ function HE_ST_Accessory(platform, device) {
                     });
                 });
                 that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
-                if (device.capabilities['Color Control'] !== undefined || device.capabilities['ColorControl']) {
+                if (device.capabilities['Color Control'] || device.capabilities['ColorControl']) {
                     thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.Hue);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, Math.round(that.device.attributes.hue * 3.6));
@@ -143,7 +143,7 @@ function HE_ST_Accessory(platform, device) {
                 }
             }
         }
-        if (device.capabilities['WindowShade']) {
+        if (platformName === 'Hubitat' && device.capabilities['WindowShade']) {
             that.deviceGroup = 'shades';
             thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
             thisCharacteristic.on('get', function(callback) {
@@ -189,7 +189,7 @@ function HE_ST_Accessory(platform, device) {
             }
 
         }
-        if (device.capabilities['Garage Door Control'] !== undefined || device.capabilities['GarageDoorControl']) {
+        if (device.capabilities['Garage Door Control'] || device.capabilities['GarageDoorControl']) {
             that.deviceGroup = 'garage_doors';
             thisCharacteristic = that.getaddService(Service.GarageDoorOpener).getCharacteristic(Characteristic.TargetDoorState);
             thisCharacteristic.on('get', function(callback) {
@@ -346,7 +346,7 @@ function HE_ST_Accessory(platform, device) {
             that.platform.addAttributeUsage('mute', that.deviceid, thisCharacteristic);
         }
         //Handles Standalone Fan with no levels
-        if (isFan === true && (that.device.capabilities['Fan Light'] !== undefined || that.device.capabilities['FanLight'] || that.deviceGroup === 'unknown')) {
+        if (isFan === true && (that.device.capabilities['Fan Light'] || that.device.capabilities['FanLight'] || that.deviceGroup === 'unknown')) {
             that.deviceGroup = 'fans';
             thisCharacteristic = that.getaddService(Service.Fanv2).getCharacteristic(Characteristic.Active);
             thisCharacteristic.on('get', function(callback) {
@@ -431,7 +431,7 @@ function HE_ST_Accessory(platform, device) {
             });
             that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
         }
-        if (device.capabilities['Switch'] !== undefined && (that.device.capabilities['Fan Light'] !== undefined || that.device.capabilities['Fan Light'] || that.deviceGroup === 'unknown')) {
+        if (device.capabilities['Switch'] && (that.device.capabilities['Fan Light'] || that.device.capabilities['FanLight'] || that.deviceGroup === 'unknown')) {
             //Handles Standalone Fan with no levels
             if (isLight === true) {
                 that.deviceGroup = 'light';
@@ -562,7 +562,7 @@ function HE_ST_Accessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-        if (device.capabilities['Water Sensor'] !== undefined || device.capabilities['WaterSensor']) {
+        if (device.capabilities['Water Sensor'] || device.capabilities['WaterSensor']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }

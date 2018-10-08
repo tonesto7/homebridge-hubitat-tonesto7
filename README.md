@@ -44,6 +44,7 @@ This is based off of @pdlove homebridge-smartthings
 
 ***v1.3.0*** - The SmartThings and Hubitat NPM package now share 99.9% the same code. All except 2 static variables defining the platform type
 
+***v1.3.1*** - Bug fixes from code merge
 <br>
 
 # Explanation:
