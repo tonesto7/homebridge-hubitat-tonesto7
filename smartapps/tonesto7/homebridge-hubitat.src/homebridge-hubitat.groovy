@@ -4,6 +4,12 @@
  *  Copyright 2018 Anthony Santilli
  */
 
+String appVersion() { return "1.2.0" }
+String appModified() { return "10-05-2018" }
+String platform() { return "Hubitat" }
+String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
+String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
+Boolean isST() { return (platform() == "SmartThings") }
 definition(
     name: "Homebridge (Hubitat)",
     namespace: "tonesto7",
@@ -20,22 +26,21 @@ preferences {
     page(name: "mainPage")
 }
 
-def appVer() { return "1.1.6" }
-
 def appInfoSect()	{
 	section() {
-		def str = """
-		<div class="appInfoSect" style="width: 300px; height: 70px; display: inline-table;">
-			<ul style=" margin: 0 auto; padding: 0; list-style-type: none;">
-			  <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" width="70px"/>
-			  <li style="padding-top: 2px;"><b>${app?.name}</b></li>
-			  <li><small style="color: black !important;">Copyright\u00A9 2018 Anthony Santilli</small></li>
-			  <li><small style="color: black !important;">Version: ${appVer()}</small></li>
-			</ul>
-		</div>
-		<script>\$('.appInfoSect').parent().css("cssText", "font-family: Arial !important; white-space: inherit !important;")</script>
-		"""
-		paragraph "${str}"
+        def str = """
+        <div class="appInfoSect" style="width: 300px; height: 70px; display: inline-table;">
+            <ul style=" margin: 0 auto; padding: 0; list-style-type: none;">
+            <img style="float: left; padding: 10px;" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/JSON%401.png" width="70px"/>
+            <li style="padding-top: 2px;"><b>${app?.name}</b></li>
+            <li><small style="color: black !important;">Copyright\u00A9 2018 Anthony Santilli</small></li>
+            <li><small style="color: black !important;">Version: ${appVersion()}</small></li>
+            </ul>
+        </div>
+        <script>\$('.appInfoSect').parent().css("cssText", "font-family: Arial !important; white-space: inherit !important;")</script>
+        """
+        paragraph "${str}"
+        paragraph '<small style="color: red !important;"><i><b>Notice:</b></small><small style="color: red !important;"> Any Device Changes will require a restart of the Homebridge Service</i></small>'
 	}
 }
 
@@ -45,9 +50,6 @@ def mainPage() {
     }
     dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
         appInfoSect()
-        section() {
-            paragraph '<small style="color: red !important;"><i><b>Notice:</b></small><small style="color: red !important;"> Any Device Changes will require a restart of the Homebridge Service</i></small>'
-        }
         section(sectionTitleStr("Define Specific Categories:")) {
             paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
             input "lightList", "capability.switch", title: inputTitleStr("Lights: (${lightList ? lightList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
@@ -55,35 +57,37 @@ def mainPage() {
             input "speakerList", "capability.switch", title: inputTitleStr("Speakers: (${speakerList ? speakerList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
             input "shadesList", "capability.windowShade", title: inputTitleStr("Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
         }
-        section(sectionTitleStr("Irrigation Devices:")) {
-			input "irrigationList", "capability.valve", title: """<u>Irrigation Devices (${irrigationList ? irrigationList?.size() : 0} Selected)</u><br/><small style="color: orange !important;"><i><b>Notice:</b></small><small style="color: orange !important;"> Only Tested with Rachio Devices</i></small>""", description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
-            
-        }
+        
         section(sectionTitleStr("All Other Devices:")) {
             input "sensorList", "capability.sensor", title: inputTitleStr("Sensor Devices: (${sensorList ? sensorList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: inputTitleStr("Switch Devices: (${switchList ? switchList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
             input "deviceList", "capability.refresh", title: inputTitleStr("Other Devices: (${deviceList ? deviceList?.size() : 0} Selected)"), description: "<i>Tap to select</i>", multiple: true, submitOnChange: true, required: false
         }
-        section() {
-            paragraph "<h3>Total Devices: ${getDeviceCnt()}</h3>"
+        section(sectionTitleStr("Restrict Temp Device Creation")) {
+            input "noTemp", "bool", title: inputTitleStr("Remove Temp from Contacts and Water Sensors?"), required: false, defaultValue: false, submitOnChange: true
+            if(settings?.noTemp) {
+                input "sensorAllowTemp", "capability.sensor", title: inputTitleStr("Allow Temp on these Sensors"), multiple: true, submitOnChange: true, required: false
+            }
         }
-        // section("<br/><h2>Create Devices that Simulate Buttons in HomeKit?</h2>") {
-        //     paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">HomeKit will create a switch device for each item selected.<br/>The switch will change state to off after it fires.</i></small>', state: "complete"
-        //     input "buttonList", "capability.button", title: inputTitleStr("Select Buttons Devices:  (${buttonList ? buttonList?.size() : 0} Selected)"), description: "<i>Tap to Select...</i>", required: false, multiple: true, submitOnChange: true
-        //     input "momentaryList", "capability.momentary", title: inputTitleStr("Select Momentary Devices:  (${momentaryList ? momentaryList?.size() : 0} Selected)"), description: "<i>Tap to Select...</i>", required: false, multiple: true, submitOnChange: true
-        // }
+
         section("</br>${sectionTitleStr("Create Mode Devices in HomeKit?")}") {
-            paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">HomeKit will create a switch device for each mode.<br/>The switch will be ON for active mode.</i></small>', state: "complete"
+            paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual switch will be created for each mode in HomeKit.</br>The switch will be ON when that mode is active.</i></small>', state: "complete"
             def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
             input "modeList", "enum", title: inputTitleStr("Create Devices for these Modes"), required: false, multiple: true, options: modes, submitOnChange: true
         }
+        // section("</br>${sectionTitleStr("Create Devices for Routines in HomeKit?")}") {
+        //     paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual device will be created for each routine in HomeKit.</br>These are very useful for use in Home Kit scenes</i></small>', state: "complete"
+        //     def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
+        //     input "routineList", "enum", title: "Create Devices for these Routines", required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine.png")
+        // }
         section("<br/>${sectionTitleStr("Hubitat Safety Monitor Support:")}") {
             input "addHsmDevice", "bool", title: inputTitleStr("Allow Hubitat Safety Monitor Control in Homekit?"), required: false, defaultValue: false, submitOnChange: true
         }
         section("<br/>${sectionTitleStr("Plug-In Configuration Data:")}") {
             href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: inputTitleStr("View the Configuration Data for Homebridge"), description: """</br><small style="color: #1A77C9 !important;"><i>Tap, select, copy, then click <b>Done</b></i></small>"""
+            paragraph "<h3>Selected Device Count:\n${getDeviceCnt()}</h3>"
         }
-        section("<br/>${sectionTitleStr("Other Options:")}") {
+        section("<br/>${sectionTitleStr("Options:")}") {
             // paragraph '<h4 style="color: blue;">This Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
             input "noTemp", "bool", title: inputTitleStr("Remove Temp from Contacts and Water Sensors?"), description: "<i>Test</i>", required: false, defaultValue: false, submitOnChange: true
         	input "showLogs", "bool", title: inputTitleStr("Show Events in Live Logs?"), required: false, defaultValue: true, submitOnChange: true
@@ -105,7 +109,7 @@ def imgTitle(imgSrc, imgWidth, imgHeight, titleStr, color=null) {
 
 def getDeviceCnt() {
     def devices = []
-    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "shadesList", "irrigationList"]
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "shadesList", "modeList"]
     items?.each { item ->   
         if(settings[item]?.size() > 0) {     
             devices = devices + settings[item]
@@ -126,25 +130,32 @@ def updated() {
 }
 
 def initialize() {
-	if(!state?.accessToken) {
-         createAccessToken()
+    if(!state?.accessToken) {
+        createAccessToken()
     }
-	runIn(2, "registerDevices", [overwrite: true])
-   	runIn(4, "registerSensors", [overwrite: true])
+    runIn(2, "registerDevices", [overwrite: true])
+    runIn(4, "registerSensors", [overwrite: true])
     runIn(6, "registerSwitches", [overwrite: true])
-    // subscribe(location, null, HubResponseEvent, [filterEvents:false])
-    if(settings?.addHsmDevice) { 
+    if(settings?.addHsmDevice) {
         subscribe(location, "hsmStatus", changeHandler) 
         subscribe(location, "hsmRules", changeHandler) 
         subscribe(location, "hsmAlert", changeHandler) 
         subscribe(location, "hsmSetArm", changeHandler) 
     }
-    if(settings?.modeList) { subscribe(location, "mode", changeHandler) }
+    if(settings?.modeList) {
+        log.debug "Registering (${settings?.modeList?.size() ?: 0}) Virtual Mode Devices"
+        subscribe(location, "mode", changeHandler)
+        if(state.lastMode == null) { state?.lastMode = location.mode?.toString() }
+    }
+}
+
+def onAppTouch(event) {
+    updated()
 }
 
 def renderDevices() {
     def deviceData = []
-    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "shadesList", "irrigationList", "modeList"]
+    def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "shadesList", "modeList"]
     items?.each { item ->   
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
@@ -161,11 +172,11 @@ def renderDevices() {
         def shmStatus = getShmStatus()
         if(shmStatus) { deviceData.push(getShmDevice(shmStatus)) }
     }
-
     return deviceData
 }
 
 def getDeviceData(type, sItem) {
+    // log.debug "getDeviceData($type, $sItem)"
     def curType = null
     def devId = sItem
     def obj = null
@@ -178,7 +189,7 @@ def getDeviceData(type, sItem) {
             curType = "Routine"
             obj = getRoutineById(sItem)
             if(obj) {
-                name = obj?.label
+                name = "Routine - " + obj?.label
                 attrVal = "off"
             }
             break
@@ -187,18 +198,8 @@ def getDeviceData(type, sItem) {
             curType = "Mode"
             obj = getModeById(sItem)
             if(obj) {
-                name = obj?.name
+                name = "Mode - " + obj?.name
                 attrVal = modeSwitchState(obj?.name)
-            }
-            break
-        case "momentaryList":
-        case "buttonList":
-            isVirtual = true
-            curType = "Button"
-            obj = sItem
-            if(obj) {
-                name = obj?.displayName
-                attrVal = "off"
             }
             break
         default:
@@ -222,6 +223,10 @@ def getDeviceData(type, sItem) {
             attributes: !isVirtual ? deviceAttributeList(sItem) : ["switch": attrVal]
         ]
     } else { return null }
+}
+
+def modeSwitchState(String mode) {
+    return location.mode.toString() == mode ? "on" : "off"
 }
 
 def getShmDevice(status) {
@@ -255,9 +260,11 @@ def findDevice(paramid) {
     device = speakerList.find { it?.id == paramid }
     if (device) return device
     device = shadesList.find { it?.id == paramid }
-    if (device) return device
-    device = irrigationList.find { it?.id == paramid }
 	return device
+    // device = momentaryList.find { it?.id == paramid }
+    // if (device) return device
+    // device = buttonList.find { it?.id == paramid }
+    // return device
 }
 
 def authError() {
@@ -293,7 +300,6 @@ def renderConfig() {
 }
 
 def renderLocation() {
-    def hub = location.hubs[0]
     return [
     	latitude: location?.latitude,
     	longitude: location?.longitude,
@@ -301,8 +307,8 @@ def renderLocation() {
     	name: location?.name,
     	temperature_scale: location?.temperatureScale,
     	zip_code: location?.zipCode,
-        hubIP: hub.getDataValue("localIP"),
-        app_version: appVer()
+        hubIP: location.hubs[0]?.getDataValue("localIP"),
+        app_version: appVersion()
   	]
 }
 
@@ -318,10 +324,16 @@ def deviceCommand() {
     if(settings?.addHsmDevice != false && params?.id == "hsmSetArm") {
         setShmMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
-    } else if (settings?.modeList && command == "mode") {
+    }  else if (settings?.modeList && command == "mode") {
         def value1 = request.JSON?.value1
-        if(value1) { changeMode(value1) }
+        log.debug "Virtual Mode Received: ${value1}"
+        if(value1) { changeMode(value1 as String) }
         CommandReply("Success", "Mode Device, Command $command")
+    } else if (settings?.routineList && command == "routine") {
+        def value1 = request.JSON?.value1
+        log.debug "Virtual Routine Received: ${value1}"
+        if(value1) { runRoutine(value1) }
+        CommandReply("Success", "Routine Device, Command $command")
     } else if ((settings?.buttonList || settings?.momentaryList) && command == "button") {
         device.on()
         CommandReply("Success", "Button Device, Command ON")
@@ -355,16 +367,30 @@ def deviceCommand() {
     }
 }
 
+def setShmMode(mode) {
+    log.info "Setting the Smart Home Monitor Mode to (${mode})..."
+    sendLocationEvent(name: 'alarmSystemStatus', value: mode.toString())
+}
+
 def changeMode(mode) {
     if(mode) {
+        mode = mode.replace("Mode - ", "")
         log.info "Setting the Location Mode to (${mode})..."
         setLocationMode(mode)
         state.lastMode = mode
     }
 }
 
+def runRoutine(rt) {
+    if(rt) {
+        rt = rt.replace("Routine - ", "")
+        log.info "Executing the (${rt}) Routine..."
+        location.helloHome?.execute(rt)
+    }
+}
+
 def deviceAttribute() {
-	def device = findDevice(params?.id)    
+	def device = findDevice(params?.id)
     def attribute = params.attribute
   	if (!device) {
     	httpError(404, "Device not found")
@@ -381,16 +407,27 @@ def findVirtModeDevice(id) {
     return null
 }
 
+def findVirtRoutineDevice(id) {
+    if (getRoutineById(id)) {
+        return getRoutineById(id)
+    }
+    return null
+}
+
 def deviceQuery() {
 	log.trace "deviceQuery(${params?.id}"
 	def device = findDevice(params?.id)
     if (!device) { 
         def mode = findVirtModeDevice(params?.id)
-        def obj = mode ? mode : null
+        def routine = null//findVirtModeDevice(params?.id)
+        def obj = mode ? mode : routine ?: null
         if(!obj) { 
             device = null
             httpError(404, "Device not found")
         } else {
+            def name = routine ? obj?.label : obj?.name
+            def type = routine ? "Routine" : "Mode"
+            def attrVal = routine ? "off" : modeSwitchState(obj?.name)
             try {
                 deviceData?.push([
                     name: obj?.name,
@@ -420,9 +457,6 @@ def deviceQuery() {
 
 def deviceCapabilityList(device) {
     def items = device?.capabilities?.collectEntries { capability-> [ (capability?.name):1 ] }
-    if(settings?.irrigationList?.find { it?.id == device?.id }) { 
-		items["Irrigation"] = 1
-    }
     if(settings?.lightList.find { it?.id == device?.id }) {
         items["LightBulb"] = 1
     }
@@ -435,8 +469,13 @@ def deviceCapabilityList(device) {
     if(settings?.shadesList.find { it?.id == device?.id }) {
         items["WindowShade"] = 1
     }
-    if(settings?.noTemp && items["TemperatureMeasurement"] && (items["ContactSensor"] != null || items["WaterSensor"] != null)) {
-        items.remove("TemperatureMeasurement")
+    if(settings?.noTemp && items["Temperature Measurement"] && (items["Contact Sensor"] || items["Water Sensor"])) {
+        Boolean remTemp = true
+        if(settings?.sensorAllowTemp) {
+            List aItems = settings?.sensorAllowTemp?.collect { it?.getId() as String } ?: []
+            if(aItems?.contains(device?.id as String)) { remTemp = false }
+        }
+        if(remTemp) { items.remove("Temperature Measurement") }
     }
 	return items
 }
@@ -471,8 +510,6 @@ def registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     log.debug "Registering (${settings?.deviceList?.size() ?: 0}) Other Devices"
 	registerChangeHandler(settings?.deviceList)
-    log.debug "Registering (${settings?.irrigationList?.size() ?: 0}) Sprinklers"
-    registerChangeHandler(settings?.irrigationList)
 }
 
 def registerSensors() {
@@ -481,8 +518,6 @@ def registerSensors() {
     registerChangeHandler(settings?.sensorList)
     log.debug "Registering (${settings?.speakerList?.size() ?: 0}) Speakers"
     registerChangeHandler(settings?.speakerList)
-    log.debug "Registering (${settings?.shadesList?.size() ?: 0}) Window Shades"
-    registerChangeHandler(settings?.shadesList)
 }
 
 def registerSwitches() {
@@ -493,6 +528,9 @@ def registerSwitches() {
     registerChangeHandler(settings?.lightList)
     log.debug "Registering (${settings?.fanList?.size() ?: 0}) Fans"
     registerChangeHandler(settings?.fanList)
+    log.debug "Registering (${settings?.shadesList?.size() ?: 0}) Window Shades"
+    registerChangeHandler(settings?.shadesList)
+    log.debug "Registered (${getDeviceCnt()} Devices)"
 }
 
 def ignoreTheseAttributes() {
@@ -513,11 +551,15 @@ def registerChangeHandler(devices) {
 		theAtts?.each {att ->
             if(!(ignoreTheseAttributes().contains(att))) {
                 if(settings?.noTemp && att == "temperature" && (device?.hasAttribute("contact") || device?.hasAttribute("water"))) {
-                    return 
-                } else {
-                    subscribe(device, att, "changeHandler")
-                    if(showlog) { log.debug "Registering ${device?.displayName}.${att}" }
-                }
+                    Boolean skipAtt = true
+                    if(settings?.sensorAllowTemp) {
+                        List aItems = settings?.sensorAllowTemp?.collect { it?.getId() as String } ?: []
+                        if(aItems?.contains(device?.id as String)) { skipAtt = false }
+                    }
+                    if(skipAtt) { return }
+                } 
+                subscribe(device, att, "changeHandler")
+                if(showlog) { log.debug "Registering ${device?.displayName}.${att}" }
             }
 		}
 	}
@@ -560,7 +602,15 @@ def changeHandler(evt) {
         case "mode":
             settings?.modeList?.each { id->
                 def md = getModeById(id)
-                if(md && md?.id ) { sendItems?.push([evtSource: "MODE", evtDeviceName: md?.name, evtDeviceId: md?.id, evtAttr: "switch", evtValue: modeSwitchState(md?.name), evtUnit: "", evtDate: dt]) }
+                if(md && md?.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md?.name}", evtDeviceId: md?.id, evtAttr: "switch", evtValue: modeSwitchState(md?.name), evtUnit: "", evtDate: dt]) }
+            }
+            break
+        case "routineExecuted":
+            settings?.routineList?.each { id->
+                def rt = getRoutineById(id)
+                if(rt && rt?.id) {
+                    sendItems?.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt?.label}", evtDeviceId: rt?.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
+                }
             }
             break
         default:
@@ -571,9 +621,30 @@ def changeHandler(evt) {
     if (sendEvt && state?.directIP != "" && sendItems?.size()) {
     	//Send Using the Direct Mechanism
         sendItems?.each { send->
-            if(settings?.showLogs) { 
-                log.debug "Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${send?.evtUnit}) to Homebridge at (${state?.directIP}:${state?.directPort})" 
+            if(settings?.showLogs) {
+                String unitStr = ""
+                switch(send?.evtAttr as String) {
+                    case "temperature":
+                        unitStr = "\u00b0${send?.evtUnit}"
+                        break
+                    case "humidity":
+                    case "level":
+                    case "battery":
+                        unitStr = "%"
+                        break
+                    case "power":
+                        unitStr = "W"
+                        break
+                    case "illuminance":
+                        unitStr = " Lux"
+                        break
+                    default:
+                        unitStr = "${send?.evtUnit}"
+                        break
+                }
+                log.debug "Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${unitStr}) to Homebridge at (${state?.directIP}:${state?.directPort})"
             }
+            
             def result = new hubitat.device.HubAction(
                 method: "POST",
                 path: "/update",
@@ -598,22 +669,23 @@ def getModeById(String mId) {
     return location?.modes?.find{it?.id?.toString() == mId}
 }
 
+def getRoutineById(rId) {
+    return location?.helloHome?.getPhrases()?.find{it?.id == rId}
+}
+
 def getModeByName(String name) {
     return location?.modes?.find{it?.name?.toString() == name}
+}
+
+def getRoutineByName(name) {
+    return location?.helloHome?.getPhrases()?.find{it?.label == name}
 }
 
 def enableDirectUpdates() {
 	log.trace "Command Request: ($params)"
 	state?.directIP = params?.ip
     state?.directPort = params?.port
-	def result = new hubitat.device.HubAction(
-        method: "GET",
-        path: "/initial",
-        headers: [
-            HOST: "${state?.directIP}:${state?.directPort}"
-        ],
-        query: deviceData
-    )
+	def result = new hubitat.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"], query: deviceData)
      sendHubCommand(result)
 }
 
