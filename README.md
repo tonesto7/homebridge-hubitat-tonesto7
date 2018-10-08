@@ -4,7 +4,7 @@ This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
 
-**```Current App version: 1.2.0```**
+**```Current App version: 1.3.0```**
 
 <br>
 
@@ -21,6 +21,8 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.1.5*** - Code Cleanups
 
 ***v1.1.5*** - Shade Fixes
+
+***v1.3.0*** - The SmartThings and Hubitat Apps now share 99.9% of the same code. With the exception being the hubaction declarations and a static variable defining the platform type
 
 #### Homebridge Plugin:
 
@@ -40,7 +42,9 @@ This is based off of @pdlove homebridge-smartthings
 
 ***v1.2.1*** - Fixed Readme Typo
 
+***v1.3.0*** - The SmartThings and Hubitat NPM package now share 99.9% the same code. All except 2 static variables defining the platform type
 
+***v1.3.1*** - Fixes for Latest code base merge.
 
 <br>
 

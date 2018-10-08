@@ -1,27 +1,27 @@
-var hubitat = require('./lib/hubitat_api');
+var he_st_api = require('./lib/he_st_api');
 var http = require('http');
 var os = require('os');
+const pluginName = 'homebridge-hubitat';
+const platformName = 'Hubitat';
+var Service, Characteristic, Accessory, uuid;
 
-var Service, Characteristic, Accessory, uuid, EnergyCharacteristics;
-
-var HubitatAccessory;
+var HE_ST_Accessory;
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
     Characteristic = homebridge.hap.Characteristic;
     Accessory = homebridge.hap.Accessory;
     uuid = homebridge.hap.uuid;
-
-    HubitatAccessory = require('./accessories/hubitat')(Accessory, Service, Characteristic, uuid);
-
-    homebridge.registerPlatform('homebridge-hubitat', 'Hubitat', HubitatPlatform);
+    HE_ST_Accessory = require('./accessories/he_st_accessories')(Accessory, Service, Characteristic, uuid);
+    homebridge.registerPlatform(pluginName, platformName, HE_ST_Platform);
 };
 
-function HubitatPlatform(log, config) {
+function HE_ST_Platform(log, config) {
     // Load Wink Authentication From Config File
     this.app_url = config['app_url'];
-    // this.app_id = config['app_id'];
+    this.app_id = config['app_id'];
     this.access_token = config['access_token'];
+    this.hub_ip = config["hub_ip"];
     this.excludedCapabilities = config["excluded_capabilities"] || [];
 
     // This is how often it does a full refresh
@@ -43,11 +43,11 @@ function HubitatPlatform(log, config) {
         this.update_seconds = 30;
     }
     if (this.update_method === 'api' && this.update_seconds < 30) {
-        this.log('The setting for update_seconds is lower than the Hubitat recommended value. Please switch to direct or PubNub using a free subscription for real-time updates.');
+        this.log('The setting for update_seconds is lower than the ' + platformName + ' recommended value. Please switch to direct or PubNub using a free subscription for real-time updates.');
     }
     this.direct_port = config['direct_port'];
     if (this.direct_port === undefined || this.direct_port === '') {
-        this.direct_port = 8005;
+        this.direct_port = (platformName === 'Hubitat' ? 8000 : 8005);
     }
 
     this.direct_ip = config['direct_ip'];
@@ -55,20 +55,20 @@ function HubitatPlatform(log, config) {
         this.direct_ip = getIPAddress();
     }
     this.config = config;
-    this.api = hubitat;
+    this.api = he_st_api;
     this.log = log;
     this.deviceLookup = {};
     this.firstpoll = true;
     this.attributeLookup = {};
 }
 
-HubitatPlatform.prototype = {
+HE_ST_Platform.prototype = {
     reloadData: function(callback) {
         var that = this;
-        // that.log('config: ', JSON.stringify(this.config));
+        that.log('config: ', JSON.stringify(this.config));
         var foundAccessories = [];
         that.log.debug('Refreshing All Device Data');
-        hubitat.getDevices(function(myList) {
+        he_st_api.getDevices(function(myList) {
             that.log.debug('Received All Device Data');
             // success
             if (myList && myList.deviceList && myList.deviceList instanceof Array) {
@@ -81,7 +81,7 @@ HubitatPlatform.prototype = {
                             accessory = that.deviceLookup[device.deviceid];
                             accessory.loadData(devices[i]);
                         } else {
-                            accessory = new HubitatAccessory(that, device);
+                            accessory = new HE_ST_Accessory(that, device);
                             // that.log(accessory);
                             if (accessory !== undefined) {
                                 if (accessory.services.length <= 1 || accessory.deviceGroup === 'unknown') {
@@ -114,7 +114,7 @@ HubitatPlatform.prototype = {
         });
     },
     accessories: function(callback) {
-        this.log('Fetching Hubitat devices.');
+        this.log('Fetching ' + platformName + ' devices.');
 
         // IMPORTANT Links:
         // https://developer.apple.com/documentation/homekit/hmaccessory
@@ -131,80 +131,105 @@ HubitatPlatform.prototype = {
             'Light',
             'LightBulb',
             'Bulb',
-            'ColorControl',
+            'Color Control',
+            // 'ColorControl',
             'Door',
             'Window',
             'Battery',
             'Polling',
             'Lock',
             'Refresh',
-            'LockCodes',
+            'Lock Codes',
+            // 'LockCodes',
             'Sensor',
             'Actuator',
             'Configuration',
-            'SwitchLevel',
-            'TemperatureMeasurement',
-            'MotionSensor',
-            'ColorTemperature',
-            'IlluminanceMeasurement',
-            'ContactSensor',
-            // 'ThreeAxis',
-            'AccelerationSensor',
-            'AirQualitySensor',
-            'Momentary',
-            'DoorControl',
-            'GarageDoorControl',
-            'TamperAlert',
-            'RelativeHumidityMeasurement',
-            'PresenceSensor',
-            'CarbonDioxideMeasurement',
-            'CarbonMonoxideDetector',
-            'WaterSensor',
-            'WindowShade',
+            'Switch Level',
+            // 'SwitchLevel',
+            'Temperature Measurement',
+            // 'TemperatureMeasurement',
+            'Motion Sensor',
+            // 'MotionSensor',
+            'Color Temperature',
+            // 'ColorTemperature',
+            'Illuminance Measurement',
+            // 'IlluminanceMeasurement',
+            'Contact Sensor',
+            // 'ContactSensor',
+            'Acceleration Sensor',
+            // 'AccelerationSensor',
+            'Door Control',
+            // 'DoorControl',
+            'Garage Door Control',
+            // 'GarageDoorControl',
+            'Relative Humidity Measurement',
+            // 'RelativeHumidityMeasurement',
+            'Presence Sensor',
+            // 'PresenceSensor',
+            'Carbon Dioxide Measurement',
+            // 'CarbonDioxideMeasurement',
+            'Carbon Monoxide Detector',
+            // 'CarbonMonoxideDetector',
+            // 'WaterSensor',
+            'Water Sensor',
+            'Window Shade',
+            // 'WindowShade',
             'Valve',
-            'Irrigation',
-            'EnergyMeter',
-            'PowerMeter',
-            // 'PowerSource',
+            'Energy Meter',
+            // 'EnergyMeter',
+            'Power Meter',
+            // 'PowerMeter',
             'Thermostat',
-            'ThermostatCoolingSetpoint',
-            'ThermostatMode',
-            'ThermostatFanMode',
-            'ThermostatOperatingState',
-            'ThermostatHeatingSetpoint',
-            'ThermostatSetpoint',
-            'FanSpeed',
+            'Thermostat Cooling Setpoint',
+            // 'ThermostatCoolingSetpoint',
+            'Thermostat Mode',
+            // 'ThermostatMode',
+            'Thermostat Fan Mode',
+            // 'ThermostatFanMode',
+            'Thermostat Operating State',
+            // 'ThermostatOperatingState',
+            'Thermostat Heating Setpoint',
+            // 'ThermostatHeatingSetpoint',
+            'Thermostat Setpoint',
+            // 'ThermostatSetpoint',
+            'Fan Speed',
+            'Fan Control',
+            'Fan Light',
+            // 'FanSpeed',
+            // 'FanControl',
+            // 'FanLight',
             'Fan',
-            'FanControl',
-            'Indicator',
-            // 'VideoStream',
-            // 'MusicPlayer',
-            'AudioMute',
-            'AudioNotification',
-            'AudioVolume',
-            'MediaPlayback',
-            'MediaPlaybackRepeat',
-            'MediaPlaybackShuffle',
-            'MediaTrackControl',
+            'Speaker',
+            'Tamper Alert',
             'Alarm',
-            'HSMStatus',
-            'TimedSession',
+            'Alarm System Status',
+            'AlarmSystemStatus',
             'Mode',
-            'Routine'
+            'Routine',
+            'Button'
         ];
+        if (platformName === 'Hubitat' || platformName === 'hubitat') {
+            let newList = [];
+            for (const item in this.knownCapabilities) {
+                newList.push(this.knownCapabilities[item].replace(/ /g, ''));
+            }
+            this.knownCapabilities = newList;
+        }
         this.temperature_unit = 'F';
 
-        hubitat.init(this.app_url, this.access_token);
+        he_st_api.init(this.app_url, this.app_id, this.access_token, this.hub_ip);
         that.log('update_method: ' + that.update_method);
         this.reloadData(function(foundAccessories) {
             that.log('Unknown Capabilities: ' + JSON.stringify(that.unknownCapabilities));
             callback(foundAccessories);
             setInterval(that.reloadData.bind(that), that.polling_seconds * 1000);
             // Initialize Update Mechanism for realtime-ish updates.
-            if (that.update_method === 'direct') {
+            if (that.update_method === 'api') {
+                setInterval(that.doIncrementalUpdate.bind(that), that.update_seconds * 1000);
+            } else if (that.update_method === 'direct') {
                 // The Hub sends updates to this module using http
-                hubitat_SetupHTTPServer(that);
-                hubitat.startDirect(null, that.direct_ip, that.direct_port);
+                he_st_api_SetupHTTPServer(that);
+                he_st_api.startDirect(null, that.direct_ip, that.direct_port);
             }
         });
     },
@@ -217,6 +242,23 @@ HubitatPlatform.prototype = {
         }
         this.attributeLookup[attribute][deviceid].push(mycharacteristic);
     },
+
+    doIncrementalUpdate: function() {
+        var that = this;
+        he_st_api.getUpdates(function(data) {
+            that.processIncrementalUpdate(data, that);
+        });
+    },
+
+    processIncrementalUpdate: function(data, that) {
+        that.log('new data: ' + data);
+        if (data && data.attributes && data.attributes instanceof Array) {
+            for (var i = 0; i < data.attributes.length; i++) {
+                that.processFieldUpdate(data.attributes[i], that);
+            }
+        }
+    },
+
     processFieldUpdate: function(attributeSet, that) {
         // that.log("Processing Update");
         // that.log(attributeSet);
@@ -250,27 +292,26 @@ function getIPAddress() {
     return '0.0.0.0';
 }
 
-function hubitat_SetupHTTPServer(myHubitat) {
+function he_st_api_SetupHTTPServer(myHe_st_api) {
     // Get the IP address that we will send to the SmartApp. This can be overridden in the config file.
-    let ip = myHubitat.direct_ip || getIPAddress();
+    let ip = myHe_st_api.direct_ip || getIPAddress();
     // Start the HTTP Server
     const server = http.createServer(function(request, response) {
-        hubitat_HandleHTTPResponse(request, response, myHubitat);
+        he_st_api_HandleHTTPResponse(request, response, myHe_st_api);
     });
 
-    server.listen(myHubitat.direct_port, err => {
+    server.listen(myHe_st_api.direct_port, err => {
         if (err) {
-            myHubitat.log('something bad happened', err);
+            myHe_st_api.log('something bad happened', err);
             return '';
         }
-        myHubitat.log(`Direct Connect Active On: ( ${ip}:${myHubitat.direct_port})`);
+        myHe_st_api.log(`Direct Connect Is Listening On ${ip}:${myHe_st_api.direct_port}`);
     });
     return 'good';
 }
 
-function hubitat_HandleHTTPResponse(request, response, myHubitat) {
-    // myHubitat.log(request.headers);
-    if (request.url === '/initial') { myHubitat.log('Hubitat Hub Communication Established'); }
+function he_st_api_HandleHTTPResponse(request, response, myHe_st_api) {
+    if (request.url === '/initial') myHe_st_api.log(platformName + ' Hub Communication Established');
     if (request.url === '/update') {
         let body = [];
         request.on('data', (chunk) => {
@@ -285,8 +326,8 @@ function hubitat_HandleHTTPResponse(request, response, myHubitat) {
                     value: data.change_value,
                     date: data.change_date
                 };
-                myHubitat.log('Change Event:', '(' + data.change_name + ') [' + (data.change_attribute ? data.change_attribute.toUpperCase() : 'unknown') + '] is ' + data.change_value);
-                myHubitat.processFieldUpdate(newChange, myHubitat);
+                myHe_st_api.log('Change Event:', '(' + data.change_name + ') [' + (data.change_attribute ? data.change_attribute.toUpperCase() : 'unknown') + '] is ' + data.change_value);
+                myHe_st_api.processFieldUpdate(newChange, myHe_st_api);
             }
         });
     }

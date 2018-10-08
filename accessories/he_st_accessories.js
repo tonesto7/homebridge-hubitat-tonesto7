@@ -1,9 +1,9 @@
 var inherits = require('util').inherits;
-
 var Accessory, Service, Characteristic, uuid, CommunityTypes;
-
+var routineState = false;
+const platformName = 'Hubitat';
 /*
- *   Hubitat Accessory
+ *   HE_ST Accessory
  */
 
 module.exports = function(oAccessory, oService, oCharacteristic, ouuid) {
@@ -14,29 +14,28 @@ module.exports = function(oAccessory, oService, oCharacteristic, ouuid) {
         CommunityTypes = require('../lib/communityTypes')(Service, Characteristic);
         uuid = ouuid;
 
-        inherits(HubitatAccessory, Accessory);
-        HubitatAccessory.prototype.loadData = loadData;
-        HubitatAccessory.prototype.getServices = getServices;
+        inherits(HE_ST_Accessory, Accessory);
+        HE_ST_Accessory.prototype.loadData = loadData;
+        HE_ST_Accessory.prototype.getServices = getServices;
     }
-    return HubitatAccessory;
+    return HE_ST_Accessory;
 };
-module.exports.HubitatAccessory = HubitatAccessory;
+module.exports.HE_ST_Accessory = HE_ST_Accessory;
 
 function toTitleCase(str) {
     return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 }
 
-function HubitatAccessory(platform, device) {
-    // console.log("HubitatAccessory: ", platform, device);
+
+function HE_ST_Accessory(platform, device) {
+    // console.log("SmartThingsAccessory: ", platform, device);
     this.deviceid = device.deviceid;
     this.name = device.name;
     this.platform = platform;
     this.state = {};
     this.device = device;
-
-    var idKey = 'hbdev:hubitat:' + this.deviceid;
+    var idKey = 'hbdev:' + platformName.toLowerCase() + ':' + this.deviceid;
     var id = uuid.generate(idKey);
-
     Accessory.call(this, this.name, id);
     var that = this;
 
@@ -55,14 +54,12 @@ function HubitatAccessory(platform, device) {
         .setCharacteristic(Characteristic.Model, `${toTitleCase(that.device.modelName)}`)
         .setCharacteristic(Characteristic.Name, that.name)
         .setCharacteristic(Characteristic.SerialNumber, that.device.serialNumber);
-
     // Get the Capabilities List
     for (var index in device.capabilities) {
         if (platform.knownCapabilities.indexOf(index) === -1 && platform.unknownCapabilities.indexOf(index) === -1) {
             platform.unknownCapabilities.push(index);
         }
     }
-
     that.getaddService = function(Service) {
         var myService = that.getService(Service);
         if (!myService) {
@@ -70,42 +67,36 @@ function HubitatAccessory(platform, device) {
         }
         return myService;
     };
-
     that.deviceGroup = 'unknown'; // that way we can easily tell if we set a device group
     var thisCharacteristic;
-    // platform.log(JSON.stringify(device.capabilities));
+    // platform.log(JSON.stringify(device));
     let isMode = (device.capabilities['Mode'] !== undefined);
     let isRoutine = (device.capabilities['Routine'] !== undefined);
-    let isFan = (device.capabilities['Fan'] !== undefined || device.commands.lowSpeed !== undefined);
-    let isLight = (device.capabilities['LightBulb'] !== undefined || device.capabilities['Bulb'] !== undefined || device.name.includes('light'));
+    let isFan = (device.capabilities['Fan'] !== undefined || that.device.capabilities['Fan Light'] !== undefined || device.commands.lowSpeed !== undefined);
+    let isLight = (device.capabilities['LightBulb'] !== undefined || device.capabilities['Bulb'] !== undefined || that.device.capabilities['Fan Light'] !== undefined || device.name.includes('light'));
     let isSpeaker = (device.capabilities['Speaker'] !== undefined);
-
     if (device && device.capabilities) {
-        if (device.capabilities['SwitchLevel'] !== undefined && !isSpeaker && !isFan && !isMode && !isRoutine) {
-            if (device.commands.levelOpenClose) {
+        if (device.capabilities['Switch Level'] || device.capabilities['SwitchLevel'] && !isSpeaker && !isFan && !isMode && !isRoutine) {
+            if (device.commands.levelOpenClose || device.commands.presetPosition) {
                 // This is a Window Shade
                 that.deviceGroup = 'shades';
-                if (device.commands.levelOpenClose) {
-                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
-                    thisCharacteristic.on('get', function(callback) {
-                        callback(null, parseInt(that.device.attributes.level));
+                thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.TargetPosition);
+                thisCharacteristic.on('get', function(callback) {
+                    callback(null, parseInt(that.device.attributes.level));
+                });
+                thisCharacteristic.on('set', function(value, callback) {
+                    that.platform.api.runCommand(callback, that.deviceid, 'setLevel', {
+                        value1: value
                     });
-                    thisCharacteristic.on('set', function(value, callback) {
-                        that.platform.api.runCommand(callback, that.deviceid, 'setLevel', {
-                            value1: value
-                        });
-                    });
-                    that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
-
-                    thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
-                    thisCharacteristic.on('get', function(callback) {
-                        callback(null, parseInt(that.device.attributes.level));
-                    });
-                    that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
-                }
+                });
+                that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
+                thisCharacteristic = that.getaddService(Service.WindowCovering).getCharacteristic(Characteristic.CurrentPosition);
+                thisCharacteristic.on('get', function(callback) {
+                    callback(null, parseInt(that.device.attributes.level));
+                });
+                that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
             } else if (isLight === true || device.commands.setLevel) {
                 that.deviceGroup = 'lights';
-
                 thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.On);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, that.device.attributes.switch === 'on');
@@ -118,7 +109,6 @@ function HubitatAccessory(platform, device) {
                     }
                 });
                 that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
-
                 thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.Brightness);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, parseInt(that.device.attributes.level));
@@ -129,8 +119,7 @@ function HubitatAccessory(platform, device) {
                     });
                 });
                 that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
-
-                if (device.capabilities['ColorControl'] !== undefined) {
+                if (device.capabilities['Color Control'] !== undefined || device.capabilities['ColorControl']) {
                     thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.Hue);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, Math.round(that.device.attributes.hue * 3.6));
@@ -141,7 +130,6 @@ function HubitatAccessory(platform, device) {
                         });
                     });
                     that.platform.addAttributeUsage('hue', that.deviceid, thisCharacteristic);
-
                     thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.Saturation);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, parseInt(that.device.attributes.saturation));
@@ -162,7 +150,11 @@ function HubitatAccessory(platform, device) {
                 callback(null, parseInt(that.device.attributes.position));
             });
             thisCharacteristic.on('set', function(value, callback) {
-                if (value > 99) { value = 99; } else if (value < 0) { value = 0; }
+                if (value > 99) {
+                    value = 99;
+                } else if (value < 0) {
+                    value = 0;
+                }
                 that.platform.log('setPosition: ' + value);
                 that.platform.api.runCommand(callback, that.deviceid, 'setPosition', {
                     value1: value
@@ -197,9 +189,8 @@ function HubitatAccessory(platform, device) {
             }
 
         }
-        if (device.capabilities['GarageDoorControl'] !== undefined) {
+        if (device.capabilities['Garage Door Control'] !== undefined || device.capabilities['GarageDoorControl']) {
             that.deviceGroup = 'garage_doors';
-
             thisCharacteristic = that.getaddService(Service.GarageDoorOpener).getCharacteristic(Characteristic.TargetDoorState);
             thisCharacteristic.on('get', function(callback) {
                 if (that.device.attributes.door === 'closed' || that.device.attributes.door === 'closing') {
@@ -218,7 +209,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('door', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.GarageDoorOpener).getCharacteristic(Characteristic.CurrentDoorState);
             thisCharacteristic.on('get', function(callback) {
                 switch (that.device.attributes.door) {
@@ -240,13 +230,10 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('door', that.deviceid, thisCharacteristic);
-
             that.getaddService(Service.GarageDoorOpener).setCharacteristic(Characteristic.ObstructionDetected, false);
         }
-
         if (device.capabilities['Lock'] !== undefined) {
             that.deviceGroup = 'locks';
-
             thisCharacteristic = that.getaddService(Service.LockMechanism).getCharacteristic(Characteristic.LockCurrentState);
             thisCharacteristic.on('get', function(callback) {
                 switch (that.device.attributes.lock) {
@@ -262,7 +249,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('lock', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.LockMechanism).getCharacteristic(Characteristic.LockTargetState);
             thisCharacteristic.on('get', function(callback) {
                 switch (that.device.attributes.lock) {
@@ -296,8 +282,7 @@ function HubitatAccessory(platform, device) {
             });
             that.platform.addAttributeUsage('lock', that.deviceid, thisCharacteristic);
         }
-
-        if (device.capabilities["Valve"] !== undefined) { //Currently only works with SmartThings Rachio Devices
+        if (device.capabilities["Valve"] !== undefined) {
             this.platform.log("valve: " + that.device.attributes.valve);
             that.deviceGroup = "valve";
             let valveType = (device.capabilities['Irrigation'] !== undefined ? 0 : 0);
@@ -316,8 +301,6 @@ function HubitatAccessory(platform, device) {
             that.platform.addAttributeUsage('valveType', that.deviceid, thisCharacteristic);
 
             //Defines Valve State (opened/closed)
-
-
             thisCharacteristic = that.getaddService(Service.Valve).getCharacteristic(Characteristic.Active);
             thisCharacteristic.on('get', function(callback) {
                 callback(null, that.device.attributes.valve === 'open' ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE);
@@ -332,52 +315,11 @@ function HubitatAccessory(platform, device) {
                 // }
             });
             that.platform.addAttributeUsage('active', that.deviceid, thisCharacteristic);
-
-            //Defines the IsConfigured Characteristic
-            // thisCharacteristic = that.getaddService(Service.Valve).getCharacteristic(Characteristic.IsConfigured);
-            // thisCharacteristic.on('get', function(callback) {
-            //     callback(null, 1);
-            // });
-            // that.platform.addAttributeUsage('IsConfigured', that.deviceid, thisCharacteristic);
-
-            // //Manages the zoneDuration Characteristic (Shows Duration in Home App) Needs Work
-            // let zoneDurVal = that.device.attributes.zoneDuration ? parseInt(that.device.attributes.zoneDuration) : 0;
-            // let zoneElapVal = that.device.attributes.zoneElapsed ? parseInt(that.device.attributes.zoneElapsed) : 0;
-            // thisCharacteristic = that.getaddService(Service.Valve).getCharacteristic(Characteristic.RemainingDuration);
-            // thisCharacteristic.on('get', function(callback) {
-            //     let zoneDur = zoneDurVal - zoneElapVal;
-            //     if (zoneDur > 3600) {
-            //         zoneDur = 3600;
-            //     } else if (zoneDur < 0) { zoneDur = 0; }
-            //     callback(null, parseInt(zoneDur));
-            // });
-            // that.platform.addAttributeUsage('remainingDuration', that.deviceid, thisCharacteristic);
-
-            //Manages the zoneDuration Characteristic
-            // thisCharacteristic = that.getaddService(Service.Valve).getCharacteristic(Characteristic.SetDuration);
-            // thisCharacteristic.on('get', function(callback) {
-            //     let zoneDur = device.attributes.zoneWaterTime || 0;
-            //     if (zoneDur > 3600) {
-            //         zoneDur = 3600;
-            //     }
-            //     callback(null, parseInt(zoneDur));
-            // });
-            // thisCharacteristic.on('set', function(value, callback) {
-            //     let zoneDur = value || 0;
-            //     if (zoneDur > 3600) {
-            //         zoneDur = 3600;
-            //     }
-            //     that.platform.api.runCommand(callback, that.deviceid, 'setZoneWaterTime', {
-            //         value1: parseInt(zoneDur / 60)
-            //     });
-            // });
-            // that.platform.addAttributeUsage('zoneDuration', that.deviceid, thisCharacteristic);
         }
 
         //Defines Speaker Device
         if (isSpeaker === true) {
             that.deviceGroup = 'speakers';
-
             thisCharacteristic = that.getaddService(Service.Speaker).getCharacteristic(Characteristic.Volume);
             thisCharacteristic.on('get', function(callback) {
                 callback(null, parseInt(that.device.attributes.level || 0));
@@ -390,7 +332,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('volume', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.Speaker).getCharacteristic(Characteristic.Mute);
             thisCharacteristic.on('get', function(callback) {
                 callback(null, that.device.attributes.mute === 'muted');
@@ -404,9 +345,8 @@ function HubitatAccessory(platform, device) {
             });
             that.platform.addAttributeUsage('mute', that.deviceid, thisCharacteristic);
         }
-
         //Handles Standalone Fan with no levels
-        if (isFan === true && (that.device.capabilities['FanLight'] !== undefined || that.deviceGroup === 'unknown')) {
+        if (isFan === true && (that.device.capabilities['Fan Light'] !== undefined || that.device.capabilities['FanLight'] || that.deviceGroup === 'unknown')) {
             that.deviceGroup = 'fans';
             thisCharacteristic = that.getaddService(Service.Fanv2).getCharacteristic(Characteristic.Active);
             thisCharacteristic.on('get', function(callback) {
@@ -420,7 +360,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
-
             if (that.device.attributes.level !== undefined || that.device.attributes.fanSpeed !== undefined) {
                 let fanLvl = that.device.attributes.fanSpeed ? fanSpeedConversion(that.device.attributes.fanSpeed, (that.device.command['medHighSpeed'] !== undefined)) : parseInt(that.device.attributes.level);
                 that.platform.log("Fan with (" + that.device.attributes.fanSpeed ? "fanSpeed" : "level" + ') | value: ' + fanLvl);
@@ -441,8 +380,7 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('level', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['Mode'] !== undefined) {
+        if (isMode === true) {
             that.deviceGroup = 'mode';
             that.platform.log('Mode: (' + that.name + ')');
             thisCharacteristic = that.getaddService(Service.Switch).getCharacteristic(Characteristic.On);
@@ -493,12 +431,11 @@ function HubitatAccessory(platform, device) {
             });
             that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
         }
-
-        if (device.capabilities['Switch'] !== undefined && (that.device.capabilities['FanLight'] !== undefined || that.deviceGroup === 'unknown')) {
+        if (device.capabilities['Switch'] !== undefined && (that.device.capabilities['Fan Light'] !== undefined || that.device.capabilities['Fan Light'] || that.deviceGroup === 'unknown')) {
             //Handles Standalone Fan with no levels
             if (isLight === true) {
                 that.deviceGroup = 'light';
-                if (that.device.capabilities['FanLight'] !== undefined) {
+                if (that.device.capabilities['Fan Light'] !== undefined) {
                     that.platform.log('FanLight: ' + that.device.name);
                 }
                 thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.On);
@@ -515,7 +452,6 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
             } else {
                 that.deviceGroup = 'switch';
-
                 thisCharacteristic = that.getaddService(Service.Switch).getCharacteristic(Characteristic.On);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, that.device.attributes.switch === 'on');
@@ -528,15 +464,14 @@ function HubitatAccessory(platform, device) {
                     }
                 });
                 that.platform.addAttributeUsage('switch', that.deviceid, thisCharacteristic);
-
-                if (that.device.capabilities['EnergyMeter'] !== undefined) {
-                    thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(CommunityTypes.CurrentConsumption1);
+                if (that.device.capabilities['Energy Meter'] !== undefined || that.device.capabilities['EnergyMeter'] !== undefined) {
+                    thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(CommunityTypes.TotalConsumption1);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, Math.round(that.device.attributes.power));
                     });
                     that.platform.addAttributeUsage('power', that.deviceid, thisCharacteristic);
                 }
-                if (device.capabilities['PowerMeter'] !== undefined) {
+                if (device.capabilities['Power Meter'] !== undefined || device.capabilities['PowerMeter'] !== undefined) {
                     thisCharacteristic = that.getaddService(Service.Switch).addCharacteristic(CommunityTypes.CurrentConsumption1);
                     thisCharacteristic.on('get', function(callback) {
                         callback(null, Math.round(that.device.attributes.power));
@@ -545,11 +480,9 @@ function HubitatAccessory(platform, device) {
                 }
             }
         }
-
         // Smoke Detectors
-        if (device.capabilities['SmokeDetector'] !== undefined && that.device.attributes.smoke) {
+        if ((device.capabilities['Smoke Detector'] || device.capabilities['SmokeDetector']) && that.device.attributes.smoke) {
             that.deviceGroup = 'detectors';
-
             thisCharacteristic = that.getaddService(Service.SmokeSensor).getCharacteristic(Characteristic.SmokeDetected);
             thisCharacteristic.on('get', function(callback) {
                 if (that.device.attributes.smoke === 'clear') {
@@ -559,8 +492,7 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('smoke', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.SmokeSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -568,10 +500,8 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['CarbonMonoxideDetector'] !== undefined && that.device.attributes.carbonMonoxide) {
+        if ((device.capabilities['Carbon Monoxide Detector'] || device.capabilities['CarbonMonoxideDetector']) && that.device.attributes.carbonMonoxide) {
             that.deviceGroup = 'detectors';
-
             thisCharacteristic = that.getaddService(Service.CarbonMonoxideSensor).getCharacteristic(Characteristic.CarbonMonoxideDetected);
             thisCharacteristic.on('get', function(callback) {
                 if (that.device.attributes.carbonMonoxide === 'clear') {
@@ -581,8 +511,7 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('carbonMonoxide', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.CarbonMonoxideSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -590,10 +519,8 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['CarbonDioxideMeasurement'] !== undefined && that.device.attributes.carbonDioxideMeasurement) {
+        if ((device.capabilities['Carbon Dioxide Measurement'] || device.capabilities['CarbonDioxideMeasurement']) && that.device.attributes.carbonDioxideMeasurement) {
             that.deviceGroup = 'carbonDioxide';
-
             thisCharacteristic = that.getaddService(Service.CarbonDioxideSensor).getCharacteristic(Characteristic.CarbonDioxideDetected);
             thisCharacteristic.on('get', function(callback) {
                 if (that.device.attributes.carbonDioxideMeasurement < 2000) {
@@ -603,7 +530,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('carbonDioxide', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.CarbonDioxideSensor).getCharacteristic(Characteristic.CarbonDioxideLevel);
             thisCharacteristic.on('get', function(callback) {
                 if (that.device.attributes.carbonDioxideMeasurement >= 0) {
@@ -611,8 +537,7 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('carbonDioxideLevel', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.CarbonDioxideSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -620,19 +545,16 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['MotionSensor'] !== undefined) {
+        if (device.capabilities['Motion Sensor'] !== undefined || device.capabilities['MotionSensor']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
-
             thisCharacteristic = that.getaddService(Service.MotionSensor).getCharacteristic(Characteristic.MotionDetected);
             thisCharacteristic.on('get', function(callback) {
                 callback(null, that.device.attributes.motion === 'active');
             });
             that.platform.addAttributeUsage('motion', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.MotionSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -640,12 +562,10 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['WaterSensor'] !== undefined) {
+        if (device.capabilities['Water Sensor'] !== undefined || device.capabilities['WaterSensor']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
-
             thisCharacteristic = that.getaddService(Service.LeakSensor).getCharacteristic(Characteristic.LeakDetected);
             thisCharacteristic.on('get', function(callback) {
                 var reply = Characteristic.LeakDetected.LEAK_DETECTED;
@@ -655,7 +575,7 @@ function HubitatAccessory(platform, device) {
                 callback(null, reply);
             });
             that.platform.addAttributeUsage('water', that.deviceid, thisCharacteristic);
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.LeakSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -663,18 +583,16 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['PresenceSensor'] !== undefined) {
+        if (device.capabilities['Presence Sensor'] !== undefined || device.capabilities['PresenceSensor']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
-
             thisCharacteristic = that.getaddService(Service.OccupancySensor).getCharacteristic(Characteristic.OccupancyDetected);
             thisCharacteristic.on('get', function(callback) {
                 callback(null, that.device.attributes.presence === 'present');
             });
             that.platform.addAttributeUsage('presence', that.deviceid, thisCharacteristic);
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.OccupancySensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -682,8 +600,7 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['RelativeHumidityMeasurement'] !== undefined) {
+        if (device.capabilities['Relative Humidity Measurement'] || device.capabilities['RelativeHumidityMeasurement']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
@@ -692,7 +609,7 @@ function HubitatAccessory(platform, device) {
                 callback(null, Math.round(that.device.attributes.humidity));
             });
             that.platform.addAttributeUsage('humidity', that.deviceid, thisCharacteristic);
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.HumiditySensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -700,8 +617,7 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['TemperatureMeasurement'] !== undefined) {
+        if (device.capabilities['Temperature Measurement'] || device.capabilities['TemperatureMeasurement']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
@@ -714,8 +630,7 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('temperature', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] !== undefined) {
                 thisCharacteristic = that.getaddService(Service.TemperatureSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -723,8 +638,7 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
-        if (device.capabilities['IlluminanceMeasurement'] !== undefined) {
+        if (device.capabilities['Illuminance Measurement'] || device.capabilities['IlluminanceMeasurement']) {
             // console.log(device);
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
@@ -735,8 +649,7 @@ function HubitatAccessory(platform, device) {
             });
             that.platform.addAttributeUsage('illuminance', that.deviceid, thisCharacteristic);
         }
-
-        if (device.capabilities['ContactSensor'] !== undefined && device.capabilities['GarageDoorControl'] === undefined) {
+        if ((device.capabilities['Contact Sensor'] !== undefined && device.capabilities['Garage Door Control'] === undefined) || (device.capabilities['ContactSensor'] && device.capabilities['GarageDoorControl'] === undefined)) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
@@ -749,8 +662,7 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('contact', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['TamperAlert'] !== undefined) {
+            if (device.capabilities['Tamper Alert'] || device.capabilities['TamperAlert']) {
                 thisCharacteristic = that.getaddService(Service.ContactSensor).getCharacteristic(Characteristic.StatusTampered);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, (device.attributes.tamperAlert === 'detected') ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED);
@@ -758,25 +670,21 @@ function HubitatAccessory(platform, device) {
                 that.platform.addAttributeUsage('tamper', that.deviceid, thisCharacteristic);
             }
         }
-
         if (device.capabilities['Battery'] !== undefined) {
             thisCharacteristic = that.getaddService(Service.BatteryService).getCharacteristic(Characteristic.BatteryLevel);
             thisCharacteristic.on('get', function(callback) {
                 callback(null, Math.round(that.device.attributes.battery));
             });
             that.platform.addAttributeUsage('battery', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.BatteryService).getCharacteristic(Characteristic.StatusLowBattery);
             thisCharacteristic.on('get', function(callback) {
                 let battStatus = (that.device.attributes.battery < 20) ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
                 callback(null, battStatus);
             });
-
             that.getaddService(Service.BatteryService).setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGING);
             that.platform.addAttributeUsage('battery', that.deviceid, thisCharacteristic);
         }
-
-        // if (device.capabilities['EnergyMeter'] !== undefined) {
+        // if (device.capabilities['Energy Meter'] !== undefined && that.deviceGroup === 'unknown') {
         //     that.deviceGroup = 'EnergyMeter';
         //     thisCharacteristic = that.getaddService(Service.Outlet).addCharacteristic(CommunityTypes.TotalConsumption1);
         //     thisCharacteristic.on('get', function(callback) {
@@ -784,30 +692,25 @@ function HubitatAccessory(platform, device) {
         //     });
         //     that.platform.addAttributeUsage('energy', that.deviceid, thisCharacteristic);
         // }
-
-        // if (device.capabilities['PowerMeter'] !== undefined) {
+        // if (device.capabilities['Power Meter'] !== undefined && that.deviceGroup === 'unknown') {
         //     thisCharacteristic = that.getaddService(Service.Outlet).addCharacteristic(CommunityTypes.CurrentConsumption1);
         //     thisCharacteristic.on('get', function(callback) {
         //         callback(null, Math.round(that.device.attributes.power));
         //     });
         //     that.platform.addAttributeUsage('power', that.deviceid, thisCharacteristic);
         // }
-
-        if (device.capabilities['AccelerationSensor'] !== undefined) {
+        if (device.capabilities['Acceleration Sensor'] !== undefined || device.capabilities['AccelerationSensor']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
         }
-
-        if (device.capabilities['ThreeAxis'] !== undefined) {
+        if (device.capabilities['Three Axis'] !== undefined || device.capabilities['ThreeAxis']) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
         }
-
         if (device.capabilities['Thermostat'] !== undefined) {
             that.deviceGroup = 'thermostats';
-
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CurrentHeatingCoolingState);
             thisCharacteristic.on('get', function(callback) {
                 switch (that.device.attributes.thermostatOperatingState) {
@@ -827,7 +730,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('thermostatOperatingState', that.deviceid, thisCharacteristic);
-
             // Handle the Target State
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TargetHeatingCoolingState);
             thisCharacteristic.on('get', function(callback) {
@@ -869,15 +771,13 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('thermostatMode', that.deviceid, thisCharacteristic);
-
-            if (device.capabilities['RelativeHumidityMeasurement'] !== undefined) {
+            if (device.capabilities['Relative Humidity Measurement'] !== undefined) {
                 thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CurrentRelativeHumidity);
                 thisCharacteristic.on('get', function(callback) {
                     callback(null, parseInt(that.device.attributes.humidity));
                 });
                 that.platform.addAttributeUsage('humidity', that.deviceid, thisCharacteristic);
             }
-
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CurrentTemperature);
             thisCharacteristic.on('get', function(callback) {
                 if (that.platform.temperature_unit === 'C') {
@@ -887,7 +787,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             that.platform.addAttributeUsage('temperature', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TargetTemperature);
             thisCharacteristic.on('get', function(callback) {
                 var temp;
@@ -924,7 +823,6 @@ function HubitatAccessory(platform, device) {
                 } else {
                     temp = value * 1.8 + 32;
                 }
-
                 // Set the appropriate temperature unit based on the mode
                 switch (that.device.attributes.thermostatMode) {
                     case 'cool':
@@ -963,7 +861,6 @@ function HubitatAccessory(platform, device) {
             that.platform.addAttributeUsage('coolingSetpoint', that.deviceid, thisCharacteristic);
             that.platform.addAttributeUsage('heatingSetpoint', that.deviceid, thisCharacteristic);
             that.platform.addAttributeUsage('temperature', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TemperatureDisplayUnits);
             thisCharacteristic.on('get', function(callback) {
                 if (platform.temperature_unit === 'C') {
@@ -973,7 +870,6 @@ function HubitatAccessory(platform, device) {
                 }
             });
             // that.platform.addAttributeUsage("temperature_unit", "platform", thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.HeatingThresholdTemperature);
             thisCharacteristic.on('get', function(callback) {
                 if (that.platform.temperature_unit === 'C') {
@@ -996,7 +892,6 @@ function HubitatAccessory(platform, device) {
                 that.device.attributes.heatingSetpoint = temp;
             });
             that.platform.addAttributeUsage('heatingSetpoint', that.deviceid, thisCharacteristic);
-
             thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CoolingThresholdTemperature);
             thisCharacteristic.on('get', function(callback) {
                 if (that.platform.temperature_unit === 'C') {
@@ -1020,103 +915,71 @@ function HubitatAccessory(platform, device) {
             });
             that.platform.addAttributeUsage('coolingSetpoint', that.deviceid, thisCharacteristic);
         }
-
-        if (device.attributes['hsmStatus'] !== undefined) {
+        // Alarm System Control/Status
+        if (device.attributes['alarmSystemStatus'] !== undefined) {
             that.deviceGroup = 'alarm';
             thisCharacteristic = that.getaddService(Service.SecuritySystem).getCharacteristic(Characteristic.SecuritySystemCurrentState);
             thisCharacteristic.on('get', function(callback) {
-                // that.platform.log(that.deviceid + ' check 1: ' + that.device.attributes.hsmStatus);
-                callback(null, convertAlarmState(that.device.attributes.hsmStatus, true));
+                callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
             });
-            that.platform.addAttributeUsage('hsmStatus', that.deviceid, thisCharacteristic);
+            that.platform.addAttributeUsage('alarmSystemStatus', that.deviceid, thisCharacteristic);
 
             thisCharacteristic = that.getaddService(Service.SecuritySystem).getCharacteristic(Characteristic.SecuritySystemTargetState);
             thisCharacteristic.on('get', function(callback) {
-                // that.platform.log(that.deviceid + ' check 2: ' + that.device.attributes.hsmStatus);
-                callback(null, convertAlarmState(that.device.attributes.hsmStatus, true));
+                callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
             });
             thisCharacteristic.on('set', function(value, callback) {
                 // that.platform.log(that.deviceid + ' set value : ' + value);
                 let val = convertAlarmState(value);
-                that.platform.api.runCommand(callback, 'hsmSetArm', val);
-                that.device.attributes.hsmStatus = val;
+                that.platform.api.runCommand(callback, 'alarmSystemStatus', val);
+                that.device.attributes.alarmSystemStatus = val;
             });
-            that.platform.addAttributeUsage('hsmStatus', that.deviceid, thisCharacteristic);
-        }
-        if (device.capabilities['Air Quality Sensor'] !== undefined) {
-            that.deviceGroup = 'airquality';
-            thisCharacteristic = that.getaddService(Service.AirQualitySensor).getCharacteristic(Characteristic.AirQuality);
-            thisCharacteristic.on('get', function(callback) {
-                // Characteristic.AirQuality.UNKNOWN = 0;
-                // Characteristic.AirQuality.EXCELLENT = 1;
-                // Characteristic.AirQuality.GOOD = 2;
-                // Characteristic.AirQuality.FAIR = 3;
-                // Characteristic.AirQuality.INFERIOR = 4;
-                // Characteristic.AirQuality.POOR = 5;
-                callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
-            });
-            that.platform.addAttributeUsage('airQuality', that.deviceid, thisCharacteristic);
-            thisCharacteristic = that.getaddService(Service.AirQualitySensor).getCharacteristic(Characteristic.TargetAirQuality);
-            thisCharacteristic.on('get', function(callback) {
-                // Characteristic.AirQuality.UNKNOWN = 0;
-                // Characteristic.AirQuality.EXCELLENT = 1;
-                // Characteristic.AirQuality.GOOD = 2;
-                // Characteristic.AirQuality.FAIR = 3;
-                // Characteristic.AirQuality.INFERIOR = 4;
-                // Characteristic.AirQuality.POOR = 5;
-                callback(null, convertAlarmState(that.device.attributes.alarmSystemStatus.toLowerCase(), true));
-            });
-            thisCharacteristic.on('set', function(value, callback) {
-                // Characteristic.TargetAirQuality.EXCELLENT = 0;
-                // Characteristic.TargetAirQuality.GOOD = 1;
-                // Characteristic.TargetAirQuality.FAIR = 2;
-                // that.platform.api.runCommand(callback, 'alarmSystemStatus', val);
-            });
-            that.platform.addAttributeUsage('airQuality', that.deviceid, thisCharacteristic);
+            that.platform.addAttributeUsage('alarmSystemStatus', that.deviceid, thisCharacteristic);
         }
     }
     this.loadData(device, that);
 }
 
+
 function fanSpeedConversion(speedVal, has4Spd = false) {
     if (speedVal <= 0) {
-        return 'off';
+        return "off";
     }
     if (has4Spd) {
         if (speedVal > 0 && speedVal <= 25) {
-            return 'low';
+            return "low";
         } else if (speedVal > 25 && speedVal <= 50) {
-            return 'med';
+            return "med";
         } else if (speedVal > 50 && speedVal <= 75) {
-            return 'medhigh';
+            return "medhigh";
         } else if (speedVal > 75 && speedVal <= 100) {
-            return 'high';
+            return "high";
         }
     } else {
         if (speedVal > 0 && speedVal <= 33) {
-            return 'low';
+            return "low";
         } else if (speedVal > 33 && speedVal <= 66) {
-            return 'medium';
+            return "medium";
         } else if (speedVal > 66 && speedVal <= 99) {
-            return 'high';
+            return "high";
         }
     }
 }
 
 function convertAlarmState(value, valInt = false) {
     switch (value) {
-        case 'armedHome':
+        case 'stay':
         case 0:
-            return valInt ? Characteristic.SecuritySystemCurrentState.STAY_ARM : 'armHome';
-        case 'armedAway':
+            return valInt ? Characteristic.SecuritySystemCurrentState.STAY_ARM : 'stay';
+        case 'away':
         case 1:
-            return valInt ? Characteristic.SecuritySystemCurrentState.AWAY_ARM : 'armAway';
-        case 'armedNight':
+            return valInt ? Characteristic.SecuritySystemCurrentState.AWAY_ARM : 'away';
+        case 'night':
         case 2:
-            return valInt ? Characteristic.SecuritySystemCurrentState.NIGHT_ARM : 'armHome';
-        case 'disarmed':
+            return valInt ? Characteristic.SecuritySystemCurrentState.NIGHT_ARM : 'night';
+        case 'off':
         case 3:
-            return valInt ? Characteristic.SecuritySystemCurrentState.DISARMED : 'disarm';
+            return valInt ? Characteristic.SecuritySystemCurrentState.DISARMED : 'off';
         case 'alarm_active':
         case 4:
             return valInt ? Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED : 'alarm_active';
@@ -1125,7 +988,9 @@ function convertAlarmState(value, valInt = false) {
 
 function loadData(data, myObject) {
     var that = this;
-    if (myObject !== undefined) that = myObject;
+    if (myObject !== undefined) {
+        that = myObject;
+    }
     if (data !== undefined) {
         this.device = data;
         for (var i = 0; i < that.services.length; i++) {
