@@ -36,7 +36,11 @@ This is based off of @pdlove homebridge-smartthings
 
 ***v1.1.9*** - Added in capability exclusion feature to match @pdlove plugin
 
-***v1.2.0*** - Routines, Modes and Minor Cleanups
+***v1.2.0*** - Modes fixes and Minor Cleanups
+
+***v1.2.1*** - Fixed Readme Typo
+
+
 
 <br>
 
