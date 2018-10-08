@@ -255,10 +255,6 @@ def findDevice(paramid) {
     if (device) return device
     device = shadesList.find { it?.id == paramid }
 	return device
-    // device = momentaryList.find { it?.id == paramid }
-    // if (device) return device
-    // device = buttonList.find { it?.id == paramid }
-    // return device
 }
 
 def authError() {
@@ -323,14 +319,6 @@ def deviceCommand() {
         log.debug "Virtual Mode Received: ${value1}"
         if(value1) { changeMode(value1 as String) }
         CommandReply("Success", "Mode Device, Command $command")
-    } else if (settings?.routineList && command == "routine") {
-        def value1 = request.JSON?.value1
-        log.debug "Virtual Routine Received: ${value1}"
-        if(value1) { runRoutine(value1) }
-        CommandReply("Success", "Routine Device, Command $command")
-    } else if ((settings?.buttonList || settings?.momentaryList) && command == "button") {
-        device.on()
-        CommandReply("Success", "Button Device, Command ON")
     } else {
         if (!device) {
             log.error("Device Not Found")
