@@ -4,7 +4,7 @@ This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
 
-**```Current App version: 1.3.0```**
+**```Current App version: 1.4.0```**
 
 <br>
 
@@ -23,6 +23,8 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.1.5*** - Shade Fixes
 
 ***v1.3.0*** - The SmartThings and Hubitat Apps now share 99.9% of the same code. With the exception being the hubaction declarations and a static variable defining the platform type
+
+***v1.4.0*** - Add support for multiple HSM locations, and other Bugfixes mainly related to Hubitat Side
 
 #### Homebridge Plugin:
 
@@ -49,6 +51,9 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.3.2*** - More Bug fixes from code merge
 
 ***v1.3.3*** - Fixed Detection Issues in plugin
+
+***v1.4.0*** - Fixed Hubitat support, working windows shades, allow multiple location SHM/HSM instances, lot's of cleanups and restructures.
+***v1.4.0*** - Warning:  This will recreate a new Alarm device under Homekit.  There is a possiblity it might also reset all of your Homekit Devices, rooms and options
 <br>
 
 # Explanation:

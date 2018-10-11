@@ -4,8 +4,8 @@
  *  Copyright 2018 Anthony Santilli
  */
 
-String appVersion() { return "1.3.0" }
-String appModified() { return "10-08-2018" }
+String appVersion() { return "1.4.0" }
+String appModified() { return "10-11-2018" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
@@ -212,7 +212,7 @@ def renderDevices() {
     def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "modeList"]
     if(isST()) { items?.push("routineList") }
     if(!isST()) { items?.push("shadesList") }
-    items?.each { item ->   
+    items?.each { item ->
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
                 try {
@@ -266,8 +266,8 @@ def getDeviceData(type, sItem) {
             basename:  !isVirtual ? sItem?.name : name,
             deviceid: !isVirtual ? sItem?.id : devId,
             status: !isVirtual ? sItem?.status : "Online",
+            manufacturerName: (!isVirtual ? (isST() ? sItem?.getManufacturerName() : sItem?.getDataValue("manufacturer")) : platform()) ?: platform(),
             modelName: !isVirtual ? ((isST() ? sItem?.getModelName() : sItem?.getDataValue("model")) ?: sItem?.getTypeName()) : "${curType} Device",
-            serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : "${curType}${devId}",
             serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : "${curType}${devId}",
             firmwareVersion: "1.0.0",
             lastTime: !isVirtual ? (isST() ? sItem?.getLastActivity() : null) : now(),
@@ -286,22 +286,22 @@ def getSecurityDevice() {
     return [
         name: (!isST() ? "Hubitat Safety Monitor Alarm" : "Security Alarm"),
         basename: (!isST() ? "HSM Alarm" : "Security Alarm"),
-        deviceid: (!isST() ? "hsmStatus" : "alarmSystemStatus"),
+        deviceid: "alarmSystemStatus_${location?.id}",
         status: "ACTIVE",
         manufacturerName: platform(),
         modelName: (!isST() ? "Safety Monitor" : "Security System"),
         serialNumber: (!isST() ? "HSM" : "SHM"),
         firmwareVersion: "1.0.0",
         lastTime: null,
-        capabilities: (!isST() ? ["HSMStatus":1, "Alarm":1] : ["Alarm System Status":1, "Alarm":1]), 
+        capabilities: ["Alarm System Status":1, "Alarm":1], 
         commands: [], 
-        attributes: (!isST() ? ["hsmStatus": getSecurityStatus()] : ["alarmSystemStatus": getSecurityStatus()])
+        attributes: ["alarmSystemStatus": getSecurityStatus()]
     ]
 }
 
 def findDevice(paramid) {
     def device = deviceList.find { it?.id == paramid }
-      if (device) return device
+    if (device) return device
     device = sensorList.find { it?.id == paramid }
     if (device) return device
       device = switchList.find { it?.id == paramid }
@@ -342,7 +342,7 @@ def getSecurityStatus(retInt=false) {
             }
         } else { return cur ?: "disarmed" }
     } else {
-        return state?.hsmStatus ?: "disarmed"
+        return location?.hsmStatus ?: "disarmed"
     }
 }
 
@@ -374,13 +374,11 @@ def renderConfig() {
                 platform: platform(),
                 name: platform(),
                 app_url: (isST() ? apiServerUrl("/api/smartapps/installations/") : fullLocalApiServerUrl('')),
+                access_token: state?.accessToken
             ]
         ]
     ]
-    if(isST()) {
-        jsonMap?.platforms["app_id"] = app.id
-        jsonMap?.platforms["access_token"] = state?.accessToken
-    }
+    if(isST()) { jsonMap?.platforms["app_id"] = app.id }
     def configJson = new groovy.json.JsonOutput().toJson(jsonMap)
     def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
     render contentType: "text/plain", data: configString
@@ -408,7 +406,7 @@ def deviceCommand() {
     log.info("Command Request: $params")
     def device = findDevice(params?.id)    
     def command = params?.command
-    if(settings?.addSecurityDevice != false && params?.id == "alarmSystemStatus") {
+    if(settings?.addSecurityDevice != false && params?.id == "alarmSystemStatus_${location?.id}") {
         setSecurityMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
     }  else if (settings?.modeList && command == "mode") {
@@ -426,8 +424,8 @@ def deviceCommand() {
             log.error("Device Not Found")
             CommandReply("Failure", "Device Not Found")
         } else if (!device.hasCommand(command)) {
-            log.error("Device "+device.displayName+" does not have the command "+command)
-            CommandReply("Failure", "Device "+device.displayName+" does not have the command "+command)
+            log.error("Device ${device.displayName} does not have the command $command")
+            CommandReply("Failure", "Device ${device.displayName} does not have the command $command")
         } else {
             def value1 = request.JSON?.value1
             def value2 = request.JSON?.value2
@@ -652,30 +650,12 @@ def changeHandler(evt) {
 
     switch(evt?.name) {
         case "hsmStatus":
-            deviceid = evt?.name
-            state?.hsmStatus = value
+            deviceid = "alarmSystemStatus_${location?.id}"
+            attr = "alarmSystemStatus"
             sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             break
-        case "hsmAlert":
-            if(evt?.value == "intrusion") {
-                deviceid = evt?.name
-                state?.hsmStatus = "alarm_active"
-                value = "alarm_active"
-                sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
-            } else { sendEvt = false }
-            state?.hsmAlert = evt?.value
-            break
-        case "hsmRules":
-            state?.hsmRules = evt?.value
-            sendEvt = false
-            break
-        case "hsmSetArm":
-            state?.hsmSetArm = evt?.value
-            sendEvt = false
-            break
         case "alarmSystemStatus":
-            deviceid = evt?.name
-            state?.alarmSystemStatus = value
+            deviceid = "alarmSystemStatus_${location?.id}"
             sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             break
         case "mode":
@@ -776,7 +756,7 @@ def enableDirectUpdates() {
 }
 
 mappings {
-    if (!params?.access_token || (params?.access_token && params?.access_token != state?.accessToken)) {
+    if (isST() && (!params?.access_token || (params?.access_token && params?.access_token != state?.accessToken))) {
         path("/devices")					{ action: [GET: "authError"] }
         path("/config")						{ action: [GET: "authError"] }
         path("/location")					{ action: [GET: "authError"] }
