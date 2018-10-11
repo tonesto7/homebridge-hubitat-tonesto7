@@ -1,7 +1,7 @@
 {
     "name": "homebridge-hubitat-tonesto7",
     "description": "Hubitat plugin for HomeBridge",
-    "version": "1.3.3",
+    "version": "1.4.0",
     "license": "ISC",
     "preferGlobal": true,
     "keywords": [
