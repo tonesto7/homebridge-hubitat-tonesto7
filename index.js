@@ -1,8 +1,9 @@
+const pluginName = 'homebridge-hubitat';
+const platformName = 'Hubitat';
 var he_st_api = require('./lib/he_st_api');
 var http = require('http');
 var os = require('os');
-const pluginName = 'homebridge-hubitat';
-const platformName = 'Hubitat';
+
 var Service, Characteristic, Accessory, uuid;
 
 var HE_ST_Accessory;
@@ -21,7 +22,6 @@ function HE_ST_Platform(log, config) {
     this.app_url = config['app_url'];
     this.app_id = config['app_id'];
     this.access_token = config['access_token'];
-    this.hub_ip = config["hub_ip"];
     this.excludedCapabilities = config["excluded_capabilities"] || [];
 
     // This is how often it does a full refresh
@@ -47,7 +47,7 @@ function HE_ST_Platform(log, config) {
     }
     this.direct_port = config['direct_port'];
     if (this.direct_port === undefined || this.direct_port === '') {
-        this.direct_port = (platformName === 'Hubitat' ? 8000 : 8005);
+        this.direct_port = (platformName === 'SmartThings' ? 8000 : 8005);
     }
 
     this.direct_ip = config['direct_ip'];
@@ -65,7 +65,7 @@ function HE_ST_Platform(log, config) {
 HE_ST_Platform.prototype = {
     reloadData: function(callback) {
         var that = this;
-        that.log('config: ', JSON.stringify(this.config));
+        // that.log('config: ', JSON.stringify(this.config));
         var foundAccessories = [];
         that.log.debug('Refreshing All Device Data');
         he_st_api.getDevices(function(myList) {
@@ -140,64 +140,37 @@ HE_ST_Platform.prototype = {
             'Lock',
             'Refresh',
             'Lock Codes',
-            // 'LockCodes',
             'Sensor',
             'Actuator',
             'Configuration',
             'Switch Level',
-            // 'SwitchLevel',
             'Temperature Measurement',
-            // 'TemperatureMeasurement',
             'Motion Sensor',
-            // 'MotionSensor',
             'Color Temperature',
-            // 'ColorTemperature',
             'Illuminance Measurement',
-            // 'IlluminanceMeasurement',
             'Contact Sensor',
-            // 'ContactSensor',
             'Acceleration Sensor',
-            // 'AccelerationSensor',
             'Door Control',
-            // 'DoorControl',
             'Garage Door Control',
-            // 'GarageDoorControl',
             'Relative Humidity Measurement',
-            // 'RelativeHumidityMeasurement',
             'Presence Sensor',
-            // 'PresenceSensor',
             'Carbon Dioxide Measurement',
-            // 'CarbonDioxideMeasurement',
             'Carbon Monoxide Detector',
-            // 'CarbonMonoxideDetector',
-            // 'WaterSensor',
             'Water Sensor',
             'Window Shade',
-            // 'WindowShade',
             'Valve',
             'Energy Meter',
-            // 'EnergyMeter',
             'Power Meter',
-            // 'PowerMeter',
             'Thermostat',
             'Thermostat Cooling Setpoint',
-            // 'ThermostatCoolingSetpoint',
             'Thermostat Mode',
-            // 'ThermostatMode',
             'Thermostat Fan Mode',
-            // 'ThermostatFanMode',
             'Thermostat Operating State',
-            // 'ThermostatOperatingState',
             'Thermostat Heating Setpoint',
-            // 'ThermostatHeatingSetpoint',
             'Thermostat Setpoint',
-            // 'ThermostatSetpoint',
             'Fan Speed',
             'Fan Control',
             'Fan Light',
-            // 'FanSpeed',
-            // 'FanControl',
-            // 'FanLight',
             'Fan',
             'Speaker',
             'Tamper Alert',
@@ -217,7 +190,7 @@ HE_ST_Platform.prototype = {
         }
         this.temperature_unit = 'F';
 
-        he_st_api.init(this.app_url, this.app_id, this.access_token, this.hub_ip);
+        he_st_api.init(this.app_url, this.app_id, this.access_token);
         that.log('update_method: ' + that.update_method);
         this.reloadData(function(foundAccessories) {
             that.log('Unknown Capabilities: ' + JSON.stringify(that.unknownCapabilities));
@@ -311,7 +284,7 @@ function he_st_api_SetupHTTPServer(myHe_st_api) {
 }
 
 function he_st_api_HandleHTTPResponse(request, response, myHe_st_api) {
-    if (request.url === '/initial') myHe_st_api.log(platformName + ' Hub Communication Established');
+    if (request.url === '/initial') { myHe_st_api.log(platformName + ' Hub Communication Established'); }
     if (request.url === '/update') {
         let body = [];
         request.on('data', (chunk) => {

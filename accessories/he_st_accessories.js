@@ -1,11 +1,10 @@
+const platformName = 'Hubitat';
 var inherits = require('util').inherits;
 var Accessory, Service, Characteristic, uuid, CommunityTypes;
-var routineState = false;
-const platformName = 'Hubitat';
+
 /*
  *   HE_ST Accessory
  */
-
 module.exports = function(oAccessory, oService, oCharacteristic, ouuid) {
     if (oAccessory) {
         Accessory = oAccessory;
@@ -933,7 +932,7 @@ function HE_ST_Accessory(platform, device) {
             thisCharacteristic.on('set', function(value, callback) {
                 // that.platform.log(that.deviceid + ' set value : ' + value);
                 let val = convertAlarmState(value);
-                that.platform.api.runCommand(callback, 'alarmSystemStatus', val);
+                that.platform.api.runCommand(callback, that.deviceid, val);
                 that.device.attributes.alarmSystemStatus = val;
             });
             that.platform.addAttributeUsage('alarmSystemStatus', that.deviceid, thisCharacteristic);
@@ -971,15 +970,18 @@ function fanSpeedConversion(speedVal, has4Spd = false) {
 function convertAlarmState(value, valInt = false) {
     switch (value) {
         case 'stay':
+        case 'armHome':
         case 0:
             return valInt ? Characteristic.SecuritySystemCurrentState.STAY_ARM : 'stay';
         case 'away':
+        case 'armAway':
         case 1:
             return valInt ? Characteristic.SecuritySystemCurrentState.AWAY_ARM : 'away';
         case 'night':
         case 2:
             return valInt ? Characteristic.SecuritySystemCurrentState.NIGHT_ARM : 'night';
         case 'off':
+        case 'disarm':
         case 3:
             return valInt ? Characteristic.SecuritySystemCurrentState.DISARMED : 'off';
         case 'alarm_active':
