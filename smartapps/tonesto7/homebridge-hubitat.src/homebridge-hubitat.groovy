@@ -4,8 +4,8 @@
  *  Copyright 2018 Anthony Santilli
  */
 
-String appVersion() { return "1.4.0" }
-String appModified() { return "10-11-2018" }
+String appVersion() { return "1.4.1" }
+String appModified() { return "10-12-2018" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
@@ -653,6 +653,18 @@ def changeHandler(evt) {
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = "alarmSystemStatus"
             sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            break
+        case "hsmAlert":
+            if(evt?.value == "intrusion") {
+                deviceid = "alarmSystemStatus_${location?.id}"
+                attr = "alarmSystemStatus"
+                value = "alarm_active"
+                sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            } else { sendEvt = false }
+            break
+        case "hsmRules":
+        case "hsmSetArm":
+            sendEvt = false
             break
         case "alarmSystemStatus":
             deviceid = "alarmSystemStatus_${location?.id}"

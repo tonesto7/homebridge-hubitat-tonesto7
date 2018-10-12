@@ -310,7 +310,9 @@ function he_st_api_SetupHTTPServer(myHe_st_api) {
 }
 
 function he_st_api_HandleHTTPResponse(request, response, myHe_st_api) {
-    if (request.url === '/initial') { myHe_st_api.log(platformName + ' Hub Communication Established'); }
+    if (request.url === '/initial') {
+        myHe_st_api.log(platformName + ' Hub Communication Established');
+    }
     if (request.url === '/update') {
         let body = [];
         request.on('data', (chunk) => {
