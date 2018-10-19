@@ -10,6 +10,10 @@
         "homekit",
         "homebridge"
     ],
+    "dependencies": {
+        "request": "^2.88.0",
+        "request-promise": "^4.2.2"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/tonesto7/homebridge-hubitat-tonesto7.git"
