@@ -4,8 +4,8 @@
  *  Copyright 2018 Anthony Santilli
  */
 
-String appVersion() { return "1.4.1" }
-String appModified() { return "10-12-2018" }
+String appVersion() { return "1.5.1" }
+String appModified() { return "10-19-2018" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
@@ -14,7 +14,7 @@ definition(
     name: "Homebridge (${platform()})",
     namespace: "tonesto7",
     author: "Anthony Santilli",
-    description: "Provides API interface between Homebridge Service (HomeKit) and ${platform()}",
+    description: "Provides the API interface between Homebridge (HomeKit) and ${platform()}",
     category: "My Apps",
     iconUrl:   "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@1x.png",
     iconX2Url: "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png",
@@ -24,6 +24,7 @@ definition(
 
 preferences {
     page(name: "mainPage")
+    page(name: "confirmPage")
 }
 
 def appInfoSect()	{
@@ -53,8 +54,9 @@ def mainPage() {
     if (!state?.accessToken) {
         createAccessToken()
     }
+    Boolean isInst = (state?.isInstalled == true)
     if(isST()) {
-        return dynamicPage(name: "mainPage", title: "Homebridge Device Configuration", install: true, uninstall:true) {
+        return dynamicPage(name: "mainPage", title: "Homebridge Device Configuration", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall:true) {
             appInfoSect()
             section("Define Specific Categories:") {
                 paragraph "Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", state: "complete"
@@ -92,11 +94,12 @@ def mainPage() {
             }
             section("Options:") {
                 input "showLogs", "bool", title: "Show Events in Live Logs?", required: false, defaultValue: true, submitOnChange: true, image: getAppImg("debug.png")
+                input "allowLocalCmds", "bool", title: "Send HomeKit Commands Locally?", required: false, defaultValue: true, submitOnChange: true, image: getAppImg("command2.png")
                 label title: "SmartApp Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false, image: getAppImg("name_tag.png")
             }
         }
     } else {
-        return dynamicPage(name: "mainPage", title: "", install: true, uninstall:true) {
+        return dynamicPage(name: "mainPage", title: "", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall:true) {
             appInfoSect()
             section(sectionTitleStr("Define Specific Categories:")) {
                 paragraph '<h4 style="color: blue;">These Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
@@ -130,9 +133,26 @@ def mainPage() {
                 paragraph "<h3>Selected Device Count:\n${getDeviceCnt()}</h3>"
             }
             section("<br/>${sectionTitleStr("Options:")}") {
-                // paragraph '<h4 style="color: blue;">This Categories will add the necessary capabilities to make sure they are recognized by HomeKit as the specific device type</h4>'
                 input "showLogs", "bool", title: inputTitleStr("Show Events in Live Logs?"), required: false, defaultValue: true, submitOnChange: true
                 label title: inputTitleStr("App Label (optional)"), description: "Rename App", defaultValue: app?.name, required: false 
+            }
+        }
+    }
+}
+
+def confirmPage() {
+    if(isST()) {
+        return dynamicPage(name: "confirmPage", title: "Confirm Page", install: true, uninstall:true) {
+            section("") {
+                paragraph "Would you like to restart the Homebridge Service to apply any device changes you made?", required: true, state: null, image: getAppImg("info.png")
+                input "restartService", "bool", title: "Restart Homebridge plugin when you press Save?", required: false, defaultValue: false, submitOnChange: true, image: getAppImg("reset2.png")
+            }
+        }
+    } else {
+        return dynamicPage(name: "confirmPage", title: "", install: true, uninstall:true) {
+            section("") {
+                paragraph '<small style="color: blue !important;"><i><b>Notice:</b></small><br/><small style="color: grey !important;">Would you like to restart the Homebridge Service to apply any device changes you made?</i></small>', state: "complete"
+                input "restartService", "bool", title: inputTitleStr("Restart Homebridge plugin when you press Save?"), required: false, defaultValue: false, submitOnChange: true
             }
         }
     }
@@ -154,8 +174,8 @@ def getDeviceCnt() {
     def items = ["deviceList", "sensorList", "switchList", "lightList", "fanList", "speakerList", "modeList"]
     if(isST()) { items?.push("routineList") }
     if(!isST()) { items?.push("shadesList") }
-    items?.each { item ->   
-        if(settings[item]?.size() > 0) {     
+    items?.each { item ->
+        if(settings[item]?.size() > 0) {
             devices = devices + settings[item]
         }
     }
@@ -174,6 +194,7 @@ def updated() {
 }
 
 def initialize() {
+    state?.isInstalled = true
     if(!state?.accessToken) {
         createAccessToken()
     }
@@ -196,11 +217,18 @@ def initialize() {
     if(isST()) {
         state?.subscriptionRenewed = 0
         subscribe(app, onAppTouch)
+        if(settings?.allowLocalCmds != false) { subscribe(location, null, lanEventHandler, [filterEvents:false]) }
         if(settings?.routineList) {
             log.debug "Registering (${settings?.routineList?.size() ?: 0}) Virtual Routine Devices"
             subscribe(location, "routineExecuted", changeHandler)
         }
     }
+    if(settings?.restartService == true) {
+        log.warn "Sent Request to Homebridge Service to Stop... Service should restart automatically"
+        attemptServiceRestart()
+        settingUpdate("restartService", "false", "bool")
+    }
+    runIn((settings?.restartService ? 60 : 10), "updateServicePrefs")
 }
 
 def onAppTouch(event) {
@@ -221,7 +249,7 @@ def renderDevices() {
                 } catch (e) {
                     log.error("Error Occurred Parsing Device ${dev?.displayName}, Error " + e.message)
                 }
-            }    
+            }
         }
     }
     if(settings?.addSecurityDevice == true) { deviceData?.push(getSecurityDevice()) }
@@ -271,8 +299,8 @@ def getDeviceData(type, sItem) {
             serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : "${curType}${devId}",
             firmwareVersion: "1.0.0",
             lastTime: !isVirtual ? (isST() ? sItem?.getLastActivity() : null) : now(),
-            capabilities: !isVirtual ? deviceCapabilityList(sItem) : ["${curType}": 1], 
-            commands: !isVirtual ? deviceCommandList(sItem) : [on:[]], 
+            capabilities: !isVirtual ? deviceCapabilityList(sItem) : ["${curType}": 1],
+            commands: !isVirtual ? deviceCommandList(sItem) : [on:[]],
             attributes: !isVirtual ? deviceAttributeList(sItem) : ["switch": attrVal]
         ]
     } else { return null }
@@ -300,11 +328,11 @@ def getSecurityDevice() {
 }
 
 def findDevice(paramid) {
-    def device = deviceList.find { it?.id == paramid }
-    if (device) return device
-    device = sensorList.find { it?.id == paramid }
-    if (device) return device
-      device = switchList.find { it?.id == paramid }
+	def device = deviceList.find { it?.id == paramid }
+  	if (device) return device
+	device = sensorList.find { it?.id == paramid }
+	if (device) return device
+  	device = switchList.find { it?.id == paramid }
     if (device) return device
     device = lightList.find { it?.id == paramid }
     if (device) return device
@@ -315,7 +343,7 @@ def findDevice(paramid) {
     if(!isST()) {
         device = shadesList.find { it?.id == paramid }
     }
-    return device
+	return device
 }
 
 def authError() {
@@ -402,20 +430,62 @@ def CommandReply(statusOut, messageOut) {
     render contentType: "application/json", data: replyJson
 }
 
+def lanEventHandler(evt) {
+    // log.trace "lanStreamEvtHandler..."
+    def msg = parseLanMessage(evt?.description)
+    Map headerMap = msg?.headers
+    // log.trace "lanEventHandler... | headers: ${headerMap}"
+    try {
+        Map msgData = [:]
+        if (headerMap?.size()) {
+            if (headerMap?.evtSource && headerMap?.evtSource == "Homebridge_${platform()}") {
+                if (msg?.body != null) {
+                    def slurper = new groovy.json.JsonSlurper()
+                    msgData = slurper?.parseText(msg?.body as String)
+                    log.debug "msgData: $msgData"
+                    if(headerMap?.evtType) { 
+                        switch(headerMap?.evtType) {
+                            case "hkCommand":
+                                // log.trace "hkCommand($msgData)"
+                                def val1 = msgData?.value1 ?: null
+                                def val2 = msgData?.value2 ?: null
+                                processCmd(msgData?.deviceid, msgData?.command, val1, val2, true)
+                                break
+                            case "enableDirect":
+                                // log.trace "enableDirect($msgData)"
+                                state?.directIP = msgData?.ip
+                                state?.directPort = msgData?.port
+                                activateDirectUpdates(true)
+                                break
+                        }
+                    }
+                }
+            }
+        }
+    } catch (ex) {
+        log.error "lanEventHandler Exception:", ex
+    }
+}
+
 def deviceCommand() {
-    log.info("Command Request: $params")
-    def device = findDevice(params?.id)    
-    def command = params?.command
-    if(settings?.addSecurityDevice != false && params?.id == "alarmSystemStatus_${location?.id}") {
+    // log.info("Command Request: $params")
+    def val1 = request?.JSON?.value1 ?: null
+    def val2 = request?.JSON?.value2 ?: null
+    processCmd(params?.id, params?.command, val1, val2)
+}
+
+private processCmd(devId, cmd, value1, value2, local=false) {
+    log.info("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    def device = findDevice(devId)
+    def command = cmd
+    if(settings?.addSecurityDevice != false && devId == "alarmSystemStatus_${location?.id}") {
         setSecurityMode(command)
         CommandReply("Success", "Security Alarm, Command $command")
     }  else if (settings?.modeList && command == "mode") {
-        def value1 = request.JSON?.value1
         log.debug "Virtual Mode Received: ${value1}"
         if(value1) { changeMode(value1 as String) }
         CommandReply("Success", "Mode Device, Command $command")
     } else if (settings?.routineList && command == "routine") {
-        def value1 = request.JSON?.value1
         log.debug "Virtual Routine Received: ${value1}"
         if(value1) { runRoutine(value1) }
         CommandReply("Success", "Routine Device, Command $command")
@@ -427,8 +497,6 @@ def deviceCommand() {
             log.error("Device ${device.displayName} does not have the command $command")
             CommandReply("Failure", "Device ${device.displayName} does not have the command $command")
         } else {
-            def value1 = request.JSON?.value1
-            def value2 = request.JSON?.value2
             try {
                 if (value2 != null) {
                     device."$command"(value1,value2)
@@ -487,11 +555,11 @@ def findVirtRoutineDevice(id) {
 def deviceQuery() {
     log.trace "deviceQuery(${params?.id}"
     def device = findDevice(params?.id)
-    if (!device) { 
+    if (!device) {
         def mode = findVirtModeDevice(params?.id)
         def routine = isST() ? findVirtModeDevice(params?.id) : null
         def obj = mode ? mode : routine ?: null
-        if(!obj) { 
+        if(!obj) {
             device = null
             httpError(404, "Device not found")
         } else {
@@ -510,8 +578,8 @@ def deviceQuery() {
                 log.error("Error Occurred Parsing ${item} ${type} ${name}, Error " + e.message)
             }
         }
-    } 
-    
+    }
+
     if (result) {
         def jsonData = [
             name: device.displayName,
@@ -715,8 +783,7 @@ def changeHandler(evt) {
                 }
                 log.debug "Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${unitStr}) to Homebridge at (${state?.directIP}:${state?.directPort})"
             }
-            
-            def result = new hubitat.device.HubAction(
+            def params = [
                 method: "POST",
                 path: "/update",
                 headers: [
@@ -730,7 +797,9 @@ def changeHandler(evt) {
                     change_value: send?.evtValue,
                     change_date: send?.evtDate
                 ]
-            )
+            ]
+            // def result = new physicalgraph.device.HubAction(params)
+            def result = new hubitat.device.HubAction(params)
             sendHubCommand(result)
         }
     }
@@ -758,13 +827,51 @@ def getShmIncidents() {
     return location.activeIncidents.collect{[date: it?.date?.time, title: it?.getTitle(), message: it?.getMessage(), args: it?.getMessageArgs(), sourceType: it?.getSourceType()]}.findAll{ it?.date >= incidentThreshold } ?: null
 }
 
+void settingUpdate(name, value, type=null) {
+	if(name && type) {
+		app?.updateSetting("$name", [type: "$type", value: value])
+	}
+	else if (name && type == null){ app?.updateSetting(name.toString(), value) }
+}
+
+private activateDirectUpdates(isLocal=false) {
+    log.trace "activateDirectUpdates: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
+    // def result = new physicalgraph.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
+    def result = new hubitat.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
+    sendHubCommand(result)
+}
+
+private attemptServiceRestart(isLocal=false) {
+    log.trace "attemptServiceRestart: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
+    // def result = new physicalgraph.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
+    def result = new hubitat.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
+    sendHubCommand(result)
+}
+
+private updateServicePrefs(isLocal=false) {
+    log.trace "updateServicePrefs: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
+    def params = [
+        method: "POST",
+        path: "/updateprefs",
+        headers: [
+            HOST: "${state?.directIP}:${state?.directPort}",
+            'Content-Type': 'application/json'
+        ],
+        body: [
+            local_commands: isST() ? (settings?.allowLocalCmds != false) : false,
+            local_hub_ip: isST() ? location?.hubs[0]?.localIP : location.hubs[0]?.getDataValue("localIP")
+        ]
+    ]
+    // def result = new physicalgraph.device.HubAction(params)
+    def result = new hubitat.device.HubAction(params)
+    sendHubCommand(result)
+}
+
 def enableDirectUpdates() {
-    log.trace "Command Request: ($params)"
+    // log.trace "enableDirectUpdates: ($params)"
     state?.directIP = params?.ip
     state?.directPort = params?.port
-    log.debug("enableDirectUpdates: ${state?.directIP}:${state?.directPort}")
-    def result = new hubitat.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"], query: deviceData)
-    sendHubCommand(result)
+    activateDirectUpdates()
 }
 
 mappings {

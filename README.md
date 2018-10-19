@@ -4,7 +4,7 @@ This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
 
-**```Current App version: 1.4.1```**
+**```Current App version: 1.5.1```**
 
 <br>
 
@@ -27,6 +27,12 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.4.0*** - Add support for multiple HSM locations, and other Bugfixes mainly related to Hubitat Side
 
 ***v1.4.1*** - SHM/HSM fixes and added support for triggering intrusion alerts under HomeKit
+
+***v1.5.0*** - Added support for the service to send commands directly to the hub locally (SmartThings ONLY)
+***v1.5.0*** - Added toggle to control whether local commands are allowed (SmartThings ONLY)
+***v1.5.0*** - Added ability to trigger service restart when you exit the app (Will only restart on it's own if using process/service manager like PM2/systemd)
+
+***v1.5.1*** - Bug fixes
 
 #### Homebridge Plugin:
 
@@ -60,6 +66,12 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.4.0*** - Warning:  This will recreate a new Alarm device under Homekit.  There is a possiblity it might also reset all of your Homekit Devices, rooms and options
 
 ***v1.4.1*** - SHM/HSM fixes and added support for triggering intrusion alerts under HomeKit
+
+***v1.5.0*** - Added support for the service to send commands directly to the hub locally (SmartThings ONLY)
+***v1.5.0*** - Added toggle to control whether local commands are allowed (SmartThings ONLY)
+***v1.5.0*** - Added ability to trigger service restart when you exit the app (Will only restart on it's own if using process/service manager like PM2/systemd)
+
+***v1.5.1*** - Bug fixes
 <br>
 
 # Explanation:
@@ -128,7 +140,7 @@ Installation comes in two parts:
    <span style="color: #f92672">&quot;access_token&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;THIS-SHOULD-BE-YOUR-TOKEN&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;direct_ip&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;10.0.0.70&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;direct_port&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #ae81ff">8000</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f92672">&quot;excluded_capabilities&quot;</span><span style="color: #f8f8f2">: {</span>
+   <span style="color: #f92672">&quot;excluded_capabilities&quot;</span><span style="color: #f8f8f2">: {</span>
    <span style="color: lightblue">    &quot;HUBITAT-DEVICE-ID-1&quot;</span><span style="color: #f8f8f2">: [</span>
    <span style="color: orange">       &quot;Switch&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: orange">       &quot;TemperatureMeasurement&quot;</span>
