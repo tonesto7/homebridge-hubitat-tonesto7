@@ -5,7 +5,7 @@
  */
 
 String appVersion() { return "1.5.2" }
-String appModified() { return "10-19-2018" }
+String appModified() { return "10-22-2018" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
@@ -406,7 +406,7 @@ def renderConfig() {
             ]
         ]
     ]
-    if(isST()) { jsonMap?.platforms["app_id"] = app.id }
+    if(isST()) { jsonMap?.platforms[0]["app_id"] = app.id }
     def configJson = new groovy.json.JsonOutput().toJson(jsonMap)
     def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
     render contentType: "text/plain", data: configString
