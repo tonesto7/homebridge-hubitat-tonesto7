@@ -255,10 +255,10 @@ function HE_ST_Accessory(platform, device) {
                 })
                 .on('set', function(value, callback) {
                     if (value === 1 || value === true) {
-                        platform.clientApi.runCommand(callback, device.deviceid, 'lock');
+                        platform.api.runCommand(callback, device.deviceid, 'lock');
                         that.device.attributes.lock = 'locked';
                     } else {
-                        platform.clientApi.runCommand(callback, device.deviceid, 'unlock');
+                        platform.api.runCommand(callback, device.deviceid, 'unlock');
                         that.device.attributes.lock = 'unlocked';
                     }
                 });

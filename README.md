@@ -78,6 +78,8 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.5.2*** - Bug fixes
 
 ***v1.5.3*** - Fixes for Open/Close | Lock/Unlock on iOS 12.1.2
+
+***v1.5.5*** - Fix for broken lock command
 <br>
 
 # Explanation:
