@@ -4,7 +4,7 @@ This is based off of @pdlove homebridge-smartthings
 
 [![npm version](https://badge.fury.io/js/homebridge-hubitat-tonesto7.svg)](https://badge.fury.io/js/homebridge-hubitat-tonesto7)
 
-**```Current App version: 1.5.1```**
+**```Current App version: 1.5.2```**
 
 <br>
 
@@ -33,6 +33,8 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.5.0*** - Added ability to trigger service restart when you exit the app (Will only restart on it's own if using process/service manager like PM2/systemd)
 
 ***v1.5.1*** - Bug fixes
+
+***v1.5.2*** - Bug fixes
 
 #### Homebridge Plugin:
 
@@ -72,6 +74,10 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.5.0*** - Added ability to trigger service restart when you exit the app (Will only restart on it's own if using process/service manager like PM2/systemd)
 
 ***v1.5.1*** - Bug fixes
+
+***v1.5.2*** - Bug fixes
+
+***v1.5.3*** - Fixes for Open/Close | Lock/Unlock on iOS 12.1.2
 <br>
 
 # Explanation:
@@ -80,13 +86,13 @@ This is based off of @pdlove homebridge-smartthings
 This method is nearly instant.
 This option allows the hub to send updates directly to your homebridge-hubitat-tonesto7 installation.
 The hub must be able to send an http packet to your device so make sure to allow incoming traffic on the applicable port.
-The port used for this can be configured by the "direct_port" setting and defaults to 8000.
+The port used for this can be configured by the "direct_port" setting and defaults to 8005.
 The program will attempt to determine your IP address automatically, but that can be overridden by "direct_ip" which is useful if you have multiple addresses.
 
 When properly setup, you should see something like this in your Homebridge startup immediately after the PIN:
 ```
 [1/29/2017, 8:28:45 AM] Homebridge is running on port 51826.
-[1/29/2017, 8:28:45 AM] [Hubitat] Direct Connect Is Listening On 10.0.0.70:8000
+[1/29/2017, 8:28:45 AM] [Hubitat] Direct Connect Is Listening On 10.0.0.70:8005
 [1/29/2017, 8:28:45 AM] [Hubitat] Hubitat Hub Communication Established
 ```
 
@@ -139,7 +145,7 @@ Installation comes in two parts:
    <span style="color: #f92672">&quot;app_url&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;10.0.0.40/api/app/YOUR_APPS_ID/&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;access_token&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;THIS-SHOULD-BE-YOUR-TOKEN&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;direct_ip&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;10.0.0.70&quot;</span><span style="color: #f8f8f2">,</span>
-   <span style="color: #f92672">&quot;direct_port&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #ae81ff">8000</span><span style="color: #f8f8f2">,</span>
+   <span style="color: #f92672">&quot;direct_port&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #ae81ff">8005</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;excluded_capabilities&quot;</span><span style="color: #f8f8f2">: {</span>
    <span style="color: lightblue">    &quot;HUBITAT-DEVICE-ID-1&quot;</span><span style="color: #f8f8f2">: [</span>
    <span style="color: orange">       &quot;Switch&quot;</span><span style="color: #f8f8f2">,</span>
@@ -159,8 +165,8 @@ Installation comes in two parts:
     Defaults to first available IP on your computer<br><small style="color: gray;">Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.</small></p>
 
  * <p><u>direct_port</u>  <small style="color: #f92672; font-weight: 600;"><i>Optional</i></small><br>
-   Defaults to 8000<br><small style="color: gray;">This is the port that homebridge-hubitat plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address.</small></p>
+   Defaults to 8005<br><small style="color: gray;">This is the port that homebridge-hubitat plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address.</small></p>
 
  * <p><u>excluded_capabilities</u>  <small style="color: #f92672; font-weight: 600;"><i>Optional</i></small><br>
-   Defaults to None<br><small style="color: gray;">Specify the SmartThings device by ID and the associated capabilities you want homebridge-smartthings to ignore<br>This prevents a SmartThings device creating unwanted or redundant HomeKit accessories</small></p>
+   Defaults to None<br><small style="color: gray;">Specify the Hubitat device by ID and the associated capabilities you want homebridge-hubitat-tonesto7 to ignore<br>This prevents a Hubitat device from creating unwanted or redundant HomeKit accessories</small></p>
 

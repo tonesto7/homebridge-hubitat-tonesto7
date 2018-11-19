@@ -188,10 +188,10 @@ function HE_ST_Accessory(platform, device) {
                     }
                 })
                 .on('set', function(value, callback) {
-                    if (value === Characteristic.TargetDoorState.OPEN) {
+                    if (value === Characteristic.TargetDoorState.OPEN || value === 0) {
                         platform.api.runCommand(callback, device.deviceid, 'open');
                         that.device.attributes.door = 'opening';
-                    } else if (value === Characteristic.TargetDoorState.CLOSED) {
+                    } else if (value === Characteristic.TargetDoorState.CLOSED || value === 1) {
                         platform.api.runCommand(callback, device.deviceid, 'close');
                         that.device.attributes.door = 'closing';
                     }
@@ -254,20 +254,12 @@ function HE_ST_Accessory(platform, device) {
                     }
                 })
                 .on('set', function(value, callback) {
-                    if (value === false) {
-                        value = Characteristic.LockTargetState.UNSECURED;
-                    } else if (value === true) {
-                        value = Characteristic.LockTargetState.SECURED;
-                    }
-                    switch (value) {
-                        case Characteristic.LockTargetState.SECURED:
-                            platform.api.runCommand(callback, device.deviceid, 'lock');
-                            that.device.attributes.lock = 'locked';
-                            break;
-                        case Characteristic.LockTargetState.UNSECURED:
-                            platform.api.runCommand(callback, device.deviceid, 'unlock');
-                            that.device.attributes.lock = 'unlocked';
-                            break;
+                    if (value === 1 || value === true) {
+                        platform.clientApi.runCommand(callback, device.deviceid, 'lock');
+                        that.device.attributes.lock = 'locked';
+                    } else {
+                        platform.clientApi.runCommand(callback, device.deviceid, 'unlock');
+                        that.device.attributes.lock = 'unlocked';
                     }
                 });
             platform.addAttributeUsage('lock', device.deviceid, thisCharacteristic);
