@@ -80,6 +80,8 @@ This is based off of @pdlove homebridge-smartthings
 ***v1.5.3*** - Fixes for Open/Close | Lock/Unlock on iOS 12.1.2
 
 ***v1.5.5*** - Fix for broken lock command
+
+***v1.5.6*** - Fixes for HSM night mode
 <br>
 
 # Explanation:
@@ -108,7 +110,7 @@ Installation comes in two parts:
 
 * Open your Hubitat web interface
 * Goto <u><b>```Apps Code```</b></u>
-* Copy/Paste the code from [Hubitat App Code](https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/tonesto7/homebridge-hubitat.src/homebridge-hubitat.groovy) 
+* Copy/Paste the code from [Hubitat App Code](https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/smartapps/tonesto7/homebridge-hubitat.src/homebridge-hubitat.groovy)
 * Press <u><b>```Save```</b></u>
 * Press <u><b>```Oauth```</b></u> and press <u><b>```Enable```</b></u>
 * Press <u><b>```Save```</b></u>
@@ -116,7 +118,7 @@ Installation comes in two parts:
 
 ## 2. Hubitat App Configuration
 
-* Under the Hubitat Web Interface, Click on <u><b>```Apps```</b></u> in the left side menu. 
+* Under the Hubitat Web Interface, Click on <u><b>```Apps```</b></u> in the left side menu.
 * Click on the button <u><b>```+Load New App```</b></u>
 * Select <u><b>```Homebridge (Hubitat)```</b></u> from the list of User Apps
 * There are 4 inputs at the top that can be used to force a device to be discovered as a specific type in HomeKit.
@@ -125,7 +127,7 @@ Installation comes in two parts:
   * Almost all devices contain the Refresh capability and are under the "Other Devices" group
   * Some sensors don't have a refresh and are under the "Sensor Devices" group.
   * Some devices, mainly Virtual Switches, only have the Switch Capability and are in the "Switch Devices".
- 
+
  * If you select the same device in multiple categories it will only be shown once in HomeKit, so you can safely check them all in all groups.
  * If a device isn't listed, let me know by submitting an issue on GitHub.
  * Tap <u><b>```Done```</b></u> and you are finished with the App configuration.
@@ -140,9 +142,9 @@ Installation comes in two parts:
   <h3 style="padding: 0em .6em;">Config.json Settings Example</h3>
 
   <h4 style="padding: 0em .6em; margin-bottom: 5px;"><u>Example of all settings. Not all settings are required. Read the breakdown below</u></h4>
-   
+
    <div style=" overflow:auto;width:auto;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #f8f8f2">{</span>
-   <span style="color: #f92672">&quot;platform&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;Hubitat&quot;</span><span style="color: #f8f8f2">,</span> 
+   <span style="color: #f92672">&quot;platform&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;Hubitat&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;name&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;Hubitat&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;app_url&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;10.0.0.40/api/app/YOUR_APPS_ID/&quot;</span><span style="color: #f8f8f2">,</span>
    <span style="color: #f92672">&quot;access_token&quot;</span><span style="color: #f8f8f2">:</span> <span style="color: #e6db74">&quot;THIS-SHOULD-BE-YOUR-TOKEN&quot;</span><span style="color: #f8f8f2">,</span>
