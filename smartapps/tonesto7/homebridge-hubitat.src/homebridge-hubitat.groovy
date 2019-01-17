@@ -134,7 +134,7 @@ def mainPage() {
             }
             section("<br/>${sectionTitleStr("Options:")}") {
                 input "showLogs", "bool", title: inputTitleStr("Show Events in Live Logs?"), required: false, defaultValue: true, submitOnChange: true
-                label title: inputTitleStr("App Label (optional)"), description: "Rename App", defaultValue: app?.name, required: false 
+                label title: inputTitleStr("App Label (optional)"), description: "Rename App", required: false 
             }
         }
     }
