@@ -95,7 +95,7 @@ def mainPage() {
             section("Options:") {
                 input "showLogs", "bool", title: "Show Events in Live Logs?", required: false, defaultValue: true, submitOnChange: true, image: getAppImg("debug.png")
                 input "allowLocalCmds", "bool", title: "Send HomeKit Commands Locally?", required: false, defaultValue: true, submitOnChange: true, image: getAppImg("command2.png")
-                label title: "SmartApp Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false, image: getAppImg("name_tag.png")
+                label title: "SmartApp Label (optional)", description: "Rename this App", required: false, image: getAppImg("name_tag.png")
             }
         }
     } else {
