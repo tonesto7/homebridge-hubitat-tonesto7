@@ -31,7 +31,7 @@ def appInfoSect()	{
 	section() {
         if(isST()) {
             paragraph "${app?.name}\nv${appVersion()}", image: appIconUrl()
-            paragraph "Any Device Changes will require a restart of the Homebridge Service", required: true, state: null, image: getAppImg("error.png")
+            paragraph "Any Device Changes will require a restart of the Homebridge Service", required: true, image: getAppImg("error.png")
         } else {
             def str = """
             <div class="appInfoSect" style="width: 300px; height: 70px; display: inline-table;">
@@ -59,7 +59,7 @@ def mainPage() {
         return dynamicPage(name: "mainPage", title: "Homebridge Device Configuration", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall:true) {
             appInfoSect()
             section("Define Specific Categories:") {
-                paragraph "Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", state: "complete"
+                paragraph "Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit"
                 input "lightList", "capability.switch", title: "Lights: (${lightList ? lightList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false, image: getAppImg("light_on.png")
                 input "fanList", "capability.switch", title: "Fans: (${fanList ? fanList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false, image: getAppImg("fan_on.png")
                 input "speakerList", "capability.switch", title: "Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", multiple: true, submitOnChange: true, required: false, image: getAppImg("media_player.png")
@@ -76,12 +76,12 @@ def mainPage() {
                 }
             }
             section("Create Devices for Modes in HomeKit?") {
-                paragraph title: "What are these for?", "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete", image: getAppImg("info.png")
+                paragraph title: "What are these for?", "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", image: getAppImg("info.png")
                 def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
                 input "modeList", "enum", title: "Create Devices for these Modes", required: false, multiple: true, options: modes, submitOnChange: true, image: getAppImg("mode.png")
             }
             section("Create Devices for Routines in HomeKit?") {
-                paragraph title: "What are these?", "A virtual device will be created for each routine in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete", image: getAppImg("info.png")
+                paragraph title: "What are these?", "A virtual device will be created for each routine in HomeKit.\nThese are very useful for use in Home Kit scenes", image: getAppImg("info.png")
                 def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
                 input "routineList", "enum", title: "Create Devices for these Routines", required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine.png")
             }
@@ -121,7 +121,7 @@ def mainPage() {
                 }
             }
             section("</br>${sectionTitleStr("Create Mode Devices in HomeKit?")}") {
-                paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual switch will be created for each mode in HomeKit.</br>The switch will be ON when that mode is active.</i></small>', state: "complete"
+                paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual switch will be created for each mode in HomeKit.</br>The switch will be ON when that mode is active.</i></small>'
                 def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
                 input "modeList", "enum", title: inputTitleStr("Create Devices for these Modes"), required: false, multiple: true, options: modes, submitOnChange: true
             }
@@ -144,14 +144,14 @@ def confirmPage() {
     if(isST()) {
         return dynamicPage(name: "confirmPage", title: "Confirm Page", install: true, uninstall:true) {
             section("") {
-                paragraph "Would you like to restart the Homebridge Service to apply any device changes you made?", required: true, state: null, image: getAppImg("info.png")
+                paragraph "Would you like to restart the Homebridge Service to apply any device changes you made?", required: true, image: getAppImg("info.png")
                 input "restartService", "bool", title: "Restart Homebridge plugin when you press Save?", required: false, defaultValue: false, submitOnChange: true, image: getAppImg("reset2.png")
             }
         }
     } else {
         return dynamicPage(name: "confirmPage", title: "", install: true, uninstall:true) {
             section("") {
-                paragraph '<small style="color: blue !important;"><i><b>Notice:</b></small><br/><small style="color: grey !important;">Would you like to restart the Homebridge Service to apply any device changes you made?</i></small>', state: "complete"
+                paragraph '<small style="color: blue !important;"><i><b>Notice:</b></small><br/><small style="color: grey !important;">Would you like to restart the Homebridge Service to apply any device changes you made?</i></small>'
                 input "restartService", "bool", title: inputTitleStr("Restart Homebridge plugin when you press Save?"), required: false, defaultValue: false, submitOnChange: true
             }
         }
