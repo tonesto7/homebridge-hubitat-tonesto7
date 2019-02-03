@@ -120,6 +120,9 @@ def mainPage() {
                     input "sensorAllowTemp", "capability.sensor", title: inputTitleStr("Allow Temp on these Sensors"), multiple: true, submitOnChange: true, required: false
                 }
             }
+			section(sectionTitleStr("Disable HomeBridge-Hubitat integration?")) {
+				input "disableHomeBridge", "bool", title: "Disable HomeBridge-Hubitat integration?", required: true, defaultValue: false
+			}
             section("</br>${sectionTitleStr("Create Mode Devices in HomeKit?")}") {
                 paragraph '<small style="color: blue !important;"><i><b>Description:</b></small><br/><small style="color: grey !important;">A virtual switch will be created for each mode in HomeKit.</br>The switch will be ON when that mode is active.</i></small>', state: "complete"
                 def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
@@ -431,6 +434,11 @@ def CommandReply(statusOut, messageOut) {
 }
 
 def lanEventHandler(evt) {
+	
+	if (disableHomeBridge) {
+		return
+	}
+	
     // log.trace "lanStreamEvtHandler..."
     def msg = parseLanMessage(evt?.description)
     Map headerMap = msg?.headers
@@ -715,6 +723,10 @@ def changeHandler(evt) {
     def value = evt?.value
     def dt = evt?.date
     def sendEvt = true
+	
+	if (disableHomeBridge) {
+		return
+	}
 
     switch(evt?.name) {
         case "hsmStatus":
