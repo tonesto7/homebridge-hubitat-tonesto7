@@ -4,8 +4,8 @@
  *  Copyright 2018 Anthony Santilli
  */
 
-String appVersion() { return "1.5.2" }
-String appModified() { return "10-22-2018" }
+String appVersion() { return "1.5.3beta" }
+String appModified() { return "03-31-2019" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
@@ -193,6 +193,55 @@ def updated() {
     initialize()
 }
 
+def asyncHttpResponse(response, data)
+{
+	//log.trace "Got asyncHttpResponse: ${response.status}"
+}
+
+private static Class HubActionClass() {
+    try {
+        return 'physicalgraph.device.HubAction' as Class
+    } catch(all) {
+        return 'hubitat.device.HubAction' as Class
+    }
+}
+
+def sendHomebridgeCommand(params)
+{
+//	log.trace "Got sendHomebridgeCommand: ${params}"
+
+	if (isST() == true)
+	{
+		sendHubCommand(HubActionClass().newInstance(params))
+	}
+	else
+	{
+		if (params?.method)
+		{
+			switch (params.method)
+			{
+				case "GET":
+					def getParams = [
+						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
+						requestContentType: 'application/json'
+					]
+					asynchttpGet("asyncHttpResponse", getParams)
+					break
+				case "POST":
+					def postParams = [
+						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
+						requestContentType: 'application/json',
+						contentType: 'application/json',
+						body : params.body
+					]
+					asynchttpPost("asyncHttpResponse", postParams)
+					break
+				default:
+					break
+			}
+		}
+	}
+}
 def initialize() {
     state?.isInstalled = true
     if(!state?.accessToken) {
@@ -798,9 +847,12 @@ def changeHandler(evt) {
                     change_date: send?.evtDate
                 ]
             ]
+			 
             // def result = new physicalgraph.device.HubAction(params)
-            def result = new hubitat.device.HubAction(params)
-            sendHubCommand(result)
+            //def result = new hubitat.device.HubAction(params)
+			//sendHubCommand(result)
+			sendHomebridgeCommand(params)
+			log.trace "Sending POST /update to ${state?.directIP}:${state?.directPort} with params ${params}"
         }
     }
 }
@@ -837,15 +889,31 @@ void settingUpdate(name, value, type=null) {
 private activateDirectUpdates(isLocal=false) {
     log.trace "activateDirectUpdates: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
     // def result = new physicalgraph.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
-    def result = new hubitat.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
-    sendHubCommand(result)
+	def params = [
+                method: "GET",
+                path: "/initial",
+                headers: [
+                    HOST: "${state?.directIP}:${state?.directPort}"
+                ]
+            ]
+    //def result = new hubitat.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
+    //sendHubCommand(result)
+	sendHomebridgeCommand(params)
 }
 
 private attemptServiceRestart(isLocal=false) {
     log.trace "attemptServiceRestart: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
     // def result = new physicalgraph.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
-    def result = new hubitat.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
-    sendHubCommand(result)
+	def params = [
+                method: "GET",
+                path: "/restart",
+                headers: [
+                    HOST: "${state?.directIP}:${state?.directPort}"
+                ]
+            ]
+    //def result = new hubitat.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
+    //sendHubCommand(result)
+	sendHomebridgeCommand(params)
 }
 
 private updateServicePrefs(isLocal=false) {
@@ -863,8 +931,10 @@ private updateServicePrefs(isLocal=false) {
         ]
     ]
     // def result = new physicalgraph.device.HubAction(params)
-    def result = new hubitat.device.HubAction(params)
-    sendHubCommand(result)
+    //def result = new hubitat.device.HubAction(params)
+    //sendHubCommand(result)
+	sendHomebridgeCommand(params)
+	
 }
 
 def enableDirectUpdates() {
