@@ -27,8 +27,8 @@ preferences {
     page(name: "confirmPage")
 }
 
-def appInfoSect()	{
-	section() {
+def appInfoSect()   {
+    section() {
         if(isST()) {
             paragraph "${app?.name}\nv${appVersion()}", image: appIconUrl()
             paragraph "Any Device Changes will require a restart of the Homebridge Service", required: true, state: null, image: getAppImg("error.png")
@@ -153,14 +153,18 @@ def confirmPage() {
             section("") {
                 paragraph '<small style="color: blue !important;"><i><b>Notice:</b></small><br/><small style="color: grey !important;">Would you like to restart the Homebridge Service to apply any device changes you made?</i></small>', state: "complete"
                 input "restartService", "bool", title: inputTitleStr("Restart Homebridge plugin when you press Save?"), required: false, defaultValue: false, submitOnChange: true
+            }            
+            section("") {
+                paragraph '<small style="color: blue !important;"><i><b>Notice:</b></small><br/><small style="color: grey !important;">Would you like to stop direct Updates to the Homebridge Service?</i></small>', state: "complete"
+                input "resetDirectUpdates", "bool", title: inputTitleStr("Do you want to stop direct Updates?"), required: false, defaultValue: false, submitOnChange: true
             }
         }
     }
 }
 
-def sectionTitleStr(title) 	{ return "<h2>$title</h2>" }
-def inputTitleStr(title) 	{ return "<u>$title</u>" }
-def pageTitleStr(title) 	{ return "<h1>$title</h1>" }
+def sectionTitleStr(title)  { return "<h2>$title</h2>" }
+def inputTitleStr(title)    { return "<u>$title</u>" }
+def pageTitleStr(title)     { return "<h1>$title</h1>" }
 def imgTitle(imgSrc, imgWidth, imgHeight, titleStr, color=null) {
     def imgStyle = ""
     imgStyle += imgWidth ? "width: ${imgWidth}px !important;" : ""
@@ -228,7 +232,13 @@ def initialize() {
         attemptServiceRestart()
         settingUpdate("restartService", "false", "bool")
     }
-    runIn((settings?.restartService ? 60 : 10), "updateServicePrefs")
+    if (settings?.resetDirectUpdates == true)
+    {
+        state?.directIP = ""
+        state?.directPort = ""
+    }
+    if (state?.directIP)
+        runIn((settings?.restartService ? 60 : 10), "updateServicePrefs")
 }
 
 def onAppTouch(event) {
@@ -328,11 +338,11 @@ def getSecurityDevice() {
 }
 
 def findDevice(paramid) {
-	def device = deviceList.find { it?.id == paramid }
-  	if (device) return device
-	device = sensorList.find { it?.id == paramid }
-	if (device) return device
-  	device = switchList.find { it?.id == paramid }
+    def device = deviceList.find { it?.id == paramid }
+    if (device) return device
+    device = sensorList.find { it?.id == paramid }
+    if (device) return device
+    device = switchList.find { it?.id == paramid }
     if (device) return device
     device = lightList.find { it?.id == paramid }
     if (device) return device
@@ -343,7 +353,7 @@ def findDevice(paramid) {
     if(!isST()) {
         device = shadesList.find { it?.id == paramid }
     }
-	return device
+    return device
 }
 
 def authError() {
@@ -798,11 +808,11 @@ def changeHandler(evt) {
                     change_date: send?.evtDate
                 ]
             ]
-			 
+             
             // def result = new physicalgraph.device.HubAction(params)
             //def result = new hubitat.device.HubAction(params)
-			//sendHubCommand(result)
-			sendHomebridgeCommand(params)
+            //sendHubCommand(result)
+            sendHomebridgeCommand(params)
         }
     }
 }
@@ -830,16 +840,16 @@ def getShmIncidents() {
 }
 
 void settingUpdate(name, value, type=null) {
-	if(name && type) {
-		app?.updateSetting("$name", [type: "$type", value: value])
-	}
-	else if (name && type == null){ app?.updateSetting(name.toString(), value) }
+    if(name && type) {
+        app?.updateSetting("$name", [type: "$type", value: value])
+    }
+    else if (name && type == null){ app?.updateSetting(name.toString(), value) }
 }
 
 private activateDirectUpdates(isLocal=false) {
     log.trace "activateDirectUpdates: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
     // def result = new physicalgraph.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
-	def params = [
+    def params = [
                 method: "GET",
                 path: "/initial",
                 headers: [
@@ -848,13 +858,13 @@ private activateDirectUpdates(isLocal=false) {
             ]
     //def result = new hubitat.device.HubAction(method: "GET", path: "/initial", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
     //sendHubCommand(result)
-	sendHomebridgeCommand(params)
+    sendHomebridgeCommand(params)
 }
 
 private attemptServiceRestart(isLocal=false) {
     log.trace "attemptServiceRestart: ${state?.directIP}:${state?.directPort}${isLocal ? " | (Local)" : ""}"
     // def result = new physicalgraph.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
-	def params = [
+    def params = [
                 method: "GET",
                 path: "/restart",
                 headers: [
@@ -863,7 +873,7 @@ private attemptServiceRestart(isLocal=false) {
             ]
     //def result = new hubitat.device.HubAction(method: "GET", path: "/restart", headers: [HOST: "${state?.directIP}:${state?.directPort}"])
     //sendHubCommand(result)
-	sendHomebridgeCommand(params)
+    sendHomebridgeCommand(params)
 }
 
 private updateServicePrefs(isLocal=false) {
@@ -883,8 +893,8 @@ private updateServicePrefs(isLocal=false) {
     // def result = new physicalgraph.device.HubAction(params)
     //def result = new hubitat.device.HubAction(params)
     //sendHubCommand(result)
-	sendHomebridgeCommand(params)
-	
+    sendHomebridgeCommand(params)
+    
 }
 
 def enableDirectUpdates() {
@@ -904,64 +914,64 @@ private static Class HubActionClass() {
 
 def asyncHttpResponse(response, data)
 {
-	if (response.status != 200)
-		log.error "asyncHttpResponse: received invalid response ${response.status} for params ${data["requestParams"]}"
+    if (response.status != 200)
+        log.error "asyncHttpResponse: received invalid response ${response.status} for params ${data["requestParams"]}"
 }
 
 def sendHomebridgeCommand(params)
 {
-	if (isST() == true)
-	{
-		sendHubCommand(HubActionClass().newInstance(params))
-	}
-	else
-	{
-		if (params?.method)
-		{
-			switch (params.method)
-			{
-				case "GET":
-					def getParams = [
-						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
-						requestContentType: 'application/json'
-					]
-					asynchttpGet("asyncHttpResponse", getParams, [requestParams: params])
-					break
-				case "POST":
-					def postParams = [
-						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
-						requestContentType: 'application/json',
-						contentType: 'application/json',
-						body : params.body
-					]
-					asynchttpPost("asyncHttpResponse", postParams, [requestParams: params])
-					break
-				default:
-					log.error "sendHomebridgeCommand: invalid http method ${params.method} called"
-					break
-			}
-		}
-	}
+    if (isST() == true)
+    {
+        sendHubCommand(HubActionClass().newInstance(params))
+    }
+    else
+    {
+        if (params?.method)
+        {
+            switch (params.method)
+            {
+                case "GET":
+                    def getParams = [
+                        uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
+                        requestContentType: 'application/json'
+                    ]
+                    asynchttpGet("asyncHttpResponse", getParams, [requestParams: params])
+                    break
+                case "POST":
+                    def postParams = [
+                        uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
+                        requestContentType: 'application/json',
+                        contentType: 'application/json',
+                        body : params.body
+                    ]
+                    asynchttpPost("asyncHttpResponse", postParams, [requestParams: params])
+                    break
+                default:
+                    log.error "sendHomebridgeCommand: invalid http method ${params.method} called"
+                    break
+            }
+        }
+    }
 }
 
 mappings {
     if (isST() && (!params?.access_token || (params?.access_token && params?.access_token != state?.accessToken))) {
-        path("/devices")					{ action: [GET: "authError"] }
-        path("/config")						{ action: [GET: "authError"] }
-        path("/location")					{ action: [GET: "authError"] }
-        path("/:id/command/:command")		{ action: [POST: "authError"] }
-        path("/:id/query")					{ action: [GET: "authError"] }
-        path("/:id/attribute/:attribute") 	{ action: [GET: "authError"] }
-        path("/getUpdates")					{ action: [GET: "authError"] }
-        path("/startDirect/:ip/:port")		{ action: [GET: "authError"] }
+        path("/devices")                    { action: [GET: "authError"] }
+        path("/config")                     { action: [GET: "authError"] }
+        path("/location")                   { action: [GET: "authError"] }
+        path("/:id/command/:command")       { action: [POST: "authError"] }
+        path("/:id/query")                  { action: [GET: "authError"] }
+        path("/:id/attribute/:attribute")   { action: [GET: "authError"] }
+        path("/getUpdates")                 { action: [GET: "authError"] }
+        path("/startDirect/:ip/:port")      { action: [GET: "authError"] }
     } else {
-        path("/devices")					{ action: [GET: "getAllData"] }
-        path("/config")						{ action: [GET: "renderConfig"]  }
-        path("/location")					{ action: [GET: "renderLocation"] }
-        path("/:id/command/:command")		{ action: [POST: "deviceCommand"] }
-        path("/:id/query")					{ action: [GET: "deviceQuery"] }
-        path("/:id/attribute/:attribute")	{ action: [GET: "deviceAttribute"] }
-        path("/getUpdates")					{ action: [GET: "getChangeEvents"] }
-        path("/startDirect/:ip/:port")		{ action: [GET: "enableDirectUpdates"] }
+        path("/devices")                    { action: [GET: "getAllData"] }
+        path("/config")                     { action: [GET: "renderConfig"]  }
+        path("/location")                   { action: [GET: "renderLocation"] }
+        path("/:id/command/:command")       { action: [POST: "deviceCommand"] }
+        path("/:id/query")                  { action: [GET: "deviceQuery"] }
+        path("/:id/attribute/:attribute")   { action: [GET: "deviceAttribute"] }
+        path("/getUpdates")                 { action: [GET: "getChangeEvents"] }
+        path("/startDirect/:ip/:port")      { action: [GET: "enableDirectUpdates"] }
     }
 }
