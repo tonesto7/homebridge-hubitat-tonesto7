@@ -193,57 +193,6 @@ def updated() {
     initialize()
 }
 
-private static Class HubActionClass() {
-    try {
-        return 'physicalgraph.device.HubAction' as Class
-    } catch(all) {
-        return 'hubitat.device.HubAction' as Class
-    }
-}
-
-def asyncHttpResponse(response, data)
-{
-	if (response.status != 200)
-		log.error "asyncHttpResponse: received invalid response ${response.status} for params ${data["requestParams"]}"
-}
-
-
-def sendHomebridgeCommand(params)
-{
-	if (isST() == true)
-	{
-		sendHubCommand(HubActionClass().newInstance(params))
-	}
-	else
-	{
-		if (params?.method)
-		{
-			switch (params.method)
-			{
-				case "GET":
-					def getParams = [
-						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
-						requestContentType: 'application/json'
-					]
-					asynchttpGet("asyncHttpResponse", getParams, [requestParams: params])
-					break
-				case "POST":
-					def postParams = [
-						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
-						requestContentType: 'application/json',
-						contentType: 'application/json',
-						body : params.body
-					]
-					asynchttpPost("asyncHttpResponse", postParams, [requestParams: params])
-					break
-				default:
-					log.error "sendHomebridgeCommand: invalid http method ${params.method} called"
-					break
-			}
-		}
-	}
-}
-
 def initialize() {
     state?.isInstalled = true
     if(!state?.accessToken) {
@@ -943,6 +892,56 @@ def enableDirectUpdates() {
     state?.directIP = params?.ip
     state?.directPort = params?.port
     activateDirectUpdates()
+}
+
+private static Class HubActionClass() {
+    try {
+        return 'physicalgraph.device.HubAction' as Class
+    } catch(all) {
+        return 'hubitat.device.HubAction' as Class
+    }
+}
+
+def asyncHttpResponse(response, data)
+{
+	if (response.status != 200)
+		log.error "asyncHttpResponse: received invalid response ${response.status} for params ${data["requestParams"]}"
+}
+
+def sendHomebridgeCommand(params)
+{
+	if (isST() == true)
+	{
+		sendHubCommand(HubActionClass().newInstance(params))
+	}
+	else
+	{
+		if (params?.method)
+		{
+			switch (params.method)
+			{
+				case "GET":
+					def getParams = [
+						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
+						requestContentType: 'application/json'
+					]
+					asynchttpGet("asyncHttpResponse", getParams, [requestParams: params])
+					break
+				case "POST":
+					def postParams = [
+						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
+						requestContentType: 'application/json',
+						contentType: 'application/json',
+						body : params.body
+					]
+					asynchttpPost("asyncHttpResponse", postParams, [requestParams: params])
+					break
+				default:
+					log.error "sendHomebridgeCommand: invalid http method ${params.method} called"
+					break
+			}
+		}
+	}
 }
 
 mappings {
