@@ -4,8 +4,8 @@
  *  Copyright 2018 Anthony Santilli
  */
 
-String appVersion() { return "1.5.3beta" }
-String appModified() { return "03-31-2019" }
+String appVersion() { return "1.5.2" }
+String appModified() { return "10-22-2018" }
 String platform() { return "Hubitat" }
 String appIconUrl() { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-tonesto7/master/images/hb_tonesto7@2x.png" }
 String getAppImg(imgName) { return "https://raw.githubusercontent.com/tonesto7/smartthings-tonesto7-public/master/resources/icons/$imgName" }
@@ -193,11 +193,6 @@ def updated() {
     initialize()
 }
 
-def asyncHttpResponse(response, data)
-{
-	//log.trace "Got asyncHttpResponse: ${response.status}"
-}
-
 private static Class HubActionClass() {
     try {
         return 'physicalgraph.device.HubAction' as Class
@@ -206,10 +201,15 @@ private static Class HubActionClass() {
     }
 }
 
+def asyncHttpResponse(response, data)
+{
+	if (response.status != 200)
+		log.error "asyncHttpResponse: received invalid response ${response.status} for params ${data["requestParams"]}"
+}
+
+
 def sendHomebridgeCommand(params)
 {
-//	log.trace "Got sendHomebridgeCommand: ${params}"
-
 	if (isST() == true)
 	{
 		sendHubCommand(HubActionClass().newInstance(params))
@@ -225,7 +225,7 @@ def sendHomebridgeCommand(params)
 						uri: "http://${state?.directIP}:${state?.directPort}" + params.path ,
 						requestContentType: 'application/json'
 					]
-					asynchttpGet("asyncHttpResponse", getParams)
+					asynchttpGet("asyncHttpResponse", getParams, [requestParams: params])
 					break
 				case "POST":
 					def postParams = [
@@ -234,14 +234,16 @@ def sendHomebridgeCommand(params)
 						contentType: 'application/json',
 						body : params.body
 					]
-					asynchttpPost("asyncHttpResponse", postParams)
+					asynchttpPost("asyncHttpResponse", postParams, [requestParams: params])
 					break
 				default:
+					log.error "sendHomebridgeCommand: invalid http method ${params.method} called"
 					break
 			}
 		}
 	}
 }
+
 def initialize() {
     state?.isInstalled = true
     if(!state?.accessToken) {
@@ -852,7 +854,6 @@ def changeHandler(evt) {
             //def result = new hubitat.device.HubAction(params)
 			//sendHubCommand(result)
 			sendHomebridgeCommand(params)
-			log.trace "Sending POST /update to ${state?.directIP}:${state?.directPort} with params ${params}"
         }
     }
 }
