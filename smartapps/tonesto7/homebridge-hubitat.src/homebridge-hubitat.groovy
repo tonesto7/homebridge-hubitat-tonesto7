@@ -236,6 +236,7 @@ def initialize() {
     {
         state?.directIP = ""
         state?.directPort = ""
+        unsubscribe()
     }
     if (state?.directIP)
         runIn((settings?.restartService ? 60 : 10), "updateServicePrefs")
