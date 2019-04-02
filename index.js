@@ -312,7 +312,6 @@ function he_eventsocket_SetupWebSocket(myHe_st_api) {
                     case 'hsmStatus':
                         newChange.push( { device: 'alarmSystemStatus_' + $jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
                         myHe_st_api.log('Change Event (Socket):', '(' + jsonData['displayName'] + ') [' + (jsonData['name'] ? jsonData['name'].toUpperCase() : 'unknown') + '] is ' + jsonData['value']);
-                        myHe_st_api.processFieldUpdate(newChange, myHe_st_api);
                         break;
                     case 'hsmAlert':
                         if ($jsonData['value'] === 'intrusion')
