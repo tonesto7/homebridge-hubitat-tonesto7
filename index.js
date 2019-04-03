@@ -310,17 +310,16 @@ function he_eventsocket_SetupWebSocket(myHe_st_api) {
                 switch (jsonData['name'])
                 {
                     case 'hsmStatus':
-                        newChange.push( { device: 'alarmSystemStatus_' + $jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
-                        myHe_st_api.log('Change Event (Socket):', '(' + jsonData['displayName'] + ') [' + (jsonData['name'] ? jsonData['name'].toUpperCase() : 'unknown') + '] is ' + jsonData['value']);
+                        newChange.push( { device: 'alarmSystemStatus_' + jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
                         break;
                     case 'hsmAlert':
-                        if ($jsonData['value'] === 'intrusion')
+                        if (jsonData['value'] === 'intrusion')
                         {
-                            newChange.push( { device: 'alarmSystemStatus_' + $jsonData['locationId'], attribute: 'alarmSystemStatus', value: 'alarm_active', date: new Date(), displayName: jsonData['displayName'] });
+                            newChange.push( { device: 'alarmSystemStatus_' + jsonData['locationId'], attribute: 'alarmSystemStatus', value: 'alarm_active', date: new Date(), displayName: jsonData['displayName'] });
                         }
                         break;
                     case 'alarmSystemStatus':
-                        newChange.push( { device: 'alarmSystemStatus_' + $jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
+                        newChange.push( { device: 'alarmSystemStatus_' + jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
                         break;
                     case 'mode':
                         myHe_st_api.deviceLookup.forEach(function (accessory)
