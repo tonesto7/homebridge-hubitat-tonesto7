@@ -1,6 +1,7 @@
 const pluginName = 'homebridge-hubitat';
 const platformName = 'Hubitat';
 var he_st_api = require('./lib/he_st_api');
+//var he_st_api = require('./lib/he_maker_api');
 var http = require('http');
 var os = require('os');
 var Service,

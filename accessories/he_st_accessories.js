@@ -96,7 +96,7 @@ function HE_ST_Accessory(platform, device) {
                 platform.addAttributeUsage('level', device.deviceid, thisCharacteristic);
 
                 thisCharacteristic = that.getaddService(Service.WindowCovering).setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
-            } else if (isLight === true || device.commands.setLevel) {
+            } else if (isLight === true || device.commands.hasOwnProperty('setLevel')) {
                 that.deviceGroup = 'lights';
                 thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.On)
                     .on('get', function(callback) {
