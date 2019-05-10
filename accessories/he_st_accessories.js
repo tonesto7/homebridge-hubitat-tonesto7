@@ -73,7 +73,7 @@ function HE_ST_Accessory(platform, device) {
     let isFan = (device.capabilities['Fan'] !== undefined || device.capabilities['Fan Light'] !== undefined || device.capabilities['FanLight'] !== undefined || device.commands.lowSpeed !== undefined);
     let isWindowShade = (device.capabilities['WindowShade'] !== undefined || device.capabilities['Window Shade'] !== undefined);
     let isLight = (device.capabilities['LightBulb'] !== undefined || device.capabilities['Light Bulb'] !== undefined || device.capabilities['Bulb'] !== undefined || device.capabilities['Fan Light'] !== undefined || device.capabilities['FanLight'] !== undefined || device.name.includes('light'));
-    let isSpeaker = (device.capabilities['Speaker'] !== undefined);
+    let isSpeaker = (device.capabilities['AudioVolume'] !== undefined);
     if (device && device.capabilities) {
         if ((device.capabilities['Switch Level'] !== undefined || device.capabilities['SwitchLevel'] !== undefined) && !isSpeaker && !isFan && !isMode && !isRoutine && !isWindowShade) {
             if (device.commands.levelOpenClose || device.commands.presetPosition) {
@@ -96,7 +96,7 @@ function HE_ST_Accessory(platform, device) {
                 platform.addAttributeUsage('level', device.deviceid, thisCharacteristic);
 
                 thisCharacteristic = that.getaddService(Service.WindowCovering).setCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
-            } else if (isLight === true || device.commands.setLevel) {
+            } else if (isLight === true || device.commands.hasOwnProperty('setLevel')) {
                 that.deviceGroup = 'lights';
                 thisCharacteristic = that.getaddService(Service.Lightbulb).getCharacteristic(Characteristic.On)
                     .on('get', function(callback) {
@@ -302,6 +302,7 @@ function HE_ST_Accessory(platform, device) {
 
         //Defines Speaker Device
         if (isSpeaker === true) {
+            platform.log('ADDING SPEAKER ' + device.name);
             that.deviceGroup = 'speakers';
             thisCharacteristic = that.getaddService(Service.Speaker).getCharacteristic(Characteristic.Volume)
                 .on('get', function(callback) {

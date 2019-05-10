@@ -1,6 +1,7 @@
 const pluginName = 'homebridge-hubitat';
 const platformName = 'Hubitat';
-var he_st_api = require('./lib/he_st_api');
+//var he_st_api = require('./lib/he_st_api');
+var he_st_api = require('./lib/he_maker_api');
 var http = require('http');
 var os = require('os');
 var Service,
@@ -204,6 +205,8 @@ HE_ST_Platform.prototype = {
                 // The Hub sends updates to this module using http
                 he_st_api_SetupHTTPServer(that);
                 he_st_api.startDirect(null, that.direct_ip, that.direct_port);
+            } else if (that.update_method === 'socket') {
+                he_eventsocket_SetupWebSocket(that);
             }
         });
     },
@@ -282,6 +285,79 @@ function he_st_api_SetupHTTPServer(myHe_st_api) {
         myHe_st_api.log(`Direct Connect Is Listening On ${ip}:${myHe_st_api.direct_port}`);
     });
     return 'good';
+}
+
+function he_eventsocket_SetupWebSocket(myHe_st_api) {
+    const WebSocket = require('ws');
+    var that = this;
+    function connect(myHe_st_api) {
+        let ip = myHe_st_api.direct_ip || getIPAddress();
+        var r = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
+        var url = 'ws://' + myHe_st_api.app_url.match(r) + '/eventsocket';
+        var ws = new WebSocket(url);
+        myHe_st_api.log('connect to ' + url);
+        ws.onopen = function() {
+        };
+    
+        ws.onmessage = function(e) {
+            var jsonData = JSON.parse(e.data);
+            var newChange = [];
+            if (jsonData['source'] === 'DEVICE')
+            {
+                newChange.push( { device: jsonData['deviceId'], attribute: jsonData['name'], value: jsonData['value'], date: new Date() , displayName: jsonData['displayName'] }  );
+            } 
+            else if (jsonData['source'] === 'LOCATION')
+            {
+                switch (jsonData['name'])
+                {
+                    case 'hsmStatus':
+                        newChange.push( { device: 'alarmSystemStatus_' + jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
+                        break;
+                    case 'hsmAlert':
+                        if (jsonData['value'] === 'intrusion')
+                        {
+                            newChange.push( { device: 'alarmSystemStatus_' + jsonData['locationId'], attribute: 'alarmSystemStatus', value: 'alarm_active', date: new Date(), displayName: jsonData['displayName'] });
+                        }
+                        break;
+                    case 'alarmSystemStatus':
+                        newChange.push( { device: 'alarmSystemStatus_' + jsonData['locationId'], attribute: 'alarmSystemStatus', value: jsonData['value'], date: new Date(), displayName: jsonData['displayName'] });
+                        break;
+                    case 'mode':
+                        myHe_st_api.deviceLookup.forEach(function (accessory)
+                        {
+                            if (accessory.deviceGroup === "mode")
+                            {
+                                if (accessory.name === "Mode - " + jsonData['value'])
+                                    newChange.push( { device: accessory.deviceid, attribute: 'switch', value: 'on', date: new Date(), displayName: accessory.name });
+                                else
+                                    newChange.push( { device: accessory.deviceid, attribute: 'switch', value: 'off', date: new Date(), displayName: accessory.name });
+                            }
+                        });
+                        break;
+                }
+            }
+            newChange.forEach(function(element)
+            {
+                myHe_st_api.log('Change Event (Socket):', '(' + element['displayName'] + ':' + element['device'] + ') [' + (element['attribute'] ? element['attribute'].toUpperCase() : 'unknown') + '] is ' + element['value']);
+                myHe_st_api.processFieldUpdate(element, myHe_st_api);
+            });
+        };
+
+        ws.onclose = function(e) {
+          myHe_st_api.log('HE Eventsocket is closed. Reconnect will be attempted in 1 second. ', e.reason);
+          setTimeout(function() {
+            connect(myHe_st_api);
+          }, 1000);
+        };
+
+        ws.onerror = function(err) {
+          myHe_st_api.log('HE Eventsocket encountered error: ', err.message, 'Closing socket');
+          ws.close();
+        };
+
+    }
+    connect(myHe_st_api); 
+
 }
 
 function he_st_api_HandleHTTPResponse(request, response, myHe_st_api) {
