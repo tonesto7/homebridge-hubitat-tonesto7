@@ -610,7 +610,7 @@ function HE_ST_Accessory(platform, device) {
             if (that.deviceGroup === 'unknown') {
                 that.deviceGroup = 'sensor';
             }
-            thisCharacteristic = that.getaddService(Service.TemperatureSensor).getCharacteristic(Characteristic.CurrentTemperature)
+            thisCharacteristic = that.getaddService(Service.TemperatureSensor).getCharacteristic(Characteristic.CurrentTemperature).setProps({minValue: -100})
                 .on('get', function(callback) {
                     if (platform.temperature_unit === 'C') {
                         callback(null, Math.round(that.device.attributes.temperature * 10) / 10);
@@ -767,7 +767,7 @@ function HE_ST_Accessory(platform, device) {
                     });
                 platform.addAttributeUsage('humidity', device.deviceid, thisCharacteristic);
             }
-            thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CurrentTemperature)
+            thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.CurrentTemperature).setProps({minValue: -100})
                 .on('get', function(callback) {
                     if (platform.temperature_unit === 'C') {
                         callback(null, Math.round(that.device.attributes.temperature * 10) / 10);
@@ -776,7 +776,7 @@ function HE_ST_Accessory(platform, device) {
                     }
                 });
             platform.addAttributeUsage('temperature', device.deviceid, thisCharacteristic);
-            thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TargetTemperature)
+            thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TargetTemperature).setProps({minValue: -100})
                 .on('get', function(callback) {
                     var temp;
                     switch (that.device.attributes.thermostatMode) {
@@ -850,7 +850,7 @@ function HE_ST_Accessory(platform, device) {
             platform.addAttributeUsage('coolingSetpoint', device.deviceid, thisCharacteristic);
             platform.addAttributeUsage('heatingSetpoint', device.deviceid, thisCharacteristic);
             platform.addAttributeUsage('temperature', device.deviceid, thisCharacteristic);
-            thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TemperatureDisplayUnits)
+            thisCharacteristic = that.getaddService(Service.Thermostat).getCharacteristic(Characteristic.TemperatureDisplayUnits).setProps({minValue: -100})
                 .on('get', function(callback) {
                     if (platform.temperature_unit === 'C') {
                         callback(null, Characteristic.TemperatureDisplayUnits.CELSIUS);
