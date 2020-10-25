@@ -49,6 +49,8 @@ module.exports = {
         "CarbonDioxideMeasurement",
         "Carbon Monoxide Detector",
         "CarbonMonoxideDetector",
+        "Smoke Detector",
+        "SmokeDetector",
         "Water Sensor",
         "WaterSensor",
         "Window Shade",
