@@ -1,27 +1,27 @@
-# homebridge-smartthings
+# homebridge-hubitat-tonesto7
 
-[![npm](https://img.shields.io/npm/v/homebridge-smartthings?style=for-the-badge)](https://www.npmjs.com/package/homebridge-smartthings)
-[![npm](https://img.shields.io/npm/dt/homebridge-smartthings?style=for-the-badge)](https://www.npmjs.com/package/homebridge-smartthings)
-![npm](https://img.shields.io/npm/dw/homebridge-smartthings?style=for-the-badge)
-![GitHub repo size](https://img.shields.io/github/repo-size/tonesto7/homebridge-smartthings?style=for-the-badge)
+[![npm](https://img.shields.io/npm/v/homebridge-hubitat-tonesto7?style=for-the-badge)](https://www.npmjs.com/package/homebridge-hubitat-tonesto7)
+[![npm](https://img.shields.io/npm/dt/homebridge-hubitat-tonesto7?style=for-the-badge)](https://www.npmjs.com/package/homebridge-hubitat-tonesto7)
+![npm](https://img.shields.io/npm/dw/homebridge-hubitat-tonesto7?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/tonesto7/homebridge-hubitat-tonesto7?style=for-the-badge)
 
-[![GitHub issues](https://img.shields.io/github/issues/tonesto7/homebridge-smartthings?style=for-the-badge)](https://github.com/tonesto7/homebridge-smartthings/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/tonesto7/homebridge-smartthings?style=for-the-badge)](https://github.com/tonesto7/homebridge-smartthings/pulls)
+[![GitHub issues](https://img.shields.io/github/issues/tonesto7/homebridge-hubitat-tonesto7?style=for-the-badge)](https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/tonesto7/homebridge-hubitat-tonesto7?style=for-the-badge)](https://github.com/tonesto7/homebridge-hubitat-tonesto7/pulls)
 
-![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/tonesto7/homebridge-smartthings/master?style=for-the-badge)
-![Known Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/tonesto7/homebridge-smartthings?style=for-the-badge)
+![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/tonesto7/homebridge-hubitat-tonesto7/master?style=for-the-badge)
+![Known Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/tonesto7/homebridge-hubitat-tonesto7?style=for-the-badge)
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/tonesto7/homebridge-smartthings/Node-CI/master?style=for-the-badge)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/tonesto7/homebridge-hubitat-tonesto7/Node-CI/master?style=for-the-badge)
 
 [![Donate](https://img.shields.io/badge/donate-paypal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url)
 
 ## About
 <p align="left">
-  <img width="100" height="100" src="https://raw.githubusercontent.com/tonesto7/homebridge-smartthings/master/images/hb_tonesto7.png">
+  <img width="100" height="100" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/hb_tonesto7.png">
 </p>
-V2 of this plugin is a complete rewrite of the homebridge-smartthings-tonesto7 plugin using modern Javascript structure with classes, promises, and arrow functions.
+V2 of this plugin is a complete rewrite of the homebridge-hubitat-tonesto7-tonesto7 plugin using modern Javascript structure with classes, promises, and arrow functions.
 
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/tonesto7/homebridge-smartthings?label=Latest%20SmartApp%20Version&sort=semver&style=for-the-badge)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/tonesto7/homebridge-hubitat-tonesto7?label=Latest%20SmartApp%20Version&sort=semver&style=for-the-badge)
 
 ## Credits
 Big thanks for @Areson for his help/motivation in rewriting this.
@@ -34,15 +34,15 @@ I also wanted to mention the following projects I referenced for inspiration for
 
 ### SmartThing App:
 
-- See [CHANGELOG](https://github.com/tonesto7/homebridge-smartthings/blob/master/CHANGELOG-app.md)
+- See [CHANGELOG](https://github.com/tonesto7/homebridge-hubitat-tonesto7/blob/master/CHANGELOG-app.md)
 
 ### Homebridge Plugin:
 
-- See [CHANGELOG](https://github.com/tonesto7/homebridge-smartthings/blob/master/CHANGELOG.md)
+- See [CHANGELOG](https://github.com/tonesto7/homebridge-hubitat-tonesto7/blob/master/CHANGELOG.md)
 
 #### Direct Updates from SmartThings
  * This method is nearly instant.
- * This option allows the hub to send updates directly to your homebridge-smartthings installation.
+ * This option allows the hub to send updates directly to your homebridge-hubitat-tonesto7 installation.
  * The hub must be able to send an http packet to your device so make sure to allow incoming traffic on the applicable port.
  * The port used for this can be configured by the `direct_port` setting and defaults to `8000`.
  * The program will attempt to determine your IP address automatically, but that can be overridden by `direct_ip` which is useful if you have multiple addresses.
@@ -74,16 +74,15 @@ Installation comes in two parts:
 
 _**Note to new SmartThings users:** You must first enable github integration. (If you use github for work you will probably want to set up a new account as it will request access to your private repos). Only after enabling integration will you see the settings button. Non-US users [can set it up here](https://graph-eu01-euwest1.api.smartthings.com/githubAuth/step1)_.
 
-_**Note to users updating from homebridge-smartthings-tonesto7:** You can continue to use the original Homebridge-SmartThings app if you choose, but to keep it aligned with any changes made to the_ `homebridge-smartthings` _plugin, you should consider migrating the app to point to the_ `homebridge-smartthings` _repository instead of the_ `homebridge-smartthings-tonesto7` _repositories._
 * Log into your SmartThings account at [SmartThings IDE](https://account.smartthings.com/login)
 * Click on **`My SmartApps`**
 * Click on Settings and Add the New repository:
    * Owner: `tonesto7`
-   * Name: `homebridge-smartthings`
+   * Name: `homebridge-hubitat-tonesto7`
    * Branch: `master`
    * Click **`Save`**
 * Click **`Update From Repo`**
-   * Select `homebridge-smartthings`
+   * Select `homebridge-hubitat-tonesto7`
 * You should have `homebridge-v2.groovy` in the New section.
    * Check the Box next to `homebridge-v2.groovy`
    * Check **`Publish`** at the bottom
@@ -123,7 +122,7 @@ _**Note to users updating from homebridge-smartthings-tonesto7:** You can contin
 ***NOTICE:*** I highly recommend installing the plugin [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x) to manage your homebridge instance and configs. This will allow you to use the web based form to configure this plugin.
 
  1. Install homebridge using: `npm i -g homebridge` (For Homebridge Install: [Homebridge Instructions](https://github.com/nfarina/homebridge/blob/master/README.md))
- 2. Install SmartThings plugin using: `npm i -g homebridge-smartthings`
+ 2. Install SmartThings plugin using: `npm i -g homebridge-hubitat-tonesto7`
  3. Update your configuration file. See sample `config.json` snippet below.
 
 ### Config.json Settings Example
@@ -176,7 +175,7 @@ Only needed when you are having issues with the plugin and you want me to be abl
 Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to SmartThings for the hub to send to.
 
  * `direct_port`  _Optional_ | _Default: `8000`_
-This is the port that the `homebridge-smartthings` plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your SmartThings hub IP address to your HomeBridge instance.
+This is the port that the `homebridge-hubitat-tonesto7` plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your SmartThings hub IP address to your HomeBridge instance.
 
  * `temperature_unit`  _Optional_ | _Default: `F`_
 This will allow you to define the temp unit to use.  This can also be set in the SmartApp
@@ -207,7 +206,7 @@ Hides pluglin name prefix `[SmartThings-v2]` from console log output
 Enable log file output and configure options
 
      - `enabled` _Optional_ | _Default: `false`_
-Activates logging to file (homebridge-smartthings.log) stored in the same folder as the homebridge config.json
+Activates logging to file (homebridge-hubitat-tonesto7.log) stored in the same folder as the homebridge config.json
 
      - `level` _Optional_ | _Default: `good`_
 Defines the log entry levels that are written to the file. `good` (recommended) is the default which will write all necessary entries.
@@ -226,7 +225,7 @@ Defines the log entry levels that are written to the file. `good` (recommended) 
 
 ## DONATIONS:
 <p align="left">
-  <img width="200" height="200" src="https://raw.githubusercontent.com/tonesto7/homebridge-smartthings/master/images/donation_qr.png">
+  <img width="200" height="200" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png">
 </p>
 
 [![PayPal Donations](https://img.shields.io/badge/donate-paypal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url)
