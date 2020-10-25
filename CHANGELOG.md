@@ -1,4 +1,8 @@
-## v2.4.0-beta.0
+## v2.4.0-beta.3
+
+- [FIX] Updated constants to help with unknown capabilities
+
+## v2.4.0-beta.1
 
 - [FIX] HSM status and commands fixed
 - [NEW] Added timeouts to Groovy app commands
