@@ -11,21 +11,28 @@
                 "required": true,
                 "readOnly": true
             },
-            "app_url": {
-                "title": "App Url",
-                "description": "To get this information, open Homebridge (Hubitat) App, and tap on 'View Configuration Data for Homebridge'",
+            "app_url_local": {
+                "title": "App Url Local",
+                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Configuration Data for Homebridge'",
                 "type": "string",
                 "required": true
             },
-            "app_id": {
-                "title": "App ID",
-                "description": "To get this information, open Homebridge (Hubitat) App, and tap on 'View Configuration Data for Homebridge'",
+            "app_url_cloud": {
+                "title": "App Url Cloud",
+                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Configuration Data for Homebridge'",
                 "type": "string",
                 "required": true
+            },
+            "use_cloud": {
+                "title": "Use Cloud Endpoint instead of local?",
+                "description": "This will enable the plugin to communicate with the hubitat app via the cloud url.  (Mostly useful for troubleshooting local communication issues via ports)",
+                "type": "boolean",
+                "required": true,
+                "default": false
             },
             "access_token": {
                 "title": "App Token",
-                "description": "To get this information, open Homebridge (Hubitat) App, and tap on 'View Configuration Data for Homebridge'",
+                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Configuration Data for Homebridge'",
                 "type": "string",
                 "required": true
             },
@@ -69,28 +76,28 @@
                 "type": "object",
                 "properties": {
                     "debug": {
-                        "title": "Enable Debug logging?",
+                        "title": "Enable debug logging?",
                         "description": "This will show just about every log output available.",
                         "type": "boolean",
                         "required": false,
                         "default": false
                     },
                     "showChanges": {
-                        "title": "Show Device Events in the Logs?",
+                        "title": "Show device events in the log output?",
                         "description": "This will log device event changes received by Hubitat.",
                         "type": "boolean",
                         "required": false,
                         "default": true
                     },
                     "hideTimestamp": {
-                        "title": "Hide TimeStamp Prefix inLogs?",
+                        "title": "Hide timeStamp prefix in logs?",
                         "description": "This will remove the prefix from all console log output.",
                         "type": "boolean",
                         "required": false,
                         "default": true
                     },
                     "hideNamePrefix": {
-                        "title": "Hide Plugin Name Prefix in Logs?",
+                        "title": "Hide plugin name prefix in logs?",
                         "description": "This will remove the prefix from all console log output.",
                         "type": "boolean",
                         "required": false,

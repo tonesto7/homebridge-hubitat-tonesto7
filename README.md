@@ -19,20 +19,20 @@
 <p align="left">
   <img width="100" height="100" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/hb_tonesto7.png">
 </p>
-V2 of this plugin is a complete rewrite of the homebridge-hubitat-tonesto7-tonesto7 plugin using modern Javascript structure with classes, promises, and arrow functions.
+V2 of this plugin is a complete rewrite of the homebridge-hubitat-tonesto7 plugin using modern Javascript structure with classes, promises, and arrow functions.
 
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/tonesto7/homebridge-hubitat-tonesto7?label=Latest%20SmartApp%20Version&sort=semver&style=for-the-badge)
 
 ## Credits
 Big thanks for @Areson for his help/motivation in rewriting this.
 
-I also wanted to mention the following projects I referenced for inspiration for design and fixes:
+I also wanted to mention the following projects I referenced for inspiration for a few minor items and fixes:
 * [homebridge-wink3](https://github.com/sibartlett/homebridge-wink3)
 * [homebridge-hubconnect-hubitat](https://github.com/danTapps/homebridge-hubitat-hubconnect)
 
 ## Change Log:
 
-### SmartThing App:
+### Hubitat App:
 
 - See [CHANGELOG](https://github.com/tonesto7/homebridge-hubitat-tonesto7/blob/master/CHANGELOG-app.md)
 
@@ -40,25 +40,25 @@ I also wanted to mention the following projects I referenced for inspiration for
 
 - See [CHANGELOG](https://github.com/tonesto7/homebridge-hubitat-tonesto7/blob/master/CHANGELOG.md)
 
-#### Direct Updates from SmartThings
- * This method is nearly instant.
+#### Direct Updates from Hubitat
+ * Device/location events are almost real-time.
  * This option allows the hub to send updates directly to your homebridge-hubitat-tonesto7 installation.
  * The hub must be able to send an http packet to your device so make sure to allow incoming traffic on the applicable port.
  * The port used for this can be configured by the `direct_port` setting and defaults to `8000`.
  * The program will attempt to determine your IP address automatically, but that can be overridden by `direct_ip` which is useful if you have multiple addresses.
- * As a note, the hub isn't actual doing any of the processing so if you lose Internet, updates will stop. I'm told it "doesn't currently" support it, so there is hope.
+ * The plugin and hubitat will continue to function when you lose internet (with the exception of controlling any cloud based devices).
 
 When properly setup, you should see something like this in your Homebridge startup immediately after the PIN:
 ```
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Devices to Remove: (0) []
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Devices to Update: (40)
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Devices to Create: (0) []
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Total Initialization Time: (2 seconds)
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Unknown Capabilities: ["Power Source"]
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] SmartThings DeviceCache Size: (40)
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] WebServer Initiated...
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Sending StartDirect Request to SmartThings | SendToLocalHub: (false)
-[11/25/2019, 4:44:46 PM] [SmartThings-v2] Direct Connect is Listening On 10.0.0.163:8000
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Devices to Remove: (0) []
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Devices to Update: (40)
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Devices to Create: (0) []
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Total Initialization Time: (2 seconds)
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Unknown Capabilities: ["Power Source"]
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] SmartThings DeviceCache Size: (40)
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] WebServer Initiated...
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Sending StartDirect Request to SmartThings | SendToLocalHub: (false)
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Direct Connect is Listening On 10.0.0.163:8000
 ```
 
 # Installation
@@ -68,36 +68,27 @@ Installation comes in two parts:
 ## 1. SmartApp Installation
 
 ### Option 1: Automated Install
-   Install using my [SmartThings Community Installer](http://thingsthataresmart.wiki/index.php?title=Community_Installer_(Free_Marketplace))
+   * Install [Hubitat Package Manager](https://github.com/dcmeglio/hubitat-packagemanager)
+   * Search for Homebridge v2 under the Package Manager
 
-### Option 2: GitHub Integration or Manual Install
+### Option 2: Import from GitHub URL
 
-_**Note to new SmartThings users:** You must first enable github integration. (If you use github for work you will probably want to set up a new account as it will request access to your private repos). Only after enabling integration will you see the settings button. Non-US users [can set it up here](https://graph-eu01-euwest1.api.smartthings.com/githubAuth/step1)_.
-
-* Log into your SmartThings account at [SmartThings IDE](https://account.smartthings.com/login)
-* Click on **`My SmartApps`**
-* Click on Settings and Add the New repository:
-   * Owner: `tonesto7`
-   * Name: `homebridge-hubitat-tonesto7`
-   * Branch: `master`
-   * Click **`Save`**
-* Click **`Update From Repo`**
-   * Select `homebridge-hubitat-tonesto7`
-* You should have `homebridge-v2.groovy` in the New section.
-   * Check the Box next to `homebridge-v2.groovy`
-   * Check **`Publish`** at the bottom
-   * Click **`Execute Update`**
-
-* Click on the `homebridge-v2` app in the list:
-   * Click **`App Settings`**
-   * Scroll down to the OAuth section and click **`Enable OAuth in Smartapp`**
+* Open the Hubitat UI in your web browser
+* Click on **`Apps Code`** in left navigation panel
+* Click **`New App`** on the top right of page
+* Click the **`Import`** button:
+  * Paste in this URL: `https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/apps/homebridge-v2.groovy`
+* Click the **`Import`** button
+   * Click `OK` on the confirmation prompt
+* Click **`Save`** and wait for the spining wheel to disappear and the page refreshes
+* Click on the `OAUTH` button:
+   * Click **`Enable OAuth in Smartapp`**
    * Click **`Update`** at the bottom.
    * (If you are upgrading from a previous version of this project, OAuth will likely already be enabled and you can safely disregard this step)
 
-## 2. SmartApp Configuration
+## 2. Hubitat App Configuration
 
-* In the [SmartThings Classic Mobile App](https://apps.apple.com/app/smartthings-classic/id590800740), go to `Marketplace` and select `SmartApps`.
-* At the bottom of the list, select `My Apps`.
+* In the Hubitat UI, click on `Apps` in the left navigation panel and click `Add User App`.
 * Select `Homebridge v2` from the choices on the list.
 * **Configuring the App:**
 
@@ -122,8 +113,8 @@ _**Note to new SmartThings users:** You must first enable github integration. (I
 ***NOTICE:*** I highly recommend installing the plugin [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x) to manage your homebridge instance and configs. This will allow you to use the web based form to configure this plugin.
 
  1. Install homebridge using: `npm i -g homebridge` (For Homebridge Install: [Homebridge Instructions](https://github.com/nfarina/homebridge/blob/master/README.md))
- 2. Install SmartThings plugin using: `npm i -g homebridge-hubitat-tonesto7`
- 3. Update your configuration file. See sample `config.json` snippet below.
+ 2. Install Hubitat plugin using: `npm i -g homebridge-hubitat-tonesto7`
+ 3. Update your configuration file. See sample `config.json` snippet below or using the Config-Ui-X plugin settings panel.
 
 ### Config.json Settings Example
 
@@ -131,10 +122,13 @@ _**Note to new SmartThings users:** You must first enable github integration. (I
 
 ```json
    {
-      "platform": "SmartThings-v2",
-      "name": "SmartThings-v2",
-      "app_url": "https://graph.api.smartthings.com:443/api/smartapps/installations/",
-      "app_id": "ffc2dd6e-6fa5-48a9-b274-35c4185ed9ac",
+      "platform": "Hubitat-v2",
+      "name": "Hubitat-v2",
+      "app_url_local": "http://10.0.0.40/apps/api/",
+      "app_url_cloud": "https://cloud.hubitat.com/api/561d981e-f986-4f7f-941d-5d43d1d0e0e1/apps/",
+      "app_id": 436,
+      "app_platform": "Hubitat",
+      "use_cloud": true,
       "access_token": "1888d2bc-7792-1114-9f32-e4724e388a26",
       "communityUserName": "tonesto7",
       "direct_ip": "10.0.0.15",
@@ -164,9 +158,12 @@ _**Note to new SmartThings users:** You must first enable github integration. (I
  * `platform` & `name`  _Required_
 This information is used by homebridge to identify the plugin and should be the settings above.
 
- * `app_url` & `app_id` & `access_token`  _Required_
-To get this information, open the SmartThings HomebridgeV2 SmartApp in your SmartThings Classic Mobile App, and tap on `View Configuration Data for Homebridge`
-**Notice:** The app_url in the example will be different for you.
+ * `app_url_local` & `app_url_cloud` & `app_id` & `access_token`  _Required_
+To get this information, open the installed Hubitat Homebridge V2 App the Hubitat Web UI, and tap on `View Configuration Data for Homebridge`
+**Notice:** The app_url's in the example will be different for you.
+
+ * `use_cloud` _Required_ | _Default: `false`_
+This will enable the plugin to communicate with the hubitat app via the cloud url.  (Mostly useful for troubleshooting local communication issues via ports)
 
  * `communityUserName`  _Optional_ | _Default:_ ''
 Only needed when you are having issues with the plugin and you want me to be able to identify your reported exception errors.
@@ -200,7 +197,7 @@ Logs device event changes received from SmartThings.
 Hides timestamp prefix from console log output.
 
    - `hideNamePrefix` _Optional_ | _Default: `false`_
-Hides pluglin name prefix `[SmartThings-v2]` from console log output
+Hides pluglin name prefix `[Hubitat-v2]` from console log output
 
    - `file` _Optional_
 Enable log file output and configure options
@@ -213,15 +210,12 @@ Defines the log entry levels that are written to the file. `good` (recommended) 
 
 ## Frequently Asked Question:
 
- ***Q:*** Can this support Samsung Washers, Dryers, Window AC, Robot Vacuum's?
-***A:*** Not in the way you hoped. There are no characteristics in Homekit to allow it beyond simple On/Off Switches.
-
  ***Q:*** Can this support Axis Blinds?
 ***A:*** Maybe, it can support any device that has the windowShade capability and/or level attributes.
 
 ## Known Issues:
 
-* When you change capability filters on a device already created under homekit it will not remove the old capabilities from the device (I'm working on this).
+* None reported yet...
 
 ## DONATIONS:
 <p align="left">
