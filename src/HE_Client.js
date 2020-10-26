@@ -142,7 +142,7 @@ module.exports = class ST_Client {
                     .then((response) => {
                         // console.log('command response:', response.data);
                         this.log.debug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
-                        that.localHubErr(false);
+                        // that.localHubErr(false);
                         resolve(true);
                     })
                     .catch((err) => {
@@ -219,7 +219,7 @@ module.exports = class ST_Client {
                         if (response.data) {
                             this.log.debug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
                             resolve(response.data);
-                            that.localHubErr(false);
+                            // that.localHubErr(false);
                         } else {
                             resolve(null);
                         }
