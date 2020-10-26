@@ -1,11 +1,11 @@
 /**
- *  Homebridge SmartThing Interface
- *  Loosely Modelled off of Paul Lovelace's JSON API
+ *  Homebridge Hubitat Interface
+ *  Originally Modelled off of Paul Lovelace's JSON API
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
 String appVersion()                     { return "2.4.0" }
-String appModified()                    { return "10-24-2020" }
+String appModified()                    { return "10-26-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
@@ -34,7 +34,6 @@ definition(
 preferences {
     page(name: "startPage")
     page(name: "mainPage")
-    page(name: "defineDevicesPage")
     page(name: "deviceSelectPage")
     page(name: "changeLogPage")
     page(name: "capFilterPage")
@@ -89,11 +88,10 @@ def mainPage() {
     Boolean isInst = (state?.isInstalled == true)
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall: true) {
         appInfoSect()
-        section(sTS("Define Specific Categories:")) {
-            paragraph pTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit.\nNOTICE: Don't select the same devices used here in the Select Your Devices Input below.", null, false, "#2784D9"), state: "complete"
-            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList)
+        section(sTS("Device Configuration:", null, true)) {
+            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
-            String desc = "Tap to configure"
+            String desc = "Tap to select devices..."
             if(conf) {
                 desc = ""
                 desc += lightList ? "(${lightList?.size()}) Light Devices\n" : ""
@@ -104,27 +102,19 @@ def mainPage() {
                 desc += garageList ? "(${garageList?.size()}) Garage Door Devices\n" : ""
                 desc += tstatList ? "(${tstatList?.size()}) Tstat Devices\n" : ""
                 desc += tstatHeatList ? "(${tstatHeatList?.size()}) Tstat Heat Devices\n" : ""
-                desc += "\nTap to modify..."
-            }
-            href "defineDevicesPage", title: inTS("Define Device Types", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : null), description: desc
-        }
-
-        section(sTS("All Other Devices:")) {
-            Boolean conf = (sensorList || switchList || deviceList)
-            String desc = "Tap to configure"
-            if(conf) {
-                desc = ""
                 desc += sensorList ? "(${sensorList?.size()}) Sensor Devices\n" : ""
                 desc += switchList ? "(${switchList?.size()}) Switch Devices\n" : ""
                 desc += deviceList ? "(${deviceList?.size()}) Other Devices\n" : ""
+                desc += modeList ? "(${modeList?.size()}) Mode Devices\n" : ""
+                desc += routineList ? "(${routineList?.size()}) Routine Devices\n" : ""
                 desc += "\nTap to modify..."
             }
-            href "deviceSelectPage", title: inTS("Select your Devices", getAppImg("devices", true)), required: false, image: getAppImg("devices"), state: (conf ? "complete" : null), description: desc
+            href "deviceSelectPage", title: inTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : null), description: desc
         }
 
         inputDupeValidation()
 
-        section(sTS("Capability Filtering:")) {
+        section(sTS("Capability Filtering:", null, true)) {
             Boolean conf = (
                 removeAcceleration || removeBattery || removeButton || removeContact || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
                 removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve
@@ -132,49 +122,38 @@ def mainPage() {
             href "capFilterPage", title: inTS("Filter out capabilities from your devices", getAppImg("filter", true)), required: false, image: getAppImg("filter"), state: (conf ? "complete" : null), description: (conf ? "Tap to modify..." : "Tap to configure")
         }
 
-        section(sTS("Virtual Devices:")) {
-            Boolean conf = (modeList || routineList)
-            String desc = "Create virtual (mode, routine) devices\n\nTap to Configure..."
-            if(conf) {
-                desc = ""
-                desc += modeList ? "(${modeList?.size()}) Mode Devices\n" : ""
-                desc += routineList ? "(${routineList?.size()}) Routine Devices\n" : ""
-                desc += "\nTap to modify..."
-            }
-            href "virtDevicePage", title: inTS("Configure Virtual Devices", getAppImg("devices", true)), required: false, image: getAppImg("devices"), state: (conf ? "complete" : null), description: desc
-        }
-
-        section(sTS(isST() ? "SmartThings Home Monitor (SHM):" : "Hubitat Safety Monitor (HSM):")) {
-            // paragraph title: pTS("NOTICE:"), "This will not work with the New SmartThings Home Monitor (Under the new mobile app).  If you are using the new STHM please disable the setting below."
-            input "addSecurityDevice", "bool", title: inTS("Allow ${isST() ? "SHM" : "HSM"} Control in HomeKit?", getAppImg("alarm_home", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("alarm_home")
-        }
-        section(sTS("Plugin Options & Review:")) {
-            // paragraph "Turn off if you are having issues sending commands"
-            // input "sendCmdViaHubaction", "bool", title: inTS("Send HomeKit Commands Locally?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("command")
+        section(sTS("Plugin Options:", null, true)) {
+            input "addSecurityDevice", "bool", title: inTS("Allow $getAlarmSystemName() Control in HomeKit?", getAppImg("alarm_home", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("alarm_home")
             input "use_cloud_endpoint", "bool", title: inTS("Use Cloud Endpoint instead of local??", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("command")
             input "temp_unit", "enum", title: inTS("Temperature Unit?", getAppImg("command", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true, image: getAppImg("command")
+            
+        }
+        section(sTS("Plugin Config Generator:", null, true)) {
+            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: inTS("Generate platform config for homebridge", getAppImg("info", true)), description: "Tap to view...", state: "complete", image: getAppImg("info")
             Integer devCnt = getDeviceCnt()
-            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: inTS("Render the platform data for Homebridge config.json", getAppImg("info", true)), description: "Tap, select, copy, then click \"Done\"", state: "complete", image: getAppImg("info")
             if(devCnt > 148) {
-                paragraph pTS("Notice:\nHomebridge Allows for 149 Devices per Bridge!!!", getAppImg("error", true), true, "red"), image: getAppImg("error"), state: null, required: true
+                paragraph pTS("Notice:\nHomebridge Allows for 149 Devices per HomeKit Bridge!!!", getAppImg("error", true), true, "red"), image: getAppImg("error"), state: null, required: true
             }
             paragraph pTS("Devices Selected: (${devCnt})", getAppImg("info", true), false, "#2784D9"), image: getAppImg("info"), state: "complete"
         }
-        section(sTS("History and Device Data:")) {
-            href "historyPage", title: inTS("Command and Event History", getAppImg("backup", true)), image: getAppImg("backup")
-            href "deviceDebugPage", title: inTS("Device Data Viewer", getAppImg("debug", true)), image: getAppImg("debug")
+
+        section(sTS("History and Device Data:", null, true)) {
+            href "historyPage", title: inTS("View Command and Event History", getAppImg("backup", true)), image: getAppImg("backup")
+            href "deviceDebugPage", title: inTS("View Device Data", getAppImg("debug", true)), image: getAppImg("debug")
         }
-        section(sTS("App Preferences:")) {
+
+        section(sTS("App Preferences:", null, true)) {
             def sDesc = getSetDesc()
             href "settingsPage", title: inTS("App Settings", getAppImg("settings", true)), description: sDesc, state: (sDesc?.endsWith("modify...") ? "complete" : null), required: false, image: getAppImg("settings")
             label title: inTS("App Label (optional)", getAppImg("name_tag", true)), description: "Rename this App", defaultValue: app?.name, required: false, image: getAppImg("name_tag")
         }
+
         if(devMode()) {
-            section(sTS("Dev Mode Options")) {
+            section(sTS("Dev Mode Options", null, true)) {
                 input "sendViaNgrok", "bool", title: inTS("Communicate with Plugin via Ngrok Http?", getAppImg("command", true)), defaultValue: false, submitOnChange: true, image: getAppImg("command")
                 if(sendViaNgrok) { input "ngrokHttpUrl", "text", title: inTS("Enter the ngrok code from the url"), required: true, submitOnChange: true }
             }
-            section(sTS("Other Settings:")) {
+            section(sTS("Other Settings:", null, true)) {
                 input "restartService", "bool", title: inTS("Restart Homebridge plugin when you press Save?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("reset")
             }
         }
@@ -201,9 +180,9 @@ def deviceValidationErrors() {
     return reqs
 }
 
-def defineDevicesPage() {
-    return dynamicPage(name: "defineDevicesPage", title: "", install: false, uninstall: false) {
-        section(sTS("Define Specific Categories:")) {
+def deviceSelectPage() {
+    return dynamicPage(name: "deviceSelectPage", title: "", install: false, uninstall: false) {
+        section(sTS("Define Specific Categories:", null, true)) {
             paragraph pTS("NOTE: Please do not select a device here and then again in another input below.")
             paragraph pTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", null, false, "#2784D9"), state: "complete"
             input "lightList", "capability.switch", title: inTS("Lights: (${lightList ? lightList?.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("light_on")
@@ -212,37 +191,41 @@ def defineDevicesPage() {
             input "speakerList", "capability.switch", title: inTS("Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("media_player")
             input "shadesList", "capability.windowShade", title: inTS("Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("window_shade")
         }
-        section(sTS("Fans")) {
+
+        section(sTS("Fans:", null, true)) {
             input "fanList", "capability.switch", title: inTS("Fans: (${fanList ? fanList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("fan_on")
             input "fan3SpdList", "capability.switch", title: inTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("fan_on")
             input "fan4SpdList", "capability.switch", title: inTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("fan_on")
         }
-        section(sTS("Thermostats")) {
+
+        section(sTS("Thermostats:", null, true)) {
             input "tstatList", "capability.thermostat", title: inTS("Thermostats: (${tstatList ? tstatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("thermostat")
             input "tstatHeatList", "capability.thermostat", title: inTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("thermostat")
         }
-    }
-}
 
-def deviceSelectPage() {
-    return dynamicPage(name: "deviceSelectPage", title: "", install: false, uninstall: false) {
-        section(sTS("All Other Devices:")) {
+        section(sTS("All Other Devices:", null, true)) {
             input "sensorList", "capability.sensor", title: inTS("Sensors: (${sensorList ? sensorList?.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("sensors")
             input "switchList", "capability.switch", title: inTS("Switches: (${switchList ? switchList?.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("switch")
             input "deviceList", "capability.refresh", title: inTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("devices2")
         }
+
+        section(sTS("Virtual Devices:", null, true)) {
+            href "virtDevicePage", title: inTS("Configure Virtual Mode Devices", getAppImg("devices", true)), required: false, image: getAppImg("devices"), state: (conf ? "complete" : null), description: desc
+        }
+
+        inputDupeValidation()
     }
 }
 
 def settingsPage() {
     return dynamicPage(name: "settingsPage", title: "", install: false, uninstall: false) {
-        section(sTS("Logging:")) {
-            input "showEventLogs", "bool", title: inTS("Show Events in Live Logs?", getAppImg("light_on", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("debug")
-            input "showDebugLogs", "bool", title: inTS("Debug Logging?", getAppImg("light_on", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("debug")
+        section(sTS("Logging:", null, true)) {
+            input "showEventLogs", "bool", title: inTS("Show Device/Location Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("debug")
+            input "showDebugLogs", "bool", title: inTS("Show Detailed Logging?", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("debug")
         }
-        section(sTS("Reset Token:")) {
-            paragraph title: pTS("What This?"), "This will allow you to clear you existing and auth_token and force a new one to be created"
-            input "resetAppToken", "bool", title: inTS("Revoke and Recreate Access Token?", getAppImg("reset", true)), defaultValue: false, submitOnChange: true, image: getAppImg("reset")
+        section(sTS("Security:", null, true)) {
+            paragraph pTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", null, false)
+            input "resetAppToken", "bool", title: inTS("Revoke and Recreate App Access Token?", getAppImg("reset", true)), defaultValue: false, submitOnChange: true, image: getAppImg("reset")
             if(settings?.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
         }
     }
@@ -336,29 +319,29 @@ def historyPage() {
     return dynamicPage(name: "historyPage", title: "", install: false, uninstall: false) {
         List cHist = getCmdHistory()?.sort {it?.dt}?.reverse()
         List eHist = getEvtHistory()?.sort {it?.dt}?.reverse()
-        section(sTS("Last (${cHist?.size()}) Commands:")) {
+        section(sTS("Last (${cHist?.size()}) Commands Received From HomeKit:", null, true)) {
             if(cHist?.size()) {
-                cHist?.each { c-> paragraph title: pTS(c?.dt), pTS("Device: ${c?.data?.device}\nCommand: (${c?.data?.cmd})${c?.data?.value1 ? "\nValue1: (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\nValue2: (${c?.data?.value2})" : ""}", null, false, "#2784D9"), state: "complete" }
-            } else {paragraph pTS("No Command History Found...", null, false) }
+                cHist?.each { c-> paragraph pTS(" \u2022 <b>Device</b>: ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
+            } else { paragraph pTS("No Command History Found...", null, false) }
         }
-        section(sTS("Last (${eHist?.size()}) Events:")) {
+        section(sTS("Last (${eHist?.size()}) Events Sent to HomeKit:", null, true)) {
             if(eHist?.size()) {
-                eHist?.each { h-> paragraph title: pTS(h?.dt), pTS("Device: ${h?.data?.device}\nEvent: (${h?.data?.name})${h?.data?.value ? "\nValue: (${h?.data?.value})" : ""}", null, false, "#2784D9"), state: "complete" }
+                eHist?.each { h-> paragraph title: pTS(h?.dt), pTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}", null, false, "#2784D9"), state: "complete" }
             } else {paragraph pTS("No Event History Found...", null, false) }
         }
     }
 }
 
 def capFilterPage() {
-    return dynamicPage(name: "capFilterPage", title: "Filter out capabilities", install: false, uninstall: false) {
-        section(sTS("Restrict Temp Device Creation")) {
-            input "noTemp", "bool", title: inTS("Remove Temp from All Contacts and Water Sensors?"), required: false, defaultValue: false, submitOnChange: true
+    return dynamicPage(name: "capFilterPage", title: "Capability Filtering", install: false, uninstall: false) {
+        section(sTS("Restrict Temp Device Creation", null, true)) {
+            input "noTemp", "bool", title: inTS("Remove Temperature from All Contacts and Water Sensors?", getAppImg("temperature", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("temperature")
             if(settings?.noTemp) {
-                input "sensorAllowTemp", "capability.sensor", title: inTS("Allow Temp on these Sensors", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("temperature")
+                input "sensorAllowTemp", "capability.sensor", title: inTS("Allow Temps on these sensors", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("temperature")
             }
         }
-        section(sTS("Remove Capabilities from Devices")) {
-            paragraph pTS("This will allow you to filter out certain capabilities from creating unwanted devices under HomeKit")
+        section(sTS("Remove Capabilities from Devices", null, true)) {
+            paragraph pTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", null, false, "#2874D9")
             input "removeAcceleration", "capability.accelerationSensor", title: inTS("Remove Acceleration from these Devices", getAppImg("acceleration", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("acceleration")
             input "removeBattery", "capability.battery", title: inTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("battery")
             input "removeButton", "capability.button", title: inTS("Remove Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("button")
@@ -376,8 +359,8 @@ def capFilterPage() {
             input "removeTemp", "capability.temperatureMeasurement", title: inTS("Remove Temperature from these Devices", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("temperature")
             input "removeValve", "capability.valve", title: inTS("Remove Valve from these Devices", getAppImg("valve", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("valve")
         }
-        section("Filter Reset:", hideable: true, hidden: true) {
-            input "resetCapFilters", "bool", title: inTS("Clear All Selected Removal Filters?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("reset")
+        section(sTS("Reset Selected Filters:", null, true), hideable: true, hidden: true) {
+            input "resetCapFilters", "bool", title: inTS("Clear All Selected Filters?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("reset")
             if(settings?.resetCapFilters) { settingUpdate("resetCapFilters", "false", "bool"); resetCapFilters() }
         }
     }
@@ -385,13 +368,13 @@ def capFilterPage() {
 
 def virtDevicePage() {
     return dynamicPage(name: "virtDevicePage", title: "", install: false, uninstall: false) {
-        section(sTS("Create Devices for Modes in HomeKit?")) {
+        section(sTS("Create Devices for Modes in HomeKit?", null, true)) {
             paragraph title: pTS("What are these for?"), "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete", image: getAppImg("info")
             def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
             input "modeList", "enum", title: inTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true, image: getAppImg("mode")
         }
         if(isST()) {
-            section(sTS("Create Devices for Routines in HomeKit?")) {
+            section(sTS("Create Devices for Routines in HomeKit?", null, true)) {
                 paragraph title: pTS("What are these?", getAppImg("info"), true, "#2784D9"), "A virtual device will be created for each routine in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete", image: getAppImg("info")
                 def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
                 input "routineList", "enum", title: inTS("Create Devices for these Routines", getAppImg("routine", true)), required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine")
@@ -428,7 +411,7 @@ def confirmPage() {
 
 def deviceDebugPage() {
     return dynamicPage(name: "deviceDebugPage", title: "", install: false, uninstall: false) {
-        section(sTS("All Other Devices:")) {
+        section(sTS("All Other Devices:", null, true)) {
             paragraph pTS("Have a device that's not working under homekit like you want?\nSelect a device from one of the inputs below and it will show you all data about the device.", getAppImg("info", true), "#2784D9"), state: "complete", image: getAppImg("info")
             if(!debug_switch && !debug_other && !debug_garage && !debug_tstat)
                 input "debug_sensor", "capability.sensor", title:  inTS("Sensors: ", getAppImg("sensors", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("sensors")
@@ -555,7 +538,7 @@ private subscribeToEvts() {
         if(state?.lastMode == null) { state?.lastMode = location?.mode?.toString() }
     }
     state?.subscriptionRenewed = 0
-    if(settings?.sendCmdViaHubaction != false) { subscribe(location, null, lanEventHandler, [filterEvents:false]) }
+    // if(settings?.sendCmdViaHubaction != false) { subscribe(location, null, lanEventHandler, [filterEvents:false]) }
     if(settings?.routineList) {
         logDebug("Registering (${settings?.routineList?.size() ?: 0}) Virtual Routine Devices")
         subscribe(location, "routineExecuted", changeHandler)
@@ -762,7 +745,8 @@ String getAlarmSystemStatus(retInt=false) {
     if(isST()) {
         def cur = location?.currentState("alarmSystemStatus")?.value
         return cur ?: "disarmed"
-    } else { return location?.hsmStatus ?: "disarmed" }
+    } 
+    return location?.hsmStatus ?: "disarmed"
 }
 
 public setAlarmSystemMode(mode) {
@@ -830,7 +814,7 @@ def renderLocation() {
         temperature_scale: settings?.temp_unit ?: location?.temperatureScale,
         zip_code: location?.zipCode,
         hubIP: location?.hubs[0]?.localIP,
-        local_commands: false, //(settings?.sendCmdViaHubaction != false),
+        use_cloud: (settings?.use_cloud_endpoint == true),
         app_version: appVersion()
     ]
 }
@@ -1442,7 +1426,7 @@ private updateServicePrefs(isLocal=false) {
     sendHttpPost("updateprefs", [
         app_id: app?.getId(),
         access_token: atomicState?.accessToken,
-        local_commands: false, //(settings?.sendCmdViaHubaction != false),
+        use_cloud: (settings?.use_cloud_endpoint == true),
         local_hub_ip: location?.hubs[0]?.localIP
     ])
 }
@@ -1523,7 +1507,7 @@ def appInfoSect() {
         APP HELPER FUNCTIONS
 ***********************************************/
 String getPublicImg(String imgName, frc=false) { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png" : "" }
-String sTS(String t, String i = null) { return isST() ? t : """<h3>${i ? """<img src="${i}" width="42"> """ : ""} ${t?.replaceAll("\\n", "<br>")}</h3>""" }
+String sTS(String t, String i = null, bold=false) { return isST() ? t : """<h3>${i ? """<img src="${i}" width="42"> """ : ""} ${bold ? "<b>" : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}</h3>""" }
 String pTS(String t, String i = null, bold=true, color=null) { return isST() ? t : "${color ? """<div style="color: $color;">""" : ""}${bold ? "<b>" : ""}${i ? """<img src="${i}" width="42"> """ : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}${color ? "</div>" : ""}" }
 String inTS(String t, String i = null, color=null, under=true) { return isST() ? t : """${color ? """<div style="color: $color;">""" : ""}${i ? """<img src="${i}" width="42"> """ : ""} ${under ? "<u>" : ""}${t?.replaceAll("\\n", " ")}${under ? "</u>" : ""}${color ? "</div>" : ""}""" }
 String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} \u2022 ${strVal}" }
@@ -1750,31 +1734,11 @@ private getPlatform() {
     return state?.hubPlatform
 }
 
-private logDebug(msg) { if(showDebugLogs) { logToServer(msg, "debug"); log.debug "Homebridge (v${appVersion()}) | ${msg}"; } }
-private logInfo(msg) { logToServer(msg, "info"); log.info " Homebridge (v${appVersion()}) | ${msg}"; }
-private logTrace(msg) { logToServer(msg, "trace"); log.trace "Homebridge (v${appVersion()}) | ${msg}"; }
-private logWarn(msg) { logToServer(msg, "warn"); log.warn " Homebridge (v${appVersion()}) | ${msg}"; }
-private logError(msg) { logToServer(msg, "error"); log.error "Homebridge (v${appVersion()}) | ${msg}"; }
-
-public String getLogServerAddr() { return appSettings?.log_address ?: null }
-public logToServer(msg, lvl) {
-    String addr = parent ? parent?.getLogServerAddr() : getLogServerAddr()
-    if(addr) {
-        Map params = [
-            method: "POST",
-            path: "/gelf",
-            headers: [
-                HOST: addr,
-                'Content-Type': "application/json"
-            ],
-            body: [short_message: msg, logLevel: lvl, host: "SmartThings (HomebridgeV2)"]
-        ]
-        params?.body?.appVersion = appVersion(); params?.body?.appName = app?.getName(); params?.body?.appLabel = app?.getLabel();
-        // params?.body?.devVersion = devVersion(); params?.body?.deviceHandler = device?.getName(); params?.body?.deviceName = device?.displayName;
-        def result = new hubitat.device.HubAction(params)
-        sendHubCommand(result)
-    }
-}
+private logDebug(msg) { if(showDebugLogs) { log.debug "Homebridge (v${appVersion()}) | ${msg}"; } }
+private logInfo(msg) { log.info " Homebridge (v${appVersion()}) | ${msg}"; }
+private logTrace(msg) { log.trace "Homebridge (v${appVersion()}) | ${msg}"; }
+private logWarn(msg) { log.warn " Homebridge (v${appVersion()}) | ${msg}"; }
+private logError(msg) { log.error "Homebridge (v${appVersion()}) | ${msg}"; }
 
 List getCmdHistory() { return atomicState?.cmdHistory ?: [] }
 List getEvtHistory() { return atomicState?.evtHistory ?: [] }
@@ -1783,5 +1747,5 @@ void clearHistory() {
     atomicState?.evtHistory = []
 }
 
-private logEvt(evtData) { addToHistory("evtHistory", evtData, 15) }
-private logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 15) }
+private logEvt(evtData) { addToHistory("evtHistory", evtData, 25) }
+private logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 25) }

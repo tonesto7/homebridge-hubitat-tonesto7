@@ -1,18 +1,13 @@
 const { platformName, platformDesc, pluginVersion } = require("./libs/Constants"),
-    axios = require("axios").default,
-    url = require("url");
-// WSServer = require('ws').Server,
-// WebSocket = require('ws'),
-// server = require('http').createServer(),
-// AU = require('ansi_up'),
-// ansi_up = new AU.default;
+    axios = require("axios").default;
+// url = require("url");
 
 module.exports = class ST_Client {
     constructor(platform) {
         this.platform = platform;
         this.log = platform.log;
         this.appEvts = platform.appEvts;
-        this.useLocal = false; //platform.local_commands;
+        this.use_cloud = platform.use_cloud;
         this.hubIp = platform.local_hub_ip;
         this.configItems = platform.getConfigItems();
         // let appURL = url.parse(this.configItems.app_url);
@@ -37,45 +32,43 @@ module.exports = class ST_Client {
     }
 
     sendAsLocalCmd() {
-        return this.useLocal === true && this.hubIp !== undefined;
+        return this.use_cloud === false && this.hubIp !== undefined;
     }
 
-    localHubErr(hasErr) {
-        if (hasErr) {
-            if (this.useLocal && !this.localDisabled) {
-                this.log.error(`Unable to reach your SmartThing Hub Locally... You will not receive device events!!!`);
-                this.useLocal = false;
-                this.localDisabled = true;
-            }
-        } else {
-            if (this.localDisabled) {
-                this.useLocal = true;
-                this.localDisabled = false;
-                this.log.good(`Now able to reach local Hub... Restoring Local Commands!!!`);
-                this.sendStartDirect();
-            }
-        }
-    }
+    // localHubErr(hasErr) {
+    //     if (hasErr) {
+    //         if (this.use_cloud && !this.localDisabled) {
+    //             this.log.error(`Unable to reach your Hubitat Hub Locally... You will not receive device events!!!`);
+    //             this.use_cloud = false;
+    //             this.localDisabled = true;
+    //         }
+    //     } else {
+    //         if (this.localDisabled) {
+    //             this.useLocal = true;
+    //             this.localDisabled = false;
+    //             this.log.good(`Now able to reach local Hub... Restoring Local Commands!!!`);
+    //             this.sendStartDirect();
+    //         }
+    //     }
+    // }
 
-    updateGlobals(hubIp, useLocal = false) {
-        this.log.notice(`Updating Global Values | HubIP: ${hubIp} | UseLocal: ${useLocal}`);
+    updateGlobals(hubIp, use_cloud = false) {
+        this.log.notice(`Updating Global Values | HubIP: ${hubIp} | UseCloud: ${use_cloud}`);
         this.hubIp = hubIp;
-        this.useLocal = false; //(useLocal === true);
+        this.use_cloud = use_cloud === true;
     }
 
     handleError(src, err, allowLocal = false) {
         switch (err.status) {
             case 401:
-                this.log.error(`${src} Error | SmartThings Token Error: ${err.response} | Message: ${err.message}`);
+                this.log.error(`${src} Error | Hubitat Token Error: ${err.response} | Message: ${err.message}`);
                 break;
             case 403:
-                this.log.error(`${src} Error | SmartThings Authentication Error: ${err.response} | Message: ${err.message}`);
+                this.log.error(`${src} Error | Hubitat Authentication Error: ${err.response} | Message: ${err.message}`);
                 break;
             default:
                 if (err.message.startsWith("getaddrinfo EAI_AGAIN")) {
                     this.log.error(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
-                } else if (allowLocal && err.message.startsWith("Error: connect ETIMEDOUT ")) {
-                    this.localHubErr(true);
                 } else {
                     // console.error(err);
                     this.log.error(`${src} Error: ${err.response} | Message: ${err.message}`);
@@ -130,7 +123,6 @@ module.exports = class ST_Client {
     sendDeviceCommand(devData, cmd, vals) {
         return new Promise((resolve) => {
             let that = this;
-            let sendLocal = this.sendAsLocalCmd();
             let config = {
                 method: "post",
                 url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/${devData.deviceid}/command/${cmd}`,
@@ -144,20 +136,8 @@ module.exports = class ST_Client {
                 data: vals,
                 timeout: 5000,
             };
-            // if (sendLocal) {
-            //     config.url = `http://${this.hubIp}:39500/event`;
-            //     delete config.params;
-            //     config.data = {
-            //         deviceid: devData.deviceid,
-            //         command: cmd,
-            //         values: vals,
-            //         evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
-            //         evttype: "hkCommand",
-            //     };
-            // }
-
             try {
-                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | SendToLocalHub: (${sendLocal})`);
+                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | SendingViaCloud: (${that.configItems.use_cloud})`);
                 axios(config)
                     .then((response) => {
                         // console.log('command response:', response.data);
@@ -212,7 +192,6 @@ module.exports = class ST_Client {
     sendStartDirect() {
         let that = this;
         return new Promise((resolve) => {
-            let sendLocal = this.sendAsLocalCmd();
             let config = {
                 method: "post",
                 url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/startDirect/${this.configItems.direct_ip}/${this.configItems.direct_port}/${pluginVersion}`,
@@ -232,11 +211,7 @@ module.exports = class ST_Client {
                 },
                 timeout: 10000,
             };
-            if (sendLocal) {
-                config.url = `http://${this.hubIp}:39500/event`;
-                delete config.params;
-            }
-            that.log.info(`Sending StartDirect Request to ${platformDesc} | SendToLocalHub: (${sendLocal})`);
+            that.log.info(`Sending StartDirect Request to ${platformDesc} | SendingViaCloud: (${that.configItems.use_cloud})`);
             try {
                 axios(config)
                     .then((response) => {
@@ -258,19 +233,4 @@ module.exports = class ST_Client {
             }
         });
     }
-
-    // webSocketInit() {
-    //     // Create web socket server on top of a regular http server
-    //     this.wssLogSocket = new WSServer({ noServer: true });
-    //     this.wssEventSocket = new WSServer({ noServer: true });
-
-    //     let parsed = URL.parse(platform.app_url)
-    //     let url = '';
-    //     if (parsed.port !== null && parsed.port !== undefined)
-    //         url = `ws://${parsed.hostname}:${parsed.port}/eventsocket`;
-    //     else
-    //         url = `ws://${parsed.hostname}/eventsocket`;
-    //     let ws = new WebSocket(url, { perMessageDeflate: false });
-    //     this.platform.log('attempt connection to ' + url);
-    // }
 };

@@ -25,7 +25,7 @@ module.exports = class Transforms {
     transformAttributeState(attr, val, charName) {
         switch (attr) {
             case "switch":
-                return (val === 'on');
+                return val === "on";
             case "door":
                 switch (val) {
                     case "open":
@@ -99,41 +99,41 @@ module.exports = class Transforms {
                 }
                 return validValues;
             case "fanState":
-                return (val === "off") ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR;
+                return val === "off" ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR;
             case "valve":
-                return (val === "open") ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
+                return val === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
             case "mute":
-                return (val === 'muted');
+                return val === "muted";
             case "smoke":
-                return (val === "clear") ? Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : Characteristic.SmokeDetected.SMOKE_DETECTED;
+                return val === "clear" ? Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : Characteristic.SmokeDetected.SMOKE_DETECTED;
             case "carbonMonoxide":
-                return (val === "clear") ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+                return val === "clear" ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
             case "carbonDioxideMeasurement":
                 switch (charName) {
                     case "Carbon Dioxide Detected":
-                        return (val < 2000) ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+                        return val < 2000 ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
                     default:
                         return parseInt(val);
                 }
             case "tamper":
-                return (val === "detected") ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED;
+                return val === "detected" ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED;
             case "acceleration":
             case "motion":
-                return (val === "active");
+                return val === "active";
             case "water":
-                return (val === "dry") ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
+                return val === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
             case "contact":
-                return (val === "closed") ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+                return val === "closed" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
             case "presence":
-                return (val === "present");
+                return val === "present";
             case "battery":
                 if (charName === "Status Low Battery") {
-                    return (val < 20) ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+                    return val < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
                 } else {
                     return Math.round(val);
                 }
             case "batteryStatus":
-                return (val === "USB Cable") ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGING;
+                return val === "USB Cable" ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGING;
             case "hue":
                 return Math.round(val * 3.6);
             case "colorTemperature":
@@ -184,15 +184,15 @@ module.exports = class Transforms {
                 }
             case "thermostatFanMode":
                 if (val === Characteristic.TargetFanState.MANUAL) {
-                    return 'on';
+                    return "on";
                 } else {
-                    return 'auto';
+                    return "auto";
                 }
 
             case "windowShade":
-                if (val === 'opening') {
+                if (val === "opening") {
                     return Characteristic.PositionState.INCREASING;
-                } else if (val === 'closing') {
+                } else if (val === "closing") {
                     return Characteristic.PositionState.DECREASING;
                 } else {
                     return Characteristic.PositionState.STOPPED;
@@ -207,9 +207,9 @@ module.exports = class Transforms {
     transformCommandName(attr, val) {
         switch (attr) {
             case "valve":
-                return (val === 1 || val === true) ? "open" : "close";
+                return val === 1 || val === true ? "open" : "close";
             case "switch":
-                return (val === 1 || val === true) ? "on" : "off";
+                return val === 1 || val === true ? "on" : "off";
             case "door":
                 if (val === Characteristic.TargetDoorState.OPEN || val === 0) {
                     return "open";
@@ -218,9 +218,9 @@ module.exports = class Transforms {
                 }
 
             case "lock":
-                return (val === 1 || val === true) ? "lock" : "unlock";
+                return val === 1 || val === true ? "lock" : "unlock";
             case "mute":
-                return (val === "muted") ? "mute" : "unmute";
+                return val === "muted" ? "mute" : "unmute";
             case "fanSpeed":
             case "level":
             case "volume":
@@ -244,24 +244,24 @@ module.exports = class Transforms {
     transformCommandValue(attr, val) {
         switch (attr) {
             case "valve":
-                return (val === 1 || val === true) ? "open" : "close";
+                return val === 1 || val === true ? "open" : "close";
             case "switch":
-                return (val === 1 || val === true) ? "on" : "off";
+                return val === 1 || val === true ? "on" : "off";
             case "lock":
-                return (val === 1 || val === true) ? "lock" : "unlock";
+                return val === 1 || val === true ? "lock" : "unlock";
             case "door":
                 if (val === Characteristic.TargetDoorState.OPEN || val === 0) {
                     return "open";
                 } else if (val === Characteristic.TargetDoorState.CLOSED || val === 1) {
                     return "close";
                 }
-                return 'closing';
+                return "closing";
             case "hue":
                 return Math.round(val / 3.6);
             case "colorTemperature":
                 return this.colorTempToK(val);
             case "mute":
-                return (val === "muted") ? "mute" : "unmute";
+                return val === "muted" ? "mute" : "unmute";
             case "alarmSystemStatus":
                 return this.convertAlarmCmd(val);
             case "fanSpeed":
@@ -315,21 +315,21 @@ module.exports = class Transforms {
 
     thermostatTempConversion(temp, isSet = false) {
         if (isSet) {
-            return (this.platform.getTempUnit() === 'C') ? Math.round(temp) : Math.round(temp * 1.8 + 32);
+            return this.platform.getTempUnit() === "C" ? Math.round(temp) : Math.round(temp * 1.8 + 32);
         } else {
-            return (this.platform.getTempUnit() === 'C') ? Math.round(temp * 10) / 10 : Math.round((temp - 32) / 1.8 * 10) / 10;
+            return this.platform.getTempUnit() === "C" ? Math.round(temp * 10) / 10 : Math.round(((temp - 32) / 1.8) * 10) / 10;
         }
     }
 
     thermostatTargetTemp(devData) {
         // console.log('ThermostatMode:', devData.attributes.thermostatMode, ' | thermostatOperatingState: ', devData.attributes.thermostatOperatingState);
         switch (devData.attributes.thermostatMode) {
-            case 'cool':
-            case 'cooling':
+            case "cool":
+            case "cooling":
                 return devData.attributes.coolingSetpoint;
-            case 'emergency heat':
-            case 'heat':
-            case 'heating':
+            case "emergency heat":
+            case "heat":
+            case "heating":
                 return devData.attributes.heatingSetpoint;
             default:
                 {
@@ -348,18 +348,15 @@ module.exports = class Transforms {
     }
 
     thermostatSupportedModes(devData) {
-        let hasHeatSetpoint = (devData.attributes.heatingSetpoint !== undefined || devData.attributes.heatingSetpoint !== null);
-        let hasCoolSetpoint = (devData.attributes.coolingSetpoint !== undefined || devData.attributes.coolingSetpoint !== null);
+        let hasHeatSetpoint = devData.attributes.heatingSetpoint !== undefined || devData.attributes.heatingSetpoint !== null;
+        let hasCoolSetpoint = devData.attributes.coolingSetpoint !== undefined || devData.attributes.coolingSetpoint !== null;
         let sModes = devData.attributes.supportedThermostatModes || [];
         let validModes = [Characteristic.TargetHeatingCoolingState.OFF];
-        if ((sModes.length && sModes.includes("heat")) || sModes.includes("emergency heat") || hasHeatSetpoint)
-            validModes.push(Characteristic.TargetHeatingCoolingState.HEAT);
+        if ((sModes.length && sModes.includes("heat")) || sModes.includes("emergency heat") || hasHeatSetpoint) validModes.push(Characteristic.TargetHeatingCoolingState.HEAT);
 
-        if ((sModes.length && sModes.includes("cool")) || hasCoolSetpoint)
-            validModes.push(Characteristic.TargetHeatingCoolingState.COOL);
+        if ((sModes.length && sModes.includes("cool")) || hasCoolSetpoint) validModes.push(Characteristic.TargetHeatingCoolingState.COOL);
 
-        if ((sModes.length && sModes.includes("auto")) || (hasCoolSetpoint && hasHeatSetpoint))
-            validModes.push(Characteristic.TargetHeatingCoolingState.AUTO);
+        if ((sModes.length && sModes.includes("auto")) || (hasCoolSetpoint && hasHeatSetpoint)) validModes.push(Characteristic.TargetHeatingCoolingState.AUTO);
         return validModes;
     }
 
@@ -395,24 +392,24 @@ module.exports = class Transforms {
         }
         return {
             cmdName: cmdName,
-            attrName: attrName
+            attrName: attrName,
         };
     }
 
     tempConversion(temp, onlyC = false) {
-        if (this.platform.getTempUnit() === 'C' || onlyC) {
-            return (parseFloat(temp * 10) / 10);
+        if (this.platform.getTempUnit() === "C" || onlyC) {
+            return parseFloat(temp * 10) / 10;
         } else {
-            return (parseFloat((temp - 32) / 1.8 * 10) / 10).toFixed(2);
+            return (parseFloat(((temp - 32) / 1.8) * 10) / 10).toFixed(2);
         }
     }
 
     cToF(temp) {
-        return (parseFloat(temp * 10) / 10);
+        return parseFloat(temp * 10) / 10;
     }
 
     fToC(temp) {
-        return (parseFloat((temp - 32) / 1.8 * 10) / 10);
+        return parseFloat(((temp - 32) / 1.8) * 10) / 10;
     }
 
     fanSpeedConversion(speedVal, has4Spd = false) {
@@ -468,9 +465,9 @@ module.exports = class Transforms {
     }
 
     fanSpeedLevelToInt(val) {
-        if (val > 0 && val < 33) {
+        if (val > 0 && val < 34) {
             return 1;
-        } else if (val >= 33 && val < 66) {
+        } else if (val >= 34 && val < 66) {
             return 2;
         } else if (val >= 66 && val <= 100) {
             return 3;
@@ -482,7 +479,7 @@ module.exports = class Transforms {
     convertAlarmState(value) {
         switch (value) {
             case "armHome":
-                return Characteristic.SecuritySystemCurrentState.STAY_ARM
+                return Characteristic.SecuritySystemCurrentState.STAY_ARM;
             case "armNight":
                 return Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
             case "armAway":
@@ -502,7 +499,7 @@ module.exports = class Transforms {
         // Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED = 4;
         switch (value) {
             case 0:
-                return "armHome"
+                return "armHome";
             case 2:
                 return "armNight";
             case 1:

@@ -20,7 +20,7 @@ module.exports = class DeviceCharacteristics {
         let c = this.getOrAddService(svc).getCharacteristic(char);
         if (!c._events.get) {
             c.on("get", (callback) => {
-                if (attr === 'status' && char === Characteristic.StatusActive) {
+                if (attr === "status" && char === Characteristic.StatusActive) {
                     callback(null, accClass.transforms.transformStatus(this.context.deviceData.status));
                 } else {
                     callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
@@ -32,7 +32,7 @@ module.exports = class DeviceCharacteristics {
             c.getValue();
             accClass.storeCharacteristicItem(attr, this.context.deviceData.deviceid, c);
         } else {
-            if (attr === 'status' && char === Characteristic.StatusActive) {
+            if (attr === "status" && char === Characteristic.StatusActive) {
                 c.updateValue(accClass.transforms.transformStatus(this.context.deviceData.status));
             } else {
                 c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
@@ -61,7 +61,7 @@ module.exports = class DeviceCharacteristics {
                     let cmdVal = accClass.transforms.transformCommandValue(opts.set_altAttr || attr, value);
                     if (opts.cmdHasVal === true) {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdName, {
-                            value1: cmdVal
+                            value1: cmdVal,
                         });
                     } else {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdVal);
@@ -86,10 +86,10 @@ module.exports = class DeviceCharacteristics {
     }
 
     acceleration_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.MotionDetected, 'acceleration');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.MotionDetected, "acceleration");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -98,17 +98,17 @@ module.exports = class DeviceCharacteristics {
     }
 
     air_purifier(_accessory, _service) {
-        let actState = (_accessory.context.deviceData.attributes.switch === "on") ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
+        let actState = _accessory.context.deviceData.attributes.switch === "on" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
         let c = this.getOrAddService(_service).getCharacteristic(Characteristic.Active);
         if (!c.events.get || !c.events.set) {
             if (!c.events.get) {
-                c.on('get', (callback) => {
+                c.on("get", (callback) => {
                     callback(null, actState);
                 });
             }
             if (!c.events.set) {
-                c.on('set', (value, callback) => {
-                    _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, value ? 'on' : 'off');
+                c.on("set", (value, callback) => {
+                    _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, value ? "on" : "off");
                 });
             }
             c.getValue();
@@ -118,9 +118,9 @@ module.exports = class DeviceCharacteristics {
         }
 
         c = this.getaddService(_service).getCharacteristic(Characteristic.CurrentAirPurifierState);
-        let apState = (actState === Characteristic.Active.INACTIVE) ? Characteristic.CurrentAirPurifierState.INACTIVE : Characteristic.CurrentAirPurifierState.PURIFYING_AIR;
+        let apState = actState === Characteristic.Active.INACTIVE ? Characteristic.CurrentAirPurifierState.INACTIVE : Characteristic.CurrentAirPurifierState.PURIFYING_AIR;
         if (!c.events.get) {
-            c.on('get', (callback) => {
+            c.on("get", (callback) => {
                 callback(null, apState);
             });
         }
@@ -129,14 +129,14 @@ module.exports = class DeviceCharacteristics {
         c = this.getaddService(CommunityTypes.NewAirPurifierService).getCharacteristic(CommunityTypes.FanOscilationMode);
         if (!c.events.get || !c.events.set) {
             if (!c.events.get) {
-                c.on('get', (callback) => {
-                    callback(null, this.transforms.transformAttributeState('fanMode', _accessory.context.deviceData.attributes.fanMode));
+                c.on("get", (callback) => {
+                    callback(null, this.transforms.transformAttributeState("fanMode", _accessory.context.deviceData.attributes.fanMode));
                 });
             }
             if (!c.events.set) {
-                c.on('set', (value, callback) => {
-                    _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, 'setFanMode', {
-                        value1: this.transforms.transformCommandValue('fanMode', value)
+                c.on("set", (value, callback) => {
+                    _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setFanMode", {
+                        value1: this.transforms.transformCommandValue("fanMode", value),
                     });
                 });
             }
@@ -159,23 +159,23 @@ module.exports = class DeviceCharacteristics {
     }
 
     alarm_system(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SecuritySystemCurrentState, 'alarmSystemStatus');
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.SecuritySystemTargetState, 'alarmSystemStatus');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SecuritySystemCurrentState, "alarmSystemStatus");
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.SecuritySystemTargetState, "alarmSystemStatus");
         _accessory.context.deviceGroups.push("alarm_system");
         return _accessory;
     }
 
     battery(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.BatteryLevel, 'battery');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusLowBattery, 'battery');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.ChargingState, 'batteryStatus');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.BatteryLevel, "battery");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusLowBattery, "battery");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.ChargingState, "batteryStatus");
         _accessory.context.deviceGroups.push("battery");
         return _accessory;
     }
 
     button(_accessory, _service) {
         let that = this;
-        let validValues = this.transforms.transformAttributeState('supportedButtonValues', _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
+        let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
         const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
         // console.log('btnCnt: ', btnCnt);
         if (btnCnt >= 1) {
@@ -183,14 +183,14 @@ module.exports = class DeviceCharacteristics {
                 const svc = _accessory.getOrAddServiceByName(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, bNum);
                 let c = svc.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
                 c.setProps({
-                    validValues: validValues
+                    validValues: validValues,
                 });
                 c.eventOnlyCharacteristic = false;
                 if (!c._events.get) {
                     that.accessories._buttonMap[`${_accessory.context.deviceData.deviceid}_${bNum}`] = svc;
                     c.on("get", (callback) => {
                         this.value = -1;
-                        callback(null, that.transforms.transformAttributeState('button', _accessory.context.deviceData.attributes.button));
+                        callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
                     });
                     _accessory.buttonEvent = this.buttonEvent.bind(_accessory);
                     this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
@@ -203,7 +203,7 @@ module.exports = class DeviceCharacteristics {
     }
 
     buttonEvent(btnNum, btnVal, devId, btnMap) {
-        console.log('Button Press Event... | Button Number: (' + btnNum + ') | Button Value: ' + btnVal);
+        console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
         let bSvc = btnMap[`${devId}_${btnNum}`];
         // console.log(bSvc);
         if (bSvc) {
@@ -212,11 +212,11 @@ module.exports = class DeviceCharacteristics {
     }
 
     carbon_dioxide(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CarbonDioxideDetected, 'carbonDioxideMeasurement');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CarbonDioxideLevel, 'carbonDioxideMeasurement');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CarbonDioxideDetected, "carbonDioxideMeasurement");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CarbonDioxideLevel, "carbonDioxideMeasurement");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -225,10 +225,10 @@ module.exports = class DeviceCharacteristics {
     }
 
     carbon_monoxide(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CarbonMonoxideDetected, 'carbonMonoxide');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CarbonMonoxideDetected, "carbonMonoxide");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -236,12 +236,11 @@ module.exports = class DeviceCharacteristics {
         return _accessory;
     }
 
-
     contact_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.ContactSensorState, 'contact');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.ContactSensorState, "contact");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -250,31 +249,31 @@ module.exports = class DeviceCharacteristics {
     }
 
     energy_meter(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, CommunityTypes.KilowattHours, 'energy');
+        _accessory.manageGetCharacteristic(_service, CommunityTypes.KilowattHours, "energy");
         _accessory.context.deviceGroups.push("energy_meter");
         return _accessory;
     }
 
     fan(_accessory, _service) {
-        if (_accessory.hasAttribute('switch')) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, 'switch');
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, 'switch', {
-                get_altAttr: "fanState"
+        if (_accessory.hasAttribute("switch")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "switch");
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "switch", {
+                get_altAttr: "fanState",
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.CurrentFanState);
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Active);
         }
         let spdSteps = 1;
-        if (_accessory.hasDeviceFlag('fan_3_spd')) spdSteps = 33;
-        if (_accessory.hasDeviceFlag('fan_4_spd')) spdSteps = 25;
-        let spdAttr = (_accessory.hasAttribute('level')) ? "level" : (_accessory.hasAttribute('fanSpeed') && _accessory.hasCommand('setFanSpeed')) ? 'fanSpeed' : undefined;
-        if (_accessory.hasAttribute('level') || _accessory.hasAttribute('fanSpeed')) {
+        if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 32;
+        if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
+        let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
+        if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
                 cmdHasVal: true,
                 props: {
-                    minStep: spdSteps
-                }
+                    minStep: spdSteps,
+                },
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
@@ -284,17 +283,17 @@ module.exports = class DeviceCharacteristics {
     }
 
     garage_door(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentDoorState, 'door');
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.TargetDoorState, 'door');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentDoorState, "door");
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.TargetDoorState, "door");
         _accessory.getOrAddService(_service).getCharacteristic(Characteristic.ObstructionDetected).updateValue(false);
         return _accessory;
     }
 
     humidity_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentRelativeHumidity, 'humidity');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentRelativeHumidity, "humidity");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -303,15 +302,15 @@ module.exports = class DeviceCharacteristics {
     }
 
     illuminance_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentAmbientLightLevel, 'illuminance', {
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentAmbientLightLevel, "illuminance", {
             props: {
                 minValue: 0,
-                maxValue: 100000
-            }
+                maxValue: 100000,
+            },
         });
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -320,35 +319,35 @@ module.exports = class DeviceCharacteristics {
     }
 
     light(_accessory, _service) {
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.On, 'switch');
-        if (_accessory.hasAttribute('level')) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Brightness, 'level', {
-                cmdHasVal: true
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.On, "switch");
+        if (_accessory.hasAttribute("level")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Brightness, "level", {
+                cmdHasVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Brightness);
         }
-        if (_accessory.hasAttribute('hue')) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Hue, 'hue', {
+        if (_accessory.hasAttribute("hue")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Hue, "hue", {
                 cmdHasVal: true,
                 props: {
                     minValue: 1,
-                    maxValue: 30000
-                }
+                    maxValue: 30000,
+                },
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Hue);
         }
-        if (_accessory.hasAttribute('saturation')) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Saturation, 'saturation', {
-                cmdHasVal: true
+        if (_accessory.hasAttribute("saturation")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Saturation, "saturation", {
+                cmdHasVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Saturation);
         }
-        if (_accessory.hasAttribute('colorTemperature')) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.ColorTemperature, 'colorTemperature', {
-                cmdHasVal: true
+        if (_accessory.hasAttribute("colorTemperature")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.ColorTemperature, "colorTemperature", {
+                cmdHasVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.ColorTemperature);
@@ -358,17 +357,17 @@ module.exports = class DeviceCharacteristics {
     }
 
     lock(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.LockCurrentState, 'lock');
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.LockTargetState, 'lock');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.LockCurrentState, "lock");
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.LockTargetState, "lock");
         _accessory.context.deviceGroups.push("lock");
         return _accessory;
     }
 
     motion_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.MotionDetected, 'motion');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.MotionDetected, "motion");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -377,16 +376,16 @@ module.exports = class DeviceCharacteristics {
     }
 
     power_meter(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, CommunityTypes.Watts, 'power');
+        _accessory.manageGetCharacteristic(_service, CommunityTypes.Watts, "power");
         _accessory.context.deviceGroups.push("power_meter");
         return _accessory;
     }
 
     presence_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.OccupancyDetected, 'presence');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.OccupancyDetected, "presence");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -395,10 +394,10 @@ module.exports = class DeviceCharacteristics {
     }
 
     smoke_detector(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SmokeDetected, 'smoke');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SmokeDetected, "smoke");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -407,8 +406,8 @@ module.exports = class DeviceCharacteristics {
     }
 
     speaker(_accessory, _service) {
-        let isSonos = (_accessory.context.deviceData.manufacturerName === "Sonos");
-        let lvlAttr = (isSonos || _accessory.hasAttribute('volume')) ? 'volume' : _accessory.hasAttribute('level') ? 'level' : undefined;
+        let isSonos = _accessory.context.deviceData.manufacturerName === "Sonos";
+        let lvlAttr = isSonos || _accessory.hasAttribute("volume") ? "volume" : _accessory.hasAttribute("level") ? "level" : undefined;
         let c = _accessory.getOrAddService(_service).getCharacteristic(Characteristic.Volume);
         let lastVolumeWriteValue = null;
         if (!c._events.get || !c._events.set) {
@@ -424,22 +423,25 @@ module.exports = class DeviceCharacteristics {
                             lastVolumeWriteValue = value;
                             this.log.debug(`Existing volume: ${_accessory.context.deviceData.attributes.volume}, set to ${lastVolumeWriteValue}`);
                             _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setVolume", {
-                                value1: lastVolumeWriteValue
+                                value1: lastVolumeWriteValue,
                             });
                         }
                     }
                     if (value > 0) {
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, this.accessories.transformCommandName(lvlAttr, value), {
-                            value1: this.transforms.transformAttributeState(lvlAttr, value)
+                            value1: this.transforms.transformAttributeState(lvlAttr, value),
                         });
                     }
                 });
             }
             this.accessories.storeCharacteristicItem("volume", _accessory.context.deviceData.deviceid, c);
         }
-        _accessory.getOrAddService(_service).getCharacteristic(Characteristic.Volume).updateValue(this.transforms.transformAttributeState(lvlAttr, _accessory.context.deviceData.attributes[lvlAttr]) || 0);
-        if (_accessory.hasCapability('Audio Mute')) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Mute, 'mute');
+        _accessory
+            .getOrAddService(_service)
+            .getCharacteristic(Characteristic.Volume)
+            .updateValue(this.transforms.transformAttributeState(lvlAttr, _accessory.context.deviceData.attributes[lvlAttr]) || 0);
+        if (_accessory.hasCapability("Audio Mute")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Mute, "mute");
         }
 
         _accessory.context.deviceGroups.push("speaker_device");
@@ -447,20 +449,20 @@ module.exports = class DeviceCharacteristics {
     }
 
     switch_device(_accessory, _service) {
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.On, 'switch');
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.On, "switch");
         _accessory.context.deviceGroups.push("switch");
         return _accessory;
     }
 
     temperature_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentTemperature, 'temperature', {
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentTemperature, "temperature", {
             props: {
                 minValue: -100,
-                maxValue: 200
-            }
+                maxValue: 200,
+            },
         });
-        if (_accessory.hasCapability('Tamper Alert')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
         }
@@ -476,11 +478,10 @@ module.exports = class DeviceCharacteristics {
         let targetHeatCoolStateChar = tstatService.getCharacteristic(Characteristic.TargetHeatingCoolingState);
         let targetTempChar = tstatService.getCharacteristic(Characteristic.TargetTemperature);
 
-
         // CURRENT HEATING/COOLING STATE
         if (!curHeatCoolStateChar._events.get) {
             curHeatCoolStateChar.on("get", (callback) => {
-                const state = this.transforms.transformAttributeState('thermostatOperatingState', _accessory.context.deviceData.attributes.thermostatOperatingState);
+                const state = this.transforms.transformAttributeState("thermostatOperatingState", _accessory.context.deviceData.attributes.thermostatOperatingState);
                 callback(null, state);
             });
             this.accessories.storeCharacteristicItem("thermostatOperatingState", _accessory.context.deviceData.deviceid, curHeatCoolStateChar);
@@ -491,19 +492,19 @@ module.exports = class DeviceCharacteristics {
         // TARGET HEATING/COOLING STATE
         if (!targetHeatCoolStateChar._events.get || !targetHeatCoolStateChar._events.set) {
             targetHeatCoolStateChar.setProps({
-                validValues: this.transforms.thermostatSupportedModes(_accessory.context.deviceData)
+                validValues: this.transforms.thermostatSupportedModes(_accessory.context.deviceData),
             });
             if (!targetHeatCoolStateChar._events.get) {
                 targetHeatCoolStateChar.on("get", (callback) => {
                     // console.log('thermostatMode(get): ', this.transforms.transformAttributeState('thermostatMode', _accessory.context.deviceData.attributes.thermostatMode));
-                    callback(null, this.transforms.transformAttributeState('thermostatMode', _accessory.context.deviceData.attributes.thermostatMode));
+                    callback(null, this.transforms.transformAttributeState("thermostatMode", _accessory.context.deviceData.attributes.thermostatMode));
                 });
             }
             if (!targetHeatCoolStateChar._events.set) {
                 targetHeatCoolStateChar.on("set", async(value, callback) => {
-                    let state = this.transforms.transformCommandValue('thermostatMode', value);
-                    _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, this.transforms.transformCommandName('thermostatMode', value), {
-                        value1: state
+                    let state = this.transforms.transformCommandValue("thermostatMode", value);
+                    _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, this.transforms.transformCommandName("thermostatMode", value), {
+                        value1: state,
                     });
                     _accessory.context.deviceData.attributes.thermostatMode = state;
                     // targetTempChar.updateValue(this.transforms.thermostatTargetTemp(_accessory.context.deviceData));
@@ -515,8 +516,8 @@ module.exports = class DeviceCharacteristics {
         }
 
         // CURRENT RELATIVE HUMIDITY
-        if (_accessory.hasCapability('Relative Humidity Measurement')) {
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentRelativeHumidity, 'humidity');
+        if (_accessory.hasCapability("Relative Humidity Measurement")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentRelativeHumidity, "humidity");
         }
 
         // CURRENT TEMPERATURE
@@ -547,7 +548,7 @@ module.exports = class DeviceCharacteristics {
                     const targetObj = this.transforms.thermostatTargetTemp_set(_accessory.context.deviceData);
                     if (targetObj && targetObj.cmdName && targetObj.attrName && temp) {
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, targetObj.cmdName, {
-                            value1: temp
+                            value1: temp,
                         });
                         _accessory.context.deviceData.attributes[targetObj.attrName] = temp;
                     }
@@ -563,7 +564,7 @@ module.exports = class DeviceCharacteristics {
 
         // TEMPERATURE DISPLAY UNITS
         let tempUnitChar = tstatService.getCharacteristic(Characteristic.TemperatureDisplayUnits);
-        tempUnitChar.updateValue((this.platform.getTempUnit() === 'F') ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT : Characteristic.TemperatureDisplayUnits.CELSIUS);
+        tempUnitChar.updateValue(this.platform.getTempUnit() === "F" ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT : Characteristic.TemperatureDisplayUnits.CELSIUS);
 
         // HEATING THRESHOLD TEMPERATURE
         if (targetHeatCoolStateChar.props.validValues.includes(3)) {
@@ -573,7 +574,7 @@ module.exports = class DeviceCharacteristics {
             if (!heatThreshTempChar._events.get || !heatThreshTempChar._events.set) {
                 if (!heatThreshTempChar._events.get) {
                     heatThreshTempChar.on("get", (callback) => {
-                        console.log('heatingSetpoint: ', _accessory.context.deviceData.attributes.heatingSetpoint);
+                        console.log("heatingSetpoint: ", _accessory.context.deviceData.attributes.heatingSetpoint);
                         callback(null, this.transforms.thermostatTempConversion(_accessory.context.deviceData.attributes.heatingSetpoint));
                     });
                 }
@@ -582,7 +583,7 @@ module.exports = class DeviceCharacteristics {
                         // Convert the Celsius value to the appropriate unit for Smartthings
                         let temp = this.transforms.thermostatTempConversion(value, true);
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setHeatingSetpoint", {
-                            value1: temp
+                            value1: temp,
                         });
                         _accessory.context.deviceData.attributes.heatingSetpoint = temp;
                     });
@@ -597,7 +598,7 @@ module.exports = class DeviceCharacteristics {
             if (!coolThreshTempChar._events.get || !coolThreshTempChar._events.set) {
                 if (!coolThreshTempChar._events.get) {
                     coolThreshTempChar.on("get", (callback) => {
-                        console.log('coolingSetpoint: ', _accessory.context.deviceData.attributes.coolingSetpoint);
+                        console.log("coolingSetpoint: ", _accessory.context.deviceData.attributes.coolingSetpoint);
                         callback(null, this.transforms.thermostatTempConversion(_accessory.context.deviceData.attributes.coolingSetpoint));
                     });
                 }
@@ -606,7 +607,7 @@ module.exports = class DeviceCharacteristics {
                         // Convert the Celsius value to the appropriate unit for Smartthings
                         let temp = this.transforms.thermostatTempConversion(value, true);
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setCoolingSetpoint", {
-                            value1: temp
+                            value1: temp,
                         });
                         _accessory.context.deviceData.attributes.coolingSetpoint = temp;
                     });
@@ -625,10 +626,9 @@ module.exports = class DeviceCharacteristics {
     }
 
     valve(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.InUse, 'valve');
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, 'valve');
-        if (!_accessory.hasCharacteristic(_service, Characteristic.ValveType))
-            _accessory.getOrAddService(_service).setCharacteristic(Characteristic.ValveType, 0);
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.InUse, "valve");
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "valve");
+        if (!_accessory.hasCharacteristic(_service, Characteristic.ValveType)) _accessory.getOrAddService(_service).setCharacteristic(Characteristic.ValveType, 0);
 
         _accessory.context.deviceGroups.push("valve");
         return _accessory;
@@ -639,17 +639,17 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get)
                 c.on("get", (callback) => {
-                    callback(null, this.transforms.transformAttributeState('switch', _accessory.context.deviceData.attributes.switch));
+                    callback(null, this.transforms.transformAttributeState("switch", _accessory.context.deviceData.attributes.switch));
                 });
             if (!c._events.set)
                 c.on("set", (value, callback) => {
-                    if (value && (_accessory.context.deviceData.attributes.switch === "off")) {
+                    if (value && _accessory.context.deviceData.attributes.switch === "off") {
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "mode");
                     }
                 });
             this.accessories.storeCharacteristicItem("switch", _accessory.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(this.transforms.transformAttributeState('switch', _accessory.context.deviceData.attributes.switch));
+            c.updateValue(this.transforms.transformAttributeState("switch", _accessory.context.deviceData.attributes.switch));
         }
         _accessory.context.deviceGroups.push("virtual_mode");
         return _accessory;
@@ -675,26 +675,25 @@ module.exports = class DeviceCharacteristics {
                 });
             this.accessories.storeCharacteristicItem("switch", _accessory.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(this.transforms.transformAttributeState('switch', _accessory.context.deviceData.attributes.switch));
+            c.updateValue(this.transforms.transformAttributeState("switch", _accessory.context.deviceData.attributes.switch));
         }
         _accessory.context.deviceGroups.push("virtual_routine");
         return _accessory;
     }
 
     water_sensor(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.LeakDetected, 'water');
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, 'status');
-        if (_accessory.hasCapability('Tamper Alert'))
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, 'tamper');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.LeakDetected, "water");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        if (_accessory.hasCapability("Tamper Alert")) _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
         _accessory.context.deviceGroups.push("window_shade");
         return _accessory;
     }
 
     window_shade(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, 'level', {
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, "level", {
             props: {
-                steps: 10
-            }
+                steps: 10,
+            },
         });
         let c = _accessory.getOrAddService(_service).getCharacteristic(Characteristic.TargetPosition);
         if (!c._events.get || !c._events.set) {
@@ -705,23 +704,23 @@ module.exports = class DeviceCharacteristics {
             }
             if (!c._events.set) {
                 c.on("set", (value, callback) => {
-                    if (_accessory.hasCommand('close') && value <= 2) {
+                    if (_accessory.hasCommand("close") && value <= 2) {
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "close");
                     } else {
                         let v = value;
                         if (value <= 2) v = 0;
                         if (value >= 98) v = 100;
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setLevel", {
-                            value1: v
+                            value1: v,
                         });
                     }
                 });
             }
             this.accessories.storeCharacteristicItem("level", _accessory.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(this.transforms.transformAttributeState('level', _accessory.context.deviceData.attributes.level));
+            c.updateValue(this.transforms.transformAttributeState("level", _accessory.context.deviceData.attributes.level));
         }
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.PositionState, 'windowShade');
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.PositionState, "windowShade");
         _accessory.getOrAddService(_service).getCharacteristic(Characteristic.ObstructionDetected).updateValue(false);
         _accessory.getOrAddService(_service).getCharacteristic(Characteristic.HoldPosition).updateValue(false);
         _accessory.context.deviceGroups.push("window_shade");

@@ -38,7 +38,7 @@ module.exports = class HE_Platform {
         this.excludedCapabilities = this.config.excluded_capabilities || [];
         this.update_method = this.config.update_method || "direct";
         this.temperature_unit = this.config.temperature_unit || "F";
-        this.local_commands = this.config.local_commands || false;
+        this.use_cloud = this.config.use_cloud || false;
         this.local_hub_ip = undefined;
         this.myUtils = new myUtils(this);
         this.configItems = this.getConfigItems();
@@ -88,7 +88,6 @@ module.exports = class HE_Platform {
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
             debug: this.config.debug === true,
-            local_commands: this.config.local_commands === true,
             validateTokenId: this.config.validateTokenId === true,
         };
     }
@@ -136,8 +135,8 @@ module.exports = class HE_Platform {
                             that.updateTempUnit(resp.location.temperature_scale);
                             if (resp.location.hubIP) {
                                 that.local_hub_ip = resp.location.hubIP;
-                                that.local_commands = resp.location.local_commands === true;
-                                that.client.updateGlobals(that.local_hub_ip, that.local_commands);
+                                that.use_cloud = resp.location.use_cloud === true;
+                                that.client.updateGlobals(that.local_hub_ip, that.use_cloud);
                             }
                         }
                         if (resp && resp.deviceList && resp.deviceList instanceof Array) {
@@ -343,10 +342,10 @@ module.exports = class HE_Platform {
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "updateprefs")) {
                         that.log.info(platformName + " Hub Sent Preference Updates");
                         let sendUpd = false;
-                        if (body.local_commands && that.local_commands !== body.local_commands) {
+                        if (body.use_cloud && that.use_cloud !== body.use_cloud) {
                             sendUpd = true;
-                            that.log.info(`${platformName} Updated Local Commands Preference | Before: ${that.local_commands} | Now: ${body.local_commands}`);
-                            that.local_commands = body.local_commands;
+                            that.log.info(`${platformName} Updated Use Cloud Preference | Before: ${that.use_cloud} | Now: ${body.use_cloud}`);
+                            that.use_cloud = body.use_cloud;
                         }
                         if (body.local_hub_ip && that.local_hub_ip !== body.local_hub_ip) {
                             sendUpd = true;
@@ -354,7 +353,7 @@ module.exports = class HE_Platform {
                             that.local_hub_ip = body.local_hub_ip;
                         }
                         if (sendUpd) {
-                            that.client.updateGlobals(that.local_hub_ip, that.local_commands);
+                            that.client.updateGlobals(that.local_hub_ip, that.use_cloud);
                         }
                         res.send({
                             status: "OK",

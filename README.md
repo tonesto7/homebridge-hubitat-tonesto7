@@ -21,7 +21,7 @@
 </p>
 V2 of this plugin is a complete rewrite of the homebridge-hubitat-tonesto7 plugin using modern Javascript structure with classes, promises, and arrow functions.
 
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/tonesto7/homebridge-hubitat-tonesto7?label=Latest%20SmartApp%20Version&sort=semver&style=for-the-badge)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/tonesto7/homebridge-hubitat-tonesto7?label=Latest%20Hubitat%20App%20Version&sort=semver&style=for-the-badge)
 
 ## Credits
 Big thanks for @Areson for his help/motivation in rewriting this.
