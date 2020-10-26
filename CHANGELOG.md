@@ -1,3 +1,7 @@
+## v2.4.0-beta.6
+
+- [FIX] More cleanups and tweaks
+
 ## v2.4.0-beta.4
 
 - [FIX] Updated constants to help with unknown capabilities
