@@ -80,7 +80,6 @@ module.exports = class ST_Client {
     getDevices() {
         let that = this;
         return new Promise((resolve) => {
-            console.log(`${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/devices`);
             axios({
                     method: "get",
                     url: `${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/devices`,
@@ -158,7 +157,7 @@ module.exports = class ST_Client {
     sendUpdateStatus() {
         return new Promise((resolve) => {
             this.platform.myUtils.checkVersion().then((res) => {
-                this.log.notice(`Sending Plugin Status to SmartThings | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
+                this.log.notice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
                 axios({
                         method: "post",
                         url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,

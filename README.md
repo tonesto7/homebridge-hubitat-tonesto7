@@ -55,10 +55,10 @@ When properly setup, you should see something like this in your Homebridge start
 [11/25/2019, 4:44:46 PM] [Hubitat-v2] Devices to Create: (0) []
 [11/25/2019, 4:44:46 PM] [Hubitat-v2] Total Initialization Time: (2 seconds)
 [11/25/2019, 4:44:46 PM] [Hubitat-v2] Unknown Capabilities: ["Power Source"]
-[11/25/2019, 4:44:46 PM] [Hubitat-v2] SmartThings DeviceCache Size: (40)
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Hubitat DeviceCache Size: (40)
 [11/25/2019, 4:44:46 PM] [Hubitat-v2] WebServer Initiated...
-[11/25/2019, 4:44:46 PM] [Hubitat-v2] Sending StartDirect Request to SmartThings | SendToLocalHub: (false)
-[11/25/2019, 4:44:46 PM] [Hubitat-v2] Direct Connect is Listening On 10.0.0.163:8000
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Sending StartDirect Request to Hubitat | SendToLocalHub: (false)
+[11/25/2019, 4:44:46 PM] [Hubitat-v2] Direct Connect Enabled and Listening on 10.0.0.163:8000
 ```
 
 # Installation
@@ -96,7 +96,7 @@ Installation comes in two parts:
    **NOTE:** Do not select the same device in more that one input. If you select a device here, do not select that same device in the other device inputs on the previous page.
 
    For any other devices you would like to add that weren't added in the previous step, just tap on the input next to an appropriate device group and then select each device you would like to use. (The same devices can be selected in any of the Sensor, Switch, Other inputs)
-    * There are several categories here because of the way SmartThings assigns capabilities. You might not see your device in one, but might in another.
+    * There are several categories here because of the way Hubitat assigns capabilities. You might not see your device in one, but might in another.
     * Almost all devices contain the Refresh capability and are under the "Other Devices" group.
     * Some sensors don't have a refresh and are under the "Sensor Devices" group.
     * Some devices, mainly Virtual Switches, only have the Switch Capability and are in the "Switch Devices" group.
@@ -136,7 +136,7 @@ Installation comes in two parts:
       "temperature_unit": "F",
       "validateTokenId": false,
       "excluded_capabilities": {
-         "SMARTTHINGS-DEVICE-ID-1": [
+         "HUBITAT-DEVICE-ID-1": [
             "Switch",
             "Temperature Measurement"
          ]
@@ -169,20 +169,20 @@ This will enable the plugin to communicate with the hubitat app via the cloud ur
 Only needed when you are having issues with the plugin and you want me to be able to identify your reported exception errors.
 
  * `direct_ip`  _Optional_ | _Default: 'First available IP on your computer'_
-Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to SmartThings for the hub to send to.
+Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.
 
  * `direct_port`  _Optional_ | _Default: `8000`_
-This is the port that the `homebridge-hubitat-tonesto7` plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your SmartThings hub IP address to your HomeBridge instance.
+This is the port that the `homebridge-hubitat-tonesto7` plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your Hubitat hub IP address to your HomeBridge instance.
 
  * `temperature_unit`  _Optional_ | _Default: `F`_
 This will allow you to define the temp unit to use.  This can also be set in the SmartApp
 
  * `validateTokenId`  _Optional_ | _Default: `false`_
-This forces the plugin to validate the smartthings app token and location with that in the plugin configuration
+This forces the plugin to validate the Hubitat app token and location with that defined in the plugin configuration
 
  * `excluded_capabilities` _Optional_ | _Default: '{}' (None)_
-NOTICE: The smartapp offers many inputs to help filter out device capabilities. Only use this if the available inputs don't meet your needs. Specify the SmartThings device by ID and the associated capabilities you want the plugin to ignore.
-This prevents a SmartThings device creating unwanted or redundant HomeKit accessories.
+NOTICE: The Hubitat app offers many inputs to help filter out device capabilities. Only use this if the available inputs don't meet your needs. Specify the Hubitat device by ID and the associated capabilities you want the plugin to ignore.
+This prevents a Hubitat device creating unwanted or redundant HomeKit accessories.
 
  * `logConfig` _Optional_
 Define log output format options as well as enable the log file output.
@@ -191,7 +191,7 @@ Define log output format options as well as enable the log file output.
 Enables Debug log output.
 
    - `showChanges` _Optional_ | _Default: `true`_
-Logs device event changes received from SmartThings.
+Logs device event changes received from Hubitat.
 
    - `hideTimestamp` _Optional_ | _Default: `false`_
 Hides timestamp prefix from console log output.

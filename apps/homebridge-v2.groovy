@@ -5,7 +5,7 @@
  */
 
 String appVersion()                     { return "2.4.0" }
-String appModified()                    { return "10-26-2020" }
+String appModified()                    { return "10-27-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
@@ -94,19 +94,19 @@ def mainPage() {
             String desc = "Tap to select devices..."
             if(conf) {
                 desc = ""
-                desc += lightList ? "(${lightList?.size()}) Light Devices\n" : ""
-                desc += buttonList ? "(${buttonList?.size()}) Button Devices\n" : ""
-                desc += (fanList || fan3SpdList || fan4SpdList) ? "(${fansize}) Fan Devices\n" : ""
-                desc += speakerList ? "(${speakerList?.size()}) Speaker Devices\n" : ""
-                desc += shadesList ? "(${shadesList?.size()}) Shade Devices\n" : ""
-                desc += garageList ? "(${garageList?.size()}) Garage Door Devices\n" : ""
-                desc += tstatList ? "(${tstatList?.size()}) Tstat Devices\n" : ""
-                desc += tstatHeatList ? "(${tstatHeatList?.size()}) Tstat Heat Devices\n" : ""
-                desc += sensorList ? "(${sensorList?.size()}) Sensor Devices\n" : ""
-                desc += switchList ? "(${switchList?.size()}) Switch Devices\n" : ""
-                desc += deviceList ? "(${deviceList?.size()}) Other Devices\n" : ""
-                desc += modeList ? "(${modeList?.size()}) Mode Devices\n" : ""
-                desc += routineList ? "(${routineList?.size()}) Routine Devices\n" : ""
+                desc += lightList ? "(${lightList?.size()}) Light Device${lightList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += buttonList ? "(${buttonList?.size()}) Button Device${buttonList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += (fanList || fan3SpdList || fan4SpdList) ? "(${fansize}) Fan Device${fansize > 1 ? "s" : ""}\n" : ""
+                desc += speakerList ? "(${speakerList?.size()}) Speaker Device${speakerList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += shadesList ? "(${shadesList?.size()}) Shade Device${shadesList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += garageList ? "(${garageList?.size()}) Garage Door Device${garageList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += tstatList ? "(${tstatList?.size()}) Tstat Device${tstatList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += tstatHeatList ? "(${tstatHeatList?.size()}) Tstat Heat Device${tstatHeatList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += sensorList ? "(${sensorList?.size()}) Sensor Device${sensorList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += switchList ? "(${switchList?.size()}) Switch Device${switchList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += deviceList ? "(${deviceList?.size()}) Other Device${deviceList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += modeList ? "(${modeList?.size()}) Mode Device${modeList?.size() > 1 ? "s" : ""}\n" : ""
+                desc += routineList ? "(${routineList?.size()}) Routine Device${routineList?.size() > 1 ? "s" : ""}\n" : ""
                 desc += "\nTap to modify..."
             }
             href "deviceSelectPage", title: inTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : null), description: desc
@@ -123,7 +123,7 @@ def mainPage() {
         }
 
         section(sTS("Plugin Options:", null, true)) {
-            input "addSecurityDevice", "bool", title: inTS("Allow $getAlarmSystemName() Control in HomeKit?", getAppImg("alarm_home", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("alarm_home")
+            input "addSecurityDevice", "bool", title: inTS("Allow ${getAlarmSystemName()} Control in HomeKit?", getAppImg("alarm_home", true)), required: false, defaultValue: true, submitOnChange: true, image: getAppImg("alarm_home")
             input "use_cloud_endpoint", "bool", title: inTS("Use Cloud Endpoint instead of local??", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true, image: getAppImg("command")
             input "temp_unit", "enum", title: inTS("Temperature Unit?", getAppImg("command", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true, image: getAppImg("command")
             
@@ -404,7 +404,7 @@ def donationPage() {
 def confirmPage() {
     return dynamicPage(name: "confirmPage", title: "Confirmation Page", install: true, uninstall:true) {
         section() {
-            paragraph pTS("Restarting the service is no longer required to apply any device changes under homekit.\n\nThe service will refresh your devices about 15-20 seconds after Pressing Done/Save.", getAppImg("info", true), false, "#2784D9"), state: "complete", image: getAppImg("info")
+            paragraph pTS("\nYou are no longer required to restart homebridge to apply any device changes made under this app in HomeKit.\n\nOnce you press Done/Save the Homebridge plugin will refresh your device changes after 15-20 seconds.", getAppImg("info", true), false, "#2784D9"), state: "complete", image: getAppImg("info")
         }
     }
 }
@@ -1645,7 +1645,6 @@ private getWebData(params, desc, text=true) {
             }
         }
     } catch (ex) {
-        incrementCntByKey("appErrorCnt")
         if(ex instanceof groovyx.net.http.HttpResponseException) {
             logWarn("${desc} file not found")
         } else { logError("getWebData(params: $params, desc: $desc, text: $text) Exception: ${ex}") }
@@ -1698,7 +1697,7 @@ Integer getDaysSinceUpdated() {
     return 0
 }
 
-String changeLogData() { return getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-v2/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog") }
+String changeLogData() { return getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog") }
 Boolean showChgLogOk() { return (state?.isInstalled && (state?.curAppVer != appVersion() || state?.installData?.shownChgLog != true)) }
 def changeLogPage() {
     def execTime = now()

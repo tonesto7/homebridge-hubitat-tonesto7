@@ -180,7 +180,7 @@ module.exports = class HE_Platform {
 
     addDevice(device) {
         let accessory;
-        const new_uuid = this.uuid.generate(`smartthings_v2_${device.deviceid}`);
+        const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         this.log.debug(`Initializing New Device (${device.name} | ${device.deviceid})`);
         accessory = this.getNewAccessory(device, new_uuid);
@@ -292,7 +292,7 @@ module.exports = class HE_Platform {
                                 //     res.send(JSON.stringify(o));
                                 //     break;
                                 // case 'accContext':
-                                //     res.send(JSON.stringify(this.SmartThingsAccessories.getAllAccessoriesFromCache()));
+                                //     res.send(JSON.stringify(this.HEAccessories.getAllAccessoriesFromCache()));
                                 //     break;
                             default:
                                 res.send(`Error: Invalid Option Parameter Received | Option: ${req.query.option}`);

@@ -265,7 +265,7 @@ module.exports = class DeviceCharacteristics {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Active);
         }
         let spdSteps = 1;
-        if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 32;
+        if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 33;
         if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
         let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
         if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
@@ -543,7 +543,7 @@ module.exports = class DeviceCharacteristics {
             }
             if (!targetTempChar._events.set) {
                 targetTempChar.on("set", (value, callback) => {
-                    // Convert the Celsius value to the appropriate unit for Smartthings
+                    // Convert the Celsius value to the appropriate unit for Hubitat
                     let temp = this.transforms.thermostatTempConversion(value, true);
                     const targetObj = this.transforms.thermostatTargetTemp_set(_accessory.context.deviceData);
                     if (targetObj && targetObj.cmdName && targetObj.attrName && temp) {
@@ -580,7 +580,7 @@ module.exports = class DeviceCharacteristics {
                 }
                 if (!heatThreshTempChar._events.set) {
                     heatThreshTempChar.on("set", (value, callback) => {
-                        // Convert the Celsius value to the appropriate unit for Smartthings
+                        // Convert the Celsius value to the appropriate unit for Hubitat
                         let temp = this.transforms.thermostatTempConversion(value, true);
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setHeatingSetpoint", {
                             value1: temp,
@@ -604,7 +604,7 @@ module.exports = class DeviceCharacteristics {
                 }
                 if (!coolThreshTempChar._events.set) {
                     coolThreshTempChar.on("set", (value, callback) => {
-                        // Convert the Celsius value to the appropriate unit for Smartthings
+                        // Convert the Celsius value to the appropriate unit for Hubitat
                         let temp = this.transforms.thermostatTempConversion(value, true);
                         _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setCoolingSetpoint", {
                             value1: temp,

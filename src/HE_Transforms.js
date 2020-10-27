@@ -167,7 +167,7 @@ module.exports = class Transforms {
                         return Characteristic.CurrentHeatingCoolingState.HEAT;
                     default:
                         // The above list should be inclusive, but we need to return something if they change stuff.
-                        // TODO: Double check if Smartthings can send "auto" as operatingstate. I don't think it can.
+                        // TODO: Double check if Hubitat can send "auto" as operatingstate. I don't think it can.
                         return Characteristic.CurrentHeatingCoolingState.OFF;
                 }
             case "thermostatMode":
@@ -431,7 +431,7 @@ module.exports = class Transforms {
                 return "low";
             } else if (speedVal > 33 && speedVal <= 66) {
                 return "medium";
-            } else if (speedVal > 66 && speedVal <= 99) {
+            } else if (speedVal > 66 && speedVal <= 100) {
                 return "high";
             }
         }
@@ -454,7 +454,7 @@ module.exports = class Transforms {
             case 0:
                 return 0;
             case 1:
-                return 32;
+                return 33;
             case 2:
                 return 66;
             case 3:
@@ -465,11 +465,11 @@ module.exports = class Transforms {
     }
 
     fanSpeedLevelToInt(val) {
-        if (val > 0 && val < 34) {
+        if (val > 0 && val <= 33) {
             return 1;
-        } else if (val >= 34 && val < 66) {
+        } else if (val > 33 && val <= 66) {
             return 2;
-        } else if (val >= 66 && val <= 100) {
+        } else if (val > 66 && val <= 100) {
             return 3;
         } else {
             return 0;

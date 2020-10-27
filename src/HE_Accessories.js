@@ -49,7 +49,7 @@ module.exports = class ST_Accessories {
         try {
             accessory.commandTimers = {};
             accessory.commandTimersTS = {};
-            accessory.context.uuid = accessory.UUID || this.uuid.generate(`smartthings_v2_${accessory.deviceid}`);
+            accessory.context.uuid = accessory.UUID || this.uuid.generate(`hubitat_v2_${accessory.deviceid}`);
             accessory.getOrAddService = this.getOrAddService.bind(accessory);
             accessory.getOrAddServiceByName = this.getOrAddServiceByName.bind(accessory);
             accessory.getOrAddCharacteristic = this.getOrAddCharacteristic.bind(accessory);
