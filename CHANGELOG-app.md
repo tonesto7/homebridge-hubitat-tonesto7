@@ -1,5 +1,6 @@
 ## v2.0.2 Changes
 - [UPDATE] App UI updates to the header, footer, and device selection inputs.  I borrowed some inspiration for the footer from Hubitat Package Manager (Thanks @dman2306). 
+- [FIX] Fixed device count to include HSM device when enabled.
 
 ## v2.0.0 Changes
 - [NEW] **_Important NOTICE:_**

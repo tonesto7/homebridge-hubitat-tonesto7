@@ -109,6 +109,7 @@ def mainPage() {
                 desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList?.size() > 1 ? "s" : ""}</b> (${deviceList?.size()})</small><br>""" : ""
                 desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList?.size() > 1 ? "s" : ""}</b> (${modeList?.size()})</small><br>""" : ""
                 desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList?.size() > 1 ? "s" : ""}</b> (${routineList?.size()})</small><br>""" : ""
+                desc += addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : ""
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
                 desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : ""
                 desc += """<br><small style="color:#2784D9;">Tap to modify...</small>"""
@@ -487,7 +488,9 @@ def getDeviceCnt(phyOnly=false) {
             if(settings[item]?.size() > 0) devices = devices + settings[item]
         }
     }
-    return devices?.unique()?.size() ?: 0
+    def dSize = devices?.unique()?.size() ?: 0
+    if(settings?.addSecurityDevice) dSize = dSize + 1
+    return dSize
 }
 
 def installed() {
