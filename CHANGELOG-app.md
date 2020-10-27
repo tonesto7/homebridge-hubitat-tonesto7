@@ -1,4 +1,7 @@
 ## v2.0.0 Changes
+- [NEW] **_Important NOTICE:_**
+- **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
+  On a positive note, you can use the same Hubitat App instance as long as you update to the latest code.**
 
 - [NEW] Ported v2.0 app and plugin from stable SmartThings version
 - [NEW] Added duplicate device detection cleanups so Homekit doesn't try to create duplicate devices and throw an error.
@@ -20,3 +23,4 @@
 - [FIX] Refactored the accessToken logic to be more consistent.
 - [FIX] Tons of other bugfixes, optimizations, and cleanups from v1
 - [REMOVE] Support for Energy and Power capabilities removed (for now).
+
