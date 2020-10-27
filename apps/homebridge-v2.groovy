@@ -5,7 +5,7 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.2" }
+String appVersion()                     { return "2.0.3" }
 String appModified()                    { return "10-27-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
