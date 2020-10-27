@@ -137,9 +137,9 @@ def mainPage() {
             paragraph pTS("Devices Selected: (${devCnt})", getAppImg("info", true), false, "#2784D9"), image: getAppImg("info"), state: "complete"
         }
 
-        section(sTS("History and Device Data:", null, true)) {
+        section(sTS("History Data and Device Debug:", null, true)) {
             href "historyPage", title: inTS("View Command and Event History", getAppImg("backup", true)), image: getAppImg("backup")
-            href "deviceDebugPage", title: inTS("View Device Data", getAppImg("debug", true)), image: getAppImg("debug")
+            href "deviceDebugPage", title: inTS("View Device Debug Data", getAppImg("debug", true)), image: getAppImg("debug")
         }
 
         section(sTS("App Preferences:", null, true)) {
