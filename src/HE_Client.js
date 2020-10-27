@@ -10,7 +10,6 @@ module.exports = class ST_Client {
         this.use_cloud = platform.use_cloud;
         this.hubIp = platform.local_hub_ip;
         this.configItems = platform.getConfigItems();
-        // let appURL = url.parse(this.configItems.app_url);
         this.localErrCnt = 0;
         this.localDisabled = false;
         this.clientsLogSocket = [];
@@ -136,7 +135,7 @@ module.exports = class ST_Client {
                 timeout: 5000,
             };
             try {
-                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | SendingViaCloud: (${that.configItems.use_cloud})`);
+                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | LocalCommand: (${that.configItems.use_cloud !== true})`);
                 axios(config)
                     .then((response) => {
                         // console.log('command response:', response.data);
@@ -210,7 +209,7 @@ module.exports = class ST_Client {
                 },
                 timeout: 10000,
             };
-            that.log.info(`Sending StartDirect Request to ${platformDesc} | SendingViaCloud: (${that.configItems.use_cloud})`);
+            that.log.info(`Sending StartDirect Request to ${platformDesc} | LocalCommand: (${that.configItems.use_cloud !== true})`);
             try {
                 axios(config)
                     .then((response) => {

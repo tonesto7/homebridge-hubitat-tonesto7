@@ -9,10 +9,10 @@ String appModified()                    { return "10-27-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
-String appIconUrl()                     { return "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-v2/${branch()}/images/hb_tonesto7@2x.png" }
+String appIconUrl()                     { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/hb_tonesto7@2x.png" }
 Boolean isST()                          { return (getPlatform() == "SmartThings") }
 Map minVersions()                       { return [plugin: 240] }
-String getAppImg(String imgName, frc=false, ext=".png") { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-v2/${branch()}/images/${imgName}${ext}" : "" }
+String getAppImg(String imgName, frc=false, ext=".png") { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/${imgName}${ext}" : "" }
 
 definition(
     name: "Homebridge v2",
@@ -392,7 +392,7 @@ def donationPage() {
             str += "\n\nIf you have already donated, thank you very much for your support!"
 
             str += "\n\nIf you are just not interested or have already donated please ignore this message and toggle the setting below"
-            str += "\n\nThanks again for using Homebridge SmartThings"
+            str += "\n\nThanks again for using Homebridge Hubitat"
             paragraph pTS(str, null, "red"), required: true, state: null
             input "sentDonation", "bool", title: inTS("Already Donated?"), defaultValue: false, submitOnChange: true
             href url: textDonateLink(), style: "external", required: false, title: inTS("Donations", getAppImg("donata", true)), description: "Tap to open in browser", state: "complete", image: getAppImg("donate")
@@ -913,19 +913,19 @@ private processCmd(devId, cmd, value1, value2, local=false) {
             try {
                 if (value2 != null) {
                     device?."$command"(value1,value2)
-                    logInfo("Command Successful for Device ${device.displayName} | Command ${command}($value1, $value2)")
+                    logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1, $value2)]")
                 } else if (value1 != null) {
                     device?."$command"(value1)
-                    logInfo("Command Successful for Device ${device.displayName} | Command ${command}($value1)")
+                    logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1)]")
                 } else {
                     device?."$command"()
-                    logInfo("Command Successful for Device ${device.displayName} | Command ${command}()")
+                    logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
                 }
-                CommandReply("Success", "Device ${device.displayName} | Command ${command}()")
+                CommandReply("Success", "Device ${device.displayName} | Command [${command}()]")
                 logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2])
             } catch (e) {
-                logError("Error Occurred for Device ${device.displayName} | Command ${command}()")
-                CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command ${command}()")
+                logError("Error Occurred for Device ${device.displayName} | Command [${command}()]")
+                CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command [${command}()]")
             }
         }
     }
@@ -1624,7 +1624,7 @@ private checkVersionData(now = false) { //This reads a JSON file from GitHub wit
 
 private getConfigData() {
     Map params = [
-        uri: "https://raw.githubusercontent.com/tonesto7/homebridge-smartthings-v2/master/appData.json",
+        uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/appData.json",
         contentType: "application/json",
         timeout: 20
     ]
