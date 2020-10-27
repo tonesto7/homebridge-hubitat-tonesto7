@@ -65,7 +65,7 @@ When properly setup, you should see something like this in your Homebridge start
 
 Installation comes in two parts:
 
-## 1. SmartApp Installation
+## 1. Hubitat App Installation
 
 ### Option 1: Automated Install
    * Install [Hubitat Package Manager](https://github.com/dcmeglio/hubitat-packagemanager)
