@@ -110,11 +110,11 @@ Installation comes in two parts:
 
 ## 3. Homebridge Plugin Installation:
 
-***NOTICE:*** I highly recommend installing the plugin [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x) to manage your homebridge instance and configs. This will allow you to use the web based form to configure this plugin.
+***NOTICE:*** I highly recommend using [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x) to manage your homebridge instance, plugin and configs. This will allow you to use the web based form to configure this plugin.
 
  1. Install homebridge using: `npm i -g homebridge` (For Homebridge Install: [Homebridge Instructions](https://github.com/nfarina/homebridge/blob/master/README.md))
  2. Install Hubitat plugin using: `npm i -g homebridge-hubitat-tonesto7`
- 3. Update your configuration file. See sample `config.json` snippet below or using the Config-Ui-X plugin settings panel.
+ 3. Update your configuration file using the config generator inside the Hubitat App as the template to copy/paste into platform section of the Homebridge config.json.
 
 ### Config.json Settings Example
 

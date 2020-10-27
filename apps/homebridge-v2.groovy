@@ -145,7 +145,7 @@ def mainPage() {
         section(sTS("App Preferences:", null, true)) {
             def sDesc = getSetDesc()
             href "settingsPage", title: inTS("App Settings", getAppImg("settings", true)), description: sDesc, state: (sDesc?.endsWith("modify...") ? "complete" : null), required: false, image: getAppImg("settings")
-            label title: inTS("App Label (optional)", getAppImg("name_tag", true)), description: "Rename this App", defaultValue: app?.name, required: false, image: getAppImg("name_tag")
+            label title: inTS("Label this Instance (optional)", getAppImg("name_tag", true)), description: "Rename this App", defaultValue: app?.name, required: false, image: getAppImg("name_tag")
         }
 
         if(devMode()) {
@@ -538,7 +538,6 @@ private subscribeToEvts() {
         if(state?.lastMode == null) { state?.lastMode = location?.mode?.toString() }
     }
     state?.subscriptionRenewed = 0
-    // if(settings?.sendCmdViaHubaction != false) { subscribe(location, null, lanEventHandler, [filterEvents:false]) }
     if(settings?.routineList) {
         logDebug("Registering (${settings?.routineList?.size() ?: 0}) Virtual Routine Devices")
         subscribe(location, "routineExecuted", changeHandler)
@@ -833,53 +832,6 @@ private getHttpHeaders(headers) {
   return obj
 }
 
-def lanEventHandler(evt) {
-    // log.trace "lanEventHandler..."
-    try {
-        def evtData = parseLanMessage(evt?.description?.toString())
-        Map headers = evtData?.headers
-        def slurper = new groovy.json.JsonSlurper()
-        def body = evtData?.body ? slurper?.parseText(evtData?.body as String) : null
-        // log.trace "lanEventHandler... | headers: ${headerMap}"
-        // log.debug "headers: $headers"
-        // log.debug "body: $body"
-        Map msgData = [:]
-        if (headers?.size()) {
-            String evtSrc = (headers?.evtsource || body?.evtsource) ? (headers?.evtsource ?: body?.evtsource) : null
-            if (evtSrc && evtSrc?.startsWith("Homebridge_${pluginName()}_${app?.getId()}")) {
-                String evtType = (headers?.evttype || body?.evttype) ? (headers?.evttype ?: body?.evttype) : null
-                if (body && evtType) {
-                    switch(evtType) {
-                        case "hkCommand":
-                            // log.trace "hkCommand($msgData)"
-                            def val1 = body?.values?.value1 ?: null
-                            def val2 = body?.values?.value2 ?: null
-                            processCmd(body?.deviceid, body?.command, val1, val2, true)
-                            break
-                        case "enableDirect":
-                            // log.trace "enableDirect($msgData)"
-                            state?.pluginDetails = [
-                                directIP: body?.ip,
-                                directPort: body?.port,
-                                version: body?.version ?: null
-                            ]
-                            updCodeVerMap("plugin", body?.version ?: null)
-                            activateDirectUpdates(true)
-                            break
-                        case "attrUpdStatus":
-                            // if(body?.evtStatus && body?.evtStatus != "OK") { log.warn "Attribute Update Failed | Device: ${body?.evtDevice} | Attribute: ${body?.evtAttr}" }
-                            break
-                        default:
-                            break
-                    }
-                }
-            }
-        }
-    } catch (ex) {
-        logError "lanEventHandler Exception:", ex
-    }
-}
-
 def deviceCommand() {
     // log.info("Command Request: $params")
     def val1 = request?.JSON?.value1 ?: null
@@ -1079,8 +1031,6 @@ def deviceAttributeList(device) {
     if(isDeviceInInput("tstatHeatList", device?.id)) { atts?.remove("coolingSetpoint"); atts?.remove("coolingSetpointRange"); }
     return atts
 }
-
-// String getAppEndpointUrl(subPath) { return "${apiServerUrl("/api/smartapps/installations/${app.id}${subPath ? "/${subPath}" : ""}?access_token=${atomicState?.accessToken}")}" }
 
 def getAllData() {
     state?.subscriptionRenewed = now()
