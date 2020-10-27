@@ -1,25 +1,70 @@
 {
-    "name": "homebridge-hubitat-tonesto7",
-    "description": "Hubitat plugin for HomeBridge",
-    "version": "1.5.6",
-    "license": "ISC",
-    "preferGlobal": true,
+    "dependencies": {
+        "axios": "^0.21.0",
+        "body-parser": "^1.19.0",
+        "chalk": "^4.1.0",
+        "compare-versions": "^3.6.0",
+        "express": "^4.17.1",
+        "hap-nodejs-community-types": "0.3.1",
+        "lodash": "^4.17.20",
+        "node-machine-id": "^1.1.12",
+        "os": "0.1.1",
+        "portfinder-sync": "^0.0.2",
+        "request": "^2.88.2",
+        "winston": "^3.3.3",
+        "winston-daily-rotate-file": "^4.5.0",
+        "ws": "^7.3.1"
+    },
+    "devDependencies": {
+        "eslint": "^7.12.1",
+        "eslint-config-prettier": "^6.14.0",
+        "eslint-plugin-prettier": "^3.1.4",
+        "homebridge": "^1.1.6",
+        "lint-staged": "^10.5.0",
+        "snyk": "^1.420.1",
+        "prettier": "^2.1.2"
+    },
+    "description": "Hubitat plugin for HomeBridge/HomeKit",
+    "engines": {
+        "homebridge": ">=0.4.46",
+        "node": ">=0.12.0"
+    },
+    "lint-staged": {
+        "*.js": [
+            "prettier --write",
+            "git add"
+        ]
+    },
+    "homepage": "https://github.com/tonesto7/homebridge-hubitat-tonesto7/#readme",
     "keywords": [
         "homebridge-plugin",
         "hubitat",
         "homekit",
-        "homebridge"
+        "homebridge",
+        "category_climate",
+        "category_hubs",
+        "category_lighting"
     ],
-    "dependencies": {
-        "request": "^2.88.0",
-        "request-promise": "^4.2.2"
+    "funding": {
+        "type": "paypal",
+        "url": "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url"
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/tonesto7/homebridge-hubitat-tonesto7.git"
+    "scripts": {
+        "test": "snyk test && eslint .",
+        "prettier": "prettier --write src/**/*.js",
+        "freeport": "npx kill-port 8000",
+        "start": "homebridge -D -P . -U .",
+        "snyk-protect": "snyk protect",
+        "prepare": "npm run snyk-protect"
     },
-    "engines": {
-        "node": ">=0.12.0",
-        "homebridge": ">=0.3.1"
-    }
+    "main": "src/index.js",
+    "license": "ISC",
+    "name": "homebridge-hubitat-tonesto7",
+    "preferGlobal": true,
+    "repository": "github:https://github.com/tonesto7/homebridge-hubitat-tonesto7",
+    "bugs": {
+        "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
+    },
+    "version": "2.0.0",
+    "synk": true
 }
