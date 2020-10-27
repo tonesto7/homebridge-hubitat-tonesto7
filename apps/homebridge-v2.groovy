@@ -1,10 +1,11 @@
 /**
  *  Homebridge Hubitat Interface
- *  Originally Modelled off of Paul Lovelace's JSON API
+ *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
+ *
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.1" }
+String appVersion()                     { return "2.0.2" }
 String appModified()                    { return "10-27-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
@@ -91,23 +92,26 @@ def mainPage() {
         section(sTS("Device Configuration:", null, true)) {
             Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
-            String desc = "Tap to select devices..."
+            String desc = """<small style="color:gray;">Tap to select devices...</small>"""
+            Integer devCnt = getDeviceCnt()
             if(conf) {
                 desc = ""
-                desc += lightList ? "(${lightList?.size()}) Light Device${lightList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += buttonList ? "(${buttonList?.size()}) Button Device${buttonList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += (fanList || fan3SpdList || fan4SpdList) ? "(${fansize}) Fan Device${fansize > 1 ? "s" : ""}\n" : ""
-                desc += speakerList ? "(${speakerList?.size()}) Speaker Device${speakerList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += shadesList ? "(${shadesList?.size()}) Shade Device${shadesList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += garageList ? "(${garageList?.size()}) Garage Door Device${garageList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += tstatList ? "(${tstatList?.size()}) Tstat Device${tstatList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += tstatHeatList ? "(${tstatHeatList?.size()}) Tstat Heat Device${tstatHeatList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += sensorList ? "(${sensorList?.size()}) Sensor Device${sensorList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += switchList ? "(${switchList?.size()}) Switch Device${switchList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += deviceList ? "(${deviceList?.size()}) Other Device${deviceList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += modeList ? "(${modeList?.size()}) Mode Device${modeList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += routineList ? "(${routineList?.size()}) Routine Device${routineList?.size() > 1 ? "s" : ""}\n" : ""
-                desc += "\nTap to modify..."
+                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList?.size() > 1 ? "s" : ""}</b> (${lightList?.size()})</small><br>""" : ""
+                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList?.size() > 1 ? "s" : ""}</b> (${buttonList?.size()})</small><br>""" : ""
+                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : ""}</b> (${fansize})</small><br>""" : ""
+                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList?.size() > 1 ? "s" : ""}</b> (${speakerList?.size()})</small><br>""" : ""
+                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList?.size() > 1 ? "s" : ""}</b> (${shadesList?.size()})</small><br>""" : ""
+                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList?.size() > 1 ? "s" : ""}</b> (${garageList?.size()})</small><br>""" : ""
+                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList?.size() > 1 ? "s" : ""}</b> (${tstatList?.size()})</small><br>""" : ""
+                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList?.size() > 1 ? "s" : ""}</b> (${tstatHeatList?.size()})</small><br>""" : ""
+                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList?.size() > 1 ? "s" : ""}</b> (${sensorList?.size()})</small><br>""" : ""
+                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList?.size() > 1 ? "es" : ""}</b> (${switchList?.size()})</small><br>""" : ""
+                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList?.size() > 1 ? "s" : ""}</b> (${deviceList?.size()})</small><br>""" : ""
+                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList?.size() > 1 ? "s" : ""}</b> (${modeList?.size()})</small><br>""" : ""
+                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList?.size() > 1 ? "s" : ""}</b> (${routineList?.size()})</small><br>""" : ""
+                desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
+                desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : ""
+                desc += """<br><small style="color:#2784D9;">Tap to modify...</small>"""
             }
             href "deviceSelectPage", title: inTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : null), description: desc
         }
@@ -130,11 +134,6 @@ def mainPage() {
         }
         section(sTS("Plugin Config Generator:", null, true)) {
             href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: inTS("Generate platform config for homebridge", getAppImg("info", true)), description: "Tap to view...", state: "complete", image: getAppImg("info")
-            Integer devCnt = getDeviceCnt()
-            if(devCnt > 148) {
-                paragraph pTS("Notice:\nHomebridge Allows for 149 Devices per HomeKit Bridge!!!", getAppImg("error", true), true, "red"), image: getAppImg("error"), state: null, required: true
-            }
-            paragraph pTS("Devices Selected: (${devCnt})", getAppImg("info", true), false, "#2784D9"), image: getAppImg("info"), state: "complete"
         }
 
         section(sTS("History Data and Device Debug:", null, true)) {
@@ -145,6 +144,7 @@ def mainPage() {
         section(sTS("App Preferences:", null, true)) {
             def sDesc = getSetDesc()
             href "settingsPage", title: inTS("App Settings", getAppImg("settings", true)), description: sDesc, state: (sDesc?.endsWith("modify...") ? "complete" : null), required: false, image: getAppImg("settings")
+            href "changeLogPage", title: inTS("View Changelog", getAppImg("change_log", true)), description: "Tap to view...", image: getAppImg("change_log")
             label title: inTS("Label this Instance (optional)", getAppImg("name_tag", true)), description: "Rename this App", defaultValue: app?.name, required: false, image: getAppImg("name_tag")
         }
 
@@ -158,6 +158,7 @@ def mainPage() {
             }
         }
         clearTestDeviceItems()
+        appFooter()
     }
 }
 
@@ -321,7 +322,7 @@ def historyPage() {
         List eHist = getEvtHistory()?.sort {it?.dt}?.reverse()
         section(sTS("Last (${cHist?.size()}) Commands Received From HomeKit:", null, true)) {
             if(cHist?.size()) {
-                cHist?.each { c-> paragraph pTS(" \u2022 <b>Device</b>: ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
+                cHist?.each { c-> paragraph pTS(" \u2022 <br>Device</br>: ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
             } else { paragraph pTS("No Command History Found...", null, false) }
         }
         section(sTS("Last (${eHist?.size()}) Events Sent to HomeKit:", null, true)) {
@@ -406,6 +407,7 @@ def confirmPage() {
         section() {
             paragraph pTS("\nYou are no longer required to restart homebridge to apply any device changes made under this app in HomeKit.\n\nOnce you press Done/Save the Homebridge plugin will refresh your device changes after 15-20 seconds.", getAppImg("info", true), false, "#2784D9"), state: "complete", image: getAppImg("info")
         }
+        appFooter()
     }
 }
 
@@ -1429,28 +1431,25 @@ mappings {
 def appInfoSect() {
     Map codeVer = state?.codeVersions ?: null
     Boolean isNote = false
-    section() {
-        String str = "Version: v${appVersion()}"
-        str += state?.pluginDetails?.version ? "\nPlugin: v${state?.pluginDetails?.version}" : ""
-        str += getPlatform() ? "\nPlatform: ${getPlatform()}" : ""
-        str += (state?.pluginDetails?.version && state?.pluginUpdates) ? ((state?.pluginUpdates?.hasUpdate == true) ? "\nUpdate Available: (v${state?.pluginUpdates?.newVersion})" : "") : ""
-        href "changeLogPage", title: inTS("${app?.name}", getAppImg("hb_tonesto7@2x", true)), description: str, image: getAppImg("hb_tonesto7@2x")
+    String tStr = """<small style="color: gray;"><b>Version:</b> v${appVersion()}</small>${state?.pluginDetails?.version ? """<br><small style="color: gray;"><b>Plugin:</b> v${state?.pluginDetails?.version}</small>""" : ""}"""
+    section (s3TS(app?.name, tStr, getAppImg("hb_tonesto7@2x", true), "orange")) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
         if(minUpdMap?.updRequired && minUpdMap?.updItems?.size()) {
             isNote=true
-            String str3 = "Updates Required:"
-            minUpdMap?.updItems?.each { item-> str3 += bulletItem(str3, item)  }
-            paragraph pTS(str3, null, false, "red"), required: true, state: null
-            paragraph pTS("If you just updated the code please press Done/Save to let the app process the changes.", null, false, "red"), required: true, state: null
+            String str3 = """<small style="color: red;"><b>Updates Required:</b></small>"""
+            minUpdMap?.updItems?.each { item-> str3 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
+            str3 += """<br><br><small style="color: red; font-weight: bold;">If you just updated the code please press Done/Next to let the app process the changes.</small>"""
+            paragraph str3
         } else if(codeUpdItems?.size()) {
             isNote=true
-            String str2 = "Code Updates Available:"
-            codeUpdItems?.each { item-> str2 += bulletItem(str2, item) }
-            paragraph pTS(str2, null, false, "red"), required: true, state: null
+            String str2 = """<small style="color: red;"><b>Code Updates Available:</b></small>"""
+            codeUpdItems?.each { item-> str2 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
+            paragraph str2
         }
-        if(!isNote) { paragraph "No Issues to Report" }
-    }
+        if(!isNote) { paragraph """<small style="color: gray;">No Issues to Report</small>""" }
+        paragraph htmlLine("orange")
+	}
 }
 
 /**********************************************
@@ -1458,8 +1457,17 @@ def appInfoSect() {
 ***********************************************/
 String getPublicImg(String imgName, frc=false) { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png" : "" }
 String sTS(String t, String i = null, bold=false) { return isST() ? t : """<h3>${i ? """<img src="${i}" width="42"> """ : ""} ${bold ? "<b>" : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}</h3>""" }
+String s3TS(String t, String st, String i = null, c="#1A77C9") { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="42"> """ : ""} ${t?.replaceAll("\\n", "<br>")}</h3>${st ? "${st}" : ""}""" }
 String pTS(String t, String i = null, bold=true, color=null) { return isST() ? t : "${color ? """<div style="color: $color;">""" : ""}${bold ? "<b>" : ""}${i ? """<img src="${i}" width="42"> """ : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}${color ? "</div>" : ""}" }
 String inTS(String t, String i = null, color=null, under=true) { return isST() ? t : """${color ? """<div style="color: $color;">""" : ""}${i ? """<img src="${i}" width="42"> """ : ""} ${under ? "<u>" : ""}${t?.replaceAll("\\n", " ")}${under ? "</u>" : ""}${color ? "</div>" : ""}""" }
+String htmlLine(color="#1A77C9") { return "<hr style='background-color:${color}; height: 1px; border: 0;'>" }
+def appFooter() {
+	section() {
+		paragraph htmlLine("orange")
+		paragraph """<div style='color:orange;text-align:center'>Homebridge Hubitat<br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target="_blank"><img width="120" height="120" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png"></a><br><br>Please consider donating if you find this useful.</div>"""
+	}       
+}
+
 String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} \u2022 ${strVal}" }
 String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == "" && !newLine) ? "" : "\n"} - ${strVal}" }
 String textDonateLink() { return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url" }

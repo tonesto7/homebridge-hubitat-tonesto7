@@ -1,3 +1,6 @@
+## v2.0.2 Changes
+- [UPDATE] App UI updates to the header, footer, and device selection inputs.  I borrowed some inspiration for the footer from Hubitat Package Manager (Thanks @dman2306). 
+
 ## v2.0.0 Changes
 - [NEW] **_Important NOTICE:_**
 - **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
