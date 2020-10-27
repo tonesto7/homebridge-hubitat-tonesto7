@@ -16,7 +16,7 @@
         "ws": "^7.3.1"
     },
     "devDependencies": {
-        "eslint": "^7.12.0",
+        "eslint": "^7.12.1",
         "eslint-config-prettier": "^6.14.0",
         "eslint-plugin-prettier": "^3.1.4",
         "homebridge": "^1.1.6",
@@ -24,7 +24,7 @@
         "snyk": "^1.420.1",
         "prettier": "^2.1.2"
     },
-    "description": "Hubitat plugin for HomeBridge",
+    "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
         "homebridge": ">=0.4.46",
         "node": ">=0.12.0"
@@ -65,6 +65,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.4.0-beta.7",
+    "version": "2.0.0",
     "synk": true
 }

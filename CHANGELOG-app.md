@@ -1,6 +1,4 @@
-# Changelog
-
-## v2.4.0
+## v2.0.0 Changes
 
 - [NEW] Ported v2.0 app and plugin from stable SmartThings version
 - [NEW] Added duplicate device detection cleanups so Homekit doesn't try to create duplicate devices and throw an error.
