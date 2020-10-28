@@ -13,13 +13,13 @@
             },
             "app_url_local": {
                 "title": "App Url Local",
-                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Configuration Data for Homebridge'",
+                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
                 "type": "string",
                 "required": true
             },
             "app_url_cloud": {
                 "title": "App Url Cloud",
-                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Configuration Data for Homebridge'",
+                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
                 "type": "string",
                 "required": true
             },
@@ -32,7 +32,7 @@
             },
             "access_token": {
                 "title": "App Token",
-                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Configuration Data for Homebridge'",
+                "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
                 "type": "string",
                 "required": true
             },

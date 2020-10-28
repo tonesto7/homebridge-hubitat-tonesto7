@@ -1,3 +1,8 @@
+## v2.0.4 Changes
+- [FIX] HSM status updates should now be sent to HomeKit correctly.
+- [FIX] Device filters should now work correctly again.
+- [UPDATE] Modified the plugin config to show under the UI instead of loading a web page.
+
 ## v2.0.3 Changes
 - [FIX] Fixed device count to include HSM device when enabled.
 

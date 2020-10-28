@@ -477,12 +477,13 @@ module.exports = class Transforms {
     }
 
     convertAlarmState(value) {
+        // console.log("convertAlarmState", value);
         switch (value) {
-            case "armHome":
+            case "armedHome":
                 return Characteristic.SecuritySystemCurrentState.STAY_ARM;
-            case "armNight":
+            case "armedNight":
                 return Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
-            case "armAway":
+            case "armedAway":
                 return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
             case "disarmed":
                 return Characteristic.SecuritySystemCurrentState.DISARMED;
@@ -492,6 +493,7 @@ module.exports = class Transforms {
     }
 
     convertAlarmCmd(value) {
+        // console.log("convertAlarmCmd", value);
         // Characteristic.SecuritySystemCurrentState.STAY_ARM = 0;
         // Characteristic.SecuritySystemCurrentState.AWAY_ARM = 1;
         // Characteristic.SecuritySystemCurrentState.NIGHT_ARM = 2;

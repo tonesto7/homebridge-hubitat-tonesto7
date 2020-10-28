@@ -1,3 +1,6 @@
+## v2.0.2
+- [FIX] HSM status updates should now work correctly.
+
 ## v2.0.0
 
 - [NEW] **_Important NOTICE:_**

@@ -5,8 +5,8 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.3" }
-String appModified()                    { return "10-27-2020" }
+String appVersion()                     { return "2.0.4" }
+String appModified()                    { return "10-28-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
@@ -40,6 +40,7 @@ preferences {
     page(name: "capFilterPage")
     page(name: "virtDevicePage")
     page(name: "developmentPage")
+    page(name: "pluginConfigPage")
     page(name: "donationPage")
     page(name: "historyPage")
     page(name: "deviceDebugPage")
@@ -133,13 +134,13 @@ def mainPage() {
             input "temp_unit", "enum", title: inTS("Temperature Unit?", getAppImg("command", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true, image: getAppImg("command")
             
         }
-        section(sTS("Plugin Config Generator:", null, true)) {
-            href url: getAppEndpointUrl("config"), style: "embedded", required: false, title: inTS("Generate platform config for homebridge", getAppImg("info", true)), description: "Tap to view...", state: "complete", image: getAppImg("info")
+        section(sTS("HomeBridge Config Generator:", null, true)) {
+            href "pluginConfigPage", style: "embedded", required: false, title: inTS("View Generated Config for HomeBridge", getAppImg("info", true)), description: "Tap to view...", state: "complete", image: getAppImg("info")
         }
 
         section(sTS("History Data and Device Debug:", null, true)) {
-            href "historyPage", title: inTS("View Command and Event History", getAppImg("backup", true)), image: getAppImg("backup")
-            href "deviceDebugPage", title: inTS("View Device Debug Data", getAppImg("debug", true)), image: getAppImg("debug")
+            href "historyPage", title: inTS("View Command and Event History", getAppImg("backup", true)), description: "Tap to view...", state: "complete", image: getAppImg("backup")
+            href "deviceDebugPage", title: inTS("View Device Debug Data", getAppImg("debug", true)), description: "Tap to view...", state: "complete", image: getAppImg("debug")
         }
 
         section(sTS("App Preferences:", null, true)) {
@@ -159,7 +160,15 @@ def mainPage() {
             }
         }
         clearTestDeviceItems()
-        appFooter()
+    }
+}
+
+def pluginConfigPage() {
+    return dynamicPage(name: "pluginConfigPage", title: "", install: false, uninstall: false) {
+        section() {
+            paragraph pTS("Generated HomeBridge Plugin Platform Config", null, true, "#2784D9")
+            paragraph """<pre><code>${renderConfig()}</code></pre>"""
+        }
     }
 }
 
@@ -211,8 +220,10 @@ def deviceSelectPage() {
             input "deviceList", "capability.refresh", title: inTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("devices2")
         }
 
-        section(sTS("Virtual Devices:", null, true)) {
-            href "virtDevicePage", title: inTS("Configure Virtual Mode Devices", getAppImg("devices", true)), required: false, image: getAppImg("devices"), state: (conf ? "complete" : null), description: desc
+        section(sTS("Create Devices for Modes in HomeKit?", null, true)) {
+            paragraph title: pTS("What are these for?"), "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete", image: getAppImg("info")
+            def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
+            input "modeList", "enum", title: inTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true, image: getAppImg("mode")
         }
 
         inputDupeValidation()
@@ -535,7 +546,7 @@ private subscribeToEvts() {
     runIn(4, "registerDevices")
     logInfo("Starting Device Subscription Process")
     if(settings?.addSecurityDevice) {
-        subscribe(location, "alarmSystemStatus", changeHandler)
+        subscribe(location, (isST() ? "alarmSystemStatus" : "hsmStatus"), changeHandler)
     }
     if(settings?.modeList) {
         logDebug("Registering (${settings?.modeList?.size() ?: 0}) Virtual Mode Devices")
@@ -727,13 +738,13 @@ def getSecurityStatus(retInt=false) {
     // if(inc != null && inc?.size()) { cur = 'alarm_active' }
     if(retInt) {
         switch (cur) {
-            case 'armHome':
+            case 'armedHome':
             case 'stay':
                 return 0
-            case 'armAway':
+            case 'armedAway':
             case 'away':
                 return 1
-            case 'armNight':
+            case 'armedNight':
             case 'night':
                 return 2
             case 'disarmed':
@@ -743,14 +754,6 @@ def getSecurityStatus(retInt=false) {
                 return 4
         }
     } else { return cur ?: "disarmed" }
-}
-
-String getAlarmSystemStatus(retInt=false) {
-    if(isST()) {
-        def cur = location?.currentState("alarmSystemStatus")?.value
-        return cur ?: "disarmed"
-    } 
-    return location?.hsmStatus ?: "disarmed"
 }
 
 public setAlarmSystemMode(mode) {
@@ -804,9 +807,9 @@ def renderConfig() {
             ]
         ]
     ]
-    def configJson = new groovy.json.JsonOutput().toJson(jsonMap)
-    def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
-    render contentType: "text/plain", data: configString
+    def cj = new groovy.json.JsonOutput().toJson(jsonMap)
+    def cs = new groovy.json.JsonOutput().prettyPrint(cj)
+    return cs
 }
 
 def renderLocation() {
@@ -985,38 +988,38 @@ def deviceCapabilityList(device) {
         capItems["Speaker"] = 1
     }
     if(isDeviceInInput("shadesList", device?.id)) {
-        capItems["Window Shade"] = 1
+        capItems["WindowShade"] = 1
     }
     if(isDeviceInInput("garageList", device?.id)) {
-        capItems["Garage Door Control"] = 1
+        capItems["GarageDoorControl"] = 1
     }
     if(isDeviceInInput("tstatList", device?.id)) {
         capItems["Thermostat"] = 1
-        capItems["Thermostat Operating State"] = 1
+        capItems["ThermostatOperatingState"] = 1
     }
     if(isDeviceInInput("tstatHeatList", device?.id)) {
         capItems["Thermostat"] = 1
-        capItems["Thermostat Operating State"] = 1
-        capItems?.remove("Thermostat Cooling Setpoint")
+        capItems["ThermostatOperatingState"] = 1
+        capItems?.remove("ThermostatCoolingSetpoint")
     }
-    if(settings?.noTemp && capItems["Temperature Measurement"] && (capItems["Contact Sensor"] || capItems["Water Sensor"])) {
+    if(settings?.noTemp && capItems["TemperatureMeasurement"] && (capItems["ContactSensor"] || capItems["WaterSensor"])) {
         Boolean remTemp = true
         if(settings?.sensorAllowTemp && isDeviceInInput("sensorAllowTemp", device?.id)) remTemp = false
-        if(remTemp) { capItems?.remove("Temperature Measurement") }
+        if(remTemp) { capItems?.remove("TemperatureMeasurement") }
     }
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
     Map remCaps = [
-       "Acceleration": "Acceleration Sensor", "Battery": "Battery", "Button": "Button", "Contact": "Contact Sensor", "Energy": "Energy Meter", "Humidity": "Relative Humidity Measurement",
-       "Illuminance": "Illuminance Measurement", "Level": "Switch Level", "Lock": "Lock", "Motion": "Motion Sensor", "Power": "Power Meter", "Presence": "Presence Sensor", "Switch": "Switch",
-       "Tamper": "Tamper Alert", "Temp": "Temperature Measurement", "Valve": "Valve"
+       "Acceleration": "AccelerationSensor", "Battery": "Battery", "Button": "Button", "Contact": "ContactSensor", "Energy": "EnergyMeter", "Humidity": "RelativeHumidityMeasurement",
+       "Illuminance": "IlluminanceMeasurement", "Level": "SwitchLevel", "Lock": "Lock", "Motion": "MotionSensor", "Power": "PowerMeter", "Presence": "PresenceSensor", "Switch": "Switch",
+       "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve"
     ]
     List remKeys = settings?.findAll { it?.key?.toString()?.startsWith("remove") && it?.value != null }?.collect { it?.key as String } ?: []
     remKeys?.each { k->
         String capName = k?.replaceAll("remove", "")
         if(remCaps[capName] && capItems[remCaps[capName]] && isDeviceInInput(k, device?.id)) { capItems?.remove(remCaps[capName]);  if(showDebugLogs) { logDebug("Filtering ${capName}"); } }
     }
-    return capItems
+    return capItems?.sort { it?.key }
 }
 
 def deviceCommandList(device) {
@@ -1420,7 +1423,6 @@ mappings {
     //     path("/startDirect/:ip/:port/:version")		{ action: [GET: "authError"] }
     // } else {
         path("/devices")					{ action: [GET: "getAllData"] }
-        path("/config")						{ action: [GET: "renderConfig"]  }
         path("/deviceDebug")			    { action: [GET: "viewDeviceDebug"]  }
         path("/location")					{ action: [GET: "renderLocation"] }
         path("/pluginStatus")			    { action: [POST: "pluginStatus"] }
@@ -1467,7 +1469,7 @@ String htmlLine(color="#1A77C9") { return "<hr style='background-color:${color};
 def appFooter() {
 	section() {
 		paragraph htmlLine("orange")
-		paragraph """<div style='color:orange;text-align:center'>Homebridge Hubitat<br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target="_blank"><img width="120" height="120" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png"></a><br><br>Please consider donating if you find this useful.</div>"""
+		paragraph """<div style='color:orange;text-align:center'>Homebridge Hubitat<br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target="_blank"><img width="120" height="120" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png"></a><br><br>Please consider donating if you find this integration useful.</div>"""
 	}       
 }
 
