@@ -1,3 +1,6 @@
+## v2.0.5 Changes
+- [NEW] View full device data output sent to Homebridge for debugging issues.
+
 ## v2.0.4 Changes
 - [FIX] HSM status updates should now be sent to HomeKit correctly.
 - [FIX] Device filters should now work correctly again.
