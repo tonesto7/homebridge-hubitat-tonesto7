@@ -119,7 +119,7 @@
                     "properties": {
                         "enabled": {
                             "title": "Enable Logging to file",
-                            "description": "This log will be created as homebridge-hubitat-v2.log in the same folder as this config.json file.",
+                            "description": "This log will be created as homebridge-hubitat-tonesto7.log in the same folder as this config.json file.",
                             "type": "boolean",
                             "required": false,
                             "default": true

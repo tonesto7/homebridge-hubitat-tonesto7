@@ -5,8 +5,8 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.4" }
-String appModified()                    { return "10-28-2020" }
+String appVersion()                     { return "2.0.5" }
+String appModified()                    { return "10-30-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
@@ -420,6 +420,9 @@ def deviceDebugPage() {
             if(debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
                 href url: getAppEndpointUrl("deviceDebug"), style: "embedded", required: false, title: inTS("Tap here to view Device Data...", getAppImg("info", true)), description: "", state: "complete", image: getAppImg("info")
             }
+        }
+        section(sTS("Homebridge Device Data Debug:", null, true)) {
+            href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inTS("View Device Data Sent to Homebridge...", getAppImg("info", true)), description: "", state: "complete", image: getAppImg("devices")
         }
     }
 }
@@ -869,7 +872,6 @@ private processCmd(devId, cmd, value1, value2, local=false) {
             }
         }
     }
-
 }
 
 def changeMode(modeId) {
@@ -1392,25 +1394,15 @@ def enableDirectUpdates() {
 }
 
 mappings {
-    // if (!params?.access_token || (params?.access_token && params?.access_token != atomicState?.accessToken)) {
-    //     path("/devices")					{ action: [GET: "authError"] }
-    //     path("/config")						{ action: [GET: "authError"] }
-    //     path("/location")					{ action: [GET: "authError"] }
-    //     path("/pluginStatus")			    { action: [POST: "authError"] }
-    //     path("/:id/command/:command")		{ action: [POST: "authError"] }
-    //     path("/:id/query")					{ action: [GET: "authError"] }
-    //     path("/:id/attribute/:attribute") 	{ action: [GET: "authError"] }
-    //     path("/startDirect/:ip/:port/:version")		{ action: [GET: "authError"] }
-    // } else {
-        path("/devices")					{ action: [GET: "getAllData"] }
-        path("/deviceDebug")			    { action: [GET: "viewDeviceDebug"]  }
-        path("/location")					{ action: [GET: "renderLocation"] }
-        path("/pluginStatus")			    { action: [POST: "pluginStatus"] }
-        path("/:id/command/:command")		{ action: [POST: "deviceCommand"] }
-        path("/:id/query")					{ action: [GET: "deviceQuery"] }
-        path("/:id/attribute/:attribute")	{ action: [GET: "deviceAttribute"] }
-        path("/startDirect/:ip/:port/:version")		{ action: [POST: "enableDirectUpdates"] }
-    // }
+    path("/devices")					{ action: [GET: "getAllData"]       }
+    path("/alldevices")                 { action: [GET: "renderDevices"]    }
+    path("/deviceDebug")			    { action: [GET: "viewDeviceDebug"]  }
+    path("/location")					{ action: [GET: "renderLocation"]   }
+    path("/pluginStatus")			    { action: [POST: "pluginStatus"]    }
+    path("/:id/command/:command")		{ action: [POST: "deviceCommand"]   }
+    path("/:id/query")					{ action: [GET: "deviceQuery"]      }
+    path("/:id/attribute/:attribute")	{ action: [GET: "deviceAttribute"]  }
+    path("/startDirect/:ip/:port/:version")		{ action: [POST: "enableDirectUpdates"] }
 }
 
 def appInfoSect() {
