@@ -90,19 +90,13 @@ Temporary Items
 .apdisk
 
 tempCodeRunnerFile.js
-AWS_Files/Testing/input.json
-.vscode/settings.json
-website/
 
+# Prevents local homebridge debug files from being committed
+.uix-secrets
 config.json
-accessories
 auth.json
-persist/
-.uix-secrets
-auth.json
-
-.uix-secrets
-smartthings_rsa.pub
-logaudit.json
-homebridge-hubitat-v2-logaudit.json
 accessories/
+persist/
+
+*.log.gz
+*-logaudit.json
