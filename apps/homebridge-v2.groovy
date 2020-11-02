@@ -413,7 +413,7 @@ def deviceDebugPage() {
                 input "debug_switch", "capability.actuator", title: inTS("Switches: ", getAppImg("switch", true)) , multiple: false, submitOnChange: true, required: false, image: getAppImg("switch")
             if(!debug_switch && !debug_sensor && !debug_garage && !debug_tstat)
                 input "debug_other", "capability.refresh", title: inTS("Others Devices: ", getAppImg("devices2", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("devices2")
-            if(!debug_sensor && !debug_other && !debug_switch)
+            if(!debug_sensor && !debug_other && !debug_switch && !debug_tstat)
                 input "debug_garage", "capability.garageDoorControl", title: inTS("Garage Doors: ", getAppImg("garage_door", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("garage_door")
             if(!debug_sensor && !debug_other && !debug_switch && !debug_garage)
                 input "debug_tstat", "capability.thermostat", title: inTS("Thermostats: ", getAppImg("thermostat", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("thermostat")

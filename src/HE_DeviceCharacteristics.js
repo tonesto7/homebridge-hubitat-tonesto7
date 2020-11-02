@@ -255,36 +255,28 @@ module.exports = class DeviceCharacteristics {
     }
 
     fan(_accessory, _service) {
-        if (_accessory.hasCapability("Thermostat") && _accessory.hasAttribute("thermostatFanMode")) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "thermostatFanMode");
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "thermostatFanMode", {
+        if (_accessory.hasAttribute("switch")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "switch");
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "switch", {
                 get_altAttr: "fanState",
             });
-            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
         } else {
-            if (_accessory.hasAttribute("switch")) {
-                _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "switch");
-                _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "switch", {
-                    get_altAttr: "fanState",
-                });
-            } else {
-                _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.CurrentFanState);
-                _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Active);
-            }
-            let spdSteps = 1;
-            if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 33;
-            if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
-            let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
-            if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
-                _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
-                    cmdHasVal: true,
-                    props: {
-                        minStep: spdSteps,
-                    },
-                });
-            } else {
-                _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
-            }
+            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.CurrentFanState);
+            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Active);
+        }
+        let spdSteps = 1;
+        if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 33;
+        if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
+        let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
+        if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
+                cmdHasVal: true,
+                props: {
+                    minStep: spdSteps,
+                },
+            });
+        } else {
+            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
         }
         _accessory.context.deviceGroups.push("fan");
         return _accessory;
@@ -630,6 +622,20 @@ module.exports = class DeviceCharacteristics {
             tstatService.removeCharacteristic(Characteristic.CoolingThresholdTemperature);
         }
         _accessory.context.deviceGroups.push("thermostat");
+        return _accessory;
+    }
+
+    thermostat_fan(_accessory, _service) {
+        if (_accessory.hasAttribute("thermostatFanMode")) {
+            console.log("Has Thermostat Fan...");
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "thermostatFanMode");
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "thermostatFanMode", {
+                get_altAttr: "fanState",
+            });
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.TargetFanState, "thermostatFanMode");
+            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
+        }
+        _accessory.context.deviceGroups.push("thermostat_fan");
         return _accessory;
     }
 

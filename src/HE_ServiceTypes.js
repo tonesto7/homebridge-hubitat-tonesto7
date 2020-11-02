@@ -37,6 +37,7 @@ module.exports = class ServiceTypes {
             switch_device: Service.Switch,
             temperature_sensor: Service.TemperatureSensor,
             thermostat: Service.Thermostat,
+            thermostat_fan: Service.Fanv2,
             valve: Service.Valve,
             virtual_mode: Service.Switch,
             virtual_routine: Service.Switch,
@@ -122,19 +123,7 @@ const serviceTests = [
     new ServiceTest("lock", (accessory) => accessory.hasCapability("Lock")),
     new ServiceTest("valve", (accessory) => accessory.hasCapability("Valve")),
     new ServiceTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
-    new ServiceTest(
-        "fan",
-        (accessory) =>
-        accessory.hasCapability("Fan") ||
-        accessory.hasCapability("Fan Light") ||
-        (accessory.hasCapability("Thermostat") && accessory.hasAttribute("thermostatFanMode")) ||
-        accessory.hasCapability("Fan Speed") ||
-        accessory.hasCapability("Fan Control") ||
-        accessory.hasCommand("setFanSpeed") ||
-        accessory.hasCommand("lowSpeed") ||
-        accessory.hasAttribute("fanSpeed"),
-        true,
-    ),
+    new ServiceTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("Fan Light") || accessory.hasCapability("Fan Speed") || accessory.hasCapability("Fan Control") || accessory.hasCommand("setFanSpeed") || accessory.hasCommand("lowSpeed") || accessory.hasAttribute("fanSpeed"), true),
     new ServiceTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
     new ServiceTest("virtual_routine", (accessory) => accessory.hasCapability("Routine")),
     new ServiceTest("button", (accessory) => accessory.hasCapability("Button")),
@@ -156,5 +145,6 @@ const serviceTests = [
     // new ServiceTest("energy_meter", accessory => (accessory.hasCapability('Energy Meter') && !accessory.hasCapability('Switch')), true),
     // new ServiceTest("power_meter", accessory => (accessory.hasCapability('Power Meter') && !accessory.hasCapability('Switch')), true),
     new ServiceTest("thermostat", (accessory) => accessory.hasCapability("Thermostat") || accessory.hasCapability("Thermostat Operating State") || accessory.hasAttribute("thermostatOperatingState")),
+    new ServiceTest("thermostat_fan", (accessory) => accessory.hasCapability("Thermostat") && accessory.hasAttribute("thermostatFanMode")),
     new ServiceTest("alarm_system", (accessory) => accessory.hasAttribute("alarmSystemStatus")),
 ];
