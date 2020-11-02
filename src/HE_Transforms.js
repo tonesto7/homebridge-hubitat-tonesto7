@@ -144,6 +144,8 @@ module.exports = class Transforms {
             case "coolingSetpoint":
             case "thermostatSetpoint":
                 return this.thermostatTempConversion(val);
+                // case "thermostatFanMode":
+                //     return val ? ""
             case "fanSpeed":
                 return this.fanSpeedIntToLevel(val);
             case "level":

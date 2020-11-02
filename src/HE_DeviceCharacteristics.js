@@ -255,28 +255,36 @@ module.exports = class DeviceCharacteristics {
     }
 
     fan(_accessory, _service) {
-        if (_accessory.hasAttribute("switch")) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "switch");
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "switch", {
+        if (_accessory.hasCapability("Thermostat") && _accessory.hasAttribute("thermostatFanMode")) {
+            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "thermostatFanMode");
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "thermostatFanMode", {
                 get_altAttr: "fanState",
             });
-        } else {
-            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.CurrentFanState);
-            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Active);
-        }
-        let spdSteps = 1;
-        if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 33;
-        if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
-        let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
-        if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
-                cmdHasVal: true,
-                props: {
-                    minStep: spdSteps,
-                },
-            });
-        } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
+        } else {
+            if (_accessory.hasAttribute("switch")) {
+                _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "switch");
+                _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "switch", {
+                    get_altAttr: "fanState",
+                });
+            } else {
+                _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.CurrentFanState);
+                _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Active);
+            }
+            let spdSteps = 1;
+            if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 33;
+            if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
+            let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
+            if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
+                _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
+                    cmdHasVal: true,
+                    props: {
+                        minStep: spdSteps,
+                    },
+                });
+            } else {
+                _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
+            }
         }
         _accessory.context.deviceGroups.push("fan");
         return _accessory;
@@ -690,7 +698,7 @@ module.exports = class DeviceCharacteristics {
     }
 
     window_shade(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, "level", {
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, _accessory.hasCommand("setLevel") ? "level" : "position", {
             props: {
                 steps: 10,
             },
@@ -699,7 +707,7 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get) {
                 c.on("get", (callback) => {
-                    callback(null, parseInt(_accessory.context.deviceData.attributes.level));
+                    callback(null, parseInt(_accessory.hasCommand("setLevel") ? _accessory.context.deviceData.attributes.level : _accessory.context.deviceData.attributes.position));
                 });
             }
             if (!c._events.set) {
@@ -710,15 +718,15 @@ module.exports = class DeviceCharacteristics {
                         let v = value;
                         if (value <= 2) v = 0;
                         if (value >= 98) v = 100;
-                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setLevel", {
+                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, _accessory.hasCommand("setLevel") ? "setLevel" : "setPosition", {
                             value1: v,
                         });
                     }
                 });
             }
-            this.accessories.storeCharacteristicItem("level", _accessory.context.deviceData.deviceid, c);
+            this.accessories.storeCharacteristicItem(_accessory.hasCommand("setLevel") ? "level" : "position", _accessory.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(this.transforms.transformAttributeState("level", _accessory.context.deviceData.attributes.level));
+            c.updateValue(this.transforms.transformAttributeState(_accessory.hasCommand("setLevel") ? "level" : "position", _accessory.hasCommand("setLevel") ? _accessory.context.deviceData.attributes.level : _accessory.context.deviceData.attributes.position));
         }
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.PositionState, "windowShade");
         _accessory.getOrAddService(_service).getCharacteristic(Characteristic.ObstructionDetected).updateValue(false);
