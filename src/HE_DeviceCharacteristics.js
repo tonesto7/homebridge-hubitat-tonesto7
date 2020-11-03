@@ -59,9 +59,9 @@ module.exports = class DeviceCharacteristics {
                 c.on("set", async(value, callback) => {
                     let cmdName = accClass.transforms.transformCommandName(opts.set_altAttr || attr, value);
                     let cmdVal = accClass.transforms.transformCommandValue(opts.set_altAttr || attr, value);
-                    if (opts.cmdHasVal === true) {
+                    if (opts.cmdHasVal === true || opts.cmdHasIntVal === true) {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdName, {
-                            value1: cmdVal,
+                            value1: opts.cmdHasIntVal === true ? parseInt(cmdVal) : cmdVal,
                         });
                     } else {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdVal);
@@ -327,7 +327,7 @@ module.exports = class DeviceCharacteristics {
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Brightness);
         }
-        if (_accessory.hasAttribute("hue")) {
+        if (_accessory.hasAttribute("hue") && _accessory.hasCommand("setHue")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Hue, "hue", {
                 cmdHasVal: true,
                 props: {
@@ -338,16 +338,16 @@ module.exports = class DeviceCharacteristics {
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Hue);
         }
-        if (_accessory.hasAttribute("saturation")) {
+        if (_accessory.hasAttribute("saturation") && _accessory.hasCommand("setSaturation")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Saturation, "saturation", {
                 cmdHasVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Saturation);
         }
-        if (_accessory.hasAttribute("colorTemperature")) {
+        if (_accessory.hasAttribute("colorTemperature") && _accessory.hasCommand("setColorTemperature")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.ColorTemperature, "colorTemperature", {
-                cmdHasVal: true,
+                cmdHasIntVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.ColorTemperature);
@@ -625,6 +625,18 @@ module.exports = class DeviceCharacteristics {
         return _accessory;
     }
 
+    thermostat_fan(_accessory, _service) {
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "thermostatFanMode");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "thermostatFanMode", {
+            get_altAttr: "fanState",
+        });
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.TargetFanState, "thermostatFanMode", {
+            get_altAttr: "thermostatFanModeTarget",
+        });
+        _accessory.context.deviceGroups.push("thermostat_fan");
+        return _accessory;
+    }
+
     valve(_accessory, _service) {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.InUse, "valve");
         _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "valve");
@@ -690,7 +702,7 @@ module.exports = class DeviceCharacteristics {
     }
 
     window_shade(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, "level", {
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, _accessory.hasCommand("setLevel") ? "level" : "position", {
             props: {
                 steps: 10,
             },
@@ -699,7 +711,7 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get) {
                 c.on("get", (callback) => {
-                    callback(null, parseInt(_accessory.context.deviceData.attributes.level));
+                    callback(null, parseInt(_accessory.hasCommand("setLevel") ? _accessory.context.deviceData.attributes.level : _accessory.context.deviceData.attributes.position));
                 });
             }
             if (!c._events.set) {
@@ -710,15 +722,15 @@ module.exports = class DeviceCharacteristics {
                         let v = value;
                         if (value <= 2) v = 0;
                         if (value >= 98) v = 100;
-                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setLevel", {
+                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, _accessory.hasCommand("setLevel") ? "setLevel" : "setPosition", {
                             value1: v,
                         });
                     }
                 });
             }
-            this.accessories.storeCharacteristicItem("level", _accessory.context.deviceData.deviceid, c);
+            this.accessories.storeCharacteristicItem(_accessory.hasCommand("setLevel") ? "level" : "position", _accessory.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(this.transforms.transformAttributeState("level", _accessory.context.deviceData.attributes.level));
+            c.updateValue(this.transforms.transformAttributeState(_accessory.hasCommand("setLevel") ? "level" : "position", _accessory.hasCommand("setLevel") ? _accessory.context.deviceData.attributes.level : _accessory.context.deviceData.attributes.position));
         }
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.PositionState, "windowShade");
         _accessory.getOrAddService(_service).getCharacteristic(Characteristic.ObstructionDetected).updateValue(false);

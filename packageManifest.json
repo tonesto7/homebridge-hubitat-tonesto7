@@ -1,21 +1,23 @@
 {
     "packageName": "Homebridge v2",
     "author": "Anthony S.",
-    "version": "2.0.5",
+    "version": "2.0.6",
     "minimumHEVersion": "1.0.0",
-    "dateReleased": "2020-10-30",
+    "dateReleased": "2020-11-03",
     "documentationLink": "https://github.com/tonesto7/homebridge-hubitat-tonesto7#readme",
     "communityLink": "https://community.hubitat.com/t/release-homebridge-hubitat-v2-0/54056",
     "licenseFile": "",
     "releaseNotes": "Please see Changelog at https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/changelog-app.md for recent changes.",
-    "apps": [{
-        "id": "d355b1b6-148e-4a67-a1b0-3e570ad1b6b5",
-        "name": "Homebridge v2",
-        "namespace": "tonesto7",
-        "location": "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/apps/homebridge-v2.groovy",
-        "required": true,
-        "oauth": true,
-        "version": "2.0.5"
-    }],
+    "apps": [
+        {
+            "id": "d355b1b6-148e-4a67-a1b0-3e570ad1b6b5",
+            "name": "Homebridge v2",
+            "namespace": "tonesto7",
+            "location": "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/apps/homebridge-v2.groovy",
+            "required": true,
+            "oauth": true,
+            "version": "2.0.6"
+        }
+    ],
     "drivers": []
 }

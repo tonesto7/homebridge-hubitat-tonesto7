@@ -17,12 +17,12 @@
     },
     "devDependencies": {
         "eslint": "^7.12.1",
-        "eslint-config-prettier": "^6.14.0",
+        "eslint-config-prettier": "^6.15.0",
         "eslint-plugin-prettier": "^3.1.4",
         "homebridge": "^1.1.6",
-        "lint-staged": "^10.5.0",
-        "snyk": "^1.420.1",
-        "prettier": "^2.1.2"
+        "lint-staged": "^10.5.1",
+        "prettier": "^2.1.2",
+        "snyk": "^1.421.1"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
@@ -55,7 +55,8 @@
         "freeport": "npx kill-port 8000",
         "start": "homebridge -D -P . -U .",
         "snyk-protect": "snyk protect",
-        "prepare": "npm run snyk-protect"
+        "prepare": "npm run snyk-protect",
+        "hb_cleanup_win": "rmdir /Q /S accessories && rmdir /Q /S persist"
     },
     "main": "src/index.js",
     "license": "ISC",

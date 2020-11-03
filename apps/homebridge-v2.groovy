@@ -5,14 +5,14 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.5" }
-String appModified()                    { return "10-30-2020" }
+String appVersion()                     { return "2.0.6" }
+String appModified()                    { return "11-03-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
 String appIconUrl()                     { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/hb_tonesto7@2x.png" }
 Boolean isST()                          { return (getPlatform() == "SmartThings") }
-Map minVersions()                       { return [plugin: 201] }
+Map minVersions()                       { return [plugin: 203] }
 String getAppImg(String imgName, frc=false, ext=".png") { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/${imgName}${ext}" : "" }
 
 definition(
@@ -413,7 +413,7 @@ def deviceDebugPage() {
                 input "debug_switch", "capability.actuator", title: inTS("Switches: ", getAppImg("switch", true)) , multiple: false, submitOnChange: true, required: false, image: getAppImg("switch")
             if(!debug_switch && !debug_sensor && !debug_garage && !debug_tstat)
                 input "debug_other", "capability.refresh", title: inTS("Others Devices: ", getAppImg("devices2", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("devices2")
-            if(!debug_sensor && !debug_other && !debug_switch)
+            if(!debug_sensor && !debug_other && !debug_switch && !debug_tstat)
                 input "debug_garage", "capability.garageDoorControl", title: inTS("Garage Doors: ", getAppImg("garage_door", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("garage_door")
             if(!debug_sensor && !debug_other && !debug_switch && !debug_garage)
                 input "debug_tstat", "capability.thermostat", title: inTS("Thermostats: ", getAppImg("thermostat", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("thermostat")
