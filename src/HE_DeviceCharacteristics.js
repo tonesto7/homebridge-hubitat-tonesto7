@@ -59,9 +59,9 @@ module.exports = class DeviceCharacteristics {
                 c.on("set", async(value, callback) => {
                     let cmdName = accClass.transforms.transformCommandName(opts.set_altAttr || attr, value);
                     let cmdVal = accClass.transforms.transformCommandValue(opts.set_altAttr || attr, value);
-                    if (opts.cmdHasVal === true) {
+                    if (opts.cmdHasVal === true || opts.cmdHasIntVal === true) {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdName, {
-                            value1: cmdVal,
+                            value1: opts.cmdHasIntVal === true ? parseInt(cmdVal) : cmdVal,
                         });
                     } else {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdVal);
@@ -327,7 +327,7 @@ module.exports = class DeviceCharacteristics {
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Brightness);
         }
-        if (_accessory.hasAttribute("hue")) {
+        if (_accessory.hasAttribute("hue") && _accessory.hasCommand("setHue")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Hue, "hue", {
                 cmdHasVal: true,
                 props: {
@@ -338,16 +338,16 @@ module.exports = class DeviceCharacteristics {
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Hue);
         }
-        if (_accessory.hasAttribute("saturation")) {
+        if (_accessory.hasAttribute("saturation") && _accessory.hasCommand("setSaturation")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Saturation, "saturation", {
                 cmdHasVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.Saturation);
         }
-        if (_accessory.hasAttribute("colorTemperature")) {
+        if (_accessory.hasAttribute("colorTemperature") && _accessory.hasCommand("setColorTemperature")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.ColorTemperature, "colorTemperature", {
-                cmdHasVal: true,
+                cmdHasIntVal: true,
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.ColorTemperature);
