@@ -1,3 +1,6 @@
+## v2.0.6 Changes
+- [NEW] Updated version info to latest app and plugin.
+
 ## v2.0.5 Changes
 - [NEW] View full device data output sent to Homebridge for debugging issues.
 

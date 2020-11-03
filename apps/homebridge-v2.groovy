@@ -5,14 +5,14 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.5" }
-String appModified()                    { return "10-30-2020" }
+String appVersion()                     { return "2.0.6" }
+String appModified()                    { return "11-03-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
 String appIconUrl()                     { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/hb_tonesto7@2x.png" }
 Boolean isST()                          { return (getPlatform() == "SmartThings") }
-Map minVersions()                       { return [plugin: 201] }
+Map minVersions()                       { return [plugin: 203] }
 String getAppImg(String imgName, frc=false, ext=".png") { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/${imgName}${ext}" : "" }
 
 definition(
