@@ -626,15 +626,13 @@ module.exports = class DeviceCharacteristics {
     }
 
     thermostat_fan(_accessory, _service) {
-        if (_accessory.hasAttribute("thermostatFanMode")) {
-            console.log("Has Thermostat Fan...");
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "thermostatFanMode");
-            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "thermostatFanMode", {
-                get_altAttr: "fanState",
-            });
-            _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.TargetFanState, "thermostatFanMode");
-            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.RotationSpeed);
-        }
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "thermostatFanMode");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentFanState, "thermostatFanMode", {
+            get_altAttr: "fanState",
+        });
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.TargetFanState, "thermostatFanMode", {
+            get_altAttr: "thermostatFanModeTarget",
+        });
         _accessory.context.deviceGroups.push("thermostat_fan");
         return _accessory;
     }

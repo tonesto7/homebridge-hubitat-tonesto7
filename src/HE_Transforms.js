@@ -99,9 +99,8 @@ module.exports = class Transforms {
                 }
                 return validValues;
             case "fanState":
-                console.log("get attr fanstate:", val);
                 return val === "off" || val === "auto" ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR;
-            case "fanModeState":
+            case "fanTargetState":
                 return val === "auto" ? Characteristic.TargetFanState.AUTO : Characteristic.TargetFanState.MANUAL;
             case "valve":
                 return val === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
@@ -186,13 +185,7 @@ module.exports = class Transforms {
                         return Characteristic.TargetHeatingCoolingState.OFF;
                 }
             case "thermostatFanMode":
-                console.log("get attr tstat fan:", val);
-                if (val === Characteristic.TargetFanState.MANUAL) {
-                    return "on";
-                } else {
-                    return "auto";
-                }
-
+                return val !== "auto" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
             case "windowShade":
                 if (val === "opening") {
                     return Characteristic.PositionState.INCREASING;
@@ -225,6 +218,10 @@ module.exports = class Transforms {
                 return val === 1 || val === true ? "lock" : "unlock";
             case "mute":
                 return val === "muted" ? "mute" : "unmute";
+            case "thermostatFanMode":
+                return val ? "fanOn" : "fanAuto";
+            case "thermostatFanModeTarget":
+                return val ? Characteristic.TargetFanState.MANUAL : Characteristic.TargetFanState.AUTO;
             case "fanSpeed":
             case "level":
             case "volume":
@@ -233,14 +230,6 @@ module.exports = class Transforms {
             case "hue":
             case "colorTemperature":
                 return `set${attr.charAt(0).toUpperCase() + attr.slice(1)}`;
-            case "thermostatFanMode":
-                console.log("set attr tstat fan mode:", val);
-                switch (val) {
-                    case Characteristic.TargetFanState.MANUAL:
-                        return "fanOn";
-                    default:
-                        return "fanAuto";
-                }
             default:
                 return val;
         }
@@ -293,6 +282,8 @@ module.exports = class Transforms {
                         return undefined;
                 }
 
+            case "thermostatFanMode":
+                return val ? "fanOn" : "fanAuto";
             case "fanMode":
                 if (val >= 0 && val <= CommunityTypes.FanOscilationMode.SLEEP) {
                     return "sleep";
