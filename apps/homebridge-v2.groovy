@@ -5,7 +5,7 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.6" }
+String appVersion()                     { return "2.0.7" }
 String appModified()                    { return "11-03-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
@@ -216,7 +216,8 @@ def deviceSelectPage() {
         section(sTS("All Other Devices:", null, true)) {
             input "sensorList", "capability.sensor", title: inTS("Sensors: (${sensorList ? sensorList?.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("sensors")
             input "switchList", "capability.switch", title: inTS("Switches: (${switchList ? switchList?.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("switch")
-            input "deviceList", "capability.refresh", title: inTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("devices2")
+            input "deviceList", "capability.*", title: inTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("devices2")
+
         }
 
         section(sTS("Create Devices for Modes in HomeKit?", null, true)) {

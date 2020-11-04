@@ -1,4 +1,4 @@
-## v2.0.3
+## v2.0.6
 - [UPDATE] Added fan characteristic to thermostats.
 - [FIX] Shades devices that don't use level commands should now work with setPosition.
 - [FIX] Generic Zigbee RGBW bulb drivers were throwing error for setColorTemperature commands not being an integer.

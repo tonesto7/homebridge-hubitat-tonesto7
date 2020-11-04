@@ -1,3 +1,6 @@
+## v2.0.7 Changes
+- [UPDATE] Modified the Other devices input to show all available devices
+
 ## v2.0.6 Changes
 - [NEW] Updated version info to latest app and plugin.
 
