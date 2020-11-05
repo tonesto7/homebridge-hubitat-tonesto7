@@ -168,7 +168,7 @@ module.exports = class DeviceCharacteristics {
     battery(_accessory, _service) {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.BatteryLevel, "battery");
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusLowBattery, "battery");
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.ChargingState, "batteryStatus");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.ChargingState, "powerSource");
         _accessory.context.deviceGroups.push("battery");
         return _accessory;
     }

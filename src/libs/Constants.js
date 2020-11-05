@@ -60,6 +60,7 @@ module.exports = {
         "EnergyMeter",
         "Power Meter",
         "PowerMeter",
+        "PowerSource",
         "Thermostat",
         "Thermostat Cooling Setpoint",
         "ThermostatCoolingSetpoint",
