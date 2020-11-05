@@ -134,8 +134,17 @@ module.exports = class Transforms {
                 } else {
                     return Math.round(val);
                 }
-            case "batteryStatus":
-                return val === "USB Cable" ? Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGING;
+            case "powerSource":
+                switch (val) {
+                    case "mains":
+                    case "dc":
+                    case "USB Cable":
+                        return Characteristic.ChargingState.CHARGING;
+                    case "battery":
+                        return Characteristic.ChargingState.NOT_CHARGING;
+                    default:
+                        return Characteristic.ChargingState.NOT_CHARGABLE;
+                }
             case "hue":
                 return Math.round(val * 3.6);
             case "colorTemperature":

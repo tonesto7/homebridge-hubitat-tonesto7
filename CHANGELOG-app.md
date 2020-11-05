@@ -1,3 +1,6 @@
+## v2.0.8 Changes
+- [NEW] Support for powerSource events
+
 ## v2.0.7 Changes
 - [UPDATE] Modified the Other devices input to show all available devices
 

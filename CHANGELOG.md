@@ -1,3 +1,6 @@
+## v2.0.7
+- [UPDATE] Restored support for charging state under batteries in HomeKit.
+
 ## v2.0.6
 - [UPDATE] Added fan characteristic to thermostats.
 - [FIX] Shades devices that don't use level commands should now work with setPosition.
