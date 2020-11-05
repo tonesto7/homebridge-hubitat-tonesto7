@@ -5,14 +5,14 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
-String appVersion()                     { return "2.0.5" }
-String appModified()                    { return "10-30-2020" }
+String appVersion()                     { return "2.0.7" }
+String appModified()                    { return "11-03-2020" }
 String branch()                         { return "master" }
 String platform()                       { return getPlatform() }
 String pluginName()                     { return "${platform()}-v2" }
 String appIconUrl()                     { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/hb_tonesto7@2x.png" }
 Boolean isST()                          { return (getPlatform() == "SmartThings") }
-Map minVersions()                       { return [plugin: 201] }
+Map minVersions()                       { return [plugin: 203] }
 String getAppImg(String imgName, frc=false, ext=".png") { return (frc || isST()) ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branch()}/images/${imgName}${ext}" : "" }
 
 definition(
@@ -38,7 +38,6 @@ preferences {
     page(name: "deviceSelectPage")
     page(name: "changeLogPage")
     page(name: "capFilterPage")
-    page(name: "virtDevicePage")
     page(name: "developmentPage")
     page(name: "pluginConfigPage")
     page(name: "donationPage")
@@ -167,7 +166,7 @@ def pluginConfigPage() {
     return dynamicPage(name: "pluginConfigPage", title: "", install: false, uninstall: false) {
         section() {
             paragraph pTS("Generated HomeBridge Plugin Platform Config", null, true, "#2784D9")
-            paragraph """<pre><code>${renderConfig()}</code></pre>"""
+            paragraph """<textarea rows=20 class='mdl-textfield' readonly='true'>${renderConfig()}</textarea>"""
         }
     }
 }
@@ -217,7 +216,8 @@ def deviceSelectPage() {
         section(sTS("All Other Devices:", null, true)) {
             input "sensorList", "capability.sensor", title: inTS("Sensors: (${sensorList ? sensorList?.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("sensors")
             input "switchList", "capability.switch", title: inTS("Switches: (${switchList ? switchList?.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("switch")
-            input "deviceList", "capability.refresh", title: inTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("devices2")
+            input "deviceList", "capability.*", title: inTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false, image: getAppImg("devices2")
+
         }
 
         section(sTS("Create Devices for Modes in HomeKit?", null, true)) {
@@ -334,7 +334,7 @@ def historyPage() {
         List eHist = getEvtHistory()?.sort {it?.dt}?.reverse()
         section(sTS("Last (${cHist?.size()}) Commands Received From HomeKit:", null, true)) {
             if(cHist?.size()) {
-                cHist?.each { c-> paragraph pTS(" \u2022 <br>Device</br>: ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
+                cHist?.each { c-> paragraph pTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
             } else { paragraph pTS("No Command History Found...", null, false) }
         }
         section(sTS("Last (${eHist?.size()}) Events Sent to HomeKit:", null, true)) {
@@ -379,23 +379,6 @@ def capFilterPage() {
     }
 }
 
-def virtDevicePage() {
-    return dynamicPage(name: "virtDevicePage", title: "", install: false, uninstall: false) {
-        section(sTS("Create Devices for Modes in HomeKit?", null, true)) {
-            paragraph title: pTS("What are these for?"), "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete", image: getAppImg("info")
-            def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
-            input "modeList", "enum", title: inTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true, image: getAppImg("mode")
-        }
-        if(isST()) {
-            section(sTS("Create Devices for Routines in HomeKit?", null, true)) {
-                paragraph title: pTS("What are these?", getAppImg("info"), true, "#2784D9"), "A virtual device will be created for each routine in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete", image: getAppImg("info")
-                def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
-                input "routineList", "enum", title: inTS("Create Devices for these Routines", getAppImg("routine", true)), required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine")
-            }
-        }
-    }
-}
-
 def donationPage() {
     return dynamicPage(name: "donationPage", title: "", nextPage: "mainPage", install: false, uninstall: false) {
         section("") {
@@ -415,10 +398,8 @@ def donationPage() {
 }
 
 def confirmPage() {
-    return dynamicPage(name: "confirmPage", title: "Confirmation Page", install: true, uninstall:true) {
-        section() {
-            paragraph pTS("\nYou are no longer required to restart homebridge to apply any device changes made under this app in HomeKit.\n\nOnce you press Done/Save the Homebridge plugin will refresh your device changes after 15-20 seconds.", getAppImg("info", true), false, "#2784D9"), state: "complete", image: getAppImg("info")
-        }
+    return dynamicPage(name: "confirmPage", title: "", install: true, uninstall:true) {
+        section(s3TS("Confirmation Page", "A plugin restart is no longer required to apply device changes in this app to HomeKit.<br><br>Once you press <b>Done</b> the Homebridge plugin will refresh your device changes after 15-20 seconds.", getAppImg("info", true), "black")) { }
         appFooter()
     }
 }
@@ -433,7 +414,7 @@ def deviceDebugPage() {
                 input "debug_switch", "capability.actuator", title: inTS("Switches: ", getAppImg("switch", true)) , multiple: false, submitOnChange: true, required: false, image: getAppImg("switch")
             if(!debug_switch && !debug_sensor && !debug_garage && !debug_tstat)
                 input "debug_other", "capability.refresh", title: inTS("Others Devices: ", getAppImg("devices2", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("devices2")
-            if(!debug_sensor && !debug_other && !debug_switch)
+            if(!debug_sensor && !debug_other && !debug_switch && !debug_tstat)
                 input "debug_garage", "capability.garageDoorControl", title: inTS("Garage Doors: ", getAppImg("garage_door", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("garage_door")
             if(!debug_sensor && !debug_other && !debug_switch && !debug_garage)
                 input "debug_tstat", "capability.thermostat", title: inTS("Thermostats: ", getAppImg("thermostat", true)), multiple: false, submitOnChange: true, required: false, image: getAppImg("thermostat")

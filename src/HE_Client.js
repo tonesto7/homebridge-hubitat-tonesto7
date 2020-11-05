@@ -167,6 +167,7 @@ module.exports = class ST_Client {
                             hasUpdate: res.hasUpdate,
                             newVersion: res.newVersion,
                             version: pluginVersion,
+                            accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null
                         },
                         timeout: 10000,
                     })
