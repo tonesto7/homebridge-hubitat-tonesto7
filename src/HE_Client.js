@@ -6,6 +6,7 @@ module.exports = class ST_Client {
     constructor(platform) {
         this.platform = platform;
         this.log = platform.log;
+        this.logConfig = platform.logConfig;
         this.appEvts = platform.appEvts;
         this.use_cloud = platform.use_cloud;
         this.hubIp = platform.local_hub_ip;
@@ -70,9 +71,12 @@ module.exports = class ST_Client {
                     this.log.error(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
                 } else {
                     // console.error(err);
-                    this.log.error(`${src} Error: ${err.response} | Message: ${err.message}`);
+                    this.log.error(`${src} ${err.response.defined ? err.response : 'Connection failure'} | Message: ${err.message}`);
                 }
                 break;
+        }
+        if (this.logConfig.debug === true) {
+            this.log.debug(`${src} ${JSON.stringify(err)}`);
         }
     }
 
