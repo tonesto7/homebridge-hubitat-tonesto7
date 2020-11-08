@@ -5,6 +5,14 @@
  *  Copyright 2018, 2019, 2020 Anthony Santilli
  */
 
+  // TODO: Create a new @field static map for containing the state database
+ // Have a central method to read/write the data to the memory.  
+ // Backup the data using a single state blob.  
+ // Use a parameter in the in central method to tell it to update the state blob with the latest mem map
+ // Maybe use the health check to occasionally write the data to state?
+
+@Field static Map<String,Map> memStorageFLD=[:]
+
 String appVersion()                     { return "2.0.8" }
 String appModified()                    { return "11-05-2020" }
 String branch()                         { return "master" }
@@ -45,6 +53,22 @@ preferences {
     page(name: "deviceDebugPage")
     page(name: "settingsPage")
     page(name: "confirmPage")
+}
+
+void updMemMap(String key, String val) {
+    String mc = app.id.toString() // device.id.toString()
+    Map<String,String> myV = memStorageFLD[mc]
+    myV = myV != null ? myV : [:]
+    myV[key] = val
+    memStorageFLD[mc] = myV
+}
+
+private getMemMap(String key) {
+    String mc = app?.id?.toString() //device.id.toString()
+    Map<String,String> myV = memStorageFLD[mc]
+    myV = myV != null ? myV : [:]
+    if(myV[key]) return (String) myV[key]
+    else return sNULL
 }
 
 private Map ignoreLists() {
