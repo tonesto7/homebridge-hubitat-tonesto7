@@ -1,6 +1,5 @@
 const { platformName, platformDesc, pluginVersion } = require("./libs/Constants"),
     axios = require("axios").default;
-// url = require("url");
 
 module.exports = class ST_Client {
     constructor(platform) {
@@ -35,30 +34,13 @@ module.exports = class ST_Client {
         return this.use_cloud === false && this.hubIp !== undefined;
     }
 
-    // localHubErr(hasErr) {
-    //     if (hasErr) {
-    //         if (this.use_cloud && !this.localDisabled) {
-    //             this.log.error(`Unable to reach your Hubitat Hub Locally... You will not receive device events!!!`);
-    //             this.use_cloud = false;
-    //             this.localDisabled = true;
-    //         }
-    //     } else {
-    //         if (this.localDisabled) {
-    //             this.useLocal = true;
-    //             this.localDisabled = false;
-    //             this.log.good(`Now able to reach local Hub... Restoring Local Commands!!!`);
-    //             this.sendStartDirect();
-    //         }
-    //     }
-    // }
-
     updateGlobals(hubIp, use_cloud = false) {
-        this.log.notice(`Updating Global Values | HubIP: ${hubIp} | UseCloud: ${use_cloud}`);
+        this.log.notice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
         this.hubIp = hubIp;
         this.use_cloud = use_cloud === true;
     }
 
-    handleError(src, err, allowLocal = false) {
+    handleError(src, err) {
         switch (err.status) {
             case 401:
                 this.log.error(`${src} Error | Hubitat Token Error: ${err.response} | Message: ${err.message}`);
@@ -71,7 +53,7 @@ module.exports = class ST_Client {
                     this.log.error(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
                 } else {
                     // console.error(err);
-                    this.log.error(`${src} ${err.response.defined ? err.response : 'Connection failure'} | Message: ${err.message}`);
+                    this.log.error(`${src} ${err.response.defined ? err.response : "Connection failure"} | Message: ${err.message}`);
                 }
                 break;
         }
@@ -132,23 +114,24 @@ module.exports = class ST_Client {
                     access_token: this.configItems.access_token,
                 },
                 headers: {
+                    "Content-Type": "application/json",
                     evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
                     evttype: "hkCommand",
                 },
-                data: vals,
+                data: vals || null,
                 timeout: 5000,
             };
+            // console.log("config: ", config);
             try {
-                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | LocalCommand: (${that.configItems.use_cloud !== true})`);
+                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${that.configItems.use_cloud === true})`);
                 axios(config)
                     .then((response) => {
-                        // console.log('command response:', response.data);
+                        // console.log("command response:", response);
                         this.log.debug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
-                        // that.localHubErr(false);
                         resolve(true);
                     })
                     .catch((err) => {
-                        that.handleError("sendDeviceCommand", err, true);
+                        that.handleError("sendDeviceCommand", err);
                         resolve(false);
                     });
             } catch (err) {
@@ -171,7 +154,7 @@ module.exports = class ST_Client {
                             hasUpdate: res.hasUpdate,
                             newVersion: res.newVersion,
                             version: pluginVersion,
-                            accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null
+                            accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null,
                         },
                         timeout: 10000,
                     })
@@ -185,7 +168,7 @@ module.exports = class ST_Client {
                         }
                     })
                     .catch((err) => {
-                        this.handleError("sendUpdateStatus", err, true);
+                        this.handleError("sendUpdateStatus", err);
                         resolve(undefined);
                     });
             });
@@ -202,6 +185,7 @@ module.exports = class ST_Client {
                     access_token: this.configItems.access_token,
                 },
                 headers: {
+                    "Content-Type": "application/json",
                     evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
                     evttype: "enableDirect",
                 },
@@ -214,7 +198,7 @@ module.exports = class ST_Client {
                 },
                 timeout: 10000,
             };
-            that.log.info(`Sending StartDirect Request to ${platformDesc} | LocalCommand: (${that.configItems.use_cloud !== true})`);
+            that.log.info(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${that.configItems.use_cloud === true})`);
             try {
                 axios(config)
                     .then((response) => {
@@ -222,13 +206,12 @@ module.exports = class ST_Client {
                         if (response.data) {
                             this.log.debug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
                             resolve(response.data);
-                            // that.localHubErr(false);
                         } else {
                             resolve(null);
                         }
                     })
                     .catch((err) => {
-                        that.handleError("sendStartDirect", err, true);
+                        that.handleError("sendStartDirect", err);
                         resolve(undefined);
                     });
             } catch (err) {
