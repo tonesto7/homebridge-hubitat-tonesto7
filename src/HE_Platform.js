@@ -88,7 +88,6 @@ module.exports = class HE_Platform {
             update_seconds: this.config.update_seconds || 30,
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
-            debug: this.config.debug === true,
             validateTokenId: this.config.validateTokenId === true,
         };
     }

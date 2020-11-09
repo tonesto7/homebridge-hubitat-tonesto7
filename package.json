@@ -22,7 +22,7 @@
         "homebridge": "^1.1.6",
         "lint-staged": "^10.5.1",
         "prettier": "^2.1.2",
-        "snyk": "^1.425.0"
+        "snyk": "^1.425.1"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
