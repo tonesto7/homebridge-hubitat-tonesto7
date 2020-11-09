@@ -1,9 +1,10 @@
 ## v2.1.0 Changes
-- [UPDATE] Significantly reduced calls to State (DB) for all commands and device event history.
+- [UPDATE] Calls to read/write from state (aka the DB) for all command and event history have been removed and stored in shared memory (Thanks @nh_schott_fam).
 - [UPDATE] Cleaned up code and removed references to ST version.
 - [UPDATE] Converted all plugin communications back to Async HTTP requests to reduce resource usage.
 - [UPDATE] Added a new thermostat input for selecting Thermostats to show with fans. The original thermostat input will no longer display the thermostat.
 - [UPDATE] Added more attribute filters to prevent many dozens of event subscriptions for attributes that will not be used by HomeKit.
+- [UPDATE] Moved some of the plugin settings to the render config page.  This allows you to modify some of the plugin settings and it updates the rendered config realtime.
 
 ## v2.0.8 Changes
 - [NEW] Support for powerSource events

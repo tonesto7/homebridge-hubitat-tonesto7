@@ -7,7 +7,6 @@ module.exports = class ST_Client {
         this.log = platform.log;
         this.logConfig = platform.logConfig;
         this.appEvts = platform.appEvts;
-        this.use_cloud = platform.use_cloud;
         this.hubIp = platform.local_hub_ip;
         this.configItems = platform.getConfigItems();
         this.localErrCnt = 0;
@@ -30,14 +29,10 @@ module.exports = class ST_Client {
         });
     }
 
-    sendAsLocalCmd() {
-        return this.use_cloud === false && this.hubIp !== undefined;
-    }
-
     updateGlobals(hubIp, use_cloud = false) {
         this.log.notice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
         this.hubIp = hubIp;
-        this.use_cloud = use_cloud === true;
+        this.configItems.use_cloud = use_cloud === true;
     }
 
     handleError(src, err) {
@@ -53,7 +48,7 @@ module.exports = class ST_Client {
                     this.log.error(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
                 } else {
                     // console.error(err);
-                    this.log.error(`${src} ${err.response.defined ? err.response : "Connection failure"} | Message: ${err.message}`);
+                    this.log.error(`${src} ${err.response && err.response.defined !== undefined ? err.response : "Connection failure"} | Message: ${err.message}`);
                 }
                 break;
         }
