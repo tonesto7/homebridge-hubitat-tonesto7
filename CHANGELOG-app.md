@@ -1,3 +1,8 @@
+## v2.1.0 Changes
+- [UPDATE] Significantly reduced calls to State (DB) for all commands and device event history.
+- [UPDATE] Cleaned up code and removed references to ST version.
+- [UPDATE] Converted all plugin communications back to Async HTTP requests to reduce resource usage.
+
 ## v2.0.8 Changes
 - [NEW] Support for powerSource events
 
@@ -22,9 +27,9 @@
 - [UPDATE] App UI updates to the header, footer, and device selection inputs.  I borrowed some inspiration for the footer from Hubitat Package Manager (Thanks @dman2306). 
 
 ## v2.0.0 Changes
-- [NEW] **_Important NOTICE:_**
-- **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
-  On a positive note, you can use the same Hubitat App instance as long as you update to the latest code.**
+- [NEW] **_IMPORTANT NOTICE:_**
+  - **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
+    On a positive note, you can use the same Hubitat App instance as long as you update to the latest code.**
 
 - [UPDATE] Restructured and cleaned up the app UI so it's more organized and easier to manage.
 - [UPDATE] Optimized the command/event streaming system to perform faster and more reliably.

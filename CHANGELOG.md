@@ -1,3 +1,8 @@
+## v2.1.0
+- [FIX] 500 error for commands when using Cloud communications.
+- [UPDATE] Minor code cleanups and tweaks.
+- [UPDATE] @jorhett submitted some logging cleanups and made them more human friendly on the plugin side.
+
 ## v2.0.7
 - [UPDATE] Restored support for charging state under batteries in HomeKit.
 
