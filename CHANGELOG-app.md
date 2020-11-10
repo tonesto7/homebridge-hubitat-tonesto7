@@ -5,6 +5,7 @@
 - [UPDATE] Added a new thermostat input for selecting Thermostats to show with fans. The original thermostat input will no longer display the thermostat.
 - [UPDATE] Added more attribute filters to prevent many dozens of event subscriptions for attributes that will not be used by HomeKit.
 - [UPDATE] Moved some of the plugin settings to the render config page.  This allows you to modify some of the plugin settings and it updates the rendered config realtime.
+- [UPDATE] Modified the app icon gradient to include hubitat green color.
 
 ## v2.0.8 Changes
 - [NEW] Support for powerSource events

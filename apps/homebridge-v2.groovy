@@ -349,6 +349,9 @@ def historyPage() {
     return dynamicPage(name: "historyPage", title: "", install: false, uninstall: false) {
         List cHist = getCmdHistory()?.sort {it?.dt}?.reverse()
         List eHist = getEvtHistory()?.sort {it?.dt}?.reverse()
+        section() {
+            paragraph paraTS("This history is only stored in memory.  It is erased after every code update and a Hub reboot.", getAppImg("info", true), false, "#2784D9"), state: "complete"
+        }
         section(sectTS("Last (${cHist?.size()}) Commands Received From HomeKit:", null, true)) {
             if(cHist?.size()) {
                 cHist?.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
@@ -428,7 +431,7 @@ def deviceDebugPage() {
         }
 
         section(sectTS("View Individual Device Data:", null, true)) {
-            paragraph paraTS("Have a device that's not working under homekit like you want?\nSelect a device from one of the inputs below and it will show you all data about the device.", getAppImg("info", true), "#2784D9"), state: "complete"
+            paragraph paraTS("Have a device that's not working under homekit like you want?\nSelect a device from one of the inputs below and it will show you all data about the device.", getAppImg("info", true), false, "#2784D9"), state: "complete"
             if(!debug_switch && !debug_other && !debug_garage && !debug_tstat)
                 input "debug_sensor", "capability.sensor", title:  inputTS("Sensors: ", getAppImg("sensors", true)), multiple: false, submitOnChange: true, required: false
             if(!debug_sensor && !debug_other && !debug_garage && !debug_tstat)
@@ -848,15 +851,17 @@ def deviceCommand() {
 }
 
 private processCmd(devId, cmd, value1, value2, local=false) {
-    logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     def device = findDevice(devId)
+    logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     def command = cmd
     if(settings?.addSecurityDevice != false && devId == "alarmSystemStatus_${location?.id}") {
         setAlarmSystemMode(command)
+        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2])
         return CommandReply("Success", "Security Alarm, Command $command", 200)
     }  else if (settings?.modeList && command == "mode" && devId) {
         logDebug("Virtual Mode Received: ${devId}")
         changeMode(devId)
+        logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2])
         return CommandReply("Success", "Mode Device, Command $command", 200)
     } else if (settings?.routineList && command == "routine" && devId) {
         logDebug("Virtual Routine Received: ${devId}")
@@ -881,8 +886,8 @@ private processCmd(devId, cmd, value1, value2, local=false) {
                     device?."$command"()
                     logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
                 }
-                return CommandReply("Success", " | ${device?.displayName} | Command [${command}()]", 200)
                 logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2])
+                return CommandReply("Success", " | ${device?.displayName} | Command [${command}()]", 200)
             } catch (e) {
                 logError("Error Occurred for Device ${device.displayName} | Command [${command}()]")
                 return CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command [${command}()]", 500)
@@ -1644,15 +1649,12 @@ private void logTrace(msg)  { log.trace "Homebridge (v${appVersionFLD}) | ${msg}
 private void logWarn(msg)   { log.warn " Homebridge (v${appVersionFLD}) | ${msg}"; }
 private void logError(msg)  { log.error "Homebridge (v${appVersionFLD}) | ${msg}"; }
 
-List getCmdHistory() { return getMemStoreItem("cmdHistory") ?: [] }
-List getEvtHistory() { return getMemStoreItem("evtHistory") ?: [] }
-void clearHistory() {
-    historyMapFLD = [:]
-    mb()
-}
+private List getCmdHistory() { return getMemStoreItem("cmdHistory") ?: [] }
+private List getEvtHistory() { return getMemStoreItem("evtHistory") ?: [] }
+private void clearHistory()  { historyMapFLD = [:]; mb(); }
 
-private logEvt(evtData) { addToHistory("evtHistory", evtData, 25) }
-private logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 25) }
+private void logEvt(evtData) { addToHistory("evtHistory", evtData, 25) }
+private void logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 25) }
 
 // FIELD VARIABLE FUNCTIONS
 private void updMemStoreItem(key, val) {
@@ -1660,7 +1662,7 @@ private void updMemStoreItem(key, val) {
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
-    // logDebug("updMemStoreItem(${key}): ${memStore}")
+    // log.debug("updMemStoreItem(${key}): ${memStore[key]}")
 }
 
 private List getMemStoreItem(key){
