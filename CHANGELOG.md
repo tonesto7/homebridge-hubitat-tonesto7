@@ -1,3 +1,6 @@
+## v2.1.1
+- [FIX] Fix for https responses.
+
 ## v2.1.0
 - [FIX] There was an issue with the plugin not sending back the response to the HE app as JSON which would throw a 500 error.
 - [UPDATE] Slight cleanup of the logic of updating config settings from Hubitat.
