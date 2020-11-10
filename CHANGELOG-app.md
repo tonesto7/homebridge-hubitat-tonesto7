@@ -1,3 +1,12 @@
+## v2.1.0 Changes
+- [UPDATE] Calls to read/write from state (aka the DB) for all command and event history have been removed and stored in shared memory (Thanks @nh_schott_fam).
+- [UPDATE] Cleaned up code and removed references to ST version.
+- [UPDATE] Converted all plugin communications back to Async HTTP requests to reduce resource usage.
+- [UPDATE] Added a new thermostat input for selecting Thermostats to show with fans. The original thermostat input will no longer display the thermostat.
+- [UPDATE] Added more attribute filters to prevent many dozens of event subscriptions for attributes that will not be used by HomeKit.
+- [UPDATE] Moved some of the plugin settings to the render config page.  This allows you to modify some of the plugin settings and it updates the rendered config realtime.
+- [UPDATE] Modified the app icon gradient to include hubitat green color.
+
 ## v2.0.8 Changes
 - [NEW] Support for powerSource events
 
@@ -22,9 +31,9 @@
 - [UPDATE] App UI updates to the header, footer, and device selection inputs.  I borrowed some inspiration for the footer from Hubitat Package Manager (Thanks @dman2306). 
 
 ## v2.0.0 Changes
-- [NEW] **_Important NOTICE:_**
-- **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
-  On a positive note, you can use the same Hubitat App instance as long as you update to the latest code.**
+- [NEW] **_IMPORTANT NOTICE:_**
+  - **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
+    On a positive note, you can use the same Hubitat App instance as long as you update to the latest code.**
 
 - [UPDATE] Restructured and cleaned up the app UI so it's more organized and easier to manage.
 - [UPDATE] Optimized the command/event streaming system to perform faster and more reliably.

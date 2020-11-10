@@ -1,3 +1,10 @@
+## v2.1.0
+- [FIX] There was an issue with the plugin not sending back the response to the HE app as JSON which would throw a 500 error.
+- [UPDATE] Slight cleanup of the logic of updating config settings from Hubitat.
+- [UPDATE] @jorhett submitted some logging cleanups and made them more human friendly on the plugin side.
+- [UPDATE] Minor code cleanups and tweaks.
+
+
 ## v2.0.7
 - [UPDATE] Restored support for charging state under batteries in HomeKit.
 

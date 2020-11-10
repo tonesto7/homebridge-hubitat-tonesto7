@@ -8,7 +8,8 @@ const { pluginName, platformName, platformDesc, pluginVersion } = require("./lib
     chalk = require("chalk"),
     Logging = require("./libs/Logger"),
     webApp = express(),
-    // os = require('os'),
+    fs = require("fs"),
+    _ = require("lodash"),
     portFinderSync = require("portfinder-sync");
 
 var PlatformAccessory;
@@ -38,10 +39,10 @@ module.exports = class HE_Platform {
         this.excludedCapabilities = this.config.excluded_capabilities || [];
         this.update_method = this.config.update_method || "direct";
         this.temperature_unit = this.config.temperature_unit || "F";
-        this.use_cloud = this.config.use_cloud || false;
         this.local_hub_ip = undefined;
         this.myUtils = new myUtils(this);
         this.configItems = this.getConfigItems();
+        // console.log("pluginConfig: ", this.loadConfig());
         this.unknownCapabilities = [];
         this.client = new HEClient(this);
         this.HEAccessories = new HEAccessories(this);
@@ -51,21 +52,23 @@ module.exports = class HE_Platform {
 
     getLogConfig() {
         let config = this.config;
-        return config.logConfig ? {
-            debug: config.logConfig.debug === true,
-            showChanges: config.logConfig.showChanges === true,
-            hideTimestamp: config.logConfig.hideTimestamp === true,
-            hideNamePrefix: config.logConfig.hideNamePrefix === true,
-            file: {
-                enabled: config.logConfig.file.enabled === true,
-                level: config.logConfig.file.level || "good",
-            },
-        } : {
-            debug: false,
-            showChanges: true,
-            hideTimestamp: false,
-            hideNamePrefix: false,
-        };
+        return config.logConfig ?
+            {
+                debug: config.logConfig.debug === true,
+                showChanges: config.logConfig.showChanges === true,
+                hideTimestamp: config.logConfig.hideTimestamp === true,
+                hideNamePrefix: config.logConfig.hideNamePrefix === true,
+                file: {
+                    enabled: config.logConfig.file.enabled === true,
+                    level: config.logConfig.file.level || "good",
+                },
+            } :
+            {
+                debug: false,
+                showChanges: true,
+                hideTimestamp: false,
+                hideNamePrefix: false,
+            };
     }
 
     findDirectPort() {
@@ -85,9 +88,28 @@ module.exports = class HE_Platform {
             update_seconds: this.config.update_seconds || 30,
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
-            debug: this.config.debug === true,
             validateTokenId: this.config.validateTokenId === true,
         };
+    }
+
+    loadConfig() {
+        const configPath = this.homebridge.user.configPath();
+        const file = fs.readFileSync(configPath);
+        const config = JSON.parse(file);
+        return config.platforms.find((x) => x.name === this.config.name);
+    }
+
+    updateConfig(newConfig) {
+        const configPath = this.homebridge.user.configPath();
+        const file = fs.readFileSync(configPath);
+        const config = JSON.parse(file);
+        const platConfig = config.platforms.find((x) => x.name === this.config.name);
+        _.extend(platConfig, newConfig);
+        const serializedConfig = JSON.stringify(config, null, "  ");
+        fs.writeFileSync(configPath, serializedConfig, "utf8");
+        _.extend(this.config, newConfig);
+        // Update local configItems
+        // this.configItems =
     }
 
     updateTempUnit(unit) {
@@ -133,8 +155,8 @@ module.exports = class HE_Platform {
                             that.updateTempUnit(resp.location.temperature_scale);
                             if (resp.location.hubIP) {
                                 that.local_hub_ip = resp.location.hubIP;
-                                that.use_cloud = resp.location.use_cloud === true;
-                                that.client.updateGlobals(that.local_hub_ip, that.use_cloud);
+                                that.configItems.use_cloud = resp.location.use_cloud === true;
+                                that.client.updateGlobals(that.local_hub_ip, that.configItems.use_cloud);
                             }
                         }
                         if (resp && resp.deviceList && resp.deviceList instanceof Array) {
@@ -142,9 +164,15 @@ module.exports = class HE_Platform {
                             const toCreate = this.HEAccessories.diffAdd(resp.deviceList);
                             const toUpdate = this.HEAccessories.intersection(resp.deviceList);
                             const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
-                            that.log.warn(`Devices to Remove: (${Object.keys(toRemove).length})`, toRemove.map((i) => i.name));
+                            that.log.warn(
+                                `Devices to Remove: (${Object.keys(toRemove).length})`,
+                                toRemove.map((i) => i.name),
+                            );
                             that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`);
-                            that.log.good(`Devices to Create: (${Object.keys(toCreate).length})`, toCreate.map((i) => i.name));
+                            that.log.good(
+                                `Devices to Create: (${Object.keys(toCreate).length})`,
+                                toCreate.map((i) => i.name),
+                            );
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
                             toUpdate.forEach((device) => this.updateDevice(device));
@@ -334,10 +362,17 @@ module.exports = class HE_Platform {
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "updateprefs")) {
                         that.log.info(platformName + " Hub Sent Preference Updates");
                         let sendUpd = false;
-                        if (body.use_cloud && that.use_cloud !== body.use_cloud) {
+                        // if (body && Object.keys(body).length > 0) {
+                        //     Object.keys(body).forEach((key) => {});
+                        // }
+                        if (body.use_cloud && that.configItems.use_cloud !== body.use_cloud) {
                             sendUpd = true;
-                            that.log.info(`${platformName} Updated Use Cloud Preference | Before: ${that.use_cloud} | Now: ${body.use_cloud}`);
-                            that.use_cloud = body.use_cloud;
+                            that.log.info(`${platformName} Updated Use Cloud Preference | Before: ${that.configItems.use_cloud} | Now: ${body.use_cloud}`);
+                            that.configItems.use_cloud = body.use_cloud;
+                        }
+                        if (body.validateTokenId && that.configItems.validateTokenId !== body.validateTokenId) {
+                            that.log.info(`${platformName} Updated Validate Token & Id Preference | Before: ${that.configItems.validateTokenId} | Now: ${body.validateTokenId}`);
+                            that.configItems.validateTokenId = body.validateTokenId;
                         }
                         if (body.local_hub_ip && that.local_hub_ip !== body.local_hub_ip) {
                             sendUpd = true;
@@ -345,7 +380,7 @@ module.exports = class HE_Platform {
                             that.local_hub_ip = body.local_hub_ip;
                         }
                         if (sendUpd) {
-                            that.client.updateGlobals(that.local_hub_ip, that.use_cloud);
+                            that.client.updateGlobals(that.local_hub_ip, that.configItems.use_cloud);
                         }
                         res.send({
                             status: "OK",
