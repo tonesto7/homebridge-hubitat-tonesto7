@@ -69,7 +69,7 @@ private Map ignoreLists() {
             "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel", "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange",
             "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB"
         ],
-        capabilities: ["Health Check", "Ultraviolet Index", "Indicator", "Window Shade Preset"]
+        capabilities: ["Health Check", "Ultraviolet Index", "Indicator", "Window Shade Preset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement"]
     ]
     if(noPwr) { o?.attributes?.push("power"); o?.evt_attributes?.push("power"); o?.capabilities?.push("Power Meter") }
     if(noEnr) { o?.attributes?.push("energy"); o?.evt_attributes?.push("energy"); o?.capabilities?.push("Energy Meter") }
