@@ -6,21 +6,6 @@
  */
 
 import groovy.transform.Field
-// STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.0"
-@Field static final String appModifiedFLD = "11-09-2020"
-@Field static final String branchFLD      = "master"
-@Field static final String platformFLD    = "Hubitat"
-@Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD = [plugin: 210]
-@Field static final String sNULL   = (String) null
-@Field static final List   lNULL   = (List) null
-@Field static final String sBLANK  = ''
-@Field static final String sBULLET = '\u2022'
-
-// IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
-@Field static Map historyMapFLD = [:]
 
 definition(
     name: "Homebridge v2",
@@ -49,32 +34,40 @@ preferences {
     page(name: "confirmPage")
 }
 
-private Map ignoreLists() {
-    Boolean noPwr = true
-    Boolean noEnr = true
-    Map o = [
-        commands: ["indicatorWhenOn", "indicatorWhenOff", "ping", "refresh", "indicatorNever", "configure", "poll", "reset"],
-        attributes: [
-            'DeviceWatch-Enroll', 'DeviceWatch-Status', "checkInterval", "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel",
-            "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange"
-        ],
-        evt_attributes: [
-            'DeviceWatch-DeviceStatus', "DeviceWatch-Enroll", 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
-            'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage', 'minEnergyReading',
-            'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
-            'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
-            'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
-            'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'eventTime', 'eventSummary', 'endOffset', 'startOffset',
-            'closeTime', 'endMsgTime', 'endMsg', 'openTime', 'startMsgTime', 'startMsg', 'calName', "deleteInfo", "eventTitle", "floor", "sleeping",
-            "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel", "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange",
-            "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB"
-        ],
-        capabilities: ["Health Check", "Ultraviolet Index", "Indicator", "Window Shade Preset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement"]
-    ]
-    if(noPwr) { o?.attributes?.push("power"); o?.evt_attributes?.push("power"); o?.capabilities?.push("Power Meter") }
-    if(noEnr) { o?.attributes?.push("energy"); o?.evt_attributes?.push("energy"); o?.capabilities?.push("Energy Meter") }
-    return o
-}
+// STATICALLY DEFINED VARIABLES
+@Field static final String appVersionFLD  = "2.1.0"
+@Field static final String appModifiedFLD = "11-09-2020"
+@Field static final String branchFLD      = "master"
+@Field static final String platformFLD    = "Hubitat"
+@Field static final String pluginNameFLD  = "Hubitat-v2"
+@Field static final Boolean devModeFLD    = false
+@Field static final Map minVersionsFLD = [plugin: 211]
+@Field static final String sNULL   = (String) null
+@Field static final List   lNULL   = (List) null
+@Field static final String sBLANK  = ''
+@Field static final String sBULLET = '\u2022'
+
+// IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
+@Field static Map historyMapFLD = [:]
+@Field static final Map ignoreListFLD =  [
+    commands: ["indicatorWhenOn", "indicatorWhenOff", "ping", "refresh", "indicatorNever", "configure", "poll", "reset"],
+    attributes: [
+        'DeviceWatch-Enroll', 'DeviceWatch-Status', "checkInterval", "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel",
+        "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange", "power", "energy"
+    ],
+    evt_attributes: [
+        'DeviceWatch-DeviceStatus', "DeviceWatch-Enroll", 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
+        'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage', 'minEnergyReading',
+        'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
+        'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
+        'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
+        'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'eventTime', 'eventSummary', 'endOffset', 'startOffset',
+        'closeTime', 'endMsgTime', 'endMsg', 'openTime', 'startMsgTime', 'startMsg', 'calName', "deleteInfo", "eventTitle", "floor", "sleeping",
+        "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel", "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange",
+        "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB", "power", "energy"
+    ],
+    capabilities: ["Health Check", "Ultraviolet Index", "Indicator", "Window Shade Preset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "Power Meter", "Energy Meter"]
+]
 
 def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
@@ -978,7 +971,7 @@ def deviceQuery() {
 
 def deviceCapabilityList(device) {
     String devId = device?.getId()
-    def capItems = device?.capabilities?.findAll{ !(it?.name in ignoreLists()?.capabilities) }?.collectEntries { capability-> [ (capability?.name as String):1 ] }
+    def capItems = device?.capabilities?.findAll{ !(it?.name in ignoreListFLD?.capabilities) }?.collectEntries { capability-> [ (capability?.name as String):1 ] }
     if(isDeviceInInput("lightList", device?.id)) {
         capItems["LightBulb"] = 1
     }
@@ -1032,14 +1025,14 @@ def deviceCapabilityList(device) {
 }
 
 def deviceCommandList(device) {
-    def cmds = device?.supportedCommands?.findAll { !(it?.name in ignoreLists()?.commands) }?.collectEntries { c-> [ (c?.name): 1 ] }
+    def cmds = device?.supportedCommands?.findAll { !(it?.name in ignoreListFLD?.commands) }?.collectEntries { c-> [ (c?.name): 1 ] }
     if(isDeviceInInput("tstatList", device?.id)) { cmds?.remove("setThermostatFanMode"); cmds?.remove("fanAuto"); cmds?.remove("fanOn"); cmds?.remove("fanCirculate"); }
     if(isDeviceInInput("tstatHeatList", device?.id)) { cmds?.remove("setCoolingSetpoint"); cmds?.remove("auto"); cmds?.remove("cool"); }
     return cmds
 }
 
 def deviceAttributeList(device) {
-    def atts = device?.supportedAttributes?.findAll { !(it?.name in ignoreLists()?.attributes) }?.collectEntries { attribute->
+    def atts = device?.supportedAttributes?.findAll { !(it?.name in ignoreListFLD?.attributes) }?.collectEntries { attribute->
         try {
             [(attribute?.name): device?.currentValue(attribute?.name)]
         } catch(e) {
@@ -1114,7 +1107,7 @@ def registerChangeHandler(devices, showlog=false) {
         List theAtts = device?.supportedAttributes?.collect { it?.name as String }?.unique()
         if(showlog) { log.debug "atts: ${theAtts}" }
         theAtts?.each {att ->
-            if(!(ignoreLists()?.evt_attributes?.contains(att))) {
+            if(!(ignoreListFLD?.evt_attributes?.contains(att))) {
                 if(settings?.noTemp && att == "temperature" && (device?.hasAttribute("contact") || device?.hasAttribute("water"))) {
                     Boolean skipAtt = true
                     if(settings?.sensorAllowTemp) {

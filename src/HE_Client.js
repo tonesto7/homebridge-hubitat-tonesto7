@@ -66,6 +66,9 @@ module.exports = class ST_Client {
                     params: {
                         access_token: that.configItems.access_token,
                     },
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
                     timeout: 10000,
                 })
                 .then((response) => {
@@ -86,6 +89,9 @@ module.exports = class ST_Client {
                     url: `${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/${deviceid}/query`,
                     params: {
                         access_token: that.configItems.access_token,
+                    },
+                    headers: {
+                        "Content-Type": "application/json",
                     },
                     timeout: 10000,
                 })
@@ -145,6 +151,9 @@ module.exports = class ST_Client {
                         params: {
                             access_token: this.configItems.access_token,
                         },
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
                         data: {
                             hasUpdate: res.hasUpdate,
                             newVersion: res.newVersion,
@@ -181,15 +190,11 @@ module.exports = class ST_Client {
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
-                    evttype: "enableDirect",
                 },
                 data: {
                     ip: that.configItems.direct_ip,
                     port: that.configItems.direct_port,
                     version: pluginVersion,
-                    evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
-                    evttype: "enableDirect",
                 },
                 timeout: 10000,
             };
