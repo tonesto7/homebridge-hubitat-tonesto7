@@ -1,3 +1,9 @@
+## v2.1.1 Changes
+- [FIX] Fix for thermostat + fan input
+- [FIX] Fixed Device debug not returning json data.
+- [FIX] Showing device events in live logs was broken unless debug logging was enabled.
+- [ADDED] Time to execute is now captured for all commands and events and added to history for reference.
+
 ## v2.1.0 Changes
 - [UPDATE] Calls to read/write from state (aka the DB) for all command and event history have been removed and stored in shared memory (Thanks @nh_schott_fam).
 - [UPDATE] Cleaned up code and removed references to ST version.

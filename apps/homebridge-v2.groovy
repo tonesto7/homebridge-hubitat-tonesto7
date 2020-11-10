@@ -36,7 +36,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = "2.1.0"
-@Field static final String appModifiedFLD = "11-09-2020"
+@Field static final String appModifiedFLD = "11-10-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -216,7 +216,7 @@ def deviceSelectPage() {
 
         section(sectTS("Thermostats:", null, true)) {
             input "tstatList", "capability.thermostat", title: inputTS("Thermostats: (${tstatList ? tstatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatFanList", "capability.thermostatFanMode", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+            input "tstatFanList", "capability.thermostat", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
             input "tstatHeatList", "capability.thermostat", title: inputTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
         }
 
@@ -347,12 +347,12 @@ def historyPage() {
         }
         section(sectTS("Last (${cHist?.size()}) Commands Received From HomeKit:", null, true)) {
             if(cHist?.size()) {
-                cHist?.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2: </b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}", null, false, "#2784D9"), state: "complete" }
+                cHist?.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2:</b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n \u2022 <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
             } else { paragraph paraTS("No Command History Found...", null, false) }
         }
         section(sectTS("Last (${eHist?.size()}) Events Sent to HomeKit:", null, true)) {
             if(eHist?.size()) {
-                eHist?.each { h-> paragraph title: paraTS(h?.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}", null, false, "#2784D9"), state: "complete" }
+                eHist?.each { h-> paragraph title: paraTS(h?.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n \u2022 <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
             } else {paragraph paraTS("No Event History Found...", null, false) }
         }
     }
@@ -450,7 +450,7 @@ public void clearTestDeviceItems() {
     settingRemove("debug_tstat")
 }
 
-private String viewDeviceDebug() {
+private viewDeviceDebug() {
     def sDev = null;
     if(debug_other) sDev = debug_other
     if(debug_sensor) sDev = debug_sensor
@@ -824,6 +824,7 @@ def renderLocation() {
 
 def CommandReply(statusOut, messageOut, code) {
     def replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
+    logInfo(messageOut)
     render contentType: "application/json", data: replyJson, code: code
 }
 
@@ -844,22 +845,26 @@ def deviceCommand() {
 }
 
 private processCmd(devId, cmd, value1, value2, local=false) {
+    Long execDt = now()
     def device = findDevice(devId)
     logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     def command = cmd
     if(settings?.addSecurityDevice != false && devId == "alarmSystemStatus_${location?.id}") {
         setAlarmSystemMode(command)
-        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2])
+        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: execDt ? (now()-execDt) : 0])
         return CommandReply("Success", "Security Alarm, Command $command", 200)
     }  else if (settings?.modeList && command == "mode" && devId) {
         logDebug("Virtual Mode Received: ${devId}")
         changeMode(devId)
-        logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2])
-        return CommandReply("Success", "Mode Device, Command $command", 200)
+        Long pt = execDt ? (now()-execDt) : 0
+        logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2, execTime: pt])
+        return CommandReply("Success", "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
     } else if (settings?.routineList && command == "routine" && devId) {
         logDebug("Virtual Routine Received: ${devId}")
         runRoutine(devId)
-        return CommandReply("Success", "Routine | ${device?.displayName} | Command $command", 200)
+        Long pt = execDt ? (now()-execDt) : 0
+        logCmd([cmd: command, device: "Routine Device", value1: value1, value2: value2, execTime: pt])
+        return CommandReply("Success", "Routine | ${device?.displayName} | Command $command | Process Time: (${pt}ms)", 200)
     } else {
         if (!device) {
             logError("Device Not Found")
@@ -879,8 +884,9 @@ private processCmd(devId, cmd, value1, value2, local=false) {
                     device?."$command"()
                     logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
                 }
-                logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2])
-                return CommandReply("Success", " | ${device?.displayName} | Command [${command}()]", 200)
+                Long pt = execDt ? (now()-execDt) : 0
+                logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2, execTime: pt])
+                return CommandReply("Success", " | ${device?.displayName} | Command [${command}()] | Process Time: (${pt}ms)", 200)
             } catch (e) {
                 logError("Error Occurred for Device ${device.displayName} | Command [${command}()]")
                 return CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command [${command}()]", 500)
@@ -1128,15 +1134,16 @@ def registerChangeHandler(devices, showlog=false) {
 }
 
 def changeHandler(evt) {
-    def sendItems = []
-    def sendNum = 1
-    def src = evt?.source
+    Long execDt = now()
+    List sendItems = []
+    Integer sendNum = 1
+    String src = evt?.source
     def deviceid = evt?.deviceId
-    def deviceName = evt?.displayName
-    def attr = evt?.name
+    String deviceName = evt?.displayName
+    String attr = evt?.name
     def value = evt?.value
     def dt = evt?.date
-    def sendEvt = true
+    Boolean sendEvt = true
 
     switch(evt?.name) {
         case "hsmStatus":
@@ -1205,7 +1212,7 @@ def changeHandler(evt) {
                         unitStr = "${send?.evtUnit}"
                         break
                 }
-                logDebug("Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${unitStr}) ${send?.evtData ? "Data: ${send?.evtData}" : ""} to Homebridge at (${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort})")
+                logInfo("Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${unitStr}) ${send?.evtData ? "Data: ${send?.evtData}" : ""} to Homebridge at (${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort})")
             }
             sendHttpPost("update", [
                 change_name: send?.evtDeviceName,
@@ -1217,7 +1224,7 @@ def changeHandler(evt) {
                 app_id: app?.getId(),
                 access_token: atomicState?.accessToken
             ], "EventUpdate")
-            logEvt([name: send?.evtAttr, value: send?.evtValue, device: send?.evtDeviceName])
+            logEvt([name: send?.evtAttr, value: send?.evtValue, device: send?.evtDeviceName, execTime: execDt ? (now()-execDt) : 0])
         }
     }
 }
@@ -1234,20 +1241,6 @@ private sendHttpGet(path, contentType) {
 }
 
 private sendHttpPost(path, body, src="", contentType = "application/json") {
-    // if(settings?.use_sync_http == true && !settings?.sendViaNgrok) {
-    //     Map params = [
-    //         method: "POST",
-    //         path: "/${path}",
-    //         headers: [
-    //             HOST: getServerAddress(),
-    //             'Content-Type': contentType
-    //         ],
-    //         body: body,
-    //         timeout: 20
-    //     ]
-    //     def result = new hubitat.device.HubAction(params)
-    //     sendHubCommand(result)
-    // } else {
     Map params = [
         uri: (settings?.sendViaNgrok && settings?.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}" : "http://${getServerAddress()}/${path}",
         requestContentType: contentType,
@@ -1256,7 +1249,6 @@ private sendHttpPost(path, body, src="", contentType = "application/json") {
         timeout: 20
     ]
     execAsyncHttpCmd("POST", params, [execDt: now(), src: src])
-    // }
 }
 
 private execAsyncHttpCmd(String method, Map params, Map otherData = null) {
@@ -1637,8 +1629,8 @@ private addToHistory(String logKey, data, Integer max=10) {
 }
 
 private void logDebug(msg)  { if(showDebugLogs) log.debug "Homebridge (v${appVersionFLD}) | ${msg}"; }
+private void logTrace(msg)  { if(showDebugLogs) log.trace "Homebridge (v${appVersionFLD}) | ${msg}"; }
 private void logInfo(msg)   { log.info " Homebridge (v${appVersionFLD}) | ${msg}"; }
-private void logTrace(msg)  { log.trace "Homebridge (v${appVersionFLD}) | ${msg}"; }
 private void logWarn(msg)   { log.warn " Homebridge (v${appVersionFLD}) | ${msg}"; }
 private void logError(msg)  { log.error "Homebridge (v${appVersionFLD}) | ${msg}"; }
 
