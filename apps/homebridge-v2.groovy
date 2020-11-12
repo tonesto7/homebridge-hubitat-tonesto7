@@ -35,12 +35,12 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.1"
-@Field static final String appModifiedFLD = "11-10-2020"
+@Field static final String appVersionFLD  = "2.1.2"
+@Field static final String appModifiedFLD = "11-12-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = false
+@Field static final Boolean devModeFLD    = true
 @Field static final Map minVersionsFLD = [plugin: 211]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
@@ -62,11 +62,13 @@ preferences {
         'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
         'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
         'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'eventTime', 'eventSummary', 'endOffset', 'startOffset',
-        'closeTime', 'endMsgTime', 'endMsg', 'openTime', 'startMsgTime', 'startMsg', 'calName', "deleteInfo", "eventTitle", "floor", "sleeping",
+        'closeTime', 'endMsgTime', 'endMsg', 'openTime', 'startMsgTime', 'startMsg', 'calName', "deleteInfo", "eventTitle", "floor", "sleeping", "ultravioletIndex", "threeAxis",
         "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel", "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange",
-        "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB", "power", "energy"
+        "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB", "power", "energy",
+        "batteryType", "deviceType", "driverVersionInternal", "outletSwitchable", "outputVoltageNominal", "deviceModel", "driverVersion", "status", "deviceModel", "deviceManufacturer",
+        "deviceFirmware", "outletDescription", "driverName", "batteryRuntimeSecs", "outputFrequency", "outputFrequencyNominal", "driverVersionData", "deviceNominalPower", "load"
     ],
-    capabilities: ["Health Check", "Ultraviolet Index", "Indicator", "Window Shade Preset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "Power Meter", "Energy Meter"]
+    capabilities: ["HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter"]
 ]
 
 def startPage() {
@@ -229,7 +231,7 @@ def deviceSelectPage() {
 
         section(sectTS("Create Devices for Modes in HomeKit?", null, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete"
-            def modes = location?.modes?.sort{it?.name}?.collect { [(it?.id):it?.name] }
+            def modes = location?.getModes()?.sort{it?.name}?.collect { [(it?.id):it?.name] }
             input "modeList", "enum", title: inputTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true
         }
 
@@ -549,7 +551,7 @@ private void subscribeToEvts() {
     if(settings?.modeList) {
         logDebug("Registering (${settings?.modeList?.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
-        if(state?.lastMode == null) { state?.lastMode = location?.mode?.toString() }
+        if(state?.lastMode == null) { state?.lastMode = location?.getMode() }
     }
     state?.subscriptionRenewed = 0
     if(settings?.routineList) {
@@ -684,7 +686,7 @@ private Map getDeviceData(type, sItem) {
 }
 
 String modeSwitchState(String mode) {
-    return location?.mode?.toString() == mode ? "on" : "off"
+    return (location?.getMode() == mode) ? "on" : "off"
 }
 
 def getSecurityDevice() {
@@ -895,18 +897,18 @@ private processCmd(devId, cmd, value1, value2, local=false) {
     }
 }
 
-def changeMode(modeId) {
+private void changeMode(modeId) {
     if(modeId) {
         def mode = findVirtModeDevice(modeId)
         if(mode) {
             logInfo("Setting the Location Mode to (${mode})...")
-            setLocationMode(mode)
-            state?.lastMode = mode
+            setLocationMode(mode as String)
+            state?.lastMode = mode as String
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
 
-def runRoutine(rtId) {
+private void runRoutine(rtId) {
     if(rtId) {
         def rt = findVirtRoutineDevice(rtId)
         if(rt?.label) {
@@ -1269,15 +1271,16 @@ def asyncHttpCmdResp(response, data) {
 private getServerAddress() { return "${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort}" }
 
 def getModeById(String mId) {
-    return location?.modes?.find{it?.id?.toString() == mId}
-}
-
-def getRoutineById(String rId) {
-    return location?.helloHome?.getPhrases()?.find{it?.id == rId}
+    return location?.getModes()?.find{it?.id?.toString() == mId}
 }
 
 def getModeByName(String name) {
-    return location?.modes?.find{it?.name?.toString() == name}
+    return location?.getModes()?.find{it?.name?.toString() == name}
+}
+
+
+def getRoutineById(String rId) {
+    return location?.helloHome?.getPhrases()?.find{it?.id == rId}
 }
 
 def getRoutineByName(String name) {

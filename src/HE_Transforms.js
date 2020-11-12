@@ -135,6 +135,7 @@ module.exports = class Transforms {
                     return Math.round(val);
                 }
             case "powerSource":
+                this.log.info(`powerSource: ${val}`);
                 switch (val) {
                     case "mains":
                     case "dc":
