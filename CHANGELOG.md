@@ -1,3 +1,6 @@
+## v2.1.2
+- [NEW] Added logging for the PowerSource value 
+
 ## v2.1.1
 - [FIX] Fix for https responses.
 

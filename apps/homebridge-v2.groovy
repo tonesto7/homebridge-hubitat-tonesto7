@@ -36,7 +36,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = "2.1.2"
-@Field static final String appModifiedFLD = "11-11-2020"
+@Field static final String appModifiedFLD = "11-12-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -68,7 +68,7 @@ preferences {
         "batteryType", "deviceType", "driverVersionInternal", "outletSwitchable", "outputVoltageNominal", "deviceModel", "driverVersion", "status", "deviceModel", "deviceManufacturer",
         "deviceFirmware", "outletDescription", "driverName", "batteryRuntimeSecs", "outputFrequency", "outputFrequencyNominal", "driverVersionData", "deviceNominalPower", "load"
     ],
-    capabilities: ["Health Check", "Ultraviolet Index", "Indicator", "Window Shade Preset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "Power Meter", "Energy Meter"]
+    capabilities: ["HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter"]
 ]
 
 def startPage() {

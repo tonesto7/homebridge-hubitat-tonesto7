@@ -33,7 +33,7 @@
         "app_id": {
             "title": "App ID",
             "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
-            "type": "string",
+            "type": "integer",
             "required": true
         },
         "access_token": {

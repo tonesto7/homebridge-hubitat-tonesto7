@@ -1,3 +1,7 @@
+## v2.1.2 Changes
+- [FIX] Fix for mode switches not working
+- [UPDATE] Cleaned up more attributes and capabilities from event subscriptions.
+
 ## v2.1.1 Changes
 - [FIX] Fix for thermostat + fan input
 - [FIX] Fixed Device debug not returning json data.
