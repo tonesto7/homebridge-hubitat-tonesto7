@@ -8,7 +8,7 @@ module.exports = {
         // "Acceleration Sensor",
         "AccelerationSensor",
         "Actuator",
-        // "Alarm System Status",
+        "Alarm System Status",
         "Alarm",
         "AlarmSystemStatus",
         "Audio Mute",

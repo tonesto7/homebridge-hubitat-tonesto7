@@ -1,3 +1,7 @@
+## v2.1.3
+- [FIX] Last plugin update broke HSM events.
+- [FIX] Fixed validate token feature 
+
 ## v2.1.2
 - [NEW] Added logging for the PowerSource value 
 
