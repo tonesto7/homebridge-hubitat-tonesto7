@@ -1,3 +1,7 @@
+## v2.1.3 Changes
+- [FIX] Last plugin update broke HSM events.
+- [UPDATE] Increased minimum plugin version to v2.1.3
+
 ## v2.1.2 Changes
 - [FIX] Fix for mode switches not working
 - [UPDATE] Cleaned up more attributes and capabilities from event subscriptions.

@@ -52,23 +52,21 @@ module.exports = class HE_Platform {
 
     getLogConfig() {
         let config = this.config;
-        return config.logConfig ?
-            {
-                debug: config.logConfig.debug === true,
-                showChanges: config.logConfig.showChanges === true,
-                hideTimestamp: config.logConfig.hideTimestamp === true,
-                hideNamePrefix: config.logConfig.hideNamePrefix === true,
-                file: {
-                    enabled: config.logConfig.file.enabled === true,
-                    level: config.logConfig.file.level || "good",
-                },
-            } :
-            {
-                debug: false,
-                showChanges: true,
-                hideTimestamp: false,
-                hideNamePrefix: false,
-            };
+        return config.logConfig ? {
+            debug: config.logConfig.debug === true,
+            showChanges: config.logConfig.showChanges === true,
+            hideTimestamp: config.logConfig.hideTimestamp === true,
+            hideNamePrefix: config.logConfig.hideNamePrefix === true,
+            file: {
+                enabled: config.logConfig.file.enabled === true,
+                level: config.logConfig.file.level || "good",
+            },
+        } : {
+            debug: false,
+            showChanges: true,
+            hideTimestamp: false,
+            hideNamePrefix: false,
+        };
     }
 
     findDirectPort() {
@@ -245,7 +243,7 @@ module.exports = class HE_Platform {
         if (this.configItems.validateTokenId !== true) {
             return true;
         }
-        if (app_id && access_token && access_token === this.getConfigItems().access_token && app_id === this.getConfigItems().app_id) return true;
+        if (app_id && access_token && this.getConfigItems().app_id && this.getConfigItems().access_token && access_token === this.getConfigItems().access_token && parseInt(app_id) === parseInt(this.getConfigItems().app_id)) return true;
         this.log.error(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
         return false;
     }
