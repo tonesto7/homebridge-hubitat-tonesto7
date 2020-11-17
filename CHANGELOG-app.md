@@ -1,3 +1,6 @@
+## v2.1.4 Changes
+- [FIX] Concurrent modification error for device/command history
+
 ## v2.1.3 Changes
 - [FIX] Last plugin update broke HSM events.
 - [UPDATE] Increased minimum plugin version to v2.1.3
