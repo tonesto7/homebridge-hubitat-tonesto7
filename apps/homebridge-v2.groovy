@@ -1675,9 +1675,12 @@ static void mb(String meth=sNULL){
 
 @Field static final String sHMLF = 'theHistMapLockFLD'
 @Field static java.util.concurrent.Semaphore histMapLockFLD = new java.util.concurrent.Semaphore(1)
-static Integer getSemaNum(String name){
-	if(name==sHMLF) return 0
-    log.warn "unrecognized lock name..."
+
+private Integer getSemaNum(String name) {
+	if(name == sHMLF) { 
+        return 0
+    }
+    log.warn("unrecognized lock name...")
     return 0
 	// Integer stripes=22
 	// if(name.isNumber()) return name.toInteger()%stripes
@@ -1685,7 +1688,8 @@ static Integer getSemaNum(String name){
 	// return Math.abs(hash)%stripes
     // log.info "sema $name # $sema"
 }
-java.util.concurrent.Semaphore getSema(Integer snum){
+
+java.util.concurrent.Semaphore getSema(Integer snum) {
 	switch(snum) {
 		case 0: return histMapLockFLD
 		default: log.error "bad hash result $snum"
