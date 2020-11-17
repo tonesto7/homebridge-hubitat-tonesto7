@@ -1650,7 +1650,7 @@ private void logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 25) }
 private void updMemStoreItem(key, val) {
     String appId = app.getId()
     Boolean aa = getTheLock(sHMLF, "updMemStoreItem(${key})")
-    log.trace "lock wait: ${aa}"
+    // log.trace "lock wait: ${aa}"
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
