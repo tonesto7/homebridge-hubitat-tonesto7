@@ -35,8 +35,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.3"
-@Field static final String appModifiedFLD = "11-13-2020"
+@Field static final String appVersionFLD  = "2.1.4"
+@Field static final String appModifiedFLD = "11-17-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -48,7 +48,7 @@ preferences {
 @Field static final String sBULLET = '\u2022'
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
-@Field static Map historyMapFLD = [:]
+
 @Field static final Map ignoreListFLD =  [
     commands: ["indicatorWhenOn", "indicatorWhenOff", "ping", "refresh", "indicatorNever", "configure", "poll", "reset"],
     attributes: [
@@ -1644,13 +1644,19 @@ private void clearHistory()  { historyMapFLD = [:]; mb(); }
 private void logEvt(evtData) { addToHistory("evtHistory", evtData, 25) }
 private void logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 25) }
 
+
+@Field volatile static Map historyMapFLD = [:]
 // FIELD VARIABLE FUNCTIONS
 private void updMemStoreItem(key, val) {
     String appId = app.getId()
+    Boolean aa = getTheLock(sHMLF, "updMemStoreItem(${key})")
+    log.trace "lock wait: ${aa}"
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
+    historyMapFLD = historyMapFLD
     // log.debug("updMemStoreItem(${key}): ${memStore[key]}")
+    releaseTheLock(sHMLF)
 }
 
 private List getMemStoreItem(key){
@@ -1663,6 +1669,69 @@ private List getMemStoreItem(key){
 @Field static java.util.concurrent.Semaphore theMBLockFLD=new java.util.concurrent.Semaphore(0)
 static void mb(String meth=sNULL){
     if((Boolean)theMBLockFLD.tryAcquire()){
-            theMBLockFLD.release()
+        theMBLockFLD.release()
     }
+}
+
+@Field static final String sHMLF = 'theHistMapLockFLD'
+@Field static java.util.concurrent.Semaphore histMapLockFLD = new java.util.concurrent.Semaphore(1)
+static Integer getSemaNum(String name){
+	if(name==sHMLF) return 0
+    log.warning "unrecognized lock name..."
+    return 0
+	// Integer stripes=22
+	// if(name.isNumber()) return name.toInteger()%stripes
+	// Integer hash=smear(name.hashCode())
+	// return Math.abs(hash)%stripes
+    // log.info "sema $name # $sema"
+}
+java.util.concurrent.Semaphore getSema(Integer snum){
+	switch(snum) {
+		case 0: return histMapLockFLD
+		default: log.error "bad hash result $snum"
+			return null
+	}
+}
+
+@Field volatile static Map<String,Long> lockTimesFLD = [:]
+@Field volatile static Map<String,String> lockHolderFLD = [:]
+
+Boolean getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
+    Long waitT = longWait ? 1000L : 60L
+    Boolean wait = false
+    Integer semaNum = getSemaNum(qname)
+    String semaSNum = semaNum.toString()
+    def sema = getSema(semaNum)
+    while(!((Boolean)sema.tryAcquire())) {
+        // did not get the lock
+        Long timeL = lockTimesFLD[semaSNum]
+        if(timeL == null){
+            timeL = now()
+            lockTimesFLD[semaSNum] = timeL
+            lockTimesFLD = lockTimesFLD
+        }
+        if(devModeFLD) log.warn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}"
+        pauseExecution(waitT)
+        wait = true
+        if((now() - timeL) > 30000L) {
+            releaseTheLock(qname)
+            if(devModeFLD) log.warn "overriding lock $meth"
+        }
+    }
+    lockTimesFLD[semaSNum] = now()
+    lockTimesFLD = lockTimesFLD
+    lockHolderFLD[semaSNum] = "${app.getId()} ${meth}"
+    lockHolderFLD = lockHolderFLD
+    return wait
+}
+
+void releaseTheLock(String qname){
+    Integer semaNum=getSemaNum(qname)
+    String semaSNum=semaNum.toString()
+    def sema=getSema(semaNum)
+    lockTimesFLD[semaSNum]=null
+    lockTimesFLD=lockTimesFLD
+    // lockHolderFLD[semaSNum]=sNULL
+    // lockHolderFLD=lockHolderFLD
+    sema.release()
 }
