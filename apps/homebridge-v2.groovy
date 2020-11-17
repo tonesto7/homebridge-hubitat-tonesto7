@@ -1677,7 +1677,7 @@ static void mb(String meth=sNULL){
 @Field static java.util.concurrent.Semaphore histMapLockFLD = new java.util.concurrent.Semaphore(1)
 static Integer getSemaNum(String name){
 	if(name==sHMLF) return 0
-    log.warning "unrecognized lock name..."
+    log.warn "unrecognized lock name..."
     return 0
 	// Integer stripes=22
 	// if(name.isNumber()) return name.toInteger()%stripes
