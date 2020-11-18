@@ -1,3 +1,6 @@
+## v2.1.5 Changes
+- [FIX] Another attempt at fixing Concurrent modification error for device/command history (Thanks @nh.schottfam).
+
 ## v2.1.4 Changes
 - [FIX] Concurrent modification error for device/command history
 
