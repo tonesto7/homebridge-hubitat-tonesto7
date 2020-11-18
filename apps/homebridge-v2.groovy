@@ -1622,13 +1622,24 @@ private changeLogPage() {
 Integer stateSize() { def j = new groovy.json.JsonOutput().toJson(state); return j?.toString().length(); }
 Integer stateSizePerc() { return (int) ((stateSize() / 100000)*100).toDouble().round(0); }
 
-private addToHistory(String logKey, data, Integer max=10) {
-    Boolean ssOk = (stateSizePerc() > 70)
-    List eData = getMemStoreItem(logKey) ?: []
-    if(eData?.find { it?.data == data }) { return; }
+private void addToHistory(String logKey, Map data, Integer max=10) {
+    String appId = app.getId()
+    Boolean ssOk = true // (stateSizePerc() > 70)
+
+    Boolean aa = getTheLock(sHMLF, "addToHistory${logKey})")
+    // log.trace "lock wait: ${aa}"
+
+    Map memStore = historyMapFLD[appId] ?: [:]
+    List eData = memStore[logKey] ?: []
+    if(eData?.find { it?.data == data }) {
+    	releaseTheLock(sHMLF)
+	return
+    }
     eData?.push([dt: getDtNow(), data: data])
     if(!ssOk || eData?.size() > max) { eData = eData?.drop( (eData?.size()-max) ) }
     updMemStoreItem(logKey, eData)
+
+    releaseTheLock(sHMLF)
 }
 
 private void logDebug(msg)  { if(showDebugLogs) log.debug "Homebridge (v${appVersionFLD}) | ${msg}"; }
@@ -1637,29 +1648,55 @@ private void logInfo(msg)   { log.info " Homebridge (v${appVersionFLD}) | ${msg}
 private void logWarn(msg)   { log.warn " Homebridge (v${appVersionFLD}) | ${msg}"; }
 private void logError(msg)  { log.error "Homebridge (v${appVersionFLD}) | ${msg}"; }
 
-private List getCmdHistory() { return getMemStoreItem("cmdHistory") ?: [] }
-private List getEvtHistory() { return getMemStoreItem("evtHistory") ?: [] }
-private void clearHistory()  { historyMapFLD = [:]; mb(); }
-
-private void logEvt(evtData) { addToHistory("evtHistory", evtData, 25) }
-private void logCmd(cmdData) { addToHistory("cmdHistory", cmdData, 25) }
-
-
-@Field volatile static Map historyMapFLD = [:]
-// FIELD VARIABLE FUNCTIONS
-private void updMemStoreItem(key, val) {
-    String appId = app.getId()
-    Boolean aa = getTheLock(sHMLF, "updMemStoreItem(${key})")
+private List getCmdHistory() {
+    Boolean aa = getTheLock(sHMLF, "getCmdHistory")
     // log.trace "lock wait: ${aa}"
+
+    List his= getMemStoreItem("cmdHistory")
+    List newHis = [] + his ?: []
+
+    releaseTheLock(sHMLF)
+    return newHis
+}
+
+private List getEvtHistory() {
+    Boolean aa = getTheLock(sHMLF, "getEvtHistory")
+    // log.trace "lock wait: ${aa}"
+
+    List his= getMemStoreItem("evtHistory")
+    List newHis = [] + his ?: []
+
+    releaseTheLock(sHMLF)
+    return newHis
+}
+
+private void clearHistory()  {
+    String appId = app.getId()
+    Boolean aa = getTheLock(sHMLF, "clearHistory")
+    // log.trace "lock wait: ${aa}"
+
+    historyMapFLD[appId] = [:]
+    historyMapFLD = historyMapFLD
+
+    releaseTheLock(sHMLF)
+}
+
+private void logEvt(Map evtData) { addToHistory("evtHistory", evtData, 25) }
+private void logCmd(Map cmdData) { addToHistory("cmdHistory", cmdData, 25) }
+
+@Field volatile static Map<String,Map> historyMapFLD = [:]
+
+// FIELD VARIABLE FUNCTIONS
+private void updMemStoreItem(String key, val) {
+    String appId = app.getId()
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
     historyMapFLD = historyMapFLD
     // log.debug("updMemStoreItem(${key}): ${memStore[key]}")
-    releaseTheLock(sHMLF)
 }
 
-private List getMemStoreItem(key){
+private List getMemStoreItem(String key){
     String appId = app.getId()
     Map memStore = historyMapFLD[appId] ?: [:]
     return memStore[key] ?: null
@@ -1667,6 +1704,7 @@ private List getMemStoreItem(key){
 
 // Memory Barrier
 @Field static java.util.concurrent.Semaphore theMBLockFLD=new java.util.concurrent.Semaphore(0)
+
 static void mb(String meth=sNULL){
     if((Boolean)theMBLockFLD.tryAcquire()){
         theMBLockFLD.release()
@@ -1677,7 +1715,7 @@ static void mb(String meth=sNULL){
 @Field static java.util.concurrent.Semaphore histMapLockFLD = new java.util.concurrent.Semaphore(1)
 
 private Integer getSemaNum(String name) {
-	if(name == sHMLF) return 0
+    if(name == sHMLF) return 0 
     log.warn "unrecognized lock name..."
     return 0
 	// Integer stripes=22
@@ -1722,7 +1760,7 @@ Boolean getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
     }
     lockTimesFLD[semaSNum] = now()
     lockTimesFLD = lockTimesFLD
-    lockHolderFLD[semaSNum] = "${app.getId()} ${meth}"
+    lockHolderFLD[semaSNum] = "${app.getId()} ${meth}".toString()
     lockHolderFLD = lockHolderFLD
     return wait
 }
@@ -1733,7 +1771,7 @@ void releaseTheLock(String qname){
     def sema=getSema(semaNum)
     lockTimesFLD[semaSNum]=null
     lockTimesFLD=lockTimesFLD
-    // lockHolderFLD[semaSNum]=sNULL
-    // lockHolderFLD=lockHolderFLD
+    lockHolderFLD[semaSNum]=(String)null
+    lockHolderFLD=lockHolderFLD
     sema.release()
 }
