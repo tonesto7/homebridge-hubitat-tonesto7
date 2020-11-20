@@ -540,7 +540,7 @@ Boolean getAccessToken() {
         }
         return true
     } catch (ex) {
-        String msg = "Error: OAuth is not Enabled for ${appName()}!. Please click remove and Enable Oauth under the SmartApp App Settings in the IDE"
+        String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under the SmartApp App Settings in the IDE"
         logError("getAccessToken Exception: ${msg}")
         return false
     }
@@ -594,7 +594,7 @@ Boolean checkIfCodeUpdated() {
 
 private void stateCleanup() {
     List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap"]
-    if(state.directIP && state.directPort) {
+    if(state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
             directIP: state.directIP,
             directPort: state.directPort
@@ -802,7 +802,7 @@ String renderConfig() {
         use_cloud: (Boolean)settings.use_cloud_endpoint,
         access_token: state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
-        validateTokenId: (Boolean)settings?.validate_token,
+        validateTokenId: (Boolean)settings.validate_token,
         logConfig: [
             debug: false,
             showChanges: true,
@@ -827,7 +827,7 @@ Map renderLocation() {
         temperature_scale: (String)settings.temp_unit ?: (String)location.temperatureScale,
         zip_code: location?.zipCode,
         hubIP: location?.hubs[0]?.localIP,
-        use_cloud: (Boolean)settings?.use_cloud_endpoint,
+        use_cloud: (Boolean)settings.use_cloud_endpoint,
         app_version: appVersionFLD
     ]
 }
@@ -1211,7 +1211,11 @@ def changeHandler(evt) {
             break
     }
 
-    if (sendEvt && state?.pluginDetails?.directIP != "" && sendItems.size()>0) {
+    if (sendEvt && sendItems.size()>0) {
+        if (!state?.pluginDetails?.directIP) { // can be configured ngrok??
+//            logError("sendHttpPost: no plugin server configured")
+            return 
+        }
         //Send Using the Direct Mechanism
         sendItems.each { Map send->
             if((Boolean)settings.showEventLogs) {
@@ -1251,7 +1255,7 @@ def changeHandler(evt) {
         }
     }
 }
-
+/*
 private sendHttpGet(path, contentType) {
     if((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) {
         httpGet([
@@ -1262,8 +1266,12 @@ private sendHttpGet(path, contentType) {
         ])
     } else { sendHubCommand(new hubitat.device.HubAction(method: "GET", path: "/${path}", headers: [HOST: getServerAddress()])) }
 }
-
+*/
 void sendHttpPost(String path, Map body, String src="", String contentType = "application/json") {
+    String server= getServerAddress()
+    if(!((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
+        if(server == ":" || server == "null:null" ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
+    }
     Map params = [
         uri: ((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${getServerAddress()}/${path}".toString(),
         requestContentType: contentType,
@@ -1378,7 +1386,7 @@ def pluginStatus() {
 
 def enableDirectUpdates() {
     // log.trace "enableDirectUpdates: ($params)"
-    state?.pluginDetails = [
+    state.pluginDetails = [
         directIP: params?.ip,
         directPort: params?.port,
         version: params?.version ?: null
