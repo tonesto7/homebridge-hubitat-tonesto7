@@ -248,7 +248,7 @@ def settingsPage() {
         section(sectTS("Security:", sNULL, true)) {
             paragraph paraTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", sNULL, false)
             input "resetAppToken", "bool", title: inputTS("Revoke and Recreate App Access Token?", getAppImg("reset", true)), defaultValue: false, submitOnChange: true
-            if(settings?.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
+            if((Boolean)settings.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
         }
         // section(sectTS("HTTP Requests:", sNULL, true)) {
         //     input "use_sync_http", "bool", title: inputTS("Slow Commands? Use Synchronous HTTP?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
@@ -572,7 +572,7 @@ private void healthCheck() {
 }
 
 Boolean checkIfCodeUpdated() {
-    logDebug("Code versions: ${state?.codeVersions}")
+    logDebug("Code versions: ${state.codeVersions}")
     if(state.codeVersions) {
         if(state.codeVersions?.mainApp != appVersionFLD) {
             checkVersionData(true)
@@ -912,7 +912,7 @@ private void changeMode(modeId) {
         if(mode) {
             logInfo("Setting the Location Mode to (${mode})...")
             setLocationMode(mode as String)
-            state?.lastMode = mode as String
+//            state.lastMode = mode as String
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
@@ -1728,7 +1728,8 @@ private List<Map> getCmdHistory() {
     // log.trace "lock wait: ${aa}"
 
     List<Map> his= getMemStoreItem("cmdHistory")
-    List<Map> newHis = [] + his ?: []
+    if(his==null) his = []
+    List<Map> newHis = [] + his
 
     releaseTheLock(sHMLF)
     return newHis
@@ -1739,7 +1740,8 @@ private List<Map> getEvtHistory() {
     // log.trace "lock wait: ${aa}"
 
     List<Map> his= getMemStoreItem("evtHistory")
-    List<Map> newHis = [] + his ?: []
+    if(his==null) his = []
+    List<Map> newHis = [] + his
 
     releaseTheLock(sHMLF)
     return newHis
