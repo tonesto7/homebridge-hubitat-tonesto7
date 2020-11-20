@@ -93,20 +93,20 @@ def mainPage() {
             Integer devCnt = getDeviceCnt()
             if(conf) {
                 desc = ""
-                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList?.size() > 1 ? "s" : ""}</b> (${lightList?.size()})</small><br>""" : ""
-                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList?.size() > 1 ? "s" : ""}</b> (${buttonList?.size()})</small><br>""" : ""
+                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : ""}</b> (${lightList.size()})</small><br>""" : ""
+                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : ""}</b> (${buttonList.size()})</small><br>""" : ""
                 desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : ""}</b> (${fansize})</small><br>""" : ""
-                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList?.size() > 1 ? "s" : ""}</b> (${speakerList?.size()})</small><br>""" : ""
-                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList?.size() > 1 ? "s" : ""}</b> (${shadesList?.size()})</small><br>""" : ""
-                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList?.size() > 1 ? "s" : ""}</b> (${garageList?.size()})</small><br>""" : ""
-                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList?.size() > 1 ? "s" : ""}</b> (${tstatList?.size()})</small><br>""" : ""
-                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList?.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList?.size()})</small><br>""" : ""
-                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList?.size() > 1 ? "s" : ""}</b> (${tstatHeatList?.size()})</small><br>""" : ""
-                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList?.size() > 1 ? "s" : ""}</b> (${sensorList?.size()})</small><br>""" : ""
-                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList?.size() > 1 ? "es" : ""}</b> (${switchList?.size()})</small><br>""" : ""
-                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList?.size() > 1 ? "s" : ""}</b> (${deviceList?.size()})</small><br>""" : ""
-                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList?.size() > 1 ? "s" : ""}</b> (${modeList?.size()})</small><br>""" : ""
-                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList?.size() > 1 ? "s" : ""}</b> (${routineList?.size()})</small><br>""" : ""
+                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : ""}</b> (${speakerList.size()})</small><br>""" : ""
+                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : ""}</b> (${shadesList.size()})</small><br>""" : ""
+                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : ""}</b> (${garageList.size()})</small><br>""" : ""
+                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : ""}</b> (${tstatList.size()})</small><br>""" : ""
+                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList.size()})</small><br>""" : ""
+                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : ""}</b> (${tstatHeatList.size()})</small><br>""" : ""
+                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : ""}</b> (${sensorList.size()})</small><br>""" : ""
+                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : ""}</b> (${switchList.size()})</small><br>""" : ""
+                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : ""
+                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : ""
+                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList.size() > 1 ? "s" : ""}</b> (${routineList.size()})</small><br>""" : ""
                 desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : ""
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
                 desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : ""
@@ -136,7 +136,7 @@ def mainPage() {
         section(sectTS("History Data and Device Debug:", sNULL, true)) {
             href "historyPage", title: inputTS("View Command and Event History", getAppImg("backup", true)), description: "Tap to view...", state: "complete"
             href "deviceDebugPage", title: inputTS("View Device Debug Data", getAppImg("debug", true)), description: "Tap to view...", state: "complete"
-        }
+	}
 
         section(sectTS("App Preferences:", sNULL, true)) {
             def sDesc = getSetDesc()
@@ -203,29 +203,29 @@ def deviceSelectPage() {
         section(sectTS("Define Specific Categories:", sNULL, true)) {
             paragraph paraTS("NOTE: Please do not select a device here and then again in another input below.")
             paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
-            input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList?.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
-            input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList?.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
-            input "buttonList", "capability.button", title: inputTS("Buttons: (${buttonList ? buttonList?.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
-            input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
+            input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
+            input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
+            input "buttonList", "capability.button", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
+            input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectTS("Fans:", sNULL, true)) {
-            input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
-            input "fan3SpdList", "capability.switch", title: inputTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
-            input "fan4SpdList", "capability.switch", title: inputTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+            input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+            input "fan3SpdList", "capability.switch", title: inputTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+            input "fan4SpdList", "capability.switch", title: inputTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectTS("Thermostats:", sNULL, true)) {
-            input "tstatList", "capability.thermostat", title: inputTS("Thermostats: (${tstatList ? tstatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatFanList", "capability.thermostat", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatHeatList", "capability.thermostat", title: inputTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+            input "tstatList", "capability.thermostat", title: inputTS("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+            input "tstatFanList", "capability.thermostat", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+            input "tstatHeatList", "capability.thermostat", title: inputTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectTS("All Other Devices:", sNULL, true)) {
-            input "sensorList", "capability.sensor", title: inputTS("Sensors: (${sensorList ? sensorList?.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false
-            input "switchList", "capability.switch", title: inputTS("Switches: (${switchList ? switchList?.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false
-            input "deviceList", "capability.*", title: inputTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false
+            input "sensorList", "capability.sensor", title: inputTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false
+            input "switchList", "capability.switch", title: inputTS("Switches: (${switchList ? switchList.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false
+            input "deviceList", "capability.*", title: inputTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false
 
         }
 
@@ -267,7 +267,7 @@ private void resetAppToken() {
 private void resetCapFilters() {
     List items = settings?.each?.findAll { ((String)it.key).startsWith("remove") }?.collect { (String)it.key }
     if(items.size()> 0) {
-        items.each { item->
+        items.each { String item->
             settingRemove(item)
         }
     }
@@ -310,7 +310,7 @@ private void inputDupeValidation() {
     String out = ""
     Boolean show = false
     Boolean first = true
-    if(clnUp.d.size()) {
+    if(clnUp.d.size()>0) {
         show=true
         clnUp.d.each { String k, List v->
             out += "${first ? "" : "\n"}${items?.d[k]}:\n "
@@ -318,7 +318,7 @@ private void inputDupeValidation() {
             first = false
         }
     }
-    if(clnUp.o.size()) {
+    if(clnUp.o.size()>0) {
         show=true
         clnUp.o.each { String k, List v->
             out += "${first ? "" : "\n"}${items?.o[k]}:\n "
@@ -335,26 +335,26 @@ private void inputDupeValidation() {
 
 String getSetDesc() {
     List s = []
-    if((Boolean)settings.showEventLogs) s?.push("\u2022 Device Event Logs")
-    if((Boolean)settings.showDebugLogs) s?.push("\u2022 Debug Logging")
-    return s.size() ? "${s.join("\n")}\n\nTap to modify..." : "Tap to configure..."
+    if((Boolean)settings.showEventLogs) s.push("\u2022 Device Event Logs")
+    if((Boolean)settings.showDebugLogs) s.push("\u2022 Debug Logging")
+    return s.size()>0 ? "${s.join("\n")}\n\nTap to modify..." : "Tap to configure..."
 }
 
 def historyPage() {
     return dynamicPage(name: "historyPage", title: "", install: false, uninstall: false) {
-        List<Map> cHist = getCmdHistory()?.sort {it.gt}?.reverse()
-        List<Map> eHist = getEvtHistory()?.sort {it.gt}?.reverse()
+        List<Map> cHist = getCmdHistory()?.sort {(Long)it.gt}?.reverse()
+        List<Map> eHist = getEvtHistory()?.sort {(Long)it.gt}?.reverse()
         section() {
             paragraph paraTS("This history is only stored in memory.  It is erased after every code update and a Hub reboot.", getAppImg("info", true), false, "#2784D9"), state: "complete"
         }
-        section(sectTS("Last (${cHist?.size()}) Commands Received From HomeKit:", sNULL, true)) {
-            if(cHist?.size()) {
-                cHist?.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2:</b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n \u2022 <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+        section(sectTS("Last (${cHist.size()}) Commands Received From HomeKit:", sNULL, true)) {
+            if(cHist.size()>0) {
+                cHist.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2:</b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n \u2022 <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
             } else { paragraph paraTS("No Command History Found...", sNULL, false) }
         }
-        section(sectTS("Last (${eHist?.size()}) Events Sent to HomeKit:", sNULL, true)) {
-            if(eHist?.size()) {
-                eHist?.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n \u2022 <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+        section(sectTS("Last (${eHist.size()}) Events Sent to HomeKit:", sNULL, true)) {
+            if(eHist.size()>0) {
+                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n \u2022 <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
             } else {paragraph paraTS("No Event History Found...", sNULL, false) }
         }
     }
@@ -555,7 +555,7 @@ Boolean getAccessToken() {
     if(settings?.modeList) {
         logDebug("Registering (${settings?.modeList?.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
-        if(state.lastMode == null) { state.lastMode = (String)location.getMode() }
+//        if(state.lastMode == null) { state.lastMode = (String)location.getMode() }
     }
     state.subscriptionRenewed = 0
     if(settings?.routineList) {
@@ -593,7 +593,7 @@ Boolean checkIfCodeUpdated() {
 }
 
 private void stateCleanup() {
-    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory"]
+    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap"]
     if(state.directIP && state.directPort) {
         state.pluginDetails = [
             directIP: state.directIP,
@@ -602,7 +602,7 @@ private void stateCleanup() {
         removeItems.push("directIP")
         removeItems.push("directPort")
     }
-    removeItems.each { String it -> if(state.containsKey(it)) state.remove(it) }
+    removeItems.each { String it -> if(state?.containsKey(it)) state.remove(it) }
 }
 
 private List renderDevices() {
@@ -614,8 +614,9 @@ private List renderDevices() {
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
                 try {
-                    Map devObj = getDeviceData(item, dev) ?: [:]
-                    if(devObj?.size()) { devMap[dev] = devObj }
+                    Map devObj = getDeviceData(item, dev)
+                    devObj = devObj!=null ? devObj : [:]
+                    if(devObj.size()>0) { devMap[dev] = devObj }
                 } catch (ex) {
                     // log.error "Device (${dev?.displayName}) Render Exception: ${ex}"
                     logError("Device (${dev?.displayName}) Render Exception: ${ex.message}")
@@ -624,7 +625,7 @@ private List renderDevices() {
         }
     }
     if((Boolean)settings.addSecurityDevice) { devList?.push(getSecurityDevice()) }
-    if(devMap.size()) { devMap.sort{ it?.value?.name }?.each { k,v-> devList?.push(v) } }
+    if(devMap.size()>0) { devMap.sort{ it.value.name }?.each { k,v-> devList.push(v) } }
     return devList
 }
 
@@ -717,7 +718,7 @@ Map getDeviceFlags(device) {
     if(settings?.fan4SpdList?.find { it?.id == device?.id }) {
         opts["fan_4_spd"] = 1
     }
-    // if(opts?.size()) log.debug "opts: ${opts}"
+    // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
 }
 
@@ -786,9 +787,9 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: "hsmSetArm", value: mode)
 }
 
-String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}".toString() }
-String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}".toString() }
-String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}".toString() }
+String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
+String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
+String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
 
 String renderConfig() {
     Map jsonMap = [
@@ -860,18 +861,19 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     String command = cmd
     if((Boolean)settings.addSecurityDevice && devId == "alarmSystemStatus_${location?.id}") {
         setAlarmSystemMode(command)
-        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: execDt ? (now()-execDt) : 0])
+        Long pt = execDt ? (now()-execDt) : 0L
+        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Security Alarm, Command $command", 200)
     }  else if (settings?.modeList && command == "mode" && devId) {
         logDebug("Virtual Mode Received: ${devId}")
         changeMode(devId)
-        Long pt = execDt ? (now()-execDt) : 0
+        Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
     } else if (settings?.routineList && command == "routine" && devId) {
         logDebug("Virtual Routine Received: ${devId}")
         runRoutine(devId)
-        Long pt = execDt ? (now()-execDt) : 0
+        Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Routine Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Routine | ${device?.displayName} | Command $command | Process Time: (${pt}ms)", 200)
     } else {
@@ -893,7 +895,7 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
                     device?."$command"()
                     logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
                 }
-                Long pt = execDt ? (now()-execDt) : 0
+                Long pt = execDt ? (now()-execDt) : 0L
                 logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2, execTime: pt])
                 return CommandReply("Success", " | ${device?.displayName} | Command [${command}()] | Process Time: (${pt}ms)", 200)
             } catch (e) {
@@ -1209,7 +1211,7 @@ def changeHandler(evt) {
             break
     }
 
-    if (sendEvt && state?.pluginDetails?.directIP != "" && sendItems.size()) {
+    if (sendEvt && state?.pluginDetails?.directIP != "" && sendItems.size()>0) {
         //Send Using the Direct Mechanism
         sendItems.each { Map send->
             if((Boolean)settings.showEventLogs) {
@@ -1408,10 +1410,10 @@ def appInfoSect() {
     section (sectH3TS(app?.name, tStr, getAppImg("hb_tonesto7", true), "orange")) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
-        if(minUpdMap?.updRequired && minUpdMap?.updItems?.size()) {
+        if((Boolean)minUpdMap?.updRequired && ((List)minUpdMap.updItems).size()>0) {
             isNote=true
             String str3 = """<small style="color: red;"><b>Updates Required:</b></small>"""
-            minUpdMap?.updItems?.each { item-> str3 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
+            ((List)minUpdMap.updItems).each { item-> str3 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
             str3 += """<br><br><small style="color: red; font-weight: bold;">If you just updated the code please press Done/Next to let the app process the changes.</small>"""
             paragraph str3
         } else if(codeUpdItems?.size()) {
@@ -1648,7 +1650,7 @@ Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
 /******************************************
 |       Changelog Logic
 ******************************************/
-Boolean showDonationOk() { return ((Boolean)state.isInstalled && !state?.installData?.shownDonation && getDaysSinceUpdated() >= 30 && !settings?.sentDonation) }
+Boolean showDonationOk() { return ((Boolean)state.isInstalled && !state?.installData?.shownDonation && getDaysSinceUpdated() >= 30 && !(Boolean)settings.sentDonation) }
 
 Integer getDaysSinceUpdated() {
     def t0 = state?.installData?.updatedDt
@@ -1685,17 +1687,17 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
     String appId = app.getId()
     Boolean ssOk = true // (stateSizePerc() > 70)
 
-    Boolean aa = getTheLock(sHMLF, "addToHistory${logKey})")
+    Boolean aa = getTheLock(sHMLF, "addToHistory(${logKey})")
     // log.trace "lock wait: ${aa}"
 
     Map<String,List> memStore = historyMapFLD[appId] ?: [:]
     List eData = (List)memStore[logKey] ?: []
-    if(eData?.find { it?.data == data }) {
+    if(eData.find { it?.data == data }) {
     	releaseTheLock(sHMLF)
         return
     }
-    eData?.push([dt: getDtNow(), gt: now(), data: data])
-    if(!ssOk || eData?.size() > max) { eData = eData?.drop( (eData?.size()-max) ) }
+    eData.push([dt: getDtNow(), gt: now(), data: data])
+    if(!ssOk || eData.size() > max) { eData = eData.drop( (eData.size()-max) ) }
     updMemStoreItem(logKey, eData)
 
     releaseTheLock(sHMLF)
