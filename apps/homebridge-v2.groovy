@@ -74,7 +74,7 @@ preferences {
 def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
-        if(!state?.installData) { state?.installData = [initVer: appVersionFLD, dt: getDtNow().toString(), updatedDt: getDtNow().toString(), shownDonation: false] }
+        if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
         checkVersionData(true)
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
@@ -83,74 +83,74 @@ def startPage() {
 }
 
 def mainPage() {
-    Boolean isInst = (state?.isInstalled == true)
+    Boolean isInst = (state.isInstalled == true)
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall: true) {
         appInfoSect()
-        section(sectTS("Device Configuration:", null, true)) {
+        section(sectTS("Device Configuration:", sNULL, true)) {
             Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
             String desc = """<small style="color:gray;">Tap to select devices...</small>"""
             Integer devCnt = getDeviceCnt()
             if(conf) {
                 desc = ""
-                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList?.size() > 1 ? "s" : ""}</b> (${lightList?.size()})</small><br>""" : ""
-                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList?.size() > 1 ? "s" : ""}</b> (${buttonList?.size()})</small><br>""" : ""
+                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : ""}</b> (${lightList.size()})</small><br>""" : ""
+                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : ""}</b> (${buttonList.size()})</small><br>""" : ""
                 desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : ""}</b> (${fansize})</small><br>""" : ""
-                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList?.size() > 1 ? "s" : ""}</b> (${speakerList?.size()})</small><br>""" : ""
-                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList?.size() > 1 ? "s" : ""}</b> (${shadesList?.size()})</small><br>""" : ""
-                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList?.size() > 1 ? "s" : ""}</b> (${garageList?.size()})</small><br>""" : ""
-                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList?.size() > 1 ? "s" : ""}</b> (${tstatList?.size()})</small><br>""" : ""
-                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList?.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList?.size()})</small><br>""" : ""
-                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList?.size() > 1 ? "s" : ""}</b> (${tstatHeatList?.size()})</small><br>""" : ""
-                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList?.size() > 1 ? "s" : ""}</b> (${sensorList?.size()})</small><br>""" : ""
-                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList?.size() > 1 ? "es" : ""}</b> (${switchList?.size()})</small><br>""" : ""
-                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList?.size() > 1 ? "s" : ""}</b> (${deviceList?.size()})</small><br>""" : ""
-                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList?.size() > 1 ? "s" : ""}</b> (${modeList?.size()})</small><br>""" : ""
-                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList?.size() > 1 ? "s" : ""}</b> (${routineList?.size()})</small><br>""" : ""
-                desc += addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : ""
+                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : ""}</b> (${speakerList.size()})</small><br>""" : ""
+                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : ""}</b> (${shadesList.size()})</small><br>""" : ""
+                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : ""}</b> (${garageList.size()})</small><br>""" : ""
+                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : ""}</b> (${tstatList.size()})</small><br>""" : ""
+                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList.size()})</small><br>""" : ""
+                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : ""}</b> (${tstatHeatList.size()})</small><br>""" : ""
+                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : ""}</b> (${sensorList.size()})</small><br>""" : ""
+                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : ""}</b> (${switchList.size()})</small><br>""" : ""
+                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : ""
+                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : ""
+                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList.size() > 1 ? "s" : ""}</b> (${routineList.size()})</small><br>""" : ""
+                desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : ""
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
                 desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : ""
                 desc += """<br><small style="color:#2784D9;">Tap to modify...</small>"""
             }
-            href "deviceSelectPage", title: inputTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : null), description: desc
+            href "deviceSelectPage", title: inputTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : sNULL), description: desc
         }
 
         inputDupeValidation()
 
-        section(sectTS("Capability Filtering:", null, true)) {
+        section(sectTS("Capability Filtering:", sNULL, true)) {
             Boolean conf = (
                 removeAcceleration || removeBattery || removeButton || removeContact || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
                 removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve
             )
-            href "capFilterPage", title: inputTS("Filter out capabilities from your devices", getAppImg("filter", true)), required: false, state: (conf ? "complete" : null), description: (conf ? "Tap to modify..." : "Tap to configure")
+            href "capFilterPage", title: inputTS("Filter out capabilities from your devices", getAppImg("filter", true)), required: false, state: (conf ? "complete" : sNULL), description: (conf ? "Tap to modify..." : "Tap to configure")
         }
 
-        section(sectTS("Location Options:", null, true)) {
+        section(sectTS("Location Options:", sNULL, true)) {
             input "addSecurityDevice", "bool", title: inputTS("Allow ${getAlarmSystemName()} Control in HomeKit?", getAppImg("alarm_home", true)), required: false, defaultValue: true, submitOnChange: true           
         }
 
-        section(sectTS("HomeBridge Plugin Config:", null, true)) {
+        section(sectTS("HomeBridge Plugin Config:", sNULL, true)) {
             href "pluginConfigPage", style: "embedded", required: false, title: inputTS("View Generated Config for HomeBridge", getAppImg("info", true)), description: "Tap to view...", state: "complete"
         }
 
-        section(sectTS("History Data and Device Debug:", null, true)) {
+        section(sectTS("History Data and Device Debug:", sNULL, true)) {
             href "historyPage", title: inputTS("View Command and Event History", getAppImg("backup", true)), description: "Tap to view...", state: "complete"
             href "deviceDebugPage", title: inputTS("View Device Debug Data", getAppImg("debug", true)), description: "Tap to view...", state: "complete"
-        }
+	}
 
-        section(sectTS("App Preferences:", null, true)) {
+        section(sectTS("App Preferences:", sNULL, true)) {
             def sDesc = getSetDesc()
-            href "settingsPage", title: inputTS("App Settings", getAppImg("settings", true)), description: sDesc, state: (sDesc?.endsWith("modify...") ? "complete" : null), required: false
+            href "settingsPage", title: inputTS("App Settings", getAppImg("settings", true)), description: sDesc, state: (sDesc?.endsWith("modify...") ? "complete" : sNULL), required: false
             href "changeLogPage", title: inputTS("View Changelog", getAppImg("change_log", true)), description: "Tap to view..."
             label title: inputTS("Label this Instance (optional)", getAppImg("name_tag", true)), description: "Rename this App", defaultValue: app?.name, required: false
         }
 
         if(devMode()) {
-            section(sectTS("Dev Mode Options", null, true)) {
+            section(sectTS("Dev Mode Options", sNULL, true)) {
                 input "sendViaNgrok", "bool", title: inputTS("Communicate with Plugin via Ngrok Http?", getAppImg("command", true)), defaultValue: false, submitOnChange: true
                 if(sendViaNgrok) { input "ngrokHttpUrl", "text", title: inputTS("Enter the ngrok code from the url"), required: true, submitOnChange: true }
             }
-            section(sectTS("Other Settings:", null, true)) {
+            section(sectTS("Other Settings:", sNULL, true)) {
                 input "restartService", "bool", title: inputTS("Restart Homebridge plugin when you press Save?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true
             }
         }
@@ -160,26 +160,26 @@ def mainPage() {
 
 def pluginConfigPage() {
     return dynamicPage(name: "pluginConfigPage", title: "", install: false, uninstall: false) {
-        section(sectTS("Plugin Communication Options:", null, true)) {
+        section(sectTS("Plugin Communication Options:", sNULL, true)) {
             input "use_cloud_endpoint", "bool", title: inputTS("Communicate with Plugin Using Cloud Endpoint?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
             input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
             input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
         }
         
-        // section(sectTS("Plugin Device Options:", null, true)) {
+        // section(sectTS("Plugin Device Options:", sNULL, true)) {
         //     input "round_up_99", "bool", title: inputTS("Round Up Devices with 9?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
         //     input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
         //     input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
         // }
 
         section() {
-            paragraph paraTS("Generated HomeBridge Plugin Platform Config", null, true, "#2784D9")
+            paragraph paraTS("Generated HomeBridge Plugin Platform Config", sNULL, true, "#2784D9")
             paragraph """<textarea rows=21 class='mdl-textfield' readonly='true'>${renderConfig()}</textarea>"""
         }
     }
 }
 
-def deviceValidationErrors() {
+static def deviceValidationErrors() {
     /*
         NOTE: Define what we require to determine the thermostat is a thermostat so we can support devices like Flair which are custom heat-only thermostats.
     */
@@ -200,36 +200,36 @@ def deviceValidationErrors() {
 
 def deviceSelectPage() {
     return dynamicPage(name: "deviceSelectPage", title: "", install: false, uninstall: false) {
-        section(sectTS("Define Specific Categories:", null, true)) {
+        section(sectTS("Define Specific Categories:", sNULL, true)) {
             paragraph paraTS("NOTE: Please do not select a device here and then again in another input below.")
-            paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", null, false, "#2784D9"), state: "complete"
-            input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList?.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
-            input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList?.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
-            input "buttonList", "capability.button", title: inputTS("Buttons: (${buttonList ? buttonList?.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList?.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
-            input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList?.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
+            paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
+            input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
+            input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
+            input "buttonList", "capability.button", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
+            input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectTS("Fans:", null, true)) {
-            input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
-            input "fan3SpdList", "capability.switch", title: inputTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
-            input "fan4SpdList", "capability.switch", title: inputTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList?.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+        section(sectTS("Fans:", sNULL, true)) {
+            input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+            input "fan3SpdList", "capability.switch", title: inputTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+            input "fan4SpdList", "capability.switch", title: inputTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectTS("Thermostats:", null, true)) {
-            input "tstatList", "capability.thermostat", title: inputTS("Thermostats: (${tstatList ? tstatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatFanList", "capability.thermostat", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatHeatList", "capability.thermostat", title: inputTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList?.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+        section(sectTS("Thermostats:", sNULL, true)) {
+            input "tstatList", "capability.thermostat", title: inputTS("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+            input "tstatFanList", "capability.thermostat", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+            input "tstatHeatList", "capability.thermostat", title: inputTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectTS("All Other Devices:", null, true)) {
-            input "sensorList", "capability.sensor", title: inputTS("Sensors: (${sensorList ? sensorList?.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false
-            input "switchList", "capability.switch", title: inputTS("Switches: (${switchList ? switchList?.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false
-            input "deviceList", "capability.*", title: inputTS("Others: (${deviceList ? deviceList?.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false
+        section(sectTS("All Other Devices:", sNULL, true)) {
+            input "sensorList", "capability.sensor", title: inputTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false
+            input "switchList", "capability.switch", title: inputTS("Switches: (${switchList ? switchList.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false
+            input "deviceList", "capability.*", title: inputTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false
 
         }
 
-        section(sectTS("Create Devices for Modes in HomeKit?", null, true)) {
+        section(sectTS("Create Devices for Modes in HomeKit?", sNULL, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete"
             def modes = location?.getModes()?.sort{it?.name}?.collect { [(it?.id):it?.name] }
             input "modeList", "enum", title: inputTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true
@@ -241,22 +241,22 @@ def deviceSelectPage() {
 
 def settingsPage() {
     return dynamicPage(name: "settingsPage", title: "", install: false, uninstall: false) {
-        section(sectTS("Logging:", null, true)) {
+        section(sectTS("Logging:", sNULL, true)) {
             input "showEventLogs", "bool", title: inputTS("Show Device/Location Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
             input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging?", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
         }
-        section(sectTS("Security:", null, true)) {
-            paragraph paraTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", null, false)
+        section(sectTS("Security:", sNULL, true)) {
+            paragraph paraTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", sNULL, false)
             input "resetAppToken", "bool", title: inputTS("Revoke and Recreate App Access Token?", getAppImg("reset", true)), defaultValue: false, submitOnChange: true
-            if(settings?.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
+            if((Boolean)settings.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
         }
-        // section(sectTS("HTTP Requests:", null, true)) {
+        // section(sectTS("HTTP Requests:", sNULL, true)) {
         //     input "use_sync_http", "bool", title: inputTS("Slow Commands? Use Synchronous HTTP?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
         // }
     }
 }
 
-private resetAppToken() {
+private void resetAppToken() {
     logWarn("resetAppToken | Current Access Token Removed...")
     state.remove("accessToken")
     if(getAccessToken()) {
@@ -264,16 +264,16 @@ private resetAppToken() {
     }
 }
 
-private resetCapFilters() {
-    List items = settings?.each?.findAll { it?.key?.startsWith("remove") }?.collect { it?.key as String }
-    if(items?.size()) {
-        items?.each { item->
+private void resetCapFilters() {
+    List items = settings?.each?.findAll { ((String)it.key).startsWith("remove") }?.collect { (String)it.key }
+    if(items.size()> 0) {
+        items.each { String item->
             settingRemove(item)
         }
     }
 }
 
-private inputDupeValidation() {
+private void inputDupeValidation() {
     Map clnUp = [d: [:], o: [:]]
     Map items = [
         d: ["fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", "buttonList": "Buttons", "lightList": "Lights", "shadesList": "Window Shadse", "speakerList": "Speakers",
@@ -281,27 +281,27 @@ private inputDupeValidation() {
         ],
         o: ["deviceList": "Other", "sensorList": "Sensor", "switchList": "Switch"]
     ]
-    items?.d?.each { k, v->
-        List priItems = (settings?."${k}"?.size()) ? settings?."${k}"?.collect { it?.getLabel() } : null
+    items.d.each { String k, String v->
+        List priItems = (settings?."${k}"?.size()) ? settings?."${k}"?.collect { (String)it?.getLabel() } : null
         if(priItems) {
-            items?.d?.each { k2, v2->
-                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { it?.getLabel() } : null
+            items.d.each { String k2, String v2->
+                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getLabel() } : null
                 if(k != k2 && secItems) {
                     secItems?.retainAll(priItems)
                     if(secItems?.size()) {
-                        clnUp?.d[k2] = clnUp?.d[k2] ?: []
-                        clnUp?.d[k2] = (clnUp?.d[k2] + secItems)?.unique()
+                        clnUp.d[k2] = clnUp?.d[k2] ?: []
+                        clnUp.d[k2] = (clnUp?.d[k2] + secItems)?.unique()
                     }
                 }
             }
 
-            items?.o?.each { k2, v2->
-                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { it?.getLabel() } : null
+            items.o.each { String k2, String v2->
+                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getLabel() } : null
                 if(secItems) {
                     secItems?.retainAll(priItems)
                     if(secItems?.size()) {
-                        clnUp?.o[k2] = clnUp?.o[k2] ?: []
-                        clnUp?.o[k2] = (clnUp?.o[k2] + secItems)?.unique()
+                        clnUp.o[k2] = clnUp?.o[k2] ?: []
+                        clnUp.o[k2] = (clnUp?.o[k2] + secItems)?.unique()
                     }
                 }
             }
@@ -310,17 +310,17 @@ private inputDupeValidation() {
     String out = ""
     Boolean show = false
     Boolean first = true
-    if(clnUp?.d?.size()) {
+    if(clnUp.d.size()>0) {
         show=true
-        clnUp?.d?.each { k,v->
+        clnUp.d.each { String k, List v->
             out += "${first ? "" : "\n"}${items?.d[k]}:\n "
             out += v?.join("\n ") + "\n"
             first = false
         }
     }
-    if(clnUp?.o?.size()) {
+    if(clnUp.o.size()>0) {
         show=true
-        clnUp?.o?.each { k,v->
+        clnUp.o.each { String k, List v->
             out += "${first ? "" : "\n"}${items?.o[k]}:\n "
             out += v?.join("\n ") + "\n"
             first = false
@@ -328,48 +328,48 @@ private inputDupeValidation() {
     }
     if(show && out) {
         section(sectTS("Duplicate Device Validation:")) {
-            paragraph title: paraTS("Duplicate Devices Found in these Inputs:"), paraTS(out + "\nPlease remove these duplicate items!", null, false, "red"), required: true, state: null
+            paragraph title: paraTS("Duplicate Devices Found in these Inputs:"), paraTS(out + "\nPlease remove these duplicate items!", sNULL, false, "red"), required: true, state: null
         }
     }
 }
 
 String getSetDesc() {
-    def s = []
-    if(settings?.showEventLogs == true) s?.push("\u2022 Device Event Logs")
-    if(settings?.showDebugLogs == true) s?.push("\u2022 Debug Logging")
-    return s?.size() ? "${s?.join("\n")}\n\nTap to modify..." : "Tap to configure..."
+    List s = []
+    if((Boolean)settings.showEventLogs) s.push("\u2022 Device Event Logs")
+    if((Boolean)settings.showDebugLogs) s.push("\u2022 Debug Logging")
+    return s.size()>0 ? "${s.join("\n")}\n\nTap to modify..." : "Tap to configure..."
 }
 
 def historyPage() {
     return dynamicPage(name: "historyPage", title: "", install: false, uninstall: false) {
-        List cHist = getCmdHistory()?.sort {it?.dt}?.reverse()
-        List eHist = getEvtHistory()?.sort {it?.dt}?.reverse()
+        List<Map> cHist = getCmdHistory()?.sort {(Long)it.gt}?.reverse()
+        List<Map> eHist = getEvtHistory()?.sort {(Long)it.gt}?.reverse()
         section() {
             paragraph paraTS("This history is only stored in memory.  It is erased after every code update and a Hub reboot.", getAppImg("info", true), false, "#2784D9"), state: "complete"
         }
-        section(sectTS("Last (${cHist?.size()}) Commands Received From HomeKit:", null, true)) {
-            if(cHist?.size()) {
-                cHist?.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2:</b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n \u2022 <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
-            } else { paragraph paraTS("No Command History Found...", null, false) }
+        section(sectTS("Last (${cHist.size()}) Commands Received From HomeKit:", sNULL, true)) {
+            if(cHist.size()>0) {
+                cHist.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2:</b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n \u2022 <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+            } else { paragraph paraTS("No Command History Found...", sNULL, false) }
         }
-        section(sectTS("Last (${eHist?.size()}) Events Sent to HomeKit:", null, true)) {
-            if(eHist?.size()) {
-                eHist?.each { h-> paragraph title: paraTS(h?.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n \u2022 <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
-            } else {paragraph paraTS("No Event History Found...", null, false) }
+        section(sectTS("Last (${eHist.size()}) Events Sent to HomeKit:", sNULL, true)) {
+            if(eHist.size()>0) {
+                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n \u2022 <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+            } else {paragraph paraTS("No Event History Found...", sNULL, false) }
         }
     }
 }
 
 def capFilterPage() {
     return dynamicPage(name: "capFilterPage", title: "Capability Filtering", install: false, uninstall: false) {
-        section(sectTS("Restrict Temp Device Creation", null, true)) {
+        section(sectTS("Restrict Temp Device Creation", sNULL, true)) {
             input "noTemp", "bool", title: inputTS("Remove Temperature from All Contacts and Water Sensors?", getAppImg("temperature", true)), required: false, defaultValue: false, submitOnChange: true
             if(settings?.noTemp) {
                 input "sensorAllowTemp", "capability.sensor", title: inputTS("Allow Temps on these sensors", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false
             }
         }
-        section(sectTS("Remove Capabilities from Devices", null, true)) {
-            paragraph paraTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", null, false, "#2874D9")
+        section(sectTS("Remove Capabilities from Devices", sNULL, true)) {
+            paragraph paraTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", sNULL, false, "#2874D9")
             input "removeAcceleration", "capability.accelerationSensor", title: inputTS("Remove Acceleration from these Devices", getAppImg("acceleration", true)), multiple: true, submitOnChange: true, required: false
             input "removeBattery", "capability.battery", title: inputTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false
             input "removeButton", "capability.button", title: inputTS("Remove Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
@@ -387,7 +387,7 @@ def capFilterPage() {
             input "removeTemp", "capability.temperatureMeasurement", title: inputTS("Remove Temperature from these Devices", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false
             input "removeValve", "capability.valve", title: inputTS("Remove Valve from these Devices", getAppImg("valve", true)), multiple: true, submitOnChange: true, required: false
         }
-        section(sectTS("Reset Selected Filters:", null, true), hideable: true, hidden: true) {
+        section(sectTS("Reset Selected Filters:", sNULL, true), hideable: true, hidden: true) {
             input "resetCapFilters", "bool", title: inputTS("Clear All Selected Filters?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true
             if(settings?.resetCapFilters) { settingUpdate("resetCapFilters", "false", "bool"); resetCapFilters() }
         }
@@ -404,7 +404,7 @@ def donationPage() {
 
             str += "\n\nIf you are just not interested or have already donated please ignore this message and toggle the setting below"
             str += "\n\nThanks again for using Homebridge Hubitat"
-            paragraph paraTS(str, null, "red"), required: true, state: null
+            paragraph paraTS(str, sNULL, true, "red"), required: true, state: null
             input "sentDonation", "bool", title: inputTS("Already Donated?"), defaultValue: false, submitOnChange: true
             href url: textDonateLink(), style: "external", required: false, title: inputTS("Donations", getAppImg("donata", true)), description: "Tap to open in browser", state: "complete"
         }
@@ -421,11 +421,11 @@ def confirmPage() {
 
 def deviceDebugPage() {
     return dynamicPage(name: "deviceDebugPage", title: "", install: false, uninstall: false) {
-        section(sectTS("View All Device Data Sent to HomeBridge:", null, true)) {
+        section(sectTS("View All Device Data Sent to HomeBridge:", sNULL, true)) {
             href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inputTS("View Device Data Sent to Homebridge...", getAppImg("info", true)), description: "", disabled: true
         }
 
-        section(sectTS("View Individual Device Data:", null, true)) {
+        section(sectTS("View Individual Device Data:", sNULL, true)) {
             paragraph paraTS("Have a device that's not working under homekit like you want?\nSelect a device from one of the inputs below and it will show you all data about the device.", getAppImg("info", true), false, "#2784D9"), state: "complete"
             if(!debug_switch && !debug_other && !debug_garage && !debug_tstat)
                 input "debug_sensor", "capability.sensor", title:  inputTS("Sensors: ", getAppImg("sensors", true)), multiple: false, submitOnChange: true, required: false
@@ -452,15 +452,15 @@ public void clearTestDeviceItems() {
     settingRemove("debug_tstat")
 }
 
-private viewDeviceDebug() {
-    def sDev = null;
+def viewDeviceDebug() {
+    def sDev = null
     if(debug_other) sDev = debug_other
     if(debug_sensor) sDev = debug_sensor
     if(debug_switch) sDev = debug_switch
     if(debug_garage) sDev = debug_garage
     if(debug_tstat)  sDev = debug_tstat
-    def json = new groovy.json.JsonOutput().toJson(getDeviceDebugMap(sDev))
-    def jsonStr = new groovy.json.JsonOutput().prettyPrint(json)
+    String json = new groovy.json.JsonOutput().toJson(getDeviceDebugMap(sDev))
+    String jsonStr = new groovy.json.JsonOutput().prettyPrint(json)
     render contentType: "application/json", data: jsonStr
 }
 
@@ -469,91 +469,95 @@ private Map getDeviceDebugMap(dev) {
     if(dev) {
         try {
             r = [:]
-            r?.name = dev?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", "");
-            r?.basename = dev?.getName();
-            r?.deviceid = dev?.getId();
-            r?.status = dev?.getStatus();
-            r?.manufacturer = dev?.manufacturerName ?: "Unknown";
-            r?.model = dev?.modelName ?: dev?.getTypeName();
-            r?.deviceNetworkId = dev?.getDeviceNetworkId();
-            r?.lastActivity = dev?.getLastActivity() ?: null;
-            r?.capabilities = dev?.capabilities?.collect { it?.name as String }?.unique()?.sort() ?: [];
-            r?.commands = dev?.supportedCommands?.collect { it?.name as String }?.unique()?.sort() ?: [];
-            r?.customflags = getDeviceFlags(dev) ?: [];
-            r?.attributes = [:];
-            r?.eventHistory = dev?.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it?.unit}" : ""})" };
-            dev?.supportedAttributes?.collect { it?.name as String }?.unique()?.sort()?.each { r?.attributes[it] = dev?.currentValue(it as String); };
+            r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", "")
+            r.basename = dev.getName()
+            r.deviceid = dev.getId()
+            r.status = dev.getStatus()
+            r.manufacturer = dev.manufacturerName ?: "Unknown"
+            r.model = dev?.modelName ?: dev?.getTypeName()
+            r.deviceNetworkId = dev.getDeviceNetworkId()
+            def aa = dev.getLastActivity()
+            r.lastActivity = aa ?: null
+            aa = dev.capabilities?.collect { (String)it.name }?.unique()?.sort()
+            r.capabilities = aa ?: []
+            aa = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort()
+            r.commands = aa ?: []
+            aa = getDeviceFlags(dev)
+            r.customflags = aa ?: [:]
+            r.attributes = [:]
+            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it?.unit}" : ""})" }
+            dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
         } catch(ex) {
-            logError("Error while generating device data: ", ex);
+            logError("Error while generating device data: ${ex}")
         }
     }
     return r
 }
 
-private Integer getDeviceCnt(phyOnly=false) {
+private Integer getDeviceCnt(Boolean phyOnly=false) {
     List devices = []
-    List items = deviceSettingKeys()?.collect { it?.key as String }
-    items?.each { item -> if(settings[item]?.size() > 0) devices = devices + settings[item] }
+    List items = deviceSettingKeys().collect { (String)it.key }
+    items?.each { String item -> if(settings[item]?.size() > 0) devices = devices + settings[item] }
     if(!phyOnly) {
-        ["modeList", "routineList"]?.each { item->
+        ["modeList", "routineList"].each { String item->
             if(settings[item]?.size() > 0) devices = devices + settings[item]
         }
     }
-    def dSize = devices?.unique()?.size() ?: 0
-    if(settings?.addSecurityDevice) dSize = dSize + 1
+    Integer dSize = devices?.unique()?.size()
+    dSize = dSize != null ? dSize : 0
+    if((Boolean)settings.addSecurityDevice) dSize = dSize + 1
     return dSize
 }
 
 def installed() {
     logDebug("${app.name} | installed() has been called...")
-    state?.isInstalled = true
-    state?.installData = [initVer: appVersionFLD, dt: getDtNow().toString(), updatedDt: "Not Set", showDonation: false, shownChgLog: true]
+    state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: "Not Set", showDonation: false, shownChgLog: true]
     initialize()
 }
 
 def updated() {
     log.debug("${app.name} | updated() has been called...")
-    state?.isInstalled = true
-    if(!state?.installData) { state?.installData = [initVer: appVersionFLD, dt: getDtNow().toString(), updatedDt: getDtNow().toString(), shownDonation: false] }
+    if(!state.installData) state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false]
     unsubscribe()
     stateCleanup()
     initialize()
 }
 
 def initialize() {
+    state.isInstalled = true
     if(getAccessToken()) {
         subscribeToEvts()
         runEvery5Minutes("healthCheck")
     } else { logError("initialize error: Unable to get or generate smartapp access token") }
 }
 
-def getAccessToken() {
+Boolean getAccessToken() {
     try {
-        if(!atomicState?.accessToken) {
-            atomicState?.accessToken = createAccessToken();
+        if(!state.accessToken) {
+            state.accessToken = createAccessToken()
             logWarn("SmartApp Access Token Missing... Generating New Token!!!")
-            return true;
+            return true
         }
         return true
     } catch (ex) {
-        def msg = "Error: OAuth is not Enabled for ${appName()}!. Please click remove and Enable Oauth under the SmartApp App Settings in the IDE"
+        String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under the SmartApp App Settings in the IDE"
         logError("getAccessToken Exception: ${msg}")
         return false
     }
 }
 
-private void subscribeToEvts() {
+ void subscribeToEvts() {
     runIn(4, "registerDevices")
     logInfo("Starting Device Subscription Process")
-    if(settings?.addSecurityDevice) {
+    if((Boolean)settings.addSecurityDevice) {
         subscribe(location, "hsmStatus", changeHandler)
     }
     if(settings?.modeList) {
         logDebug("Registering (${settings?.modeList?.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
-        if(state?.lastMode == null) { state?.lastMode = location?.getMode() }
+//        if(state.lastMode == null) { state.lastMode = (String)location.getMode() }
     }
-    state?.subscriptionRenewed = 0
+    state.subscriptionRenewed = 0
     if(settings?.routineList) {
         logDebug("Registering (${settings?.routineList?.size() ?: 0}) Virtual Routine Devices")
         subscribe(location, "routineExecuted", changeHandler)
@@ -564,24 +568,23 @@ private void healthCheck() {
     checkVersionData()
     if(checkIfCodeUpdated()) {
         logWarn("Code Version Change Detected... Health Check will occur on next cycle.")
-        return
     }
 }
 
-private Boolean checkIfCodeUpdated() {
-    logDebug("Code versions: ${state?.codeVersions}")
-    if(state?.codeVersions) {
-        if(state?.codeVersions?.mainApp != appVersionFLD) {
+Boolean checkIfCodeUpdated() {
+    logDebug("Code versions: ${state.codeVersions}")
+    if(state.codeVersions) {
+        if(state.codeVersions?.mainApp != appVersionFLD) {
             checkVersionData(true)
-            state?.pollBlocked = true
+            state.pollBlocked = true
             updCodeVerMap("mainApp", appVersionFLD)
-            Map iData = atomicState?.installData ?: [:]
-            iData["updatedDt"] = getDtNow().toString()
+            Map iData = state.installData ?: [:]
+            iData["updatedDt"] = getDtNow()
             iData["shownChgLog"] = false
             if(iData?.shownDonation == null) {
                 iData["shownDonation"] = false
             }
-            atomicState?.installData = iData
+            state.installData = iData
             logInfo("Code Version Change Detected... | Re-Initializing SmartApp in 5 seconds")
             return true
         }
@@ -590,29 +593,30 @@ private Boolean checkIfCodeUpdated() {
 }
 
 private void stateCleanup() {
-    List removeItems = ["hubPlatform", "cmdHistory", "evtHistory"]
-    if(state?.directIP && state?.directPort) {
-        state?.pluginDetails = [
-            directIP: state?.directIP,
-            directPort: state?.directPort
+    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap"]
+    if(state.directIP && state.directPort) { // old cleanup
+        state.pluginDetails = [
+            directIP: state.directIP,
+            directPort: state.directPort
         ]
-        removeItems?.push("directIP")
-        removeItems?.push("directPort")
+        removeItems.push("directIP")
+        removeItems.push("directPort")
     }
-    removeItems?.each { if(state?.containsKey(it)) state?.remove(it) }
+    removeItems.each { String it -> if(state?.containsKey(it)) state.remove(it) }
 }
 
 private List renderDevices() {
     Map devMap = [:]
     List devList = []
-    List items = deviceSettingKeys()?.collect { it?.key as String }
+    List items = deviceSettingKeys().collect { (String)it.key }
     items = items+["modeList", "routineList"]
-    items?.each { item ->
+    items.each { String item ->
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
                 try {
-                    Map devObj = getDeviceData(item, dev) ?: [:]
-                    if(devObj?.size()) { devMap[dev] = devObj }
+                    Map devObj = getDeviceData(item, dev)
+                    devObj = devObj!=null ? devObj : [:]
+                    if(devObj.size()>0) { devMap[dev] = devObj }
                 } catch (ex) {
                     // log.error "Device (${dev?.displayName}) Render Exception: ${ex}"
                     logError("Device (${dev?.displayName}) Render Exception: ${ex.message}")
@@ -620,18 +624,18 @@ private List renderDevices() {
             }
         }
     }
-    if(settings?.addSecurityDevice == true) { devList?.push(getSecurityDevice()) }
-    if(devMap?.size()) { devMap?.sort{ it?.value?.name }?.each { k,v-> devList?.push(v) } }
+    if((Boolean)settings.addSecurityDevice) { devList?.push(getSecurityDevice()) }
+    if(devMap.size()>0) { devMap.sort{ it.value.name }?.each { k,v-> devList.push(v) } }
     return devList
 }
 
-private Map getDeviceData(type, sItem) {
+private Map getDeviceData(String type, sItem) {
     // log.debug "getDeviceData($type, $sItem)"
-    String curType = null
+    String curType = sNULL
     String devId = sItem
     Boolean isVirtual = false
-    String firmware = null
-    String name = null
+    String firmware = sNULL
+    String name = sNULL
     Map optFlags = [:]
     def attrVal = null
     def obj = null
@@ -652,8 +656,8 @@ private Map getDeviceData(type, sItem) {
             optFlags["virtual_mode"] = 1
             obj = getModeById(sItem)
             if(obj) {
-                name = "Mode - " + obj?.name
-                attrVal = modeSwitchState(obj?.name)
+                name = "Mode - " + (String)obj.name
+                attrVal = modeSwitchState((String)obj.name)
             }
             break
         default:
@@ -662,7 +666,7 @@ private Map getDeviceData(type, sItem) {
             // Define firmware variable and initialize it out of device handler attribute`
             try {
                 if (sItem?.hasAttribute("firmware")) { firmware = sItem?.currentValue("firmware")?.toString() }
-            } catch (ex) { firmware = null }
+            } catch (ex) { firmware = sNULL }
             break
     }
     if(curType && obj) {
@@ -676,7 +680,7 @@ private Map getDeviceData(type, sItem) {
             serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : "${curType}${devId}",
             firmwareVersion: firmware ?: "1.0.0",
             lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : now(),
-            capabilities: !isVirtual ? deviceCapabilityList(sItem) : ["${curType}": 1],
+            capabilities: !isVirtual ? deviceCapabilityList(sItem) : [("${curType}".toString()) : 1],
             commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
             deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
             attributes: !isVirtual ? deviceAttributeList(sItem) : ["switch": attrVal]
@@ -706,7 +710,7 @@ def getSecurityDevice() {
     ]
 }
 
-def getDeviceFlags(device) {
+Map getDeviceFlags(device) {
     Map opts = [:]
     if(settings?.fan3SpdList?.find { it?.id == device?.id }) {
         opts["fan_3_spd"] = 1
@@ -714,26 +718,30 @@ def getDeviceFlags(device) {
     if(settings?.fan4SpdList?.find { it?.id == device?.id }) {
         opts["fan_4_spd"] = 1
     }
-    // if(opts?.size()) log.debug "opts: ${opts}"
+    // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
 }
 
 def findDevice(dev_id) {
     List allDevs = []
-    deviceSettingKeys()?.collect { it?.key as String }?.each { key-> allDevs = allDevs + (settings?."${key}" ?: []) }
-    return allDevs?.find { it?.id == dev_id } ?: null
+    deviceSettingKeys().collect { (String)it.key }?.each { String key->
+	def setVal= settings?."${key}"
+	allDevs = allDevs + (setVal ?: [])
+    }
+    def aa=  allDevs.find { it.id == dev_id }
+    return aa ?: null
 }
 
-def authError() {
+static def authError() {
     return [error: "Permission denied"]
 }
 
-String getAlarmSystemName(abbr=false) {
+static String getAlarmSystemName(Boolean abbr=false) {
     return (abbr ? "HSM" : "Hubitat Safety Monitor")
 }
 
-def getSecurityStatus(retInt=false) {
-    def cur = location?.hsmStatus
+def getSecurityStatus(Boolean retInt=false) {
+    String cur = (String)location.hsmStatus
     // def inc = getShmIncidents()
     // if(inc != null && inc?.size()) { cur = 'alarm_active' }
     if(retInt) {
@@ -756,7 +764,7 @@ def getSecurityStatus(retInt=false) {
     } else { return cur ?: "disarmed" }
 }
 
-public setAlarmSystemMode(mode) {
+void setAlarmSystemMode(String mode) {
     switch(mode) {
         case "armAway":
         case "away":
@@ -764,7 +772,7 @@ public setAlarmSystemMode(mode) {
             break
         case "armNight":
             mode = "armNight"
-            break;
+            break
         case "armHome":
         case "night":
         case "stay":
@@ -776,25 +784,25 @@ public setAlarmSystemMode(mode) {
             break
     }
     logInfo("Setting the ${getAlarmSystemName()} Mode to (${mode})...")
-    sendLocationEvent(name: "hsmSetArm", value: mode.toString())
+    sendLocationEvent(name: "hsmSetArm", value: mode)
 }
 
-String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}" }
-String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}" }
-String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state?.accessToken}" }
+String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
+String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
+String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
 
-def renderConfig() {
+String renderConfig() {
     Map jsonMap = [
         platform: pluginNameFLD,
         name: pluginNameFLD,
-        app_url_local: "${getLocalApiServerUrl()}/",
-        app_url_cloud: "${getApiServerUrl()}/${getHubUID()}/apps/",
+        app_url_local: "${getLocalApiServerUrl()}/".toString(),
+        app_url_cloud: "${getApiServerUrl()}/${getHubUID()}/apps/".toString(),
         app_id: app?.getId(),
         app_platform: platformFLD,
-        use_cloud: (settings?.use_cloud_endpoint == true),
-        access_token: atomicState?.accessToken,
-        temperature_unit: settings?.temp_unit ?: location?.temperatureScale,
-        validateTokenId: (settings?.validate_token == true),
+        use_cloud: (Boolean)settings.use_cloud_endpoint,
+        access_token: state.accessToken,
+        temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
+        validateTokenId: (Boolean)settings.validate_token,
         logConfig: [
             debug: false,
             showChanges: true,
@@ -805,38 +813,38 @@ def renderConfig() {
             ]
         ]
     ]
-    def cj = new groovy.json.JsonOutput().toJson(jsonMap)
-    def cs = new groovy.json.JsonOutput().prettyPrint(cj)
+    String cj = new groovy.json.JsonOutput().toJson(jsonMap)
+    String cs = new groovy.json.JsonOutput().prettyPrint(cj)
     return cs
 }
 
-def renderLocation() {
+Map renderLocation() {
     return [
         latitude: location?.latitude,
         longitude: location?.longitude,
         mode: location?.mode,
         name: location?.name,
-        temperature_scale: settings?.temp_unit ?: location?.temperatureScale,
+        temperature_scale: (String)settings.temp_unit ?: (String)location.temperatureScale,
         zip_code: location?.zipCode,
         hubIP: location?.hubs[0]?.localIP,
-        use_cloud: (settings?.use_cloud_endpoint == true),
+        use_cloud: (Boolean)settings.use_cloud_endpoint,
         app_version: appVersionFLD
     ]
 }
 
-def CommandReply(statusOut, messageOut, code) {
-    def replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
+def CommandReply(String statusOut, String messageOut, Integer code) {
+    String replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
     logInfo(messageOut)
     render contentType: "application/json", data: replyJson, code: code
 }
 
-private getHttpHeaders(headers) {
-  def obj = [:]
+static Map getHttpHeaders(String headers) {
+    Map obj = [:]
     new String(headers.decodeBase64()).split("\r\n")?.each {param ->
-    def nameAndValue = param.split(":")
-    obj[nameAndValue[0]] = (nameAndValue.length == 1) ? "" : nameAndValue[1].trim()
-  }
-  return obj
+        List nameAndValue = param.split(":")
+        obj[(String)nameAndValue[0]] = (nameAndValue.length == 1) ? "" : nameAndValue[1].trim()
+    }
+    return obj
 }
 
 def deviceCommand() {
@@ -846,32 +854,33 @@ def deviceCommand() {
     return processCmd(params?.id, params?.command, val1, val2)
 }
 
-private processCmd(devId, cmd, value1, value2, local=false) {
+private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     def device = findDevice(devId)
     logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
-    def command = cmd
-    if(settings?.addSecurityDevice != false && devId == "alarmSystemStatus_${location?.id}") {
+    String command = cmd
+    if((Boolean)settings.addSecurityDevice && devId == "alarmSystemStatus_${location?.id}") {
         setAlarmSystemMode(command)
-        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: execDt ? (now()-execDt) : 0])
+        Long pt = execDt ? (now()-execDt) : 0L
+        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Security Alarm, Command $command", 200)
     }  else if (settings?.modeList && command == "mode" && devId) {
         logDebug("Virtual Mode Received: ${devId}")
         changeMode(devId)
-        Long pt = execDt ? (now()-execDt) : 0
+        Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
     } else if (settings?.routineList && command == "routine" && devId) {
         logDebug("Virtual Routine Received: ${devId}")
         runRoutine(devId)
-        Long pt = execDt ? (now()-execDt) : 0
+        Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Routine Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Routine | ${device?.displayName} | Command $command | Process Time: (${pt}ms)", 200)
     } else {
         if (!device) {
             logError("Device Not Found")
             return CommandReply("Failure", "Device Not Found", 500)
-        } else if (!device?.hasCommand(command as String)) {
+        } else if (!device?.hasCommand(command)) {
             logError("Device ${device.displayName} does not have the command $command")
             return CommandReply("Failure", "Device ${device.displayName} does not have the command $command", 500)
         } else {
@@ -886,7 +895,7 @@ private processCmd(devId, cmd, value1, value2, local=false) {
                     device?."$command"()
                     logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
                 }
-                Long pt = execDt ? (now()-execDt) : 0
+                Long pt = execDt ? (now()-execDt) : 0L
                 logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2, execTime: pt])
                 return CommandReply("Success", " | ${device?.displayName} | Command [${command}()] | Process Time: (${pt}ms)", 200)
             } catch (e) {
@@ -903,7 +912,7 @@ private void changeMode(modeId) {
         if(mode) {
             logInfo("Setting the Location Mode to (${mode})...")
             setLocationMode(mode as String)
-            state?.lastMode = mode as String
+//            state.lastMode = mode as String
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
@@ -920,102 +929,107 @@ private void runRoutine(rtId) {
 
 def deviceAttribute() {
     def device = findDevice(params?.id)
-    def attribute = params?.attribute
+    String attribute = params?.attribute
     if (!device) {
-        httpError(404, "Device not found")
+        return httpError(404, "Device not found")
     } else {
         return [currentValue: device?.currentValue(attribute)]
     }
 }
 
 def findVirtModeDevice(id) {
-    return getModeById(id) ?: null
+    def aa = getModeById(id)
+    return aa ?: null
 }
 
 def findVirtRoutineDevice(id) {
-    return getRoutineById(id) ?: null
+    def aa = getRoutineById(id)
+    return aa ?: null
 }
 
+/* THIS METHOD SEEMS BROKEN */
 def deviceQuery() {
     log.trace "deviceQuery(${params?.id}"
+    Map jsonData = [:]
     def device = findDevice(params?.id)
     if (!device) {
         def mode = findVirtModeDevice(params?.id)
-        def routine = findVirtModeDevice(params?.id)
-        def obj = mode ? mode : routine ?: null
+        def routine = findVirtRoutineDevice(params?.id)
+        def obj = mode ?: routine ?: null
         if(!obj) {
             device = null
-            httpError(404, "Device not found")
+            return httpError(404, "Device not found")
         } else {
-            def name = routine ? obj?.label : obj?.name
-            def type = routine ? "Routine" : "Mode"
-            def attrVal = routine ? "off" : modeSwitchState(obj?.name)
+            String name = routine ? obj?.label : obj?.name
+            String type = routine ? "Routine" : "Mode"
+            String attrVal = routine ? "off" : modeSwitchState((String)obj?.name)
             try {
-                deviceData?.push([
+                jsonData = [
                     name: name,
                     deviceid: params?.id,
-                    capabilities: ["${type}": 1],
+                    capabilities: [("${type}".toString()) : 1],
                     commands: [on:1],
                     attributes: ["switch": attrVal]
-                ])
-            } catch (e) {
+                ]
+            } catch (ex) {
                 logError("Error Occurred Parsing ${item} ${type} ${name}, Error: ${ex}")
             }
         }
     }
 
-    if (result) {
-        def jsonData = [
+    if (device) {
+        jsonData = [
             name: device.displayName,
             deviceid: device.id,
             capabilities: deviceCapabilityList(device),
             commands: deviceCommandList(device),
             attributes: deviceAttributeList(device)
         ]
-        def resultJson = new groovy.json.JsonOutput().toJson(jsonData)
-        render contentType: "application/json", data: resultJson
     }
+    String resultJson = new groovy.json.JsonOutput().toJson(jsonData)
+    render contentType: "application/json", data: resultJson
 }
 
-def deviceCapabilityList(device) {
-    String devId = device?.getId()
-    def capItems = device?.capabilities?.findAll{ !(it?.name in ignoreListFLD?.capabilities) }?.collectEntries { capability-> [ (capability?.name as String):1 ] }
-    if(isDeviceInInput("lightList", device?.id)) {
+Map deviceCapabilityList(device) {
+    if(!device || !device.getId()) return [:]
+    String devId = device.getId()
+    Map<String,Integer> capItems = device.capabilities?.findAll{ !((String)it.name in ignoreListFLD.capabilities) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
+    if(isDeviceInInput("lightList", device.id)) {
         capItems["LightBulb"] = 1
     }
-    if(isDeviceInInput("buttonList", device?.id)) {
+    if(isDeviceInInput("buttonList", device.id)) {
         capItems["Button"] = 1
     }
-    if(isDeviceInInput("fanList", device?.id)) {
+    if(isDeviceInInput("fanList", device.id)) {
         capItems["Fan"] = 1
     }
-    if(isDeviceInInput("speakerList", device?.id)) {
+    if(isDeviceInInput("speakerList", device.id)) {
         capItems["Speaker"] = 1
     }
-    if(isDeviceInInput("shadesList", device?.id)) {
+    if(isDeviceInInput("shadesList", device.id)) {
         capItems["WindowShade"] = 1
     }
-    if(isDeviceInInput("garageList", device?.id)) {
+    if(isDeviceInInput("garageList", device.id)) {
         capItems["GarageDoorControl"] = 1
     }
-    if(isDeviceInInput("tstatList", device?.id)) {
+    if(isDeviceInInput("tstatList", device.id)) {
         capItems["Thermostat"] = 1
         capItems["ThermostatOperatingState"] = 1
         capItems?.remove("ThermostatFanMode")
     }
-    if(isDeviceInInput("tstatFanList", device?.id)) {
+    if(isDeviceInInput("tstatFanList", device.id)) {
         capItems["Thermostat"] = 1
         capItems["ThermostatOperatingState"] = 1
     }
-    if(isDeviceInInput("tstatHeatList", device?.id)) {
+    if(isDeviceInInput("tstatHeatList", device.id)) {
         capItems["Thermostat"] = 1
         capItems["ThermostatOperatingState"] = 1
-        capItems?.remove("ThermostatCoolingSetpoint")
+        capItems.remove("ThermostatCoolingSetpoint")
     }
-    if(settings?.noTemp && capItems["TemperatureMeasurement"] && (capItems["ContactSensor"] || capItems["WaterSensor"])) {
+    if(settings.noTemp && capItems["TemperatureMeasurement"] && (capItems["ContactSensor"] || capItems["WaterSensor"])) {
         Boolean remTemp = true
-        if(settings?.sensorAllowTemp && isDeviceInInput("sensorAllowTemp", device?.id)) remTemp = false
-        if(remTemp) { capItems?.remove("TemperatureMeasurement") }
+        if(settings.sensorAllowTemp && isDeviceInInput("sensorAllowTemp", device.id)) remTemp = false
+        if(remTemp) { capItems.remove("TemperatureMeasurement") }
     }
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
@@ -1024,42 +1038,46 @@ def deviceCapabilityList(device) {
        "Illuminance": "IlluminanceMeasurement", "Level": "SwitchLevel", "Lock": "Lock", "Motion": "MotionSensor", "Power": "PowerMeter", "Presence": "PresenceSensor", "Switch": "Switch",
        "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve"
     ]
-    List remKeys = settings?.findAll { it?.key?.toString()?.startsWith("remove") && it?.value != null }?.collect { it?.key as String } ?: []
-    remKeys?.each { k->
-        String capName = k?.replaceAll("remove", "")
-        if(remCaps[capName] && capItems[remCaps[capName]] && isDeviceInInput(k, device?.id)) { capItems?.remove(remCaps[capName]);  if(showDebugLogs) { logDebug("Filtering ${capName}"); } }
+    List<String> remKeys = settings.findAll { ((String)it.key).startsWith("remove") && it.value != null }.collect { (String)it.key }
+    if(!remKeys) remKeys = []
+    remKeys.each { String k->
+        String capName = k.replaceAll("remove", "")
+        String theCap= (String)remCaps[capName]
+        if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if(showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
-    return capItems?.sort { it?.key }
+    return capItems?.sort { (String)it.key }
 }
 
-def deviceCommandList(device) {
-    def cmds = device?.supportedCommands?.findAll { !(it?.name in ignoreListFLD?.commands) }?.collectEntries { c-> [ (c?.name): 1 ] }
-    if(isDeviceInInput("tstatList", device?.id)) { cmds?.remove("setThermostatFanMode"); cmds?.remove("fanAuto"); cmds?.remove("fanOn"); cmds?.remove("fanCirculate"); }
-    if(isDeviceInInput("tstatHeatList", device?.id)) { cmds?.remove("setCoolingSetpoint"); cmds?.remove("auto"); cmds?.remove("cool"); }
+Map deviceCommandList(device) {
+    if(!device || !device.getId()) return [:]
+    Map cmds = device.supportedCommands?.findAll { !((String)it.name in ignoreListFLD.commands) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
+    if(isDeviceInInput("tstatList", device.id)) { cmds.remove("setThermostatFanMode"); cmds.remove("fanAuto"); cmds.remove("fanOn"); cmds.remove("fanCirculate") }
+    if(isDeviceInInput("tstatHeatList", device.id)) { cmds.remove("setCoolingSetpoint"); cmds.remove("auto"); cmds.remove("cool") }
     return cmds
 }
 
-def deviceAttributeList(device) {
-    def atts = device?.supportedAttributes?.findAll { !(it?.name in ignoreListFLD?.attributes) }?.collectEntries { attribute->
+Map deviceAttributeList(device) {
+    if(!device || !device.getId()) return [:]
+    Map atts = device.supportedAttributes?.findAll { !((String)it.name in ignoreListFLD.attributes) }?.collectEntries { attribute->
         try {
-            [(attribute?.name): device?.currentValue(attribute?.name)]
+            [((String)attribute.name): device.currentValue((String)attribute.name)]
         } catch(e) {
-            [(attribute?.name): null]
+            [((String)attribute.name): null]
         }
     }
-    if(isDeviceInInput("tstatHeatList", device?.id)) { atts?.remove("coolingSetpoint"); atts?.remove("coolingSetpointRange"); }
+    if(isDeviceInInput("tstatHeatList", device.id)) { atts.remove("coolingSetpoint"); atts.remove("coolingSetpointRange") }
     return atts
 }
 
 def getAllData() {
-    state?.subscriptionRenewed = now()
-    state?.devchanges = []
-    def deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
+    state.subscriptionRenewed = now()
+    state.devchanges = []
+    String deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
     updTsVal("lastDeviceDataQueryDt")
     render contentType: "application/json", data: deviceJson
 }
 
-Map deviceSettingKeys() {
+static Map deviceSettingKeys() {
     return [
         "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "buttonList": "Button Devices", "deviceList": "Other Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "switchList": "Switch Devices", "lightList": "Light Devices", "shadesList": "Window Shade Devices",
@@ -1067,27 +1085,29 @@ Map deviceSettingKeys() {
     ]
 }
 
-def registerDevices() {
+void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
-    ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "buttonList": "Button Devices"]?.each { k,v->
+    ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "buttonList": "Button Devices"]?.each { String k,String v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
-    runIn(3, "registerDevices2")
+//    runIn(3, "registerDevices2")
+    registerDevices2()
 }
 
-def registerDevices2() {
+void registerDevices2() {
     //This has to be done at startup because it takes too long for a normal command.
     ["sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "deviceList": "Other Devices"]?.each { k,v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
-    runIn(3, "registerDevices3")
+//    runIn(3, "registerDevices3")
+    registerDevices3()
 }
 
-def registerDevices3() {
+void registerDevices3() {
     //This has to be done at startup because it takes too long for a normal command.
-    ["switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", "tstatList": "Thermostat Devices", "tstatFanList": "Thermostat + Fan Devices", "tstatHeatList": "Thermostat (HeatOnly) Devices"]?.each { k,v->
+    ["switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", "tstatList": "Thermostat Devices", "tstatFanList": "Thermostat + Fan Devices", "tstatHeatList": "Thermostat (HeatOnly) Devices"]?.each { String k,String v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
@@ -1103,33 +1123,34 @@ def registerDevices3() {
     runIn(8, "sendDeviceRefreshCmd")
 }
 
-Boolean isDeviceInInput(setKey, devId) {
+Boolean isDeviceInInput(String setKey, devId) {
     if(settings[setKey]) {
         return (settings[setKey]?.find { it?.getId() == devId })
     }
     return false
 }
 
-def registerChangeHandler(devices, showlog=false) {
+@Field static final Map<String, String> attMapFLD = [
+                    "acceleration": "Acceleration", "battery": "Battery", "button": "Button", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
+                    "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "switch": "Switch", "tamper": "Tamper",
+                    "temperature": "Temp", "valve": "Valve" ]
+
+void registerChangeHandler(devices, Boolean showlog=false) {
     devices?.each { device ->
-        List theAtts = device?.supportedAttributes?.collect { it?.name as String }?.unique()
+        List theAtts = device.supportedAttributes?.collect { it?.name as String }?.unique()
         if(showlog) { log.debug "atts: ${theAtts}" }
-        theAtts?.each {att ->
-            if(!(ignoreListFLD?.evt_attributes?.contains(att))) {
-                if(settings?.noTemp && att == "temperature" && (device?.hasAttribute("contact") || device?.hasAttribute("water"))) {
+        theAtts?.each { String att ->
+            if(!(ignoreListFLD.evt_attributes.contains(att))) {
+                if(settings.noTemp && att == "temperature" && (device.hasAttribute("contact") || device.hasAttribute("water"))) {
                     Boolean skipAtt = true
-                    if(settings?.sensorAllowTemp) {
-                        skipAtt = isDeviceInInput('sensorAllowTemp', device?.id)
+                    if(settings.sensorAllowTemp) {
+                        skipAtt = isDeviceInInput('sensorAllowTemp', device.id)
                     }
                     if(skipAtt) { return }
                 }
-                Map attMap = [
-                    "acceleration": "Acceleration", "battery": "Battery", "button": "Button", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
-                    "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "switch": "Switch", "tamper": "Tamper",
-                    "temperature": "Temp", "valve": "Valve"
-                ]?.each { k,v -> if(att == k && isDeviceInInput('remove${v}', device?.id)) { return } }
+                attMapFLD.each { String k, String v -> if(att == k && isDeviceInInput("remove${v}".toString(), device.id)) { return } }
                 subscribe(device, att, "changeHandler")
-                if(showlog) { log.debug "Registering ${device?.displayName} for ${att} events" }
+                if(showlog) { log.debug "Registering ${device.displayName} for ${att} events" }
             }
         }
     }
@@ -1137,28 +1158,28 @@ def registerChangeHandler(devices, showlog=false) {
 
 def changeHandler(evt) {
     Long execDt = now()
-    List sendItems = []
-    Integer sendNum = 1
+    List<Map> sendItems = []
+//    Integer sendNum = 1
     String src = evt?.source
     def deviceid = evt?.deviceId
-    String deviceName = evt?.displayName
-    String attr = evt?.name
+    String deviceName = (String)evt.displayName
+    String attr = (String)evt.name
     def value = evt?.value
-    def dt = evt?.date
+    Date dt = (Date)evt.date
     Boolean sendEvt = true
 
-    switch(evt?.name) {
+    switch((String)evt.name) {
         case "hsmStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = "alarmSystemStatus"
-            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             break
         case "hsmAlert":
             if(evt?.value == "intrusion") {
                 deviceid = "alarmSystemStatus_${location?.id}"
                 attr = "alarmSystemStatus"
                 value = "alarm_active"
-                sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             } else { sendEvt = false }
             break
         case "hsmRules":
@@ -1167,35 +1188,39 @@ def changeHandler(evt) {
             break
         case "alarmSystemStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
-            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
             break
         case "mode":
             settings?.modeList?.each { id->
                 def md = getModeById(id)
-                if(md && md?.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md?.name}", evtDeviceId: md?.id, evtAttr: "switch", evtValue: modeSwitchState(md?.name), evtUnit: "", evtDate: dt]) }
+                if(md && md.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: "switch", evtValue: modeSwitchState((String)md.name), evtUnit: "", evtDate: dt]) }
             }
             break
         case "routineExecuted":
             settings?.routineList?.each { id->
                 def rt = getRoutineById(id)
                 if(rt && rt?.id) {
-                    sendItems?.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt?.label}", evtDeviceId: rt?.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
+                    sendItems.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt?.label}", evtDeviceId: rt?.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
                 }
             }
             break
         default:
             def evtData = null
-            if(attr == "button") { evtData = parseJson(evt?.data) }
-            sendItems?.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt, evtData: evtData])
+            if(attr == "button") { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt, evtData: evtData])
             break
     }
 
-    if (sendEvt && state?.pluginDetails?.directIP != "" && sendItems?.size()) {
+    if (sendEvt && sendItems.size()>0) {
+        if (!state?.pluginDetails?.directIP) { // can be configured ngrok??
+//            logError("sendHttpPost: no plugin server configured")
+            return 
+        }
         //Send Using the Direct Mechanism
-        sendItems?.each { send->
-            if(settings?.showEventLogs) {
+        sendItems.each { Map send->
+            if((Boolean)settings.showEventLogs) {
                 String unitStr = ""
-                switch(send?.evtAttr as String) {
+                switch((String)send.evtAttr) {
                     case "temperature":
                         unitStr = "\u00b0${send?.evtUnit}"
                         break
@@ -1214,37 +1239,41 @@ def changeHandler(evt) {
                         unitStr = "${send?.evtUnit}"
                         break
                 }
-                logInfo("Sending${" ${send?.evtSource}" ?: ""} Event (${send?.evtDeviceName} | ${send?.evtAttr.toUpperCase()}: ${send?.evtValue}${unitStr}) ${send?.evtData ? "Data: ${send?.evtData}" : ""} to Homebridge at (${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort})")
+                logInfo("Sending${" ${send?.evtSource}" ?: ""} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : ""} to Homebridge at (${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort})")
             }
             sendHttpPost("update", [
-                change_name: send?.evtDeviceName,
-                change_device: send?.evtDeviceId,
-                change_attribute: send?.evtAttr,
-                change_value: send?.evtValue,
-                change_data: send?.evtData,
-                change_date: send?.evtDate,
+                change_name: send.evtDeviceName,
+                change_device: send.evtDeviceId,
+                change_attribute: send.evtAttr,
+                change_value: send.evtValue,
+                change_data: send.evtData,
+                change_date: send.evtDate,
                 app_id: app?.getId(),
-                access_token: atomicState?.accessToken
+                access_token: state.accessToken
             ], "EventUpdate")
-            logEvt([name: send?.evtAttr, value: send?.evtValue, device: send?.evtDeviceName, execTime: execDt ? (now()-execDt) : 0])
+            logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: now()-execDt])
         }
     }
 }
-
+/*
 private sendHttpGet(path, contentType) {
-    if(settings?.sendViaNgrok && settings?.ngrokHttpUrl) {
+    if((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) {
         httpGet([
-            uri: (settings?.sendViaNgrok && settings?.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}" : "http://${getServerAddress()}/${path}",
+            uri: ((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${getServerAddress()}/${path}".toString(),
             requestContentType: contentType,
             contentType: contentType,
             timeout: 20
         ])
     } else { sendHubCommand(new hubitat.device.HubAction(method: "GET", path: "/${path}", headers: [HOST: getServerAddress()])) }
 }
-
-private sendHttpPost(path, body, src="", contentType = "application/json") {
+*/
+void sendHttpPost(String path, Map body, String src="", String contentType = "application/json") {
+    String server= getServerAddress()
+    if(!((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
+        if(server == ":" || server == "null:null" ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
+    }
     Map params = [
-        uri: (settings?.sendViaNgrok && settings?.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}" : "http://${getServerAddress()}/${path}",
+        uri: ((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${getServerAddress()}/${path}".toString(),
         requestContentType: contentType,
         contentType: contentType,
         body: body,
@@ -1253,7 +1282,7 @@ private sendHttpPost(path, body, src="", contentType = "application/json") {
     execAsyncHttpCmd("POST", params, [execDt: now(), src: src])
 }
 
-private execAsyncHttpCmd(String method, Map params, Map otherData = null) {
+void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
     if(method && params) {
         String m = method?.toString()?.toLowerCase()
         "asynchttp${m?.capitalize()}"("asyncHttpCmdResp", params, otherData)
@@ -1268,7 +1297,7 @@ def asyncHttpCmdResp(response, data) {
     }
 }
 
-private getServerAddress() { return "${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort}" }
+String getServerAddress() { return "${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort}".toString() }
 
 def getModeById(String mId) {
     return location?.getModes()?.find{it?.id?.toString() == mId}
@@ -1279,90 +1308,93 @@ def getModeByName(String name) {
 }
 
 
+//not right for HE
 def getRoutineById(String rId) {
     return location?.helloHome?.getPhrases()?.find{it?.id == rId}
 }
 
+//not right for HE
 def getRoutineByName(String name) {
     return location?.helloHome?.getPhrases()?.find{it?.label == name}
 }
 
+/* will not work for HE....have to collect alerts as they happen
 def getShmIncidents() {
     //Thanks Adrian
     def incidentThreshold = now() - 604800000
     return location.activeIncidents.collect{[date: it?.date?.time, title: it?.getTitle(), message: it?.getMessage(), args: it?.getMessageArgs(), sourceType: it?.getSourceType()]}.findAll{ it?.date >= incidentThreshold } ?: null
-}
+}*/
 
-void settingUpdate(name, value, type=null) {
+void settingUpdate(String name, String value, String type=sNULL) {
     if(name && type) {
-        app?.updateSetting("$name", [type: "$type", value: value])
+        app.updateSetting(name, [type: type, value: value])
     }
-    else if (name && type == null){ app?.updateSetting(name.toString(), value) }
+    else if (name && type == sNULL){ app.updateSetting(name, value) }
 }
 
 void settingRemove(String name) {
     // logTrace("settingRemove($name)...")
-    if(name && settings?.containsKey(name as String)) { app?.removeSetting(name as String) }
+    if(name && settings?.containsKey(name)) { app.removeSetting(name) }
 }
 
-Boolean devMode() {
-    return (devModeFLD == true)
+static Boolean devMode() {
+    return devModeFLD
 }
 
-private activateDirectUpdates(isLocal=false) {
+void activateDirectUpdates(Boolean isLocal=false) {
     logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
     sendHttpPost("initial", [
-        app_id: app?.getId(),
-        access_token: atomicState?.accessToken
+        app_id: app.getId(),
+        access_token: state.accessToken
     ], "activateDirectUpdates")
 }
 
-private attemptServiceRestart(isLocal=false) {
+void attemptServiceRestart(Boolean isLocal=false) {
     logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
     sendHttpPost("restart", [
-        app_id: app?.getId(),
-        access_token: atomicState?.accessToken
+        app_id: app.getId(),
+        access_token: state.accessToken
     ], "attemptServiceRestart")
 }
 
-private sendDeviceRefreshCmd(isLocal=false) {
+void sendDeviceRefreshCmd(Boolean isLocal=false) {
     logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
     sendHttpPost("refreshDevices", [
-        app_id: app?.getId(),
-        access_token: atomicState?.accessToken
+        app_id: app.getId(),
+        access_token: state.accessToken
     ], "sendDeviceRefreshCmd")
 }
 
-private updateServicePrefs(isLocal=false) {
+void updateServicePrefs(Boolean isLocal=false) {
     logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
     sendHttpPost("updateprefs", [
-        app_id: app?.getId(),
-        access_token: atomicState?.accessToken,
-        use_cloud: (settings?.use_cloud_endpoint == true),
-        validateTokenId: (settings?.validate_token == true),
+        app_id: app.getId(),
+        access_token: state.accessToken,
+        use_cloud: (Boolean)settings.use_cloud_endpoint,
+        validateTokenId: (Boolean)settings.validate_token,
         local_hub_ip: location?.hubs[0]?.localIP
     ], "updateServicePrefs")
 }
 
 def pluginStatus() {
     def body = request?.JSON;
-    state?.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
-    if(body?.version) { updCodeVerMap("plugin", body?.version)}
+    state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
+    if(body?.version) { updCodeVerMap("plugin", (String)body?.version)}
     def resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
     render contentType: "application/json", data: resultJson
 }
 
 def enableDirectUpdates() {
     // log.trace "enableDirectUpdates: ($params)"
-    state?.pluginDetails = [
+    state.pluginDetails = [
         directIP: params?.ip,
         directPort: params?.port,
         version: params?.version ?: null
     ]
-    updCodeVerMap("plugin", params?.version ?: null)
+    updCodeVerMap("plugin", (String)params?.version ?: sNULL)
     activateDirectUpdates()
     updTsVal("lastDirectUpdsEnabled")
-    def resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
+    String resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
     render contentType: "application/json", data: resultJson
 }
 
@@ -1379,16 +1411,17 @@ mappings {
 }
 
 def appInfoSect() {
-    Map codeVer = state?.codeVersions ?: null
+    Map codeVer = state.codeVersions
     Boolean isNote = false
     String tStr = """<small style="color: gray;"><b>Version:</b> v${appVersionFLD}</small>${state?.pluginDetails?.version ? """<br><small style="color: gray;"><b>Plugin:</b> v${state?.pluginDetails?.version}</small>""" : ""}"""
+/* """ */
     section (sectH3TS(app?.name, tStr, getAppImg("hb_tonesto7", true), "orange")) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
-        if(minUpdMap?.updRequired && minUpdMap?.updItems?.size()) {
+        if((Boolean)minUpdMap?.updRequired && ((List)minUpdMap.updItems).size()>0) {
             isNote=true
             String str3 = """<small style="color: red;"><b>Updates Required:</b></small>"""
-            minUpdMap?.updItems?.each { item-> str3 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
+            ((List)minUpdMap.updItems).each { item-> str3 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
             str3 += """<br><br><small style="color: red; font-weight: bold;">If you just updated the code please press Done/Next to let the app process the changes.</small>"""
             paragraph str3
         } else if(codeUpdItems?.size()) {
@@ -1399,19 +1432,31 @@ def appInfoSect() {
         }
         if(!isNote) { paragraph """<small style="color: gray;">No Issues to Report</small>""" }
         paragraph htmlLine("orange")
-	}
+    }
 }
 
 /**********************************************
         APP HELPER FUNCTIONS
 ***********************************************/
-String getAppImg(String imgName, frc=false, ext=".png") { return frc ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}" : "" }
-String getPublicImg(String imgName, frc=false) { return frc ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png" : "" }
-String sectTS(String t, String i = null, bold=false) { return """<h3>${i ? """<img src="${i}" width="48"> """ : ""} ${bold ? "<b>" : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}</h3>""" }
-String sectH3TS(String t, String st, String i = null, c="#1A77C9") { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="48"> """ : ""} ${t?.replaceAll("\\n", "<br>")}</h3>${st ? "${st}" : ""}""" }
-String paraTS(String t, String i = null, bold=true, color=null) { return "${color ? """<div style="color: $color;">""" : ""}${bold ? "<b>" : ""}${i ? """<img src="${i}" width="48"> """ : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}${color ? "</div>" : ""}" }
-String inputTS(String t, String i = null, color=null, under=true) { return """${color ? """<div style="color: $color;">""" : ""}${i ? """<img src="${i}" width="48"> """ : ""} ${under ? "<u>" : ""}${t?.replaceAll("\\n", " ")}${under ? "</u>" : ""}${color ? "</div>" : ""}""" }
-String htmlLine(color="#1A77C9") { return "<hr style='background-color:${color}; height: 1px; border: 0;'>" }
+
+static String getAppImg(String imgName, Boolean frc=false, String ext=".png") { return frc ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}".toString() : "" }
+
+static String getPublicImg(String imgName, Boolean frc=false) { return frc ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png".toString() : "" }
+
+static String sectTS(String t, String i = sNULL, Boolean bold=false) { return """<h3>${i ? """<img src="${i}" width="48"> """ : ""} ${bold ? "<b>" : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}</h3>""".toString() }
+/* """ */
+
+static String sectH3TS(String t, String st, String i = sNULL, String c="#1A77C9") { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="48"> """ : ""} ${t?.replaceAll("\\n", "<br>")}</h3>${st ? "${st}" : ""}""".toString() }
+/* """ */
+
+static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? """<div style="color: $color;">""" : ""}${bold ? "<b>" : ""}${i ? """<img src="${i}" width="48"> """ : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}${color ? "</div>" : ""}".toString() }
+
+/* """ */
+static String inputTS(String t, String i = sNULL, String color=sNULL, Boolean under=true) { return """${color ? """<div style="color: $color;">""" : ""}${i ? """<img src="${i}" width="48"> """ : ""} ${under ? "<u>" : ""}${t?.replaceAll("\\n", " ")}${under ? "</u>" : ""}${color ? "</div>" : ""}""".toString() }
+
+/* """ */
+static String htmlLine(String color="#1A77C9") { return "<hr style='background-color:${color}; height: 1px; border: 0;'>".toString() }
+
 def appFooter() {
 	section() {
 		paragraph htmlLine("orange")
@@ -1419,12 +1464,17 @@ def appFooter() {
 	}       
 }
 
-String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} \u2022 ${strVal}" }
-String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == "" && !newLine) ? "" : "\n"} - ${strVal}" }
-String textDonateLink() { return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url" }
-Integer versionStr2Int(str) { return str ? str?.toString()?.tokenize("-")[0]?.replaceAll("\\.", "")?.toInteger() : null }
-String versionCleanup(str) { return str ? str?.toString()?.tokenize("-")[0] : null }
-Boolean codeUpdIsAvail(String newVer, String curVer, String type) {
+static String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} \u2022 ${strVal}".toString() }
+
+static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == "" && !newLine) ? "" : "\n"} - ${strVal}".toString() }
+
+static String textDonateLink() { return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url" }
+
+static Integer versionStr2Int(String str) { return str ? str.tokenize("-")[0]?.replaceAll("\\.", "")?.toInteger() : null }
+
+static String versionCleanup(String str) { return str ? str.tokenize("-")[0] : sNULL }
+
+static Boolean codeUpdIsAvail(String newVer, String curVer, String type) {
     Boolean result = false
     def latestVer
     if(newVer && curVer) {
@@ -1433,8 +1483,8 @@ Boolean codeUpdIsAvail(String newVer, String curVer, String type) {
         List versions = [newVer, curVer]
         if(newVer != curVer) {
             latestVer = versions?.max { a, b ->
-                List verA = a?.tokenize('.'); List verB = b?.tokenize('.'); Integer commonIndices = Math.min(verA?.size(), verB?.size());
-                for (int i = 0; i < commonIndices; ++i) { if(verA[i]?.toInteger() != verB[i]?.toInteger()) { return verA[i]?.toInteger() <=> verB[i]?.toInteger() }; }
+                List verA = a?.tokenize('.'); List verB = b?.tokenize('.'); Integer commonIndices = Math.min(verA?.size(), verB?.size())
+                for (int i = 0; i < commonIndices; ++i) { if(verA[i]?.toInteger() != verB[i]?.toInteger()) { return verA[i]?.toInteger() <=> verB[i]?.toInteger() } }
                 verA?.size() <=> verB?.size()
             }
             result = (latestVer == newVer)
@@ -1442,16 +1492,19 @@ Boolean codeUpdIsAvail(String newVer, String curVer, String type) {
     }
     return result
 }
-Boolean appUpdAvail() { return (state?.appData?.versions && state?.codeVersions?.mainApp && codeUpdIsAvail(state?.appData?.versions?.mainApp, appVersionFLD, "main_app")) }
-Boolean pluginUpdAvail() { return (state?.appData?.versions && state?.codeVersions?.plugin && codeUpdIsAvail(state?.appData?.versions?.plugin, state?.codeVersions?.plugin, "plugin")) }
+
+Boolean appUpdAvail() { return (state?.appData?.versions && state?.codeVersions?.mainApp && codeUpdIsAvail((String)state?.appData?.versions?.mainApp, appVersionFLD, "main_app")) }
+
+Boolean pluginUpdAvail() { return (state?.appData?.versions && state?.codeVersions?.plugin && codeUpdIsAvail((String)state?.appData?.versions?.plugin, (String)state?.codeVersions?.plugin, "plugin")) }
+
 private Map getMinVerUpdsRequired() {
     Boolean updRequired = false
     List updItems = []
     Map codeItems = [plugin: "Homebridge Plugin"]
-    Map codeVers = state?.codeVersions ?: [:]
-    codeVers?.each { k,v->
+    Map<String,String> codeVers = (Map<String, String>)state.codeVersions ?: [:]
+    codeVers?.each { String k, String v->
         try {
-            if(codeItems?.containsKey(k as String) && v != null && (versionStr2Int(v) < minVersionsFLD[k as String])) { updRequired = true; updItems?.push(codeItems[k]); }
+            if(codeItems?.containsKey(k) && v != null && (versionStr2Int(v) < (Integer)minVersionsFLD[k])) { updRequired = true; updItems.push(codeItems[k]) }
         } catch (ex) {
             logError("getMinVerUpdsRequired Error: ${ex}")
         }
@@ -1459,7 +1512,7 @@ private Map getMinVerUpdsRequired() {
     return [updRequired: updRequired, updItems: updItems]
 }
 
-private List codeUpdateItems(shrt=false) {
+private List codeUpdateItems(Boolean shrt=false) {
     Boolean appUpd = appUpdAvail()
     Boolean plugUpd = pluginUpdAvail()
     List updItems = []
@@ -1470,82 +1523,93 @@ private List codeUpdateItems(shrt=false) {
     return updItems
 }
 
-Integer getLastTsValSecs(val, nullVal=1000000) {
-    def tsMap = atomicState?.tsDtMap
-    return (val && tsMap && tsMap[val]) ? GetTimeDiffSeconds(tsMap[val]).toInteger() : nullVal
+@Field volatile static Map<String,Map> tsDtMapFLD = [:]
+
+Integer getLastTsValSecs(String val, Integer nullVal=1000000) {
+    String appId = app.getId()
+    Map tsMap = tsDtMapFLD[appId] ?: [:]
+    return (val && tsMap && tsMap[val]) ? GetTimeDiffSeconds((String)tsMap[val]).toInteger() : nullVal
 }
 
-private updTsVal(key, dt=null) {
-    def data = atomicState?.tsDtMap ?: [:]
+private void updTsVal(String key, String dt=sNULL) {
+    String appId = app.getId()
+    Map data = tsDtMapFLD[appId] ?: [:]
     if(key) { data[key] = dt ?: getDtNow() }
-    atomicState?.tsDtMap = data
+    tsDtMapFLD[appId] = data
+    tsDtMapFLD = tsDtMapFLD
 }
 
-private remTsVal(key) {
-    def data = atomicState?.tsDtMap ?: [:]
+private void remTsVal(key) {
+    String appId = app.getId()
+    Map data = tsDtMapFLD[appId] ?: [:]
     if(key) {
         if(key instanceof List) {
-            key?.each { k-> if(data?.containsKey(k)) { data?.remove(k) } }
-        } else { if(data?.containsKey(key)) { data?.remove(key) } }
-        atomicState?.tsDtMap = data
+            key.each { String k-> if(data?.containsKey(k)) { data?.remove(k) } }
+        } else { if(data?.containsKey((String)key)) { data?.remove((String)key) } }
+        tsDtMapFLD[appId] = data
+        tsDtMapFLD = tsDtMapFLD
     }
 }
 
-private getTsVal(val) {
-    def tsMap = atomicState?.tsDtMap
-    if(val && tsMap && tsMap[val]) { return tsMap[val] }
-    return null
+private String getTsVal(String val) {
+    String appId = app.getId()
+    Map tsMap = tsDtMapFLD[appId]
+    if(val && tsMap && tsMap[val]) { return (String)tsMap[val] }
+    return sNULL
 }
 
-private updCodeVerMap(key, val) {
-    Map cv = atomicState?.codeVersions ?: [:]
-    if(val && (!cv.containsKey(key) || (cv?.containsKey(key) && cv[key] != val))) { cv[key as String] = val }
-    if (cv?.containsKey(key) && val == null) { cv?.remove(key) }
-    atomicState?.codeVersions = cv
+private void updCodeVerMap(String key, String val) {
+    Map cv = state.codeVersions
+    if(cv == null) cv = [:]
+    if(val && (!cv.containsKey(key) || (cv.containsKey(key) && (String)cv[key] != val))) { cv[key] = val }
+    if (cv.containsKey(key) && val == sNULL) { cv.remove(key) }
+    state.codeVersions = cv
 }
 
-private cleanUpdVerMap() {
-    Map cv = atomicState?.codeVersions ?: [:]
-    cv?.each { k, v-> if(v == null) ri?.push(k) }
-    ri?.each { cv?.remove(it) }
-    atomicState?.codeVersions = cv
+private void cleanUpdVerMap() {
+    Map<String, String> cv = state.codeVersions
+    if(cv == null) cv = [:]
+    List ri = []
+    cv.each { String k, String v-> if(v == null) ri.push(k) }
+    ri.each { cv.remove(it) }
+    state.codeVersions = cv
 }
 
-private updInstData(key, val) {
-    Map iData = atomicState?.installData ?: [:]
+private void updInstData(String key, val) {
+    Map iData = state.installData ?: [:]
     iData[key] = val
-    atomicState?.installData = iData
+    state.installData = iData
 }
 
-private getInstData(key) {
-    def iMap = atomicState?.installData
-    if(val && iMap && iMap[val]) { return iMap[val] }
+private getInstData(String key) {
+    Map iMap = state.installData
+    if(key && iMap && iMap[key]) { return iMap[key] }
     return null
 }
 
-private checkVersionData(now = false) { //This reads a JSON file from GitHub with version numbers
-    def lastUpd = getLastTsValSecs("lastAppDataUpdDt")
-    if (now || !state?.appData || (lastUpd > (3600*6))) {
+private void checkVersionData(Boolean now = false) { //This reads a JSON file from GitHub with version numbers
+    Integer lastUpd = getLastTsValSecs("lastAppDataUpdDt")
+    if (now || !state.appData || (lastUpd > (3600*6))) {
         if(now && (lastUpd < 300)) { return }
         getConfigData()
     }
 }
 
-private getConfigData() {
+void getConfigData() {
     Map params = [
         uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/appData.json",
         contentType: "application/json",
         timeout: 20
     ]
-    def data = getWebData(params, "appData", false)
+    Map data = (Map)getWebData(params, "appData", false)
     if(data) {
-        state?.appData = data
+        state.appData = data
         updTsVal("lastAppDataUpdDt")
-        logDebug("Successfully Retrieved (v${data?.appDataVer}) of AppData Content from GitHub Repo...")
+        logDebug("Successfully Retrieved (v${data.appDataVer}) of AppData Content from GitHub Repo...")
     }
 }
 
-private getWebData(params, desc, text=true) {
+private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
             if(resp?.data) {
@@ -1564,107 +1628,120 @@ private getWebData(params, desc, text=true) {
 /******************************************
 |       DATE | TIME HELPERS
 ******************************************/
-def formatDt(dt, tzChg=true) {
+String formatDt(Date dt, Boolean tzChg=true) {
     def tf = new java.text.SimpleDateFormat("E MMM dd HH:mm:ss z yyyy")
     if(tzChg) { if(location.timeZone) { tf.setTimeZone(location?.timeZone) } }
     return tf?.format(dt)
 }
 
-def getDtNow() {
-    def now = new Date()
+String getDtNow() {
+    Date now = new Date()
     return formatDt(now)
 }
 
-def GetTimeDiffSeconds(lastDate, sender=null) {
-    try {
-        if(lastDate?.contains("dtNow")) { return 10000 }
-        def now = new Date()
-        def lastDt = Date.parse("E MMM dd HH:mm:ss z yyyy", lastDate)
-        def start = Date.parse("E MMM dd HH:mm:ss z yyyy", formatDt(lastDt)).getTime()
-        def stop = Date.parse("E MMM dd HH:mm:ss z yyyy", formatDt(now)).getTime()
-        def diff = (int) (long) (stop - start) / 1000
-        return diff?.abs()
-    } catch (ex) {
+Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
+    if(lastDate) {
+        if(!lastDate.contains("dtNow")) {
+            //String stopVal = getDtNow()
+            Long start = Date.parse("E MMM dd HH:mm:ss z yyyy", lastDate).getTime()
+            //Long stop = Date.parse("E MMM dd HH:mm:ss z yyyy", stopVal).getTime()
+            Long stop = now()
+            Long diff = (stop - start) / 1000L
+            return diff
+        }
+    } else {
         logError("GetTimeDiffSeconds Exception: (${sender ? "$sender | " : ""}lastDate: $lastDate): ${ex}")
-        return 10000
     }
+    return 10000L
 }
 
 /******************************************
 |       Changelog Logic
 ******************************************/
-Boolean showDonationOk() { return (state?.isInstalled && !atomicState?.installData?.shownDonation && getDaysSinceUpdated() >= 30 && !settings?.sentDonation) }
+Boolean showDonationOk() { return ((Boolean)state.isInstalled && !state?.installData?.shownDonation && getDaysSinceUpdated() >= 30 && !(Boolean)settings.sentDonation) }
+
 Integer getDaysSinceUpdated() {
-    def updDt = atomicState?.installData?.updatedDt ?: null
-    if(updDt == null || updDt == "Not Set") {
-        updInstData("updatedDt", getDtNow().toString())
+    def t0 = state?.installData?.updatedDt
+    String updDt = t0 ? (String)t0 : sNULL
+    if(updDt == sNULL || updDt == "Not Set") {
+        updInstData("updatedDt", getDtNow())
         return 0
     }
-    def start = Date.parse("E MMM dd HH:mm:ss z yyyy", updDt)
-    def stop = new Date()
+    Date start = Date.parse("E MMM dd HH:mm:ss z yyyy", updDt)
+    Date stop = new Date()
     if(start && stop) {	return (stop - start) }
     return 0
 }
 
 String changeLogData() { 
-    String txt = getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
+    String txt = (String)getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
     return txt?.toString()?.replaceAll("##", "\u2022")?.replaceAll("[\\**_]", ""); // Replaces ## then **_ and _** in changelog data
 }
-Boolean showChgLogOk() { return (state?.isInstalled && (state?.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
+
+Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
+
 private changeLogPage() {
     return dynamicPage(name: "changeLogPage", title: "", nextPage: "mainPage", install: false) {
         section(sectTS("Release Notes:", getAppImg("change_log", true), true)) { paragraph changeLogData() }
-        state?.curAppVer = appVersionFLD
+        state.curAppVer = appVersionFLD
         updInstData("shownChgLog", true)
     }
 }
 
-Integer stateSize() { def j = new groovy.json.JsonOutput().toJson(state); return j?.toString().length(); }
-Integer stateSizePerc() { return (int) ((stateSize() / 100000)*100).toDouble().round(0); }
+//Integer stateSize() { String j = new groovy.json.JsonOutput().toJson(state); return j.length() }
+//Integer stateSizePerc() { return (int) ((stateSize() / 100000)*100).toDouble().round(0) }
 
 private void addToHistory(String logKey, Map data, Integer max=10) {
     String appId = app.getId()
     Boolean ssOk = true // (stateSizePerc() > 70)
 
-    Boolean aa = getTheLock(sHMLF, "addToHistory${logKey})")
+    Boolean aa = getTheLock(sHMLF, "addToHistory(${logKey})")
     // log.trace "lock wait: ${aa}"
 
-    Map memStore = historyMapFLD[appId] ?: [:]
-    List eData = memStore[logKey] ?: []
-    if(eData?.find { it?.data == data }) {
+    Map<String,List> memStore = historyMapFLD[appId] ?: [:]
+    List eData = (List)memStore[logKey] ?: []
+    if(eData.find { it?.data == data }) {
     	releaseTheLock(sHMLF)
-	return
+        return
     }
-    eData?.push([dt: getDtNow(), data: data])
-    if(!ssOk || eData?.size() > max) { eData = eData?.drop( (eData?.size()-max) ) }
+    eData.push([dt: getDtNow(), gt: now(), data: data])
+    if(!ssOk || eData.size() > max) { eData = eData.drop( (eData.size()-max) ) }
     updMemStoreItem(logKey, eData)
 
     releaseTheLock(sHMLF)
 }
 
-private void logDebug(msg)  { if(showDebugLogs) log.debug "Homebridge (v${appVersionFLD}) | ${msg}"; }
-private void logTrace(msg)  { if(showDebugLogs) log.trace "Homebridge (v${appVersionFLD}) | ${msg}"; }
-private void logInfo(msg)   { log.info " Homebridge (v${appVersionFLD}) | ${msg}"; }
-private void logWarn(msg)   { log.warn " Homebridge (v${appVersionFLD}) | ${msg}"; }
-private void logError(msg)  { log.error "Homebridge (v${appVersionFLD}) | ${msg}"; }
+private void logDebug(msg)  { if(showDebugLogs) myLog('debug', msg.toString()) }
+private void logTrace(msg)  { if(showDebugLogs) myLog('trace', msg.toString()) }
+private void logInfo(msg)   { myLog('info', msg.toString()) }
+private void logWarn(msg)   { myLog('warn', msg.toString()) }
+private void logError(msg)  { myLog('error', msg.toString()) }
 
-private List getCmdHistory() {
+private void myLog(String lvl, String msg){
+    String pad=''
+    if(lvl in ['warn', 'info']) pad = " "
+    log."$lvl" pad + 'Homebridge (v'+appVersionFLD+') | ' + msg
+}
+
+private List<Map> getCmdHistory() {
     Boolean aa = getTheLock(sHMLF, "getCmdHistory")
     // log.trace "lock wait: ${aa}"
 
-    List his= getMemStoreItem("cmdHistory")
-    List newHis = [] + his ?: []
+    List<Map> his= getMemStoreItem("cmdHistory")
+    if(his==null) his = []
+    List<Map> newHis = [] + his
 
     releaseTheLock(sHMLF)
     return newHis
 }
 
-private List getEvtHistory() {
+private List<Map> getEvtHistory() {
     Boolean aa = getTheLock(sHMLF, "getEvtHistory")
     // log.trace "lock wait: ${aa}"
 
-    List his= getMemStoreItem("evtHistory")
-    List newHis = [] + his ?: []
+    List<Map> his= getMemStoreItem("evtHistory")
+    if(his==null) his = []
+    List<Map> newHis = [] + his
 
     releaseTheLock(sHMLF)
     return newHis
@@ -1687,7 +1764,7 @@ private void logCmd(Map cmdData) { addToHistory("cmdHistory", cmdData, 25) }
 @Field volatile static Map<String,Map> historyMapFLD = [:]
 
 // FIELD VARIABLE FUNCTIONS
-private void updMemStoreItem(String key, val) {
+private void updMemStoreItem(String key, List val) {
     String appId = app.getId()
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
@@ -1698,8 +1775,8 @@ private void updMemStoreItem(String key, val) {
 
 private List getMemStoreItem(String key){
     String appId = app.getId()
-    Map memStore = historyMapFLD[appId] ?: [:]
-    return memStore[key] ?: null
+    Map<String, List> memStore = historyMapFLD[appId] ?: [:]
+    return (List)memStore[key] ?: null
 }
 
 // Memory Barrier
@@ -1771,7 +1848,7 @@ void releaseTheLock(String qname){
     def sema=getSema(semaNum)
     lockTimesFLD[semaSNum]=null
     lockTimesFLD=lockTimesFLD
-    lockHolderFLD[semaSNum]=(String)null
+    lockHolderFLD[semaSNum]=sNULL
     lockHolderFLD=lockHolderFLD
     sema.release()
 }
