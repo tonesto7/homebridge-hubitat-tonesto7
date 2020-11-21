@@ -40,7 +40,7 @@ preferences {
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = false
+@Field static final Boolean devModeFLD    = true
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
@@ -87,7 +87,7 @@ def mainPage() {
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectTS("Device Configuration:", sNULL, true)) {
-            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList)
+            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
             String desc = """<small style="color:gray;">Tap to select devices...</small>"""
             Integer devCnt = getDeviceCnt()
@@ -106,6 +106,7 @@ def mainPage() {
                 desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : ""}</b> (${switchList.size()})</small><br>""" : ""
                 desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : ""
                 desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : ""
+                desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : ""}</b> (${pistonList.size()})</small><br>""" : ""
                 desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList.size() > 1 ? "s" : ""}</b> (${routineList.size()})</small><br>""" : ""
                 desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : ""
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
@@ -235,6 +236,18 @@ def deviceSelectPage() {
             input "modeList", "enum", title: inputTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true
         }
 
+        section(sectTS("Create Devices for Piston in HomeKit?", sNULL, true)) {
+            paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
+            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id):it?.name] }
+            input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("routine",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
+        }
+/*
+        section(sectTS("Create Devices for Routines in HomeKit?", sNULL, true)) {
+            paragraph title: "What are these?", "A virtual device will be created for each routine in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete", image: getAppImg("info")
+            def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
+            input "routineList", "enum", title: "Create Devices for these Routines", required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine")
+        }*/
+
         inputDupeValidation()
     }
 }
@@ -277,7 +290,7 @@ private void resetCapFilters() {
 private void inputDupeValidation() {
     Map clnUp = [d: [:], o: [:]]
     Map items = [
-        d: ["fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", "buttonList": "Buttons", "lightList": "Lights", "shadesList": "Window Shadse", "speakerList": "Speakers",
+        d: ["fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", "buttonList": "Buttons", "lightList": "Lights", "shadesList": "Window Shades", "speakerList": "Speakers",
             "garageList": "Garage Doors", "tstatList": "Thermostat", "tstatFanList": "Themostat + Fan", "tstatHeatList": "Thermostat (Heat Only)"
         ],
         o: ["deviceList": "Other", "sensorList": "Sensor", "switchList": "Switch"]
@@ -501,7 +514,7 @@ private Integer getDeviceCnt(Boolean phyOnly=false) {
     List items = deviceSettingKeys().collect { (String)it.key }
     items?.each { String item -> if(settings[item]?.size() > 0) devices = devices + settings[item] }
     if(!phyOnly) {
-        ["modeList", "routineList"].each { String item->
+        ["modeList", "routineList", "pistonList"].each { String item->
             if(settings[item]?.size() > 0) devices = devices + settings[item]
         }
     }
@@ -523,6 +536,7 @@ def updated() {
     unsubscribe()
     stateCleanup()
     initialize()
+    sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
 }
 
 def initialize() {
@@ -548,22 +562,23 @@ Boolean getAccessToken() {
     }
 }
 
- void subscribeToEvts() {
+void subscribeToEvts() {
     runIn(4, "registerDevices")
     logInfo("Starting Device Subscription Process")
     if((Boolean)settings.addSecurityDevice) {
         subscribe(location, "hsmStatus", changeHandler)
     }
-    if(settings?.modeList) {
-        logDebug("Registering (${settings?.modeList?.size() ?: 0}) Virtual Mode Devices")
+    if(settings.modeList) {
+        logDebug("Registering (${settings.modeList.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
 //        if(state.lastMode == null) { state.lastMode = (String)location.getMode() }
     }
     state.subscriptionRenewed = 0
-    if(settings?.routineList) {
-        logDebug("Registering (${settings?.routineList?.size() ?: 0}) Virtual Routine Devices")
+    if(settings.routineList) {
+        logDebug("Registering (${settings.routineList.size() ?: 0}) Virtual Routine Devices")
         subscribe(location, "routineExecuted", changeHandler)
     }
+    subscribe(location, "webCoRE", changeHandler)
 }
 
 private void healthCheck() {
@@ -595,7 +610,7 @@ Boolean checkIfCodeUpdated() {
 }
 
 private void stateCleanup() {
-    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap"]
+    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode"]
     if(state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
             directIP: state.directIP,
@@ -611,7 +626,7 @@ private List renderDevices() {
     Map devMap = [:]
     List devList = []
     List items = deviceSettingKeys().collect { (String)it.key }
-    items = items+["modeList", "routineList"]
+    items = items+["modeList", "routineList", "pistonList"]
     items.each { String item ->
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
@@ -642,6 +657,16 @@ private Map getDeviceData(String type, sItem) {
     def attrVal = null
     def obj = null
     switch(type) {
+        case "pistonList":
+            isVirtual = true
+            curType = "Piston"
+            optFlags["virtual_piston"] = 1
+            obj = getPistonById(sItem)
+            if(obj) {
+                name = "Piston - " + obj?.name
+                attrVal = "off"
+            }
+            break
         case "routineList":
             isVirtual = true
             curType = "Routine"
@@ -858,7 +883,6 @@ def deviceCommand() {
 
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
-    def device = findDevice(devId)
     if(settings?.showCmdLogs) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     String command = cmd
     if((Boolean)settings.addSecurityDevice && devId == "alarmSystemStatus_${location?.id}") {
@@ -866,19 +890,26 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Security Alarm, Command $command", 200)
-    }  else if (settings?.modeList && command == "mode" && devId) {
+    }  else if (settings.modeList && command == "mode" && devId) {
         logDebug("Virtual Mode Received: ${devId}")
         changeMode(devId)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply("Success", "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
-    } else if (settings?.routineList && command == "routine" && devId) {
+    } else if (settings.pistonList && command == "piston" && devId) {
+        logDebug("Virtual Piston Received: ${devId}")
+        String aa=runPiston(devId)
+        Long pt = execDt ? (now()-execDt) : 0L
+        logCmd([cmd: command, device: "Piston Device", value1: value1, value2: value2, execTime: pt])
+        return CommandReply("Success", "Piston | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
+    } else if (settings.routineList && command == "routine" && devId) {
         logDebug("Virtual Routine Received: ${devId}")
-        runRoutine(devId)
+        String aa=runRoutine(devId)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Routine Device", value1: value1, value2: value2, execTime: pt])
-        return CommandReply("Success", "Routine | ${device?.displayName} | Command $command | Process Time: (${pt}ms)", 200)
+        return CommandReply("Success", "Routine | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
     } else {
+        def device = findDevice(devId)
         if (!device) {
             logError("Device Not Found")
             return CommandReply("Failure", "Device Not Found", 500)
@@ -919,14 +950,28 @@ private void changeMode(modeId) {
     }
 }
 
-private void runRoutine(rtId) {
+private runPiston(rtId) {
+    if(rtId) {
+        def rt = findVirtPistonDevice(rtId)
+        if(rt?.name) {
+            logInfo("Executing the (${rt.name}) Piston...")
+            sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: "Execute Piston from homebridge", descriptionText: "Homebridge piston execute ${rt.name}", data: [:])
+            return rt.name
+        } else { logError("Unable to find a matching piston for the id: ${rtId}") }
+    }
+    return null
+}
+
+private runRoutine(rtId) {
     if(rtId) {
         def rt = findVirtRoutineDevice(rtId)
         if(rt?.label) {
-            logInfo("Executing the (${rt?.label}) Routine...")
-            location?.helloHome?.execute(rt?.label)
+            logInfo("Executing the (${rt.label}) Routine...")
+            location?.helloHome?.execute(rt.label)
+            return rt.label
         } else { logError("Unable to find a matching routine for the id: ${rtId}") }
     }
+    return null
 }
 
 def deviceAttribute() {
@@ -944,6 +989,11 @@ def findVirtModeDevice(id) {
     return aa ?: null
 }
 
+def findVirtPistonDevice(id) {
+    def aa = getPistonById(id)
+    return aa ?: null
+}
+
 def findVirtRoutineDevice(id) {
     def aa = getRoutineById(id)
     return aa ?: null
@@ -957,14 +1007,15 @@ def deviceQuery() {
     if (!device) {
         def mode = findVirtModeDevice(params?.id)
         def routine = findVirtRoutineDevice(params?.id)
-        def obj = mode ?: routine ?: null
+        def piston = findVirtPistonDevice(params?.id)
+        def obj = mode ?: piston ?: routine ?: null
         if(!obj) {
             device = null
             return httpError(404, "Device not found")
         } else {
             String name = routine ? obj?.label : obj?.name
-            String type = routine ? "Routine" : "Mode"
-            String attrVal = routine ? "off" : modeSwitchState((String)obj?.name)
+            String type = piston ? "Piston" : routine ? "Routine" : "Mode"
+            String attrVal = routine||piston ? "off" : modeSwitchState((String)obj?.name)
             try {
                 jsonData = [
                     name: name,
@@ -1089,7 +1140,7 @@ static Map deviceSettingKeys() {
 
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
-    ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "buttonList": "Button Devices"]?.each { String k,String v->
+    ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "buttonList": "Button Devices"]?.each { String k, String v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
@@ -1099,7 +1150,7 @@ void registerDevices() {
 
 void registerDevices2() {
     //This has to be done at startup because it takes too long for a normal command.
-    ["sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "deviceList": "Other Devices"]?.each { k,v->
+    ["sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "deviceList": "Other Devices"]?.each { String k, String v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
@@ -1109,7 +1160,7 @@ void registerDevices2() {
 
 void registerDevices3() {
     //This has to be done at startup because it takes too long for a normal command.
-    ["switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", "tstatList": "Thermostat Devices", "tstatFanList": "Thermostat + Fan Devices", "tstatHeatList": "Thermostat (HeatOnly) Devices"]?.each { String k,String v->
+    ["switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", "tstatList": "Thermostat Devices", "tstatFanList": "Thermostat + Fan Devices", "tstatHeatList": "Thermostat (HeatOnly) Devices"]?.each { String k, String v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
@@ -1198,17 +1249,35 @@ def changeHandler(evt) {
                 if(md && md.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: "switch", evtValue: modeSwitchState((String)md.name), evtUnit: "", evtDate: dt]) }
             }
             break
+        case "webCoRE":
+            sendEvt = false
+            if((String)evt.value == 'pistonList'){
+                def data=evt.jsonData ?: null
+                if(data!=null) webCoREFLD = data
+                logDebug("got webCoRE piston list event $data")
+                break
+            } else if((String)evt.value == 'pistonExecuted'){
+                settings.pistonList.each { id->
+                    def rt = getPistonById(id)
+                    if(rt && rt.id) {
+                        sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
+                    }
+                }
+                break
+            }
+            logDebug("unknown webCoRE event $evt.value")
+            break
         case "routineExecuted":
-            settings?.routineList?.each { id->
+            settings.routineList.each { id->
                 def rt = getRoutineById(id)
-                if(rt && rt?.id) {
+                if(rt && rt.id) {
                     sendItems.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt?.label}", evtDeviceId: rt?.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
                 }
             }
             break
         default:
             def evtData = null
-            if(attr == "button") { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
+//            if(attr == "button") { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt, evtData: evtData])
             break
     }
@@ -1309,6 +1378,15 @@ def getModeByName(String name) {
     return location?.getModes()?.find{it?.name?.toString() == name}
 }
 
+@Field volatile static Map<String,Map> webCoREFLD = [:]
+
+def getPistonById(String rId) {
+    return webCoREFLD?.pistons?.find{it?.id == rId}
+}
+
+def getPistoneByName(String name) {
+    return webCoREFLD?.pistons?.find{it?.name == name}
+}
 
 //not right for HE
 def getRoutineById(String rId) {
