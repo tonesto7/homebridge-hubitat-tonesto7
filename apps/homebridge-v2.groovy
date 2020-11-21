@@ -952,10 +952,15 @@ private runPiston(rtId) {
         if(rt?.name) {
             logInfo("Executing the (${rt.name}) Piston...")
             sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: "Execute Piston from homebridge", descriptionText: "Homebridge piston execute ${rt.name}", data: [:])
+            runIn(2, "endPiston", [data: [id:rtId, name:rt.name]])
             return rt.name
         } else { logError("Unable to find a matching piston for the id: ${rtId}") }
     }
     return null
+}
+
+void endPiston(evt){
+    changeHandler([deviceId:evt.id , name: 'webCoRE', value: 'pistonExecuted', displayName: evt.name, date: new Date()])
 }
 
 private runRoutine(rtId) {
@@ -1211,7 +1216,7 @@ def changeHandler(evt) {
 //    Integer sendNum = 1
     String src = evt?.source
     def deviceid = evt?.deviceId
-    String deviceName = (String)evt.displayName
+    String deviceName = (String)evt?.displayName
     String attr = (String)evt.name
     def value = evt?.value
     Date dt = (Date)evt.date
@@ -1256,6 +1261,7 @@ def changeHandler(evt) {
                 settings.pistonList.each { id->
                     def rt = getPistonById(id)
                     if(rt && rt.id) {
+                        sendEvt = true
                         sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
                     }
                 }
@@ -1267,7 +1273,7 @@ def changeHandler(evt) {
             settings.routineList.each { id->
                 def rt = getRoutineById(id)
                 if(rt && rt.id) {
-                    sendItems.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt?.label}", evtDeviceId: rt?.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
+                    sendItems.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt.label}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
                 }
             }
             break
