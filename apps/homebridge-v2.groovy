@@ -1258,7 +1258,7 @@ def changeHandler(evt) {
                 logDebug("got webCoRE piston list event $data")
                 break
             } else if((String)evt.value == 'pistonExecuted'){
-                settings.pistonList.each { id->
+                settings?.pistonList?.each { id->
                     def rt = getPistonById(id)
                     if(rt && rt.id) {
                         sendEvt = true
@@ -1270,7 +1270,7 @@ def changeHandler(evt) {
             logDebug("unknown webCoRE event $evt.value")
             break
         case "routineExecuted":
-            settings.routineList.each { id->
+            settings?.routineList?.each { id->
                 def rt = getRoutineById(id)
                 if(rt && rt.id) {
                     sendItems.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt.label}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
