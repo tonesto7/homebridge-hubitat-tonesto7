@@ -40,7 +40,7 @@ preferences {
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = true
+@Field static final Boolean devModeFLD    = false
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
@@ -75,7 +75,7 @@ def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
-        checkVersionData(true)
+        checkVersionData()
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
         return mainPage()
@@ -590,27 +590,23 @@ private void healthCheck() {
 
 Boolean checkIfCodeUpdated() {
     logDebug("Code versions: ${state.codeVersions}")
-    if(state.codeVersions) {
-        if(state.codeVersions?.mainApp != appVersionFLD) {
-            checkVersionData(true)
-            state.pollBlocked = true
-            updCodeVerMap("mainApp", appVersionFLD)
-            Map iData = state.installData ?: [:]
-            iData["updatedDt"] = getDtNow()
-            iData["shownChgLog"] = false
-            if(iData?.shownDonation == null) {
-                iData["shownDonation"] = false
-            }
-            state.installData = iData
-            logInfo("Code Version Change Detected... | Re-Initializing SmartApp in 5 seconds")
-            return true
-        }
+    if(state?.codeVersions?.mainApp != appVersionFLD) {
+        updCodeVerMap("mainApp", appVersionFLD)
+        Map iData = state.installData ?: [:]
+        iData["updatedDt"] = getDtNow()
+        iData["shownChgLog"] = false
+       if(iData?.shownDonation == null) {
+            iData["shownDonation"] = false
+       }
+       state.installData = iData
+       logInfo("Code Version Change Detected... | Re-Initializing SmartApp in 5 seconds")
+       return true
     }
     return false
 }
 
 private void stateCleanup() {
-    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode"]
+    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode", "pollBlocked"]
     if(state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
             directIP: state.directIP,
@@ -1491,7 +1487,7 @@ mappings {
 }
 
 def appInfoSect() {
-    Map codeVer = state.codeVersions
+//    Map codeVer = state.codeVersions
     Boolean isNote = false
     String tStr = """<small style="color: gray;"><b>Version:</b> v${appVersionFLD}</small>${state?.pluginDetails?.version ? """<br><small style="color: gray;"><b>Plugin:</b> v${state?.pluginDetails?.version}</small>""" : ""}"""
 /* """ */
