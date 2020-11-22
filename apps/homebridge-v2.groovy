@@ -35,12 +35,12 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.5"
-@Field static final String appModifiedFLD = "11-18-2020"
+@Field static final String appVersionFLD  = "2.1.6"
+@Field static final String appModifiedFLD = "11-20-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = true
+@Field static final Boolean devModeFLD    = false
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
@@ -243,6 +243,7 @@ def settingsPage() {
     return dynamicPage(name: "settingsPage", title: "", install: false, uninstall: false) {
         section(sectTS("Logging:", sNULL, true)) {
             input "showEventLogs", "bool", title: inputTS("Show Device/Location Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
+            input "showCmdLogs", "bool", title: inputTS("Show Command Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
             input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging?", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
         }
         section(sectTS("Security:", sNULL, true)) {
@@ -335,8 +336,9 @@ private void inputDupeValidation() {
 
 String getSetDesc() {
     List s = []
-    if((Boolean)settings.showEventLogs) s.push("\u2022 Device Event Logs")
-    if((Boolean)settings.showDebugLogs) s.push("\u2022 Debug Logging")
+    if((Boolean)settings.showEventLogs || (Boolean)settings.showEventLogs != false) s.push("${sBULLET} Device Event Logging")
+    if((Boolean)settings.showCmdLogs || (Boolean)settings.showCmdLogs != false) s.push("${sBULLET} Command Event Logging")
+    if((Boolean)settings.showDebugLogs) s.push("${sBULLET} Debug Logging")
     return s.size()>0 ? "${s.join("\n")}\n\nTap to modify..." : "Tap to configure..."
 }
 
@@ -349,12 +351,12 @@ def historyPage() {
         }
         section(sectTS("Last (${cHist.size()}) Commands Received From HomeKit:", sNULL, true)) {
             if(cHist.size()>0) {
-                cHist.each { c-> paragraph paraTS(" \u2022 <b>Device:</b> ${c?.data?.device}\n \u2022 <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n \u2022 <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n \u2022 <b>Value2:</b> (${c?.data?.value2})" : ""}\n \u2022 <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n \u2022 <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+                cHist.each { c-> paragraph paraTS(" ${sBULLET} <b>Device:</b> ${c?.data?.device}\n ${sBULLET} <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n ${sBULLET} <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n ${sBULLET} <b>Value2:</b> (${c?.data?.value2})" : ""}\n ${sBULLET} <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n ${sBULLET} <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
             } else { paragraph paraTS("No Command History Found...", sNULL, false) }
         }
         section(sectTS("Last (${eHist.size()}) Events Sent to HomeKit:", sNULL, true)) {
             if(eHist.size()>0) {
-                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" \u2022 <b>Device</b>: ${h?.data?.device}\n \u2022 <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n \u2022 <b>Value:</b> (${h?.data?.value})" : ""}\n \u2022 <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n \u2022 <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" ${sBULLET} <b>Device</b>: ${h?.data?.device}\n ${sBULLET} <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n ${sBULLET} <b>Value:</b> (${h?.data?.value})" : ""}\n ${sBULLET} <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n ${sBULLET} <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
             } else {paragraph paraTS("No Event History Found...", sNULL, false) }
         }
     }
@@ -857,7 +859,7 @@ def deviceCommand() {
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     def device = findDevice(devId)
-    logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    if(settings?.showCmdLogs) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     String command = cmd
     if((Boolean)settings.addSecurityDevice && devId == "alarmSystemStatus_${location?.id}") {
         setAlarmSystemMode(command)
@@ -887,13 +889,13 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
             try {
                 if (value2 != null) {
                     device?."$command"(value1,value2)
-                    logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1, $value2)]")
+                    if(settings?.showCmdLogs) logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1, $value2)]")
                 } else if (value1 != null) {
                     device?."$command"(value1)
-                    logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1)]")
+                    if(settings?.showCmdLogs) logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1)]")
                 } else {
                     device?."$command"()
-                    logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
+                    if(settings?.showCmdLogs) logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
                 }
                 Long pt = execDt ? (now()-execDt) : 0L
                 logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2, execTime: pt])
@@ -1421,13 +1423,13 @@ def appInfoSect() {
         if((Boolean)minUpdMap?.updRequired && ((List)minUpdMap.updItems).size()>0) {
             isNote=true
             String str3 = """<small style="color: red;"><b>Updates Required:</b></small>"""
-            ((List)minUpdMap.updItems).each { item-> str3 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
+            ((List)minUpdMap.updItems).each { item-> str3 += """<br><small style="color: red;">  ${sBULLET} ${item}</small>""" }
             str3 += """<br><br><small style="color: red; font-weight: bold;">If you just updated the code please press Done/Next to let the app process the changes.</small>"""
             paragraph str3
         } else if(codeUpdItems?.size()) {
             isNote=true
             String str2 = """<small style="color: red;"><b>Code Updates Available:</b></small>"""
-            codeUpdItems?.each { item-> str2 += """<br><small style="color: red;">  \u2022 ${item}</small>""" }
+            codeUpdItems?.each { item-> str2 += """<br><small style="color: red;">  ${sBULLET} ${item}</small>""" }
             paragraph str2
         }
         if(!isNote) { paragraph """<small style="color: gray;">No Issues to Report</small>""" }
@@ -1464,7 +1466,7 @@ def appFooter() {
 	}       
 }
 
-static String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} \u2022 ${strVal}".toString() }
+static String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} ${sBULLET} ${strVal}".toString() }
 
 static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == "" && !newLine) ? "" : "\n"} - ${strVal}".toString() }
 
@@ -1675,7 +1677,7 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String)getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
-    return txt?.toString()?.replaceAll("##", "\u2022")?.replaceAll("[\\**_]", ""); // Replaces ## then **_ and _** in changelog data
+    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", ""); // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
