@@ -67,9 +67,19 @@ preferences {
         "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB", "power", "energy",
         "batteryType", "deviceType", "driverVersionInternal", "outletSwitchable", "outputVoltageNominal", "deviceModel", "driverVersion", "status", "deviceModel", "deviceManufacturer",
         "deviceFirmware", "outletDescription", "driverName", "batteryRuntimeSecs", "outputFrequency", "outputFrequencyNominal", "driverVersionData", "deviceNominalPower", "load",
+// nest thermostat items
+        "canCool", "canHeat", "etaBegin", "hasAuto", "hasFan", "hasLeaf", "heatingSetpointMax", "heatingSetpointMin", "lockedTempMax", "lockedTempMine", "nestPresence", "nestThermostatMode", "nestOperatingState", "nestType", "pauseUpdates", "previousthermostatMode", "sunlightCorrectionActive", "sunlightCorrectionEnabled", "supportedNestThermostatModes", "tempLockOn", "temperatureUnit", "thermostatSetpointMax", "thermostatSetpointMin", "timeToTarget", "coolingSetpointMin", "coolingSetpointMax",
+// nest protect items
         "alarmState", "apiStatus", "batteryState", "isTesting", "lastConnection", "lastTested", "nestSmoke", "nestCarbonMonoxide", "onlineStatus",
         "powerSource", "powerSourceNest", "softwareVer", "uiColor",
-        "numberOfButtons", "released"
+// nest camera
+        "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
+// momentary buttons (until fixed)
+        "numberOfButtons", "released", "pushed", "held", "doubleTapped",
+// tankUtility
+        "lastreading",
+// intesisHome
+        "iFanSpeed", "ihvvane", "ivvane", "online", "currentConfigCode", "currentTempOffset", "currentemitterPower", "currentsurroundIR", "swingMode"
     ],
     capabilities: ["HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter"]
 ]
@@ -1207,8 +1217,8 @@ void registerChangeHandler(devices, Boolean showlog=false) {
                 }
                 attMapFLD.each { String k, String v -> if(att == k && isDeviceInInput("remove${v}".toString(), device.id)) { return } }
                 subscribe(device, att, "changeHandler")
-                if(showlog) { log.debug "Registering ${device.displayName} for ${att} events" }
-            }
+                if(showlog || devMode()) { log.debug "Registering ${device.displayName} for ${att} events" }
+            } else if(devMode()) log.debug "ignoring attribute $att for ${device.displayName}"
         }
     }
 }
@@ -1912,12 +1922,12 @@ Boolean getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
             lockTimesFLD[semaSNum] = timeL
             lockTimesFLD = lockTimesFLD
         }
-        if(devModeFLD) log.warn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}"
+        if(devMode()) log.warn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}"
         pauseExecution(waitT)
         wait = true
         if((now() - timeL) > 30000L) {
             releaseTheLock(qname)
-            if(devModeFLD) log.warn "overriding lock $meth"
+            if(devMode()) log.warn "overriding lock $meth"
         }
     }
     lockTimesFLD[semaSNum] = now()
