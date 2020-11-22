@@ -36,7 +36,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = "2.1.6"
-@Field static final String appModifiedFLD = "11-20-2020"
+@Field static final String appModifiedFLD = "11-22-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -81,18 +81,18 @@ preferences {
         "colorName", "locationForURL", "location", "offsetNotify", "lastActivity", "firmware", "groups", "lastEvent", "colorMode", "RGB", "power", "energy",
         "batteryType", "deviceType", "driverVersionInternal", "outletSwitchable", "outputVoltageNominal", "deviceModel", "driverVersion", "status", "deviceModel", "deviceManufacturer",
         "deviceFirmware", "outletDescription", "driverName", "batteryRuntimeSecs", "outputFrequency", "outputFrequencyNominal", "driverVersionData", "deviceNominalPower", "load",
-// nest thermostat items
+        // nest thermostat items
         "canCool", "canHeat", "etaBegin", "hasAuto", "hasFan", "hasLeaf", "heatingSetpointMax", "heatingSetpointMin", "lockedTempMax", "lockedTempMine", "nestPresence", "nestThermostatMode", "nestOperatingState", "nestType", "pauseUpdates", "previousthermostatMode", "sunlightCorrectionActive", "sunlightCorrectionEnabled", "supportedNestThermostatModes", "tempLockOn", "temperatureUnit", "thermostatSetpointMax", "thermostatSetpointMin", "timeToTarget", "coolingSetpointMin", "coolingSetpointMax",
-// nest protect items
+        // nest protect items
         "alarmState", "apiStatus", "batteryState", "isTesting", "lastConnection", "lastTested", "nestSmoke", "nestCarbonMonoxide", "onlineStatus",
         "powerSourceNest", "softwareVer", "uiColor",
-// nest camera
+        // nest camera
         "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
-// momentary buttons (until fixed)
-        "numberOfButtons", "released", "pushed", "held", "doubleTapped",
-// tankUtility
+        // momentary buttons (until fixed)
+        // "numberOfButtons", "released", "pushed", "held", "doubleTapped",
+        // tankUtility
         "lastreading",
-// intesisHome
+        // intesisHome
         "iFanSpeed", "ihvvane", "ivvane", "online", "currentConfigCode", "currentTempOffset", "currentemitterPower", "currentsurroundIR", "swingMode"
     ],
     capabilities: ["HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter"]
@@ -102,6 +102,7 @@ def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
+        subscribe(location, "webCoRE", changeHandler) // This is also defined under subscribeToEvts but it makes sure that the piston list will be populated.
         checkVersionData()
         checkWebCoREData()
         if(showChgLogOk()) { return changeLogPage() }
@@ -115,7 +116,7 @@ def mainPage() {
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : sBLNK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectTS("Device Configuration:", sNULL, true)) {
-            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList || pistonList)
+            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
             String desc = """<small style="color:gray;">Tap to select devices...</small>"""
             Integer devCnt = getDeviceCnt()
@@ -135,7 +136,6 @@ def mainPage() {
                 desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : sBLNK
                 desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : sBLNK
                 desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : ""}</b> (${pistonList.size()})</small><br>""" : sBLNK
-                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList.size() > 1 ? "s" : ""}</b> (${routineList.size()})</small><br>""" : sBLNK
                 desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : sBLNK
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
                 desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : sBLNK
@@ -148,7 +148,7 @@ def mainPage() {
 
         section(sectTS("Capability Filtering:", sNULL, true)) {
             Boolean conf = (
-                removeAcceleration || removeBattery || removeButton || removeContact || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
+                removeAcceleration || removeBattery || removeButton || removeContact || removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
                 removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve
             )
             href "capFilterPage", title: inputTS("Filter out capabilities from your devices", getAppImg("filter", true)), required: false, state: (conf ? "complete" : sNULL), description: (conf ? "Tap to modify..." : "Tap to configure")
@@ -234,7 +234,7 @@ def deviceSelectPage() {
             paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
             input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
             input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
-            input "buttonList", "capability.button", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "buttonList", "capability.pushableButton", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
             input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
         }
@@ -264,17 +264,11 @@ def deviceSelectPage() {
             input "modeList", "enum", title: inputTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true
         }
 
-        section(sectTS("Create Devices for Piston in HomeKit?", sNULL, true)) {
+        section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
             def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id):it?.name] }
             input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("routine",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
         }
-/*
-        section(sectTS("Create Devices for Routines in HomeKit?", sNULL, true)) {
-            paragraph title: "What are these?", "A virtual device will be created for each routine in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete", image: getAppImg("info")
-            def routines = location.helloHome?.getPhrases()?.sort { it?.label }?.collect { [(it?.id):it?.label] }
-            input "routineList", "enum", title: "Create Devices for these Routines", required: false, multiple: true, options: routines, submitOnChange: true, image: getAppImg("routine")
-        }*/
 
         inputDupeValidation()
     }
@@ -418,6 +412,8 @@ def capFilterPage() {
             input "removeBattery", "capability.battery", title: inputTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false
             input "removeButton", "capability.button", title: inputTS("Remove Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "removeContact", "capability.contactSensor", title: inputTS("Remove Contact from these Devices", getAppImg("contact", true)), multiple: true, submitOnChange: true, required: false
+            input "removeColorControl", "capability.colorControl", title: inputTS("Remove Color Control from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
+            input "removeColorTemp", "capability.colorTemperature", title: inputTS("Remove Color Temperature from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
             // input "removeEnergy", "capability.energyMeter", title: inputTS("Remove Energy Meter from these Devices", getAppImg("power", true)), multiple: true, submitOnChange: true, required: false
             input "removeHumidity", "capability.relativeHumidityMeasurement", title: inputTS("Remove Humidity from these Devices", getAppImg("humidity", true)), multiple: true, submitOnChange: true, required: false
             input "removeIlluminance", "capability.illuminanceMeasurement", title: inputTS("Remove Illuminance from these Devices", getAppImg("illuminance", true)), multiple: true, submitOnChange: true, required: false
@@ -543,7 +539,7 @@ private Integer getDeviceCnt(Boolean phyOnly=false) {
     List items = deviceSettingKeys().collect { (String)it.key }
     items?.each { String item -> if(settings[item]?.size() > 0) devices = devices + settings[item] }
     if(!phyOnly) {
-        ["modeList", "routineList", "pistonList"].each { String item->
+        ["modeList", "pistonList"].each { String item->
             if(settings[item]?.size() > 0) devices = devices + settings[item]
         }
     }
@@ -602,13 +598,8 @@ void subscribeToEvts() {
     if(settings.modeList) {
         logDebug("Registering (${settings.modeList.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
-//        if(state.lastMode == null) { state.lastMode = (String)location.getMode() }
     }
     state.subscriptionRenewed = 0
-    if(settings.routineList) {
-        logDebug("Registering (${settings.routineList.size() ?: 0}) Virtual Routine Devices")
-        subscribe(location, "routineExecuted", changeHandler)
-    }
     subscribe(location, "webCoRE", changeHandler)
 }
 
@@ -663,7 +654,7 @@ private List renderDevices() {
     Map devMap = [:]
     List devList = []
     List items = deviceSettingKeys().collect { (String)it.key }
-    items = items+["modeList", "routineList", "pistonList"]
+    items = items+["modeList", "pistonList"]
     items.each { String item ->
         if(settings[item]?.size()) {
             settings[item]?.each { dev->
@@ -701,16 +692,6 @@ private Map getDeviceData(String type, sItem) {
             obj = getPistonById(sItem)
             if(obj) {
                 name = "Piston - " + obj?.name
-                attrVal = "off"
-            }
-            break
-        case "routineList":
-            isVirtual = true
-            curType = "Routine"
-            optFlags["virtual_routine"] = 1
-            obj = getRoutineById(sItem)
-            if(obj) {
-                name = "Routine - " + obj?.label
                 attrVal = "off"
             }
             break
@@ -945,13 +926,6 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
         logCmd([cmd: command, device: "Piston Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Piston | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
 
-    } else if (command == "routine" && settings.routineList) {
-        if(shw)logDebug("Virtual Routine Received: ${devId}")
-        String aa=runRoutine(devId, shw)
-        Long pt = execDt ? (now()-execDt) : 0L
-        logCmd([cmd: command, device: "Routine Device", value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Routine | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
-
     } else {
         def device = findDevice(devId)
         String devN = device?.displayName
@@ -1015,19 +989,6 @@ void endPiston(evt){
     changeHandler([deviceId:evt.id , name: 'webCoRE', value: 'pistonExecuted', displayName: evt.name, date: new Date()])
 }
 
-private runRoutine(rtId, Boolean shw) {
-    if(rtId) {
-        def rt = findVirtRoutineDevice(rtId)
-        String nm=(String)rt?.label
-        if(nm) {
-            if(shw)logInfo("Executing the (${nm}) Routine...")
-            location?.helloHome?.execute(nm)
-            return nm
-        } else { logError("Unable to find a matching routine for the id: ${rtId}") }
-    }
-    return null
-}
-
 def deviceAttribute() {
     def device = findDevice(params?.id)
     String attribute = params?.attribute
@@ -1046,55 +1007,6 @@ def findVirtModeDevice(id) {
 def findVirtPistonDevice(id) {
     def aa = getPistonById(id)
     return aa ?: null
-}
-
-def findVirtRoutineDevice(id) {
-    def aa = getRoutineById(id)
-    return aa ?: null
-}
-
-/* THIS METHOD SEEMS BROKEN */
-def deviceQuery() {
-    log.trace "deviceQuery(${params?.id}"
-    Map jsonData = [:]
-    def device = findDevice(params?.id)
-    if (!device) {
-        def mode = findVirtModeDevice(params?.id)
-        def routine = findVirtRoutineDevice(params?.id)
-        def piston = findVirtPistonDevice(params?.id)
-        def obj = mode ?: piston ?: routine ?: null
-        if(!obj) {
-            device = null
-            return httpError(404, "Device not found")
-        } else {
-            String name = routine ? obj?.label : obj?.name
-            String (type = piston) ? "Piston" : (routine ? "Routine" : "Mode")
-            String attrVal = (routine || piston) ? "off" : modeSwitchState((String)obj?.name)
-            try {
-                jsonData = [
-                    name: name,
-                    deviceid: params?.id,
-                    capabilities: [("${type}".toString()) : 1],
-                    commands: [on:1],
-                    attributes: ["switch": attrVal]
-                ]
-            } catch (ex) {
-                logError("Error Occurred Parsing ${item} ${type} ${name}, Error: ${ex}")
-            }
-        }
-    }
-
-    if (device) {
-        jsonData = [
-            name: device.displayName,
-            deviceid: device.id,
-            capabilities: deviceCapabilityList(device),
-            commands: deviceCommandList(device),
-            attributes: deviceAttributeList(device)
-        ]
-    }
-    String resultJson = new groovy.json.JsonOutput().toJson(jsonData)
-    render contentType: sAPPJSON, data: resultJson
 }
 
 Map deviceCapabilityList(device) {
@@ -1141,10 +1053,11 @@ Map deviceCapabilityList(device) {
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
     Map remCaps = [
-       "Acceleration": "AccelerationSensor", "Battery": "Battery", "Button": "Button", "Contact": "ContactSensor", "Energy": "EnergyMeter", "Humidity": "RelativeHumidityMeasurement",
+       "Acceleration": "AccelerationSensor", "Battery": "Battery", "Button": "Button", "Color Control": "ColorControl", "Color Temperature": "ColorTemperature", "Contact": "ContactSensor", "Energy": "EnergyMeter", "Humidity": "RelativeHumidityMeasurement",
        "Illuminance": "IlluminanceMeasurement", "Level": "SwitchLevel", "Lock": "Lock", "Motion": "MotionSensor", "Power": "PowerMeter", "Presence": "PresenceSensor", "Switch": "Switch",
        "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve"
     ]
+
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith("remove") && it.value != null }.collect { (String)it.key }
     if(!remKeys) remKeys = []
     remKeys.each { String k->
@@ -1327,14 +1240,6 @@ def changeHandler(evt) {
             }
             logDebug("unknown webCoRE event $evt.value")
             break
-        case "routineExecuted":
-            settings?.routineList?.each { id->
-                def rt = getRoutineById(id)
-                if(rt && rt.id) {
-                    sendItems.push([evtSource: "ROUTINE", evtDeviceName: "Routine - ${rt.label}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
-                }
-            }
-            break
         default:
             def evtData = null
 //            if(attr == "button") { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
@@ -1342,8 +1247,8 @@ def changeHandler(evt) {
             break
     }
 
-    if (sendEvt && sendItems.size()>0) {
-        String server= getServerAddress()
+    if (sendEvt && sendItems.size() > 0) {
+        String server = getServerAddress()
         if(server == sCLN || server == sNLCLN ) { // can be configured ngrok??
 //            logError("sendHttpPost: no plugin server configured")
             return 
@@ -1461,16 +1366,6 @@ def getPistoneByName(String name) {
     return webCoREFLD?.pistons?.find{it?.name == name}
 }
 
-//not right for HE
-def getRoutineById(String rId) {
-    return location?.helloHome?.getPhrases()?.find{it?.id == rId}
-}
-
-//not right for HE
-def getRoutineByName(String name) {
-    return location?.helloHome?.getPhrases()?.find{it?.label == name}
-}
-
 /* will not work for HE....have to collect alerts as they happen
 def getShmIncidents() {
     //Thanks Adrian
@@ -1559,7 +1454,7 @@ mappings {
     path("/location")				{ action: [GET: "renderLocation"]   }
     path("/pluginStatus")			{ action: [POST: "pluginStatus"]    }
     path("/:id/command/:command")		{ action: [POST: "deviceCommand"]   }
-    path("/:id/query")				{ action: [GET: "deviceQuery"]      }
+    // path("/:id/query")				{ action: [GET: "deviceQuery"]      }
     path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  }
     path("/startDirect/:ip/:port/:version")	{ action: [POST: "enableDirectUpdates"] }
 }
