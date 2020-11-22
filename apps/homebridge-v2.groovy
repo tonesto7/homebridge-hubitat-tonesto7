@@ -40,12 +40,23 @@ preferences {
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = false
+@Field static final Boolean devModeFLD    = true
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
 @Field static final String sBLANK  = ''
 @Field static final String sBULLET = '\u2022'
+@Field static final String sSVR = 'svraddr'
+@Field static final String sBLK = ""
+@Field static final String sCLN = ':'
+@Field static final String sNLCLN = 'null:null'
+@Field static final String sEVT = 'evt'
+@Field static final String sDBG = 'debug'
+@Field static final String sTRU = 'true'
+@Field static final String sUPD = 'update'
+@Field static final String sEVTUPD = 'EventUpdate'
+@Field static final String sAPPJSON = 'application/json'
+@Field static final String sSUCC = 'Success'
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 
@@ -89,6 +100,7 @@ def startPage() {
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
         checkVersionData()
+        checkWebCoREData()
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
         return mainPage()
@@ -97,7 +109,7 @@ def startPage() {
 
 def mainPage() {
     Boolean isInst = (state.isInstalled == true)
-    return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : ""), install: !isInst, uninstall: true) {
+    return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : sBLK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectTS("Device Configuration:", sNULL, true)) {
             Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || routineList || pistonList)
@@ -105,25 +117,25 @@ def mainPage() {
             String desc = """<small style="color:gray;">Tap to select devices...</small>"""
             Integer devCnt = getDeviceCnt()
             if(conf) {
-                desc = ""
-                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : ""}</b> (${lightList.size()})</small><br>""" : ""
-                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : ""}</b> (${buttonList.size()})</small><br>""" : ""
-                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : ""}</b> (${fansize})</small><br>""" : ""
-                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : ""}</b> (${speakerList.size()})</small><br>""" : ""
-                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : ""}</b> (${shadesList.size()})</small><br>""" : ""
-                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : ""}</b> (${garageList.size()})</small><br>""" : ""
-                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : ""}</b> (${tstatList.size()})</small><br>""" : ""
-                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList.size()})</small><br>""" : ""
-                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : ""}</b> (${tstatHeatList.size()})</small><br>""" : ""
-                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : ""}</b> (${sensorList.size()})</small><br>""" : ""
-                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : ""}</b> (${switchList.size()})</small><br>""" : ""
-                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : ""
-                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : ""
-                desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : ""}</b> (${pistonList.size()})</small><br>""" : ""
-                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList.size() > 1 ? "s" : ""}</b> (${routineList.size()})</small><br>""" : ""
-                desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : ""
+                desc = sBLK
+                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : ""}</b> (${lightList.size()})</small><br>""" : sBLK
+                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : ""}</b> (${buttonList.size()})</small><br>""" : sBLK
+                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : ""}</b> (${fansize})</small><br>""" : sBLK
+                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : ""}</b> (${speakerList.size()})</small><br>""" : sBLK
+                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : ""}</b> (${shadesList.size()})</small><br>""" : sBLK
+                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : ""}</b> (${garageList.size()})</small><br>""" : sBLK
+                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : ""}</b> (${tstatList.size()})</small><br>""" : sBLK
+                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList.size()})</small><br>""" : sBLK
+                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : ""}</b> (${tstatHeatList.size()})</small><br>""" : sBLK
+                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : ""}</b> (${sensorList.size()})</small><br>""" : sBLK
+                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : ""}</b> (${switchList.size()})</small><br>""" : sBLK
+                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : sBLK
+                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : sBLK
+                desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : ""}</b> (${pistonList.size()})</small><br>""" : sBLK
+                desc += routineList ? """<small style="color:#2784D9;"><b>Routine${routineList.size() > 1 ? "s" : ""}</b> (${routineList.size()})</small><br>""" : sBLK
+                desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : sBLK
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
-                desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : ""
+                desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : sBLK
                 desc += """<br><small style="color:#2784D9;">Tap to modify...</small>"""
             }
             href "deviceSelectPage", title: inputTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : sNULL), description: desc
@@ -173,7 +185,7 @@ def mainPage() {
 }
 
 def pluginConfigPage() {
-    return dynamicPage(name: "pluginConfigPage", title: "", install: false, uninstall: false) {
+    return dynamicPage(name: "pluginConfigPage", title: sBLK, install: false, uninstall: false) {
         section(sectTS("Plugin Communication Options:", sNULL, true)) {
             input "use_cloud_endpoint", "bool", title: inputTS("Communicate with Plugin Using Cloud Endpoint?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
             input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
@@ -213,7 +225,7 @@ static def deviceValidationErrors() {
 }
 
 def deviceSelectPage() {
-    return dynamicPage(name: "deviceSelectPage", title: "", install: false, uninstall: false) {
+    return dynamicPage(name: "deviceSelectPage", title: sBLK, install: false, uninstall: false) {
         section(sectTS("Define Specific Categories:", sNULL, true)) {
             paragraph paraTS("NOTE: Please do not select a device here and then again in another input below.")
             paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
@@ -266,7 +278,7 @@ def deviceSelectPage() {
 }
 
 def settingsPage() {
-    return dynamicPage(name: "settingsPage", title: "", install: false, uninstall: false) {
+    return dynamicPage(name: "settingsPage", title: sBLK, install: false, uninstall: false) {
         section(sectTS("Logging:", sNULL, true)) {
             input "showEventLogs", "bool", title: inputTS("Show Device/Location Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
             input "showCmdLogs", "bool", title: inputTS("Show Command Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
@@ -334,7 +346,7 @@ private void inputDupeValidation() {
             }
         }
     }
-    String out = ""
+    String out = sBLK
     Boolean show = false
     Boolean first = true
     if(clnUp.d.size()>0) {
@@ -369,7 +381,7 @@ String getSetDesc() {
 }
 
 def historyPage() {
-    return dynamicPage(name: "historyPage", title: "", install: false, uninstall: false) {
+    return dynamicPage(name: "historyPage", title: sBLK, install: false, uninstall: false) {
         List<Map> cHist = getCmdHistory()?.sort {(Long)it.gt}?.reverse()
         List<Map> eHist = getEvtHistory()?.sort {(Long)it.gt}?.reverse()
         section() {
@@ -423,9 +435,9 @@ def capFilterPage() {
 }
 
 def donationPage() {
-    return dynamicPage(name: "donationPage", title: "", nextPage: "mainPage", install: false, uninstall: false) {
+    return dynamicPage(name: "donationPage", title: sBLK, nextPage: "mainPage", install: false, uninstall: false) {
         section("") {
-            def str = ""
+            def str = sBLK
             str += "Hello User, \n\nPlease forgive the interuption but it's been 30 days since you installed/updated this SmartApp and I wanted to present you with this one time reminder that donations are accepted (We do not require them)."
             str += "\n\nIf you have been enjoying the software and devices please remember that we have spent thousand's of hours of our spare time working on features and stability for those applications and devices."
             str += "\n\nIf you have already donated, thank you very much for your support!"
@@ -441,16 +453,16 @@ def donationPage() {
 }
 
 def confirmPage() {
-    return dynamicPage(name: "confirmPage", title: "", install: true, uninstall:true) {
+    return dynamicPage(name: "confirmPage", title: sBLK, install: true, uninstall:true) {
         section(sectH3TS("Confirmation Page", "A plugin restart is no longer required to apply device changes in this app to HomeKit.<br><br>Once you press <b>Done</b> the Homebridge plugin will refresh your device changes after 15-20 seconds.", getAppImg("info", true), "black")) { }
         appFooter()
     }
 }
 
 def deviceDebugPage() {
-    return dynamicPage(name: "deviceDebugPage", title: "", install: false, uninstall: false) {
+    return dynamicPage(name: "deviceDebugPage", title: sBLK, install: false, uninstall: false) {
         section(sectTS("View All Device Data Sent to HomeBridge:", sNULL, true)) {
-            href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inputTS("View Device Data Sent to Homebridge...", getAppImg("info", true)), description: "", disabled: true
+            href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inputTS("View Device Data Sent to Homebridge...", getAppImg("info", true)), description: sBLK, disabled: true
         }
 
         section(sectTS("View Individual Device Data:", sNULL, true)) {
@@ -466,7 +478,7 @@ def deviceDebugPage() {
             if(!debug_sensor && !debug_other && !debug_switch && !debug_garage)
                 input "debug_tstat", "capability.thermostat", title: inputTS("Thermostats: ", getAppImg("thermostat", true)), multiple: false, submitOnChange: true, required: false
             if(debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
-                href url: getAppEndpointUrl("deviceDebug"), style: "embedded", required: false, title: inputTS("Tap here to view Device Data...", getAppImg("info", true)), description: "", state: "complete"
+                href url: getAppEndpointUrl("deviceDebug"), style: "embedded", required: false, title: inputTS("Tap here to view Device Data...", getAppImg("info", true)), description: sBLK, state: "complete"
             }
         }
     }
@@ -489,7 +501,7 @@ def viewDeviceDebug() {
     if(debug_tstat)  sDev = debug_tstat
     String json = new groovy.json.JsonOutput().toJson(getDeviceDebugMap(sDev))
     String jsonStr = new groovy.json.JsonOutput().prettyPrint(json)
-    render contentType: "application/json", data: jsonStr
+    render contentType: sAPPJSON, data: jsonStr
 }
 
 private Map getDeviceDebugMap(dev) {
@@ -550,10 +562,12 @@ def updated() {
     stateCleanup()
     initialize()
     sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
+    updTsVal("lastwebCoREUpdDt")
 }
 
 def initialize() {
     state.isInstalled = true
+    remTsVal(sSVR)
     if(getAccessToken()) {
         subscribeToEvts()
         runEvery5Minutes("healthCheck")
@@ -596,6 +610,8 @@ void subscribeToEvts() {
 
 private void healthCheck() {
     checkVersionData()
+    checkWebCoREData()
+    remTsVal(sSVR)
     if(checkIfCodeUpdated()) {
         logWarn("Code Version Change Detected... Health Check will occur on next cycle.")
     }
@@ -616,6 +632,14 @@ Boolean checkIfCodeUpdated() {
        return true
     }
     return false
+}
+
+private void checkWebCoREData(Boolean now = false) {
+    Integer lastUpd = getLastTsValSecs("lastwebCoREUpdDt")
+    if ((lastUpd > (3600*24)) || (now && lastUpd > 300)) {
+        sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
+        updTsVal("lastwebCoREUpdDt")
+    }
 }
 
 private void stateCleanup() {
@@ -868,16 +892,16 @@ Map renderLocation() {
     ]
 }
 
-def CommandReply(String statusOut, String messageOut, Integer code) {
+def CommandReply(Boolean shw, String statusOut, String messageOut, Integer code) {
     String replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
-    logInfo(messageOut)
-    render contentType: "application/json", data: replyJson, code: code
+    if(shw)logInfo(messageOut)
+    render contentType: sAPPJSON, data: replyJson, code: code
 }
 
 static Map getHttpHeaders(String headers) {
     Map obj = [:]
     new String(headers.decodeBase64()).split("\r\n")?.each {param ->
-        List nameAndValue = param.split(":")
+        List nameAndValue = param.split(sCLN)
         obj[(String)nameAndValue[0]] = (nameAndValue.length == 1) ? "" : nameAndValue[1].trim()
     }
     return obj
@@ -892,78 +916,87 @@ def deviceCommand() {
 
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
-    if(settings?.showCmdLogs) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    Boolean shw = (Boolean)settings.showCmdLogs
+    if(shw) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     String command = cmd
+
     if((Boolean)settings.addSecurityDevice && devId == "alarmSystemStatus_${location?.id}") {
         setAlarmSystemMode(command)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
-        return CommandReply("Success", "Security Alarm, Command $command", 200)
+        return CommandReply(shw, sSUCC, "Security Alarm, Command $command", 200)
+
     }  else if (settings.modeList && command == "mode" && devId) {
-        logDebug("Virtual Mode Received: ${devId}")
-        changeMode(devId)
+        if(shw)logDebug("Virtual Mode Received: ${devId}")
+        changeMode(devId, shw)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2, execTime: pt])
-        return CommandReply("Success", "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
+
     } else if (settings.pistonList && command == "piston" && devId) {
-        logDebug("Virtual Piston Received: ${devId}")
-        String aa=runPiston(devId)
+        if(shw)logDebug("Virtual Piston Received: ${devId}")
+        String aa=runPiston(devId, shw)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Piston Device", value1: value1, value2: value2, execTime: pt])
-        return CommandReply("Success", "Piston | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Piston | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
+
     } else if (settings.routineList && command == "routine" && devId) {
-        logDebug("Virtual Routine Received: ${devId}")
-        String aa=runRoutine(devId)
+        if(shw)logDebug("Virtual Routine Received: ${devId}")
+        String aa=runRoutine(devId, shw)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Routine Device", value1: value1, value2: value2, execTime: pt])
-        return CommandReply("Success", "Routine | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Routine | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
+
     } else {
         def device = findDevice(devId)
+        String devN = device?.displayName
         if (!device) {
-            logError("Device Not Found")
-            return CommandReply("Failure", "Device Not Found", 500)
+            logError("Device Not Found $devId")
+            return CommandReply(shw, "Failure", "Device Not Found", 500)
         } else if (!device?.hasCommand(command)) {
-            logError("Device ${device.displayName} does not have the command $command")
-            return CommandReply("Failure", "Device ${device.displayName} does not have the command $command", 500)
+            logError("Device ${devN} does not have the command $command")
+            return CommandReply(shw, "Failure", "Device ${devN} does not have the command $command", 500)
         } else {
+
             try {
+                String cmdS= shw ? "Command Successful for Device ${devN} | Command [${command}(" : sBLK
                 if (value2 != null) {
                     device?."$command"(value1,value2)
-                    if(settings?.showCmdLogs) logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1, $value2)]")
+                    if(shw) logInfo(cmdS +"$value1, $value2)]")
                 } else if (value1 != null) {
                     device?."$command"(value1)
-                    if(settings?.showCmdLogs) logInfo("Command Successful for Device ${device.displayName} | Command [${command}($value1)]")
+                    if(shw) logInfo(cmdS+"$value1)]")
                 } else {
                     device?."$command"()
-                    if(settings?.showCmdLogs) logInfo("Command Successful for Device ${device.displayName} | Command [${command}()]")
+                    if(shw) logInfo(cmdS+")]")
                 }
                 Long pt = execDt ? (now()-execDt) : 0L
-                logCmd([cmd: command, device: device?.displayName, value1: value1, value2: value2, execTime: pt])
-                return CommandReply("Success", " | ${device?.displayName} | Command [${command}()] | Process Time: (${pt}ms)", 200)
+                logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
+                return CommandReply(shw, sSUCC, " | ${devN} | Command [${command}()] | Process Time: (${pt}ms)", 200)
             } catch (e) {
-                logError("Error Occurred for Device ${device.displayName} | Command [${command}()]")
-                return CommandReply("Failure", "Error Occurred For Device ${device.displayName} | Command [${command}()]", 500)
+                logError("Error Occurred for Device ${devN} | Command [${command}()]")
+                return CommandReply(shw, "Failure", "Error Occurred For Device ${devN} | Command [${command}()]", 500)
             }
         }
     }
 }
 
-private void changeMode(modeId) {
+private void changeMode(modeId, Boolean shw) {
     if(modeId) {
         def mode = findVirtModeDevice(modeId)
         if(mode) {
-            logInfo("Setting the Location Mode to (${mode})...")
+            if(shw)logInfo("Setting the Location Mode to (${mode})...")
             setLocationMode(mode as String)
 //            state.lastMode = mode as String
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
 
-private runPiston(rtId) {
+private runPiston(rtId, Boolean shw) {
     if(rtId) {
         def rt = findVirtPistonDevice(rtId)
         if(rt?.name) {
-            logInfo("Executing the (${rt.name}) Piston...")
+            if(shw)logInfo("Executing the (${rt.name}) Piston...")
             sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: "Execute Piston from homebridge", descriptionText: "Homebridge piston execute ${rt.name}", data: [:])
             runIn(2, "endPiston", [data: [id:rtId, name:rt.name]])
             return rt.name
@@ -976,11 +1009,11 @@ void endPiston(evt){
     changeHandler([deviceId:evt.id , name: 'webCoRE', value: 'pistonExecuted', displayName: evt.name, date: new Date()])
 }
 
-private runRoutine(rtId) {
+private runRoutine(rtId, Boolean shw) {
     if(rtId) {
         def rt = findVirtRoutineDevice(rtId)
         if(rt?.label) {
-            logInfo("Executing the (${rt.label}) Routine...")
+            if(shw)logInfo("Executing the (${rt.label}) Routine...")
             location?.helloHome?.execute(rt.label)
             return rt.label
         } else { logError("Unable to find a matching routine for the id: ${rtId}") }
@@ -1054,7 +1087,7 @@ def deviceQuery() {
         ]
     }
     String resultJson = new groovy.json.JsonOutput().toJson(jsonData)
-    render contentType: "application/json", data: resultJson
+    render contentType: sAPPJSON, data: resultJson
 }
 
 Map deviceCapabilityList(device) {
@@ -1110,7 +1143,7 @@ Map deviceCapabilityList(device) {
     remKeys.each { String k->
         String capName = k.replaceAll("remove", "")
         String theCap= (String)remCaps[capName]
-        if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if(showDebugLogs) { logDebug("Filtering ${capName}") } }
+        if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if((Boolean)settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
     return capItems?.sort { (String)it.key }
 }
@@ -1141,7 +1174,7 @@ def getAllData() {
     state.devchanges = []
     String deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
     updTsVal("lastDeviceDataQueryDt")
-    render contentType: "application/json", data: deviceJson
+    render contentType: sAPPJSON, data: deviceJson
 }
 
 static Map deviceSettingKeys() {
@@ -1198,9 +1231,9 @@ Boolean isDeviceInInput(String setKey, devId) {
 }
 
 @Field static final Map<String, String> attMapFLD = [
-                    "acceleration": "Acceleration", "battery": "Battery", "button": "Button", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
-                    "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "switch": "Switch", "tamper": "Tamper",
-                    "temperature": "Temp", "valve": "Valve" ]
+            "acceleration": "Acceleration", "battery": "Battery", "button": "Button", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
+            "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "switch": "Switch", "tamper": "Tamper",
+            "temperature": "Temp", "valve": "Valve" ]
 
 void registerChangeHandler(devices, Boolean showlog=false) {
     devices?.each { device ->
@@ -1234,6 +1267,7 @@ def changeHandler(evt) {
     def value = evt?.value
     Date dt = (Date)evt.date
     Boolean sendEvt = true
+    Boolean evtLg = (getTsVal(sEVT) == sTRU) //if((Boolean)settings.showEventLogs) 
 
     switch((String)evt.name) {
         case "hsmStatus":
@@ -1267,8 +1301,11 @@ def changeHandler(evt) {
             sendEvt = false
             if((String)evt.value == 'pistonList'){
                 def data=evt.jsonData ?: null
-                if(data!=null) webCoREFLD = data
-                logDebug("got webCoRE piston list event $data")
+                if(data!=null){
+                    webCoREFLD = data
+                    updTsVal("lastwebCoREUpdDt")
+                }
+                if(evtLg) logDebug("got webCoRE piston list event $data")
                 break
             } else if((String)evt.value == 'pistonExecuted'){
                 settings?.pistonList?.each { id->
@@ -1298,14 +1335,16 @@ def changeHandler(evt) {
     }
 
     if (sendEvt && sendItems.size()>0) {
-        if (!state?.pluginDetails?.directIP) { // can be configured ngrok??
+        String server= getServerAddress()
+        if(server == sCLN || server == sNLCLN ) { // can be configured ngrok??
 //            logError("sendHttpPost: no plugin server configured")
             return 
         }
+
         //Send Using the Direct Mechanism
         sendItems.each { Map send->
-            if((Boolean)settings.showEventLogs) {
-                String unitStr = ""
+            if(evtLg) { //if((Boolean)settings.showEventLogs) {
+                String unitStr = sBLK
                 switch((String)send.evtAttr) {
                     case "temperature":
                         unitStr = "\u00b0${send?.evtUnit}"
@@ -1325,9 +1364,9 @@ def changeHandler(evt) {
                         unitStr = "${send?.evtUnit}"
                         break
                 }
-                logInfo("Sending${" ${send?.evtSource}" ?: ""} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : ""} to Homebridge at (${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort})")
+                logInfo("Sending${" ${send?.evtSource}" ?: ""} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : ""} to Homebridge at (${server})")
             }
-            sendHttpPost("update", [
+            sendHttpPost(sUPD, [
                 change_name: send.evtDeviceName,
                 change_device: send.evtDeviceId,
                 change_attribute: send.evtAttr,
@@ -1336,7 +1375,7 @@ def changeHandler(evt) {
                 change_date: send.evtDate,
                 app_id: app?.getId(),
                 access_token: state.accessToken
-            ], "EventUpdate")
+            ], sEVTUPD)
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: now()-execDt])
         }
     }
@@ -1353,13 +1392,13 @@ private sendHttpGet(path, contentType) {
     } else { sendHubCommand(new hubitat.device.HubAction(method: "GET", path: "/${path}", headers: [HOST: getServerAddress()])) }
 }
 */
-void sendHttpPost(String path, Map body, String src="", String contentType = "application/json") {
+void sendHttpPost(String path, Map body, String src=sBLK, String contentType = sAPPJSON) {
     String server= getServerAddress()
-    if(!((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
-        if(server == ":" || server == "null:null" ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
+    if(!devMode() || !((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
+        if(server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
     }
     Map params = [
-        uri: ((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${getServerAddress()}/${path}".toString(),
+        uri: (devMode() && (Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${server}/${path}".toString(),
         requestContentType: contentType,
         contentType: contentType,
         body: body,
@@ -1376,14 +1415,25 @@ void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
 }
 
 def asyncHttpCmdResp(response, data) {
-    logDebug("asyncHttpCmdResp | Src: ${data?.src ?: "Unknown"} | Resp: ${response?.getData()} | Status: ${response?.getStatus()} | Data: ${data}")
-    def resp = response?.getData() || null
-    if(resp) {
-        logDebug("${data?.src != "" ? data?.src : "${method}"} Command Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
+    Boolean debug= (getTsVal(sDBG) == sTRU)
+    if(debug){
+        def resp = response?.getData() // || null
+        String src=data?.src ? (String)data.src : "Unknown"
+        logDebug("asyncHttpCmdResp | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+        if(resp) logDebug("Command Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
     }
 }
 
-String getServerAddress() { return "${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort}".toString() }
+String getServerAddress() {
+    String sv=getTsVal(sSVR)
+    if(sv==sNULL) {
+        sv="${state?.pluginDetails?.directIP}:${state?.pluginDetails?.directPort}".toString()
+        updTsVal(sSVR, sv)
+        updTsVal(sDBG, ((Boolean)settings.showDebugLogs).toString())
+        updTsVal(sEVT, ((Boolean)settings.showEventLogs).toString())
+    }
+    return sv
+}
 
 def getModeById(String mId) {
     return location?.getModes()?.find{it?.id?.toString() == mId}
@@ -1476,7 +1526,7 @@ def pluginStatus() {
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if(body?.version) { updCodeVerMap("plugin", (String)body?.version)}
     def resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
-    render contentType: "application/json", data: resultJson
+    render contentType: sAPPJSON, data: resultJson
 }
 
 def enableDirectUpdates() {
@@ -1486,11 +1536,12 @@ def enableDirectUpdates() {
         directPort: params?.port,
         version: params?.version ?: null
     ]
+    remTsVal(sSVR)
     updCodeVerMap("plugin", (String)params?.version ?: sNULL)
     activateDirectUpdates()
     updTsVal("lastDirectUpdsEnabled")
     String resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
-    render contentType: "application/json", data: resultJson
+    render contentType: sAPPJSON, data: resultJson
 }
 
 mappings {
@@ -1693,7 +1744,7 @@ private void checkVersionData(Boolean now = false) { //This reads a JSON file fr
 void getConfigData() {
     Map params = [
         uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/appData.json",
-        contentType: "application/json",
+        contentType: sAPPJSON,
         timeout: 20
     ]
     Map data = (Map)getWebData(params, "appData", false)
@@ -1806,8 +1857,8 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
     releaseTheLock(sHMLF)
 }
 
-private void logDebug(msg)  { if(showDebugLogs) myLog('debug', msg.toString()) }
-private void logTrace(msg)  { if(showDebugLogs) myLog('trace', msg.toString()) }
+private void logDebug(msg)  { if((Boolean)settings.showDebugLogs) myLog(sDBG, msg.toString()) }
+private void logTrace(msg)  { if((Boolean)settings.showDebugLogs) myLog('trace', msg.toString()) }
 private void logInfo(msg)   { myLog('info', msg.toString()) }
 private void logWarn(msg)   { myLog('warn', msg.toString()) }
 private void logError(msg)  { myLog('error', msg.toString()) }
