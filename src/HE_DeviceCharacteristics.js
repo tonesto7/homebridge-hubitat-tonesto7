@@ -667,6 +667,32 @@ module.exports = class DeviceCharacteristics {
         return _accessory;
     }
 
+    virtual_piston(_accessory, _service) {
+        let c = _accessory.getOrAddService(_service).getCharacteristic(Characteristic.On);
+        if (!c._events.get || !c._events.set) {
+            if (!c._events.get)
+                c.on("get", (callback) => {
+                    callback(null, false);
+                });
+            if (!c._events.set)
+                c.on("set", (value, callback) => {
+                    if (value) {
+                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "piston");
+                        setTimeout(() => {
+                            // console.log("pistonOff...");
+                            _accessory.context.deviceData.attributes.switch = "off";
+                            c.updateValue(false);
+                        }, 1000);
+                    }
+                });
+            this.accessories.storeCharacteristicItem("switch", _accessory.context.deviceData.deviceid, c);
+        } else {
+            c.updateValue(this.transforms.transformAttributeState("switch", _accessory.context.deviceData.attributes.switch));
+        }
+        _accessory.context.deviceGroups.push("virtual_piston");
+        return _accessory;
+    }
+
     virtual_routine(_accessory, _service) {
         let c = _accessory.getOrAddService(_service).getCharacteristic(Characteristic.On);
         if (!c._events.get || !c._events.set) {

@@ -52,6 +52,7 @@ module.exports = {
         "Mode",
         // "Motion Sensor",
         "MotionSensor",
+        "Piston",
         "Polling",
         // "Power Meter",
         "PowerMeter",

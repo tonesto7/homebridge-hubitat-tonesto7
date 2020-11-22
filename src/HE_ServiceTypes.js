@@ -40,6 +40,7 @@ module.exports = class ServiceTypes {
             thermostat_fan: Service.Fanv2,
             valve: Service.Valve,
             virtual_mode: Service.Switch,
+            virtual_piston: Service.Switch,
             virtual_routine: Service.Switch,
             water_sensor: Service.LeakSensor,
             window_shade: Service.WindowCovering,
@@ -107,7 +108,7 @@ const serviceTests = [
             accessory.hasCommand("setFanSpeed") ||
             accessory.hasCommand("lowSpeed") ||
             accessory.hasAttribute("fanSpeed") ||
-            accessory.hasCapability("custom.airPurifierOperationMode")
+            accessory.hasCapability("custom.airPurifierOperation")
         ),
         true,
     ),
@@ -125,6 +126,7 @@ const serviceTests = [
     new ServiceTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
     new ServiceTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("Fan Light") || accessory.hasCapability("Fan Speed") || accessory.hasCapability("Fan Control") || accessory.hasCommand("setFanSpeed") || accessory.hasCommand("lowSpeed") || accessory.hasAttribute("fanSpeed"), true),
     new ServiceTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
+    new ServiceTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
     new ServiceTest("virtual_routine", (accessory) => accessory.hasCapability("Routine")),
     new ServiceTest("button", (accessory) => accessory.hasCapability("Button")),
     new ServiceTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Fan Light") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light")), true),
