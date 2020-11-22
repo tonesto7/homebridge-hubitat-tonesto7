@@ -165,7 +165,7 @@ def mainPage() {
         section(sectTS("History Data and Device Debug:", sNULL, true)) {
             href "historyPage", title: inputTS("View Command and Event History", getAppImg("backup", true)), description: "Tap to view...", state: "complete"
             href "deviceDebugPage", title: inputTS("View Device Debug Data", getAppImg("debug", true)), description: "Tap to view...", state: "complete"
-	}
+        }
 
         section(sectTS("App Preferences:", sNULL, true)) {
             def sDesc = getSetDesc()
@@ -789,8 +789,8 @@ Map getDeviceFlags(device) {
 def findDevice(dev_id) {
     List allDevs = []
     deviceSettingKeys().collect { (String)it.key }?.each { String key->
-	def setVal= settings?."${key}"
-	allDevs = allDevs + (setVal ?: [])
+        def setVal= settings?."${key}"
+        allDevs = allDevs + (setVal ?: [])
     }
     def aa=  allDevs.find { it.id == dev_id }
     return aa ?: null
@@ -922,29 +922,30 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
     if(shw) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    if(!devId) return
     String command = cmd
 
-    if((Boolean)settings.addSecurityDevice && devId == "alarmSystemStatus_${location?.id}") {
+    if(devId == "alarmSystemStatus_${location?.id}" && (Boolean)settings.addSecurityDevice) {
         setAlarmSystemMode(command)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command $command", 200)
 
-    }  else if (settings.modeList && command == "mode" && devId) {
+    }  else if (command == "mode" &&  settings.modeList) {
         if(shw)logDebug("Virtual Mode Received: ${devId}")
         changeMode(devId, shw)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Mode Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
 
-    } else if (settings.pistonList && command == "piston" && devId) {
+    } else if (command == "piston" && settings.pistonList) {
         if(shw)logDebug("Virtual Piston Received: ${devId}")
         String aa=runPiston(devId, shw)
         Long pt = execDt ? (now()-execDt) : 0L
         logCmd([cmd: command, device: "Piston Device", value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Piston | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
 
-    } else if (settings.routineList && command == "routine" && devId) {
+    } else if (command == "routine" && settings.routineList) {
         if(shw)logDebug("Virtual Routine Received: ${devId}")
         String aa=runRoutine(devId, shw)
         Long pt = execDt ? (now()-execDt) : 0L
@@ -957,30 +958,31 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
         if (!device) {
             logError("Device Not Found $devId")
             return CommandReply(shw, "Failure", "Device Not Found", 500)
-        } else if (!device?.hasCommand(command)) {
+        }
+        if (!device?.hasCommand(command)) {
             logError("Device ${devN} does not have the command $command")
             return CommandReply(shw, "Failure", "Device ${devN} does not have the command $command", 500)
-        } else {
+        }
 
-            try {
-                String cmdS= shw ? "Command Successful for Device ${devN} | Command [${command}(" : sBLK
-                if (value2 != null) {
-                    device?."$command"(value1,value2)
-                    if(shw) logInfo(cmdS +"$value1, $value2)]")
-                } else if (value1 != null) {
-                    device?."$command"(value1)
-                    if(shw) logInfo(cmdS+"$value1)]")
-                } else {
-                    device?."$command"()
-                    if(shw) logInfo(cmdS+")]")
-                }
-                Long pt = execDt ? (now()-execDt) : 0L
-                logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
-                return CommandReply(shw, sSUCC, " | ${devN} | Command [${command}()] | Process Time: (${pt}ms)", 200)
-            } catch (e) {
-                logError("Error Occurred for Device ${devN} | Command [${command}()]")
-                return CommandReply(shw, "Failure", "Error Occurred For Device ${devN} | Command [${command}()]", 500)
+        String cmdS= shw ? "Command Successful for Device ${devN} | Command [${command}(".toString() : sBLK
+        try {
+            if (value2 != null) {
+                device."$command"(value1,value2)
+                if(shw)cmdS=cmdS +"$value1, $value2)]".toString()
+            } else if (value1 != null) {
+                device."$command"(value1)
+                if(shw)cmdS=cmdS+"$value1)]".toString()
+            } else {
+                device."$command"()
+                if(shw)cmdS=cmdS+')]'
             }
+            if(shw) logInfo(cmdS)
+            Long pt = execDt ? (now()-execDt) : 0L
+            logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
+            return CommandReply(shw, sSUCC, " | ${devN} | Command [${command}()] | Process Time: (${pt}ms)", 200)
+        } catch (e) {
+            logError("Error Occurred for Device ${devN} | Command [${command}()] ${e}")
+            return CommandReply(shw, "Failure", "Error Occurred For Device ${devN} | Command [${command}()]", 500)
         }
     }
 }
@@ -991,7 +993,6 @@ private void changeMode(modeId, Boolean shw) {
         if(mode) {
             if(shw)logInfo("Setting the Location Mode to (${mode})...")
             setLocationMode(mode as String)
-//            state.lastMode = mode as String
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
@@ -999,11 +1000,12 @@ private void changeMode(modeId, Boolean shw) {
 private runPiston(rtId, Boolean shw) {
     if(rtId) {
         def rt = findVirtPistonDevice(rtId)
-        if(rt?.name) {
-            if(shw)logInfo("Executing the (${rt.name}) Piston...")
-            sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: "Execute Piston from homebridge", descriptionText: "Homebridge piston execute ${rt.name}", data: [:])
-            runIn(2, "endPiston", [data: [id:rtId, name:rt.name]])
-            return rt.name
+        String nm=(String)rt?.name
+        if(nm) {
+            if(shw)logInfo("Executing the (${nm}) Piston...")
+            sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: "Execute Piston from homebridge", descriptionText: "Homebridge piston execute ${nm}", data: [:])
+            runIn(2, "endPiston", [data: [id:rtId, name:nm]])
+            return nm
         } else { logError("Unable to find a matching piston for the id: ${rtId}") }
     }
     return null
@@ -1016,10 +1018,11 @@ void endPiston(evt){
 private runRoutine(rtId, Boolean shw) {
     if(rtId) {
         def rt = findVirtRoutineDevice(rtId)
-        if(rt?.label) {
-            if(shw)logInfo("Executing the (${rt.label}) Routine...")
-            location?.helloHome?.execute(rt.label)
-            return rt.label
+        String nm=(String)rt?.label
+        if(nm) {
+            if(shw)logInfo("Executing the (${nm}) Routine...")
+            location?.helloHome?.execute(nm)
+            return nm
         } else { logError("Unable to find a matching routine for the id: ${rtId}") }
     }
     return null
@@ -1218,7 +1221,7 @@ void registerDevices3() {
     logDebug("Registered (${getDeviceCnt(true)} Devices)")
     logDebug("-----------------------------------------------")
 
-    if(settings?.restartService == true) {
+    if((Boolean)settings.restartService) {
         logWarn("Sent Request to Homebridge Service to Stop... Service should restart automatically")
         attemptServiceRestart()
         settingUpdate("restartService", "false", "bool")
@@ -1549,15 +1552,15 @@ def enableDirectUpdates() {
 }
 
 mappings {
-    path("/devices")					{ action: [GET: "getAllData"]       }
-    path("/alldevices")                 { action: [GET: "renderDevices"]    }
-    path("/deviceDebug")			    { action: [GET: "viewDeviceDebug"]  }
-    path("/location")					{ action: [GET: "renderLocation"]   }
-    path("/pluginStatus")			    { action: [POST: "pluginStatus"]    }
+    path("/devices")				{ action: [GET: "getAllData"]       }
+    path("/alldevices")				{ action: [GET: "renderDevices"]    }
+    path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  }
+    path("/location")				{ action: [GET: "renderLocation"]   }
+    path("/pluginStatus")			{ action: [POST: "pluginStatus"]    }
     path("/:id/command/:command")		{ action: [POST: "deviceCommand"]   }
-    path("/:id/query")					{ action: [GET: "deviceQuery"]      }
-    path("/:id/attribute/:attribute")	{ action: [GET: "deviceAttribute"]  }
-    path("/startDirect/:ip/:port/:version")		{ action: [POST: "enableDirectUpdates"] }
+    path("/:id/query")				{ action: [GET: "deviceQuery"]      }
+    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  }
+    path("/startDirect/:ip/:port/:version")	{ action: [POST: "enableDirectUpdates"] }
 }
 
 def appInfoSect() {
@@ -1608,10 +1611,10 @@ static String inputTS(String t, String i = sNULL, String color=sNULL, Boolean un
 static String htmlLine(String color="#1A77C9") { return "<hr style='background-color:${color}; height: 1px; border: 0;'>".toString() }
 
 def appFooter() {
-	section() {
-		paragraph htmlLine("orange")
-		paragraph """<div style='color:orange;text-align:center'>Homebridge Hubitat<br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target="_blank"><img width="120" height="120" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png"></a><br><br>Please consider donating if you find this integration useful.</div>"""
-	}       
+    section() {
+        paragraph htmlLine("orange")
+        paragraph """<div style='color:orange;text-align:center'>Homebridge Hubitat<br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target="_blank"><img width="120" height="120" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png"></a><br><br>Please consider donating if you find this integration useful.</div>"""
+    }       
 }
 
 static String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} ${sBULLET} ${strVal}".toString() }
@@ -1851,7 +1854,7 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
     Map<String,List> memStore = historyMapFLD[appId] ?: [:]
     List eData = (List)memStore[logKey] ?: []
     if(eData.find { it?.data == data }) {
-    	releaseTheLock(sHMLF)
+        releaseTheLock(sHMLF)
         return
     }
     eData.push([dt: getDtNow(), gt: now(), data: data])
@@ -1949,15 +1952,15 @@ private Integer getSemaNum(String name) {
 	// if(name.isNumber()) return name.toInteger()%stripes
 	// Integer hash=smear(name.hashCode())
 	// return Math.abs(hash)%stripes
-    // log.info "sema $name # $sema"
+	// log.info "sema $name # $sema"
 }
 
 java.util.concurrent.Semaphore getSema(Integer snum) {
-	switch(snum) {
-		case 0: return histMapLockFLD
-		default: log.error "bad hash result $snum"
-			return null
-	}
+    switch(snum) {
+        case 0: return histMapLockFLD
+        default: log.error "bad hash result $snum"
+            return null
+    }
 }
 
 @Field volatile static Map<String,Long> lockTimesFLD = [:]
