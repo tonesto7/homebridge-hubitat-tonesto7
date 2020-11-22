@@ -57,6 +57,9 @@ preferences {
 @Field static final String sEVTUPD = 'EventUpdate'
 @Field static final String sAPPJSON = 'application/json'
 @Field static final String sSUCC = 'Success'
+@Field static final String sATK = 'acsT'
+@Field static final String sPOST = 'Post'
+@Field static final String sASYNCCR = 'asyncHttpCmdResp'
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 
@@ -301,6 +304,7 @@ private void resetAppToken() {
     if(getAccessToken()) {
         logInfo("resetAppToken | New Access Token Created...")
     }
+    remTsVal(sSVR)
 }
 
 private void resetCapFilters() {
@@ -561,8 +565,7 @@ def updated() {
     unsubscribe()
     stateCleanup()
     initialize()
-    sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
-    updTsVal("lastwebCoREUpdDt")
+    checkWebCoREData(true)
 }
 
 def initialize() {
@@ -578,6 +581,7 @@ Boolean getAccessToken() {
     try {
         if(!state.accessToken) {
             state.accessToken = createAccessToken()
+            remTsVal(sSVR)
             logWarn("SmartApp Access Token Missing... Generating New Token!!!")
             return true
         }
@@ -1374,7 +1378,7 @@ def changeHandler(evt) {
                 change_data: send.evtData,
                 change_date: send.evtDate,
                 app_id: app?.getId(),
-                access_token: state.accessToken
+                access_token: getTsVal(sATK)
             ], sEVTUPD)
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: now()-execDt])
         }
@@ -1404,13 +1408,12 @@ void sendHttpPost(String path, Map body, String src=sBLK, String contentType = s
         body: body,
         timeout: 20
     ]
-    execAsyncHttpCmd("POST", params, [execDt: now(), src: src])
+    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src])
 }
 
 void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
     if(method && params) {
-        String m = method?.toString()?.toLowerCase()
-        "asynchttp${m?.capitalize()}"("asyncHttpCmdResp", params, otherData)
+        "asynchttp${method}"(sASYNCCR, params, otherData)
     } else { logError("execAsyncHttpCmd Error | Missing a required parameter") }
 }
 
@@ -1419,7 +1422,7 @@ def asyncHttpCmdResp(response, data) {
     if(debug){
         def resp = response?.getData() // || null
         String src=data?.src ? (String)data.src : "Unknown"
-        logDebug("asyncHttpCmdResp | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+        logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
         if(resp) logDebug("Command Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
     }
 }
@@ -1431,6 +1434,7 @@ String getServerAddress() {
         updTsVal(sSVR, sv)
         updTsVal(sDBG, ((Boolean)settings.showDebugLogs).toString())
         updTsVal(sEVT, ((Boolean)settings.showEventLogs).toString())
+        updTsVal(sATK, (String)state.accessToken)
     }
     return sv
 }
