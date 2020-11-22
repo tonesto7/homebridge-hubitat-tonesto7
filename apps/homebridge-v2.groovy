@@ -267,7 +267,7 @@ def deviceSelectPage() {
         section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
             def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id):it?.name] }
-            input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("routine",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
+            input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("webcore",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
         }
 
         inputDupeValidation()
