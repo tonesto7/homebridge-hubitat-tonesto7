@@ -3,7 +3,7 @@
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
  *  Copyright 2018, 2019, 2020 Anthony Santilli
- *  Contributions by @nh.schotfam
+ *  Contributions by @nh.schottfam
  */
 
 import groovy.transform.Field
