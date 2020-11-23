@@ -3,7 +3,7 @@
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
  *  Copyright 2018, 2019, 2020 Anthony Santilli
- *  Contributions by @nh.schotfam
+ *  Contributions by @nh.schottfam
  */
 
 import groovy.transform.Field
@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.6"
-@Field static final String appModifiedFLD = "11-22-2020"
+@Field static final String appVersionFLD  = "2.1.7"
+@Field static final String appModifiedFLD = "11-23-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -45,10 +45,9 @@ preferences {
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
-@Field static final String sBLANK  = ''
 @Field static final String sBULLET = '\u2022'
 @Field static final String sSVR = 'svraddr'
-@Field static final String sBLNK = ""
+@Field static final String sBLNK = ''
 @Field static final String sCLN = ':'
 @Field static final String sNLCLN = 'null:null'
 @Field static final String sEVT = 'evt'
@@ -103,9 +102,7 @@ def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
-        subscribe(location, "webCoRE", changeHandler) // This is also defined under subscribeToEvts but it makes sure that the piston list will be populated.
-        checkVersionData()
-        checkWebCoREData()
+	healthCheck(true)
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
         return mainPage()
@@ -267,7 +264,7 @@ def deviceSelectPage() {
 
         section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
-            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id):it?.name] }
+            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", "")] }
             input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("webcore",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
         }
 
@@ -562,7 +559,8 @@ def updated() {
     unsubscribe()
     stateCleanup()
     initialize()
-    checkWebCoREData(true)
+    remTsVal("lastwebCoREUpdDt")
+    runIn(2, "checkWebCoREData")
 }
 
 def initialize() {
@@ -574,7 +572,7 @@ def initialize() {
     } else { logError("initialize error: Unable to get or generate smartapp access token") }
 }
 
-Boolean getAccessToken() {
+Boolean getAccessToken(Boolean disableRetry=false) {
     try {
         if(!state.accessToken) {
             state.accessToken = createAccessToken()
@@ -584,14 +582,33 @@ Boolean getAccessToken() {
         }
         return true
     } catch (ex) {
-        String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under the SmartApp App Settings in the IDE"
-        logError("getAccessToken Exception: ${msg}")
-        return false
+        if(!disableRetry){
+            enableOauth() // can fail depending on security settings
+            return getAccessToken(true)
+        } else {
+            String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under in the HE console 'Apps Code'"
+            logError("getAccessToken Exception: ${msg}")
+            return false
+        }
     }
 }
 
+private void enableOauth(){
+        Map params=[
+                uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
+                headers: ['Content-Type':'text/html;charset=utf-8']
+        ]
+        try{
+                httpPost(params){ resp ->
+                        //LogTrace("response data: ${resp.data}")
+                }
+        } catch (e){
+                logError("enableOauth something went wrong: $e")
+        }
+}
+
 void subscribeToEvts() {
-    runIn(4, "registerDevices")
+    runIn(6, "registerDevices")
     logInfo("Starting Device Subscription Process")
     if((Boolean)settings.addSecurityDevice) {
         subscribe(location, "hsmStatus", changeHandler)
@@ -600,21 +617,23 @@ void subscribeToEvts() {
         logDebug("Registering (${settings.modeList.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
     }
-    state.subscriptionRenewed = 0
+//    state.subscriptionRenewed = 0
     subscribe(location, "webCoRE", changeHandler)
 }
 
-private void healthCheck() {
+private void healthCheck(Boolean ui=false) {
     checkVersionData()
-    checkWebCoREData()
-    remTsVal(sSVR)
-    if(checkIfCodeUpdated()) {
+    if(checkIfCodeUpdated(ui)) {
         logWarn("Code Version Change Detected... Health Check will occur on next cycle.")
+        updated()
+        return
     }
+    checkWebCoREData()
+    if(!ui)remTsVal(sSVR)
 }
 
-Boolean checkIfCodeUpdated() {
-    logDebug("Code versions: ${state.codeVersions}")
+Boolean checkIfCodeUpdated(Boolean ui=false) {
+    if(!ui) logDebug("Code versions: ${state.codeVersions}")
     if(state?.codeVersions?.mainApp != appVersionFLD) {
         updCodeVerMap("mainApp", appVersionFLD)
         Map iData = state.installData ?: [:]
@@ -639,7 +658,7 @@ private void checkWebCoREData(Boolean now = false) {
 }
 
 private void stateCleanup() {
-    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode", "pollBlocked"]
+    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode", "pollBlocked", "devchanges", "subscriptionRenewed"]
     if(state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
             directIP: state.directIP,
@@ -664,8 +683,7 @@ private List renderDevices() {
                     devObj = devObj!=null ? devObj : [:]
                     if(devObj.size()>0) { devMap[dev] = devObj }
                 } catch (ex) {
-                    // log.error "Device (${dev?.displayName}) Render Exception: ${ex}"
-                    logError("Device (${dev?.displayName}) Render Exception: ${ex.message}")
+                    logError("Setting key $item Device (${dev?.displayName}) Render Exception: ${ex.message}")
                 }
             }
         }
@@ -903,7 +921,7 @@ def deviceCommand() {
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
-    if(shw) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    if(shw) logInfo("Plugin called Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     if(!devId) return
     String command = cmd
 
@@ -974,7 +992,7 @@ private void changeMode(modeId, Boolean shw) {
 
 private runPiston(rtId, Boolean shw) {
     if(rtId) {
-        def rt = findVirtPistonDevice(rtId)
+        Map rt = findVirtPistonDevice(rtId)
         String nm=(String)rt?.name
         if(nm) {
             if(shw)logInfo("Executing the (${nm}) Piston...")
@@ -1005,8 +1023,8 @@ def findVirtModeDevice(id) {
     return aa ?: null
 }
 
-def findVirtPistonDevice(id) {
-    def aa = getPistonById(id)
+Map findVirtPistonDevice(id) {
+    Map aa = getPistonById(id)
     return aa ?: null
 }
 
@@ -1091,8 +1109,8 @@ Map deviceAttributeList(device) {
 }
 
 def getAllData() {
-    state.subscriptionRenewed = now()
-    state.devchanges = []
+    logTrace("Plugin called to Renew subscriptions")
+//    state.subscriptionRenewed = now()
     String deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
     updTsVal("lastDeviceDataQueryDt")
     render contentType: sAPPJSON, data: deviceJson
@@ -1136,7 +1154,7 @@ void registerDevices3() {
     logDebug("-----------------------------------------------")
 
     if((Boolean)settings.restartService) {
-        logWarn("Sent Request to Homebridge Service to Stop... Service should restart automatically")
+        logWarn("Sent Request to Homebridge Service to restart...")
         attemptServiceRestart()
         settingUpdate("restartService", "false", "bool")
     }
@@ -1231,7 +1249,7 @@ def changeHandler(evt) {
                 break
             } else if((String)evt.value == 'pistonExecuted'){
                 settings?.pistonList?.each { id->
-                    def rt = getPistonById(id)
+                    Map rt = getPistonById(id)
                     if(rt && rt.id) {
                         sendEvt = true
                         sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
@@ -1251,7 +1269,6 @@ def changeHandler(evt) {
     if (sendEvt && sendItems.size() > 0) {
         String server = getServerAddress()
         if(server == sCLN || server == sNLCLN ) { // can be configured ngrok??
-//            logError("sendHttpPost: no plugin server configured")
             return 
         }
 
@@ -1289,7 +1306,7 @@ def changeHandler(evt) {
                 change_date     : send.evtDate,
                 app_id          : app?.getId(),
                 access_token    : getTsVal(sATK)
-            ], sEVTUPD)
+            ], sEVTUPD, evtLog)
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: now()-execDt])
         }
     }
@@ -1306,7 +1323,7 @@ private sendHttpGet(path, contentType) {
     } else { sendHubCommand(new hubitat.device.HubAction(method: "GET", path: "/${path}", headers: [HOST: getServerAddress()])) }
 }
 */
-void sendHttpPost(String path, Map body, String src=sBLNK, String contentType = sAPPJSON) {
+void sendHttpPost(String path, Map body, String src=sBLNK, Boolean evtLog, String contentType = sAPPJSON) {
     String server= getServerAddress()
     if(!devMode() || !((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
         if(server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
@@ -1318,7 +1335,7 @@ void sendHttpPost(String path, Map body, String src=sBLNK, String contentType = 
         body: body,
         timeout: 20
     ]
-    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src])
+    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src, evtLog: evtLog])
 }
 
 void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
@@ -1332,8 +1349,10 @@ def asyncHttpCmdResp(response, data) {
     if(debug){
         def resp = response?.getData() // || null
         String src=data?.src ? (String)data.src : "Unknown"
-        logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
-        if(resp) logDebug("Command Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
+        if((Boolean)data.evtLog){
+            logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+            if(resp) logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
+        }
     }
 }
 
@@ -1359,11 +1378,11 @@ def getModeByName(String name) {
 
 @Field volatile static Map<String,Map> webCoREFLD = [:]
 
-def getPistonById(String rId) {
+Map getPistonById(String rId) {
     return webCoREFLD?.pistons?.find{it?.id == rId}
 }
 
-def getPistoneByName(String name) {
+Map getPistonByName(String name) {
     return webCoREFLD?.pistons?.find{it?.name == name}
 }
 
@@ -1395,7 +1414,7 @@ void activateDirectUpdates(Boolean isLocal=false) {
     sendHttpPost("initial", [
         app_id: app.getId(),
         access_token: state.accessToken
-    ], "activateDirectUpdates")
+    ], "activateDirectUpdates", (Boolean)settings.showDebugLogs)
 }
 
 void attemptServiceRestart(Boolean isLocal=false) {
@@ -1403,7 +1422,7 @@ void attemptServiceRestart(Boolean isLocal=false) {
     sendHttpPost("restart", [
         app_id: app.getId(),
         access_token: state.accessToken
-    ], "attemptServiceRestart")
+    ], "attemptServiceRestart", (Boolean)settings.showDebugLogs)
 }
 
 void sendDeviceRefreshCmd(Boolean isLocal=false) {
@@ -1411,7 +1430,7 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
     sendHttpPost("refreshDevices", [
         app_id: app.getId(),
         access_token: state.accessToken
-    ], "sendDeviceRefreshCmd")
+    ], "sendDeviceRefreshCmd", (Boolean)settings.showDebugLogs)
 }
 
 void updateServicePrefs(Boolean isLocal=false) {
@@ -1422,11 +1441,12 @@ void updateServicePrefs(Boolean isLocal=false) {
         use_cloud: (Boolean)settings.use_cloud_endpoint,
         validateTokenId: (Boolean)settings.validate_token,
         local_hub_ip: location?.hubs[0]?.localIP
-    ], "updateServicePrefs")
+    ], "updateServicePrefs", (Boolean)settings.showDebugLogs)
 }
 
 def pluginStatus() {
-    def body = request?.JSON;
+    logTrace("Plugin called Status")
+    def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if(body?.version) { updCodeVerMap("plugin", (String)body?.version)}
     def resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
@@ -1434,6 +1454,7 @@ def pluginStatus() {
 }
 
 def enableDirectUpdates() {
+    logTrace("Plugin called enable direct updates")
     // log.trace "enableDirectUpdates: ($params)"
     state.pluginDetails = [
         directIP: params?.ip,
@@ -1450,13 +1471,13 @@ def enableDirectUpdates() {
 
 mappings {
     path("/devices")				{ action: [GET: "getAllData"]       }
-    path("/alldevices")				{ action: [GET: "renderDevices"]    }
-    path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  }
-    path("/location")				{ action: [GET: "renderLocation"]   }
+    path("/alldevices")				{ action: [GET: "renderDevices"]    } // debug
+    path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  } // debug
+    path("/location")				{ action: [GET: "renderLocation"]   } // debug
     path("/pluginStatus")			{ action: [POST: "pluginStatus"]    }
     path("/:id/command/:command")		{ action: [POST: "deviceCommand"]   }
     // path("/:id/query")				{ action: [GET: "deviceQuery"]      }
-    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  }
+    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  } // debug
     path("/startDirect/:ip/:port/:version")	{ action: [POST: "enableDirectUpdates"] }
 }
 
@@ -1615,7 +1636,7 @@ private void updCodeVerMap(String key, String val) {
     if (cv.containsKey(key) && val == sNULL) { cv.remove(key) }
     state.codeVersions = cv
 }
-
+/*
 private void cleanUpdVerMap() {
     Map<String, String> cv = state.codeVersions
     if(cv == null) cv = [:]
@@ -1623,7 +1644,7 @@ private void cleanUpdVerMap() {
     cv.each { String k, String v-> if(v == null) ri.push(k) }
     ri.each { cv.remove(it) }
     state.codeVersions = cv
-}
+}*/
 
 private void updInstData(String key, val) {
     Map iData = state.installData ?: [:]
@@ -1663,16 +1684,17 @@ private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
             if(resp?.data) {
-                if(text) { return resp?.data?.text.toString() }
-                return resp?.data
+                if(text) { return resp.data.text?.toString() }
+                return resp.data
             }
         }
     } catch (ex) {
         if(ex instanceof groovyx.net.http.HttpResponseException) {
             logWarn("${desc} file not found")
         } else { logError("getWebData(params: $params, desc: $desc, text: $text) Exception: ${ex}") }
-        return "${label} info not found"
     }
+    if(text) return "${desc} info not found"
+    return null
 }
 
 /******************************************
@@ -1725,7 +1747,7 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String)getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
-    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", ""); // Replaces ## then **_ and _** in changelog data
+    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", "") // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
