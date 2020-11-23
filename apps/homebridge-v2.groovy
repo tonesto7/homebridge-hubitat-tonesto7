@@ -36,7 +36,7 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.6"
+@Field static final String appVersionFLD  = "2.1.7"
 @Field static final String appModifiedFLD = "11-22-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
@@ -45,10 +45,9 @@ preferences {
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final List   lNULL   = (List) null
-@Field static final String sBLANK  = ''
 @Field static final String sBULLET = '\u2022'
 @Field static final String sSVR = 'svraddr'
-@Field static final String sBLNK = ""
+@Field static final String sBLNK = ''
 @Field static final String sCLN = ':'
 @Field static final String sNLCLN = 'null:null'
 @Field static final String sEVT = 'evt'
@@ -103,9 +102,7 @@ def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
-        subscribe(location, "webCoRE", changeHandler) // This is also defined under subscribeToEvts but it makes sure that the piston list will be populated.
-        checkVersionData()
-        checkWebCoREData()
+        healthCheck(true)
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
         return mainPage()
@@ -562,7 +559,8 @@ def updated() {
     unsubscribe()
     stateCleanup()
     initialize()
-    checkWebCoREData(true)
+    remTsVal("lastwebCoREUpdDt")
+    runIn(2, "checkWebCoREData")
 }
 
 def initialize() {
@@ -574,7 +572,7 @@ def initialize() {
     } else { logError("initialize error: Unable to get or generate smartapp access token") }
 }
 
-Boolean getAccessToken() {
+Boolean getAccessToken(Boolean disableRetry=false) {
     try {
         if(!state.accessToken) {
             state.accessToken = createAccessToken()
@@ -584,14 +582,33 @@ Boolean getAccessToken() {
         }
         return true
     } catch (ex) {
-        String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under the SmartApp App Settings in the IDE"
-        logError("getAccessToken Exception: ${msg}")
-        return false
+        if(!disableRetry){
+            enableOauth() // can fail depending on security settings
+            return getAccessToken(true)
+        } else {
+            String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under in the HE console 'Apps Code'"
+            logError("getAccessToken Exception: ${msg}")
+            return false
+        }
     }
 }
 
+private void enableOauth(){
+        Map params=[
+                uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
+                headers: ['Content-Type':'text/html;charset=utf-8']
+        ]
+        try{
+                httpPost(params){ resp ->
+                        //LogTrace("response data: ${resp.data}")
+                }
+        } catch (e){
+                logError("enableOauth something went wrong: $e")
+        }
+}
+
 void subscribeToEvts() {
-    runIn(4, "registerDevices")
+    runIn(6, "registerDevices")
     logInfo("Starting Device Subscription Process")
     if((Boolean)settings.addSecurityDevice) {
         subscribe(location, "hsmStatus", changeHandler)
@@ -604,17 +621,19 @@ void subscribeToEvts() {
     subscribe(location, "webCoRE", changeHandler)
 }
 
-private void healthCheck() {
+private void healthCheck(Boolean ui=false) {
     checkVersionData()
-    checkWebCoREData()
-    remTsVal(sSVR)
-    if(checkIfCodeUpdated()) {
+    if(checkIfCodeUpdated(ui)) {
         logWarn("Code Version Change Detected... Health Check will occur on next cycle.")
+        updated()
+        return
     }
+    checkWebCoREData()
+    if(!ui)remTsVal(sSVR)
 }
 
-Boolean checkIfCodeUpdated() {
-    logDebug("Code versions: ${state.codeVersions}")
+Boolean checkIfCodeUpdated(Boolean ui=false) {
+    if(!ui) logDebug("Code versions: ${state.codeVersions}")
     if(state?.codeVersions?.mainApp != appVersionFLD) {
         updCodeVerMap("mainApp", appVersionFLD)
         Map iData = state.installData ?: [:]
@@ -974,7 +993,7 @@ private void changeMode(modeId, Boolean shw) {
 
 private runPiston(rtId, Boolean shw) {
     if(rtId) {
-        def rt = findVirtPistonDevice(rtId)
+        Map rt = findVirtPistonDevice(rtId)
         String nm=(String)rt?.name
         if(nm) {
             if(shw)logInfo("Executing the (${nm}) Piston...")
@@ -1005,8 +1024,8 @@ def findVirtModeDevice(id) {
     return aa ?: null
 }
 
-def findVirtPistonDevice(id) {
-    def aa = getPistonById(id)
+Map findVirtPistonDevice(id) {
+    Map aa = getPistonById(id)
     return aa ?: null
 }
 
@@ -1231,7 +1250,7 @@ def changeHandler(evt) {
                 break
             } else if((String)evt.value == 'pistonExecuted'){
                 settings?.pistonList?.each { id->
-                    def rt = getPistonById(id)
+                    Map rt = getPistonById(id)
                     if(rt && rt.id) {
                         sendEvt = true
                         sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
@@ -1359,11 +1378,11 @@ def getModeByName(String name) {
 
 @Field volatile static Map<String,Map> webCoREFLD = [:]
 
-def getPistonById(String rId) {
+Map getPistonById(String rId) {
     return webCoREFLD?.pistons?.find{it?.id == rId}
 }
 
-def getPistoneByName(String name) {
+Map getPistonByName(String name) {
     return webCoREFLD?.pistons?.find{it?.name == name}
 }
 
@@ -1426,7 +1445,7 @@ void updateServicePrefs(Boolean isLocal=false) {
 }
 
 def pluginStatus() {
-    def body = request?.JSON;
+    def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if(body?.version) { updCodeVerMap("plugin", (String)body?.version)}
     def resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
@@ -1663,8 +1682,8 @@ private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
             if(resp?.data) {
-                if(text) { return resp?.data?.text.toString() }
-                return resp?.data
+                if(text) { return resp.data.text?.toString() }
+                return resp.data
             }
         }
     } catch (ex) {
@@ -1725,7 +1744,7 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String)getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
-    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", ""); // Replaces ## then **_ and _** in changelog data
+    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", "") // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
