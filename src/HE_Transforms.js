@@ -149,9 +149,9 @@ module.exports = class Transforms {
             case "hue":
                 return Math.round(val * 3.6);
             case "colorTemperature":
-                return this.colorTempFromK(val);
+                return parseInt(this.colorTempFromK(val));
             case "temperature":
-                return this.tempConversion(val);
+                return parseFloat(this.tempConversion(val));
             case "heatingSetpoint":
             case "coolingSetpoint":
             case "thermostatSetpoint":
