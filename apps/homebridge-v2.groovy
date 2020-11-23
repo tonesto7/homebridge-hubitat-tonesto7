@@ -37,7 +37,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = "2.1.7"
-@Field static final String appModifiedFLD = "11-22-2020"
+@Field static final String appModifiedFLD = "11-23-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -264,7 +264,7 @@ def deviceSelectPage() {
 
         section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
-            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id):it?.name] }
+            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", "")] }
             input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("webcore",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
         }
 
@@ -1154,7 +1154,7 @@ void registerDevices3() {
     logDebug("-----------------------------------------------")
 
     if((Boolean)settings.restartService) {
-        logWarn("Sent Request to Homebridge Service to Stop... Service should restart automatically")
+        logWarn("Sent Request to Homebridge Service to restart...")
         attemptServiceRestart()
         settingUpdate("restartService", "false", "bool")
     }
@@ -1269,7 +1269,6 @@ def changeHandler(evt) {
     if (sendEvt && sendItems.size() > 0) {
         String server = getServerAddress()
         if(server == sCLN || server == sNLCLN ) { // can be configured ngrok??
-//            logError("sendHttpPost: no plugin server configured")
             return 
         }
 
@@ -1307,7 +1306,7 @@ def changeHandler(evt) {
                 change_date     : send.evtDate,
                 app_id          : app?.getId(),
                 access_token    : getTsVal(sATK)
-            ], sEVTUPD)
+            ], sEVTUPD, evtLog)
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: now()-execDt])
         }
     }
@@ -1324,7 +1323,7 @@ private sendHttpGet(path, contentType) {
     } else { sendHubCommand(new hubitat.device.HubAction(method: "GET", path: "/${path}", headers: [HOST: getServerAddress()])) }
 }
 */
-void sendHttpPost(String path, Map body, String src=sBLNK, String contentType = sAPPJSON) {
+void sendHttpPost(String path, Map body, String src=sBLNK, Boolean evtLog, String contentType = sAPPJSON) {
     String server= getServerAddress()
     if(!devMode() || !((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
         if(server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
@@ -1336,7 +1335,7 @@ void sendHttpPost(String path, Map body, String src=sBLNK, String contentType = 
         body: body,
         timeout: 20
     ]
-    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src])
+    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src, evtLog: evtLog])
 }
 
 void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
@@ -1350,8 +1349,10 @@ def asyncHttpCmdResp(response, data) {
     if(debug){
         def resp = response?.getData() // || null
         String src=data?.src ? (String)data.src : "Unknown"
-        logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
-        if(resp) logDebug("Command Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
+        if((Boolean)data.evtLog){
+            logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+            if(resp) logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
+        }
     }
 }
 
@@ -1413,7 +1414,7 @@ void activateDirectUpdates(Boolean isLocal=false) {
     sendHttpPost("initial", [
         app_id: app.getId(),
         access_token: state.accessToken
-    ], "activateDirectUpdates")
+    ], "activateDirectUpdates", (Boolean)settings.showDebugLogs)
 }
 
 void attemptServiceRestart(Boolean isLocal=false) {
@@ -1421,7 +1422,7 @@ void attemptServiceRestart(Boolean isLocal=false) {
     sendHttpPost("restart", [
         app_id: app.getId(),
         access_token: state.accessToken
-    ], "attemptServiceRestart")
+    ], "attemptServiceRestart", (Boolean)settings.showDebugLogs)
 }
 
 void sendDeviceRefreshCmd(Boolean isLocal=false) {
@@ -1429,7 +1430,7 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
     sendHttpPost("refreshDevices", [
         app_id: app.getId(),
         access_token: state.accessToken
-    ], "sendDeviceRefreshCmd")
+    ], "sendDeviceRefreshCmd", (Boolean)settings.showDebugLogs)
 }
 
 void updateServicePrefs(Boolean isLocal=false) {
@@ -1440,7 +1441,7 @@ void updateServicePrefs(Boolean isLocal=false) {
         use_cloud: (Boolean)settings.use_cloud_endpoint,
         validateTokenId: (Boolean)settings.validate_token,
         local_hub_ip: location?.hubs[0]?.localIP
-    ], "updateServicePrefs")
+    ], "updateServicePrefs", (Boolean)settings.showDebugLogs)
 }
 
 def pluginStatus() {
@@ -1470,7 +1471,7 @@ def enableDirectUpdates() {
 
 mappings {
     path("/devices")				{ action: [GET: "getAllData"]       }
-    path("/alldevices")				{ action: [GET: "renderDevices"]    } // debug?
+    path("/alldevices")				{ action: [GET: "renderDevices"]    } // debug
     path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  } // debug
     path("/location")				{ action: [GET: "renderLocation"]   } // debug
     path("/pluginStatus")			{ action: [POST: "pluginStatus"]    }
@@ -1635,7 +1636,7 @@ private void updCodeVerMap(String key, String val) {
     if (cv.containsKey(key) && val == sNULL) { cv.remove(key) }
     state.codeVersions = cv
 }
-
+/*
 private void cleanUpdVerMap() {
     Map<String, String> cv = state.codeVersions
     if(cv == null) cv = [:]
@@ -1643,7 +1644,7 @@ private void cleanUpdVerMap() {
     cv.each { String k, String v-> if(v == null) ri.push(k) }
     ri.each { cv.remove(it) }
     state.codeVersions = cv
-}
+}*/
 
 private void updInstData(String key, val) {
     Map iData = state.installData ?: [:]
@@ -1691,8 +1692,9 @@ private getWebData(Map params, String desc, Boolean text=true) {
         if(ex instanceof groovyx.net.http.HttpResponseException) {
             logWarn("${desc} file not found")
         } else { logError("getWebData(params: $params, desc: $desc, text: $text) Exception: ${ex}") }
-        return "${label} info not found"
     }
+    if(text) return "${desc} info not found"
+    return null
 }
 
 /******************************************
