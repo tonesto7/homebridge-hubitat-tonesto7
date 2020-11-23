@@ -102,7 +102,7 @@ def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
-        healthCheck(true)
+	healthCheck(true)
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
         return mainPage()
@@ -617,7 +617,7 @@ void subscribeToEvts() {
         logDebug("Registering (${settings.modeList.size() ?: 0}) Virtual Mode Devices")
         subscribe(location, "mode", changeHandler)
     }
-    state.subscriptionRenewed = 0
+//    state.subscriptionRenewed = 0
     subscribe(location, "webCoRE", changeHandler)
 }
 
@@ -658,7 +658,7 @@ private void checkWebCoREData(Boolean now = false) {
 }
 
 private void stateCleanup() {
-    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode", "pollBlocked"]
+    List<String> removeItems = ["hubPlatform", "cmdHistory", "evtHistory", "tsDtMap", "lastMode", "pollBlocked", "devchanges", "subscriptionRenewed"]
     if(state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
             directIP: state.directIP,
@@ -683,8 +683,7 @@ private List renderDevices() {
                     devObj = devObj!=null ? devObj : [:]
                     if(devObj.size()>0) { devMap[dev] = devObj }
                 } catch (ex) {
-                    // log.error "Device (${dev?.displayName}) Render Exception: ${ex}"
-                    logError("Device (${dev?.displayName}) Render Exception: ${ex.message}")
+                    logError("Setting key $item Device (${dev?.displayName}) Render Exception: ${ex.message}")
                 }
             }
         }
@@ -922,7 +921,7 @@ def deviceCommand() {
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
-    if(shw) logInfo("Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    if(shw) logInfo("Plugin called Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
     if(!devId) return
     String command = cmd
 
@@ -1110,8 +1109,8 @@ Map deviceAttributeList(device) {
 }
 
 def getAllData() {
-    state.subscriptionRenewed = now()
-    state.devchanges = []
+    logTrace("Plugin called to Renew subscriptions")
+//    state.subscriptionRenewed = now()
     String deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
     updTsVal("lastDeviceDataQueryDt")
     render contentType: sAPPJSON, data: deviceJson
@@ -1445,6 +1444,7 @@ void updateServicePrefs(Boolean isLocal=false) {
 }
 
 def pluginStatus() {
+    logTrace("Plugin called Status")
     def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if(body?.version) { updCodeVerMap("plugin", (String)body?.version)}
@@ -1453,6 +1453,7 @@ def pluginStatus() {
 }
 
 def enableDirectUpdates() {
+    logTrace("Plugin called enable direct updates")
     // log.trace "enableDirectUpdates: ($params)"
     state.pluginDetails = [
         directIP: params?.ip,
@@ -1469,13 +1470,13 @@ def enableDirectUpdates() {
 
 mappings {
     path("/devices")				{ action: [GET: "getAllData"]       }
-    path("/alldevices")				{ action: [GET: "renderDevices"]    }
-    path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  }
-    path("/location")				{ action: [GET: "renderLocation"]   }
+    path("/alldevices")				{ action: [GET: "renderDevices"]    } // debug?
+    path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  } // debug
+    path("/location")				{ action: [GET: "renderLocation"]   } // debug
     path("/pluginStatus")			{ action: [POST: "pluginStatus"]    }
     path("/:id/command/:command")		{ action: [POST: "deviceCommand"]   }
     // path("/:id/query")				{ action: [GET: "deviceQuery"]      }
-    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  }
+    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  } // debug
     path("/startDirect/:ip/:port/:version")	{ action: [POST: "enableDirectUpdates"] }
 }
 
