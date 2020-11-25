@@ -44,7 +44,6 @@ preferences {
 @Field static final Boolean devModeFLD    = true
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
-@Field static final List   lNULL   = (List) null
 @Field static final String sBULLET = '\u2022'
 @Field static final String sSVR = 'svraddr'
 @Field static final String sBLNK = ''
@@ -58,7 +57,7 @@ preferences {
 @Field static final String sAPPJSON = 'application/json'
 @Field static final String sSUCC = 'Success'
 @Field static final String sATK = 'acsT'
-@Field static final String sPOST = 'Post'
+//@Field static final String sPOST = 'Post'
 @Field static final String sASYNCCR = 'asyncHttpCmdResp'
 @Field static final String sLASTWU = 'lastwebCoREUpdDt'
 
@@ -311,7 +310,7 @@ private void resetCapFilters() {
 }
 
 private void inputDupeValidation() {
-    Map clnUp = [d: [:], o: [:]]
+    Map clnUp = [d: [], o: []]
     Map items = [
         d: ["fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", "buttonList": "Buttons", "lightList": "Lights", "shadesList": "Window Shades", "speakerList": "Speakers",
             "garageList": "Garage Doors", "tstatList": "Thermostat", "tstatFanList": "Themostat + Fan", "tstatHeatList": "Thermostat (Heat Only)"
