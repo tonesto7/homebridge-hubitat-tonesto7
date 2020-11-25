@@ -60,6 +60,7 @@ preferences {
 @Field static final String sATK = 'acsT'
 @Field static final String sPOST = 'Post'
 @Field static final String sASYNCCR = 'asyncHttpCmdResp'
+@Field static final String sLASTWU = 'lastwebCoREUpdDt'
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 
@@ -560,7 +561,7 @@ def updated() {
     unsubscribe()
     stateCleanup()
     initialize()
-    remTsVal("lastwebCoREUpdDt")
+    remTsVal(sLASTWU)
     runIn(2, "checkWebCoREData")
 }
 
@@ -630,7 +631,8 @@ private void healthCheck(Boolean ui=false) {
         return
     }
     checkWebCoREData()
-    if(!ui)remTsVal(sSVR)
+    Integer lastUpd = getLastTsValSecs(sSVR)
+    if(!ui && lastUpd > 14400) remTsVal(sSVR)
 }
 
 Boolean checkIfCodeUpdated(Boolean ui=false) {
@@ -651,10 +653,10 @@ Boolean checkIfCodeUpdated(Boolean ui=false) {
 }
 
 private void checkWebCoREData(Boolean now = false) {
-    Integer lastUpd = getLastTsValSecs("lastwebCoREUpdDt")
+    Integer lastUpd = getLastTsValSecs(sLASTWU)
     if ((lastUpd > (3600*24)) || (now && lastUpd > 300)) {
         sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
-        updTsVal("lastwebCoREUpdDt")
+        updTsVal(sLASTWU)
     }
 }
 
@@ -1244,7 +1246,7 @@ def changeHandler(evt) {
                 def data = evt.jsonData ?: null
                 if(data != null){
                     webCoREFLD = data
-                    updTsVal("lastwebCoREUpdDt")
+                    updTsVal(sLASTWU)
                 }
                 if(evtLog) logDebug("got webCoRE piston list event $data")
                 break
