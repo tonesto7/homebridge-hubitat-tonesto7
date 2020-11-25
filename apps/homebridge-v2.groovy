@@ -636,7 +636,7 @@ private void healthCheck(Boolean ui=false) {
 }
 
 Boolean checkIfCodeUpdated(Boolean ui=false) {
-    if(!ui) logDebug("Code versions: ${state.codeVersions}")
+    //if(!ui) logDebug("Code versions: ${state.codeVersions}")
     if(state?.codeVersions?.mainApp != appVersionFLD) {
         updCodeVerMap("mainApp", appVersionFLD)
         Map iData = state.installData ?: [:]
@@ -1590,7 +1590,7 @@ private List codeUpdateItems(Boolean shrt=false) {
     Boolean plugUpd = pluginUpdAvail()
     List updItems = []
     if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : sBLNK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
-    if(plugUpd) updItems.push("${!shrt ? "\n" : sBLNK}Plugin: (v${state?.appData?.versions?.server?.toString()})")
+    if(plugUpd) updItems.push("${!shrt ? "\n" : sBLNK}Plugin: (v${state?.appData?.versions?.plugin?.toString()})")
     return updItems
 }
 
