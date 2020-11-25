@@ -631,7 +631,7 @@ private void healthCheck(Boolean ui=false) {
         return
     }
     checkWebCoREData()
-    Integer lastUpd = getLastTsValSecs(sSVR)
+    Integer lastUpd = getLastTsValSecs('upT')
     if(!ui && lastUpd > 14400) remTsVal(sSVR)
 }
 
@@ -1365,6 +1365,7 @@ String getServerAddress() {
         updTsVal(sDBG, ((Boolean)settings.showDebugLogs).toString())
         updTsVal(sEVT, ((Boolean)settings.showEventLogs).toString())
         updTsVal(sATK, (String)state.accessToken)
+        updTsVal('upT')
     }
     return sv
 }
