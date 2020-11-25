@@ -1586,10 +1586,8 @@ private List codeUpdateItems(Boolean shrt=false) {
     Boolean appUpd = appUpdAvail()
     Boolean plugUpd = pluginUpdAvail()
     List updItems = []
-    if(appUpd || servUpd) {
-        if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : sBLNK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
-        if(plugUpd) updItems.push("${!shrt ? "\n" : sBLNK}Plugin: (v${state?.appData?.versions?.server?.toString()})")
-    }
+    if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : sBLNK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
+    if(plugUpd) updItems.push("${!shrt ? "\n" : sBLNK}Plugin: (v${state?.appData?.versions?.server?.toString()})")
     return updItems
 }
 
