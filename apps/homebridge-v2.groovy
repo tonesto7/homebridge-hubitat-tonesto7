@@ -12,7 +12,7 @@ definition(
     name: "Homebridge v2",
     namespace: "tonesto7",
     author: "Anthony Santilli",
-    description: "Provides the API interface between Homebridge (HomeKit) and ${platformFLD}",
+    description: "Provides the API interface between Homebridge (HomeKit) and "+platformFLD,
     category: "My Apps",
     iconUrl:   "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/hb_tonesto7.png",
     iconX2Url: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/hb_tonesto7.png",
@@ -88,8 +88,9 @@ preferences {
         "powerSourceNest", "softwareVer", "uiColor",
         // nest camera
         "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
-        // momentary buttons (until fixed)
-        // "numberOfButtons", "released", "pushed", "held", "doubleTapped",
+        // momentary buttons
+        "numberOfButtons", 
+        // "released", "pushed", "held", "doubleTapped",
         // tankUtility
         "lastreading",
         // intesisHome
@@ -120,20 +121,20 @@ def mainPage() {
             Integer devCnt = getDeviceCnt()
             if(conf) {
                 desc  = sBLNK
-                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : ""}</b> (${lightList.size()})</small><br>""" : sBLNK
-                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : ""}</b> (${buttonList.size()})</small><br>""" : sBLNK
-                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : ""}</b> (${fansize})</small><br>""" : sBLNK
-                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : ""}</b> (${speakerList.size()})</small><br>""" : sBLNK
-                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : ""}</b> (${shadesList.size()})</small><br>""" : sBLNK
-                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : ""}</b> (${garageList.size()})</small><br>""" : sBLNK
-                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : ""}</b> (${tstatList.size()})</small><br>""" : sBLNK
-                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : ""} w/Fan</b> (${tstatFanList.size()})</small><br>""" : sBLNK
-                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : ""}</b> (${tstatHeatList.size()})</small><br>""" : sBLNK
-                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : ""}</b> (${sensorList.size()})</small><br>""" : sBLNK
-                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : ""}</b> (${switchList.size()})</small><br>""" : sBLNK
-                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : ""}</b> (${deviceList.size()})</small><br>""" : sBLNK
-                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : ""}</b> (${modeList.size()})</small><br>""" : sBLNK
-                desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : ""}</b> (${pistonList.size()})</small><br>""" : sBLNK
+                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : sBLNK}</b> (${lightList.size()})</small><br>""" : sBLNK
+                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : sBLNK}</b> (${buttonList.size()})</small><br>""" : sBLNK
+                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : sBLNK}</b> (${fansize})</small><br>""" : sBLNK
+                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : sBLNK}</b> (${speakerList.size()})</small><br>""" : sBLNK
+                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : sBLNK}</b> (${shadesList.size()})</small><br>""" : sBLNK
+                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : sBLNK}</b> (${garageList.size()})</small><br>""" : sBLNK
+                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : sBLNK}</b> (${tstatList.size()})</small><br>""" : sBLNK
+                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : sBLNK} w/Fan</b> (${tstatFanList.size()})</small><br>""" : sBLNK
+                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : sBLNK}</b> (${tstatHeatList.size()})</small><br>""" : sBLNK
+                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : sBLNK}</b> (${sensorList.size()})</small><br>""" : sBLNK
+                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : sBLNK}</b> (${switchList.size()})</small><br>""" : sBLNK
+                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : sBLNK}</b> (${deviceList.size()})</small><br>""" : sBLNK
+                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : sBLNK}</b> (${modeList.size()})</small><br>""" : sBLNK
+                desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : sBLNK}</b> (${pistonList.size()})</small><br>""" : sBLNK
                 desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : sBLNK
                 desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
                 desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : sBLNK
@@ -264,7 +265,7 @@ def deviceSelectPage() {
 
         section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
             paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
-            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", "")] }
+            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
             input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("webcore",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
         }
 
@@ -348,7 +349,7 @@ private void inputDupeValidation() {
     if(clnUp.d.size()>0) {
         show=true
         clnUp.d.each { String k, List v->
-            out += "${first ? "" : "\n"}${items?.d[k]}:\n "
+            out += "${first ? sBLNK : "\n"}${items?.d[k]}:\n "
             out += v?.join("\n ") + "\n"
             first = false
         }
@@ -356,7 +357,7 @@ private void inputDupeValidation() {
     if(clnUp.o.size()>0) {
         show=true
         clnUp.o.each { String k, List v->
-            out += "${first ? "" : "\n"}${items?.o[k]}:\n "
+            out += "${first ? sBLNK : "\n"}${items?.o[k]}:\n "
             out += v?.join("\n ") + "\n"
             first = false
         }
@@ -385,12 +386,12 @@ def historyPage() {
         }
         section(sectTS("Last (${cHist.size()}) Commands Received From HomeKit:", sNULL, true)) {
             if(cHist.size()>0) {
-                cHist.each { c-> paragraph paraTS(" ${sBULLET} <b>Device:</b> ${c?.data?.device}\n ${sBULLET} <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n ${sBULLET} <b>Value1:</b> (${c?.data?.value1})" : ""}${c?.data?.value2 ? "\n ${sBULLET} <b>Value2:</b> (${c?.data?.value2})" : ""}\n ${sBULLET} <b>Date:</b> ${c?.dt}${c?.data?.execTime ? "\n ${sBULLET} <b>ExecTime: </b> (${c?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+                cHist.each { c-> paragraph paraTS(" ${sBULLET} <b>Device:</b> ${c?.data?.device}\n ${sBULLET} <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n ${sBULLET} <b>Value1:</b> (${c?.data?.value1})" : sBLNK}${c?.data?.value2 ? "\n ${sBULLET} <b>Value2:</b> (${c?.data?.value2})" : sBLNK}\n ${sBULLET} <b>Date:</b> ${c.dt}${c?.data?.execTime ? "\n ${sBULLET} <b>ExecTime: </b> (${c?.data?.execTime}ms)" : sBLNK}", null, false, "#2784D9"), state: "complete" }
             } else { paragraph paraTS("No Command History Found...", sNULL, false) }
         }
         section(sectTS("Last (${eHist.size()}) Events Sent to HomeKit:", sNULL, true)) {
             if(eHist.size()>0) {
-                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" ${sBULLET} <b>Device</b>: ${h?.data?.device}\n ${sBULLET} <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n ${sBULLET} <b>Value:</b> (${h?.data?.value})" : ""}\n ${sBULLET} <b>Date:</b> ${h?.dt}${h?.data?.execTime ? "\n ${sBULLET} <b>ExecTime:</b> (${h?.data?.execTime}ms)" : ""}", null, false, "#2784D9"), state: "complete" }
+                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" ${sBULLET} <b>Device</b>: ${h?.data?.device}\n ${sBULLET} <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n ${sBULLET} <b>Value:</b> (${h?.data?.value})" : sBLNK}\n ${sBULLET} <b>Date:</b> ${h.dt}${h?.data?.execTime ? "\n ${sBULLET} <b>ExecTime:</b> (${h?.data?.execTime}ms)" : sBLNK}", null, false, "#2784D9"), state: "complete" }
             } else {paragraph paraTS("No Event History Found...", sNULL, false) }
         }
     }
@@ -434,7 +435,7 @@ def capFilterPage() {
 
 def donationPage() {
     return dynamicPage(name: "donationPage", title: sBLNK, nextPage: "mainPage", install: false, uninstall: false) {
-        section("") {
+        section(sBLNK) {
             def str = sBLNK
             str += "Hello User, \n\nPlease forgive the interuption but it's been 30 days since you installed/updated this SmartApp and I wanted to present you with this one time reminder that donations are accepted (We do not require them)."
             str += "\n\nIf you have been enjoying the software and devices please remember that we have spent thousand's of hours of our spare time working on features and stability for those applications and devices."
@@ -507,7 +508,7 @@ private Map getDeviceDebugMap(dev) {
     if(dev) {
         try {
             r = [:]
-            r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", "")
+            r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLNK)
             r.basename = dev.getName()
             r.deviceid = dev.getId()
             r.status = dev.getStatus()
@@ -523,7 +524,7 @@ private Map getDeviceDebugMap(dev) {
             aa = getDeviceFlags(dev)
             r.customflags = aa ?: [:]
             r.attributes = [:]
-            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it?.unit}" : ""})" }
+            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " it.unit" : sBLNK})" }
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
@@ -735,7 +736,7 @@ private Map getDeviceData(String type, sItem) {
     }
     if(curType && obj) {
         return [
-            name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", "") : name?.toString()?.replaceAll("[#\$()!%&@^']", ""),
+            name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLNK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLNK),
             basename: !isVirtual ? sItem?.name : name,
             deviceid: !isVirtual ? sItem?.id : devId,
             status: !isVirtual ? sItem?.status : "Online",
@@ -851,9 +852,9 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: "hsmSetArm", value: mode)
 }
 
-String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
-String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
-String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : ""}?access_token=${state.accessToken}".toString() }
+String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${state.accessToken}".toString() }
+String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${state.accessToken}".toString() }
+String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${state.accessToken}".toString() }
 
 String renderConfig() {
     Map jsonMap = [
@@ -906,7 +907,7 @@ static Map getHttpHeaders(String headers) {
     Map obj = [:]
     new String(headers.decodeBase64()).split("\r\n")?.each {param ->
         List nameAndValue = param.split(sCLN)
-        obj[(String)nameAndValue[0]] = (nameAndValue.length == 1) ? "" : nameAndValue[1].trim()
+        obj[(String)nameAndValue[0]] = (nameAndValue.length == 1) ? sBLNK : nameAndValue[1].trim()
     }
     return obj
 }
@@ -921,7 +922,7 @@ def deviceCommand() {
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
-    if(shw) logInfo("Plugin called Process Command${local ? "(LOCAL)" : ""} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : ""}${value2 ? " | Param2: ($value2)" : ""}")
+    if(shw) logInfo("Plugin called Process Command${local ? "(LOCAL)" : sBLNK} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLNK}${value2 ? " | Param2: ($value2)" : sBLNK}")
     if(!devId) return
     String command = cmd
 
@@ -1080,7 +1081,7 @@ Map deviceCapabilityList(device) {
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith("remove") && it.value != null }.collect { (String)it.key }
     if(!remKeys) remKeys = []
     remKeys.each { String k->
-        String capName = k.replaceAll("remove", "")
+        String capName = k.replaceAll("remove", sBLNK)
         String theCap= (String)remCaps[capName]
         if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if((Boolean)settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
@@ -1191,7 +1192,7 @@ void registerChangeHandler(devices, Boolean showlog=false) {
                 attMapFLD.each { String k, String v -> if(att == k && isDeviceInInput("remove${v}".toString(), device.id)) { return } }
                 subscribe(device, att, "changeHandler")
                 if(showlog || devMode()) { log.debug "Registering ${device.displayName} for ${att} events" }
-            } else if(devMode()) log.debug "ignoring attribute $att for ${device.displayName}"
+            } //else if(devMode()) log.debug "ignoring attribute $att for ${device.displayName}"
         }
     }
 }
@@ -1213,14 +1214,14 @@ def changeHandler(evt) {
         case "hsmStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = "alarmSystemStatus"
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt])
             break
         case "hsmAlert":
             if(evt?.value == "intrusion") {
                 deviceid = "alarmSystemStatus_${location?.id}"
                 attr = "alarmSystemStatus"
                 value = "alarm_active"
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt])
             } else { sendEvt = false }
             break
         case "hsmRules":
@@ -1229,12 +1230,12 @@ def changeHandler(evt) {
             break
         case "alarmSystemStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt])
             break
         case "mode":
             settings?.modeList?.each { id->
                 def md = getModeById(id)
-                if(md && md.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: "switch", evtValue: modeSwitchState((String)md.name), evtUnit: "", evtDate: dt]) }
+                if(md && md.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: "switch", evtValue: modeSwitchState((String)md.name), evtUnit: sBLNK, evtDate: dt]) }
             }
             break
         case "webCoRE":
@@ -1252,7 +1253,7 @@ def changeHandler(evt) {
                     Map rt = getPistonById(id)
                     if(rt && rt.id) {
                         sendEvt = true
-                        sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: "", evtDate: dt])
+                        sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: sBLNK, evtDate: dt])
                     }
                 }
                 break
@@ -1262,7 +1263,7 @@ def changeHandler(evt) {
         default:
             def evtData = null
 //            if(attr == "button") { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: "", evtDate: dt, evtData: evtData])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
             break
     }
 
@@ -1295,7 +1296,7 @@ def changeHandler(evt) {
                         unitStr = "${send?.evtUnit}"
                         break
                 }
-                logInfo("Sending${" ${send?.evtSource}" ?: ""} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : ""} to Homebridge at (${server})")
+                logInfo("Sending ${send?.evtSource ?: sBLNK} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : sBLNK} to Homebridge at (${server})")
             }
             sendHttpPost(sUPD, [
                 change_name     : send.evtDeviceName,
@@ -1335,24 +1336,22 @@ void sendHttpPost(String path, Map body, String src=sBLNK, Boolean evtLog, Strin
         body: body,
         timeout: 20
     ]
-    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src, evtLog: evtLog])
+    asynchttpPost(sASYNCCR, params, [execDt: now(), src: src, evtLog: evtLog])
+//    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src, evtLog: evtLog])
 }
-
+/*
 void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
     if(method && params) {
         "asynchttp${method}"(sASYNCCR, params, otherData)
     } else { logError("execAsyncHttpCmd Error | Missing a required parameter") }
-}
+}*/
 
 def asyncHttpCmdResp(response, data) {
-    Boolean debug= (getTsVal(sDBG) == sTRU)
-    if(debug){
+    if(getTsVal(sDBG) == sTRU && (Boolean)data?.evtLog){
         def resp = response?.getData() // || null
         String src=data?.src ? (String)data.src : "Unknown"
-        if((Boolean)data.evtLog){
-            logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
-            if(resp) logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (now()-data?.execDt) : 0}ms)")
-        }
+        logDebug(sASYNCCR+" | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+        logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (now()-data.execDt) : 0}ms)")
     }
 }
 
@@ -1410,7 +1409,7 @@ static Boolean devMode() {
 }
 
 void activateDirectUpdates(Boolean isLocal=false) {
-    logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
+    logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("initial", [
         app_id: app.getId(),
         access_token: state.accessToken
@@ -1418,7 +1417,7 @@ void activateDirectUpdates(Boolean isLocal=false) {
 }
 
 void attemptServiceRestart(Boolean isLocal=false) {
-    logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
+    logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("restart", [
         app_id: app.getId(),
         access_token: state.accessToken
@@ -1426,7 +1425,7 @@ void attemptServiceRestart(Boolean isLocal=false) {
 }
 
 void sendDeviceRefreshCmd(Boolean isLocal=false) {
-    logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
+    logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("refreshDevices", [
         app_id: app.getId(),
         access_token: state.accessToken
@@ -1434,7 +1433,7 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
 }
 
 void updateServicePrefs(Boolean isLocal=false) {
-    logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? " | (Local)" : ""}")
+    logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("updateprefs", [
         app_id: app.getId(),
         access_token: state.accessToken,
@@ -1484,7 +1483,7 @@ mappings {
 def appInfoSect() {
 //    Map codeVer = state.codeVersions
     Boolean isNote = false
-    String tStr = """<small style="color: gray;"><b>Version:</b> v${appVersionFLD}</small>${state?.pluginDetails?.version ? """<br><small style="color: gray;"><b>Plugin:</b> v${state?.pluginDetails?.version}</small>""" : ""}"""
+    String tStr = """<small style="color: gray;"><b>Version:</b> v${appVersionFLD}</small>${state?.pluginDetails?.version ? """<br><small style="color: gray;"><b>Plugin:</b> v${state?.pluginDetails?.version}</small>""" : sBLNK}"""
 /* """ */
     section (sectH3TS(app?.name, tStr, getAppImg("hb_tonesto7", true), "orange")) {
         Map minUpdMap = getMinVerUpdsRequired()
@@ -1510,20 +1509,20 @@ def appInfoSect() {
         APP HELPER FUNCTIONS
 ***********************************************/
 
-static String getAppImg(String imgName, Boolean frc=false, String ext=".png") { return frc ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}".toString() : "" }
+static String getAppImg(String imgName, Boolean frc=false, String ext=".png") { return frc ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}".toString() : sBLNK }
 
-static String getPublicImg(String imgName, Boolean frc=false) { return frc ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png".toString() : "" }
+static String getPublicImg(String imgName, Boolean frc=false) { return frc ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png".toString() : sBLNK }
 
-static String sectTS(String t, String i = sNULL, Boolean bold=false) { return """<h3>${i ? """<img src="${i}" width="48"> """ : ""} ${bold ? "<b>" : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}</h3>""".toString() }
+static String sectTS(String t, String i = sNULL, Boolean bold=false) { return """<h3>${i ? """<img src="${i}" width="48"> """ : sBLNK} ${bold ? "<b>" : sBLNK}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : sBLNK}</h3>""".toString() }
 /* """ */
 
-static String sectH3TS(String t, String st, String i = sNULL, String c="#1A77C9") { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="48"> """ : ""} ${t?.replaceAll("\\n", "<br>")}</h3>${st ? "${st}" : ""}""".toString() }
+static String sectH3TS(String t, String st, String i = sNULL, String c="#1A77C9") { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="48"> """ : sBLNK} ${t?.replaceAll("\\n", "<br>")}</h3>${st ?: sBLNK}""".toString() }
 /* """ */
 
-static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? """<div style="color: $color;">""" : ""}${bold ? "<b>" : ""}${i ? """<img src="${i}" width="48"> """ : ""}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : ""}${color ? "</div>" : ""}".toString() }
+static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? """<div style="color: $color;">""" : sBLNK}${bold ? "<b>" : sBLNK}${i ? """<img src="${i}" width="48"> """ : sBLNK}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : sBLNK}${color ? "</div>" : sBLNK}".toString() }
 
 /* """ */
-static String inputTS(String t, String i = sNULL, String color=sNULL, Boolean under=true) { return """${color ? """<div style="color: $color;">""" : ""}${i ? """<img src="${i}" width="48"> """ : ""} ${under ? "<u>" : ""}${t?.replaceAll("\\n", " ")}${under ? "</u>" : ""}${color ? "</div>" : ""}""".toString() }
+static String inputTS(String t, String i = sNULL, String color=sNULL, Boolean under=true) { return """${color ? """<div style="color: $color;">""" : sBLNK}${i ? """<img src="${i}" width="48"> """ : sBLNK} ${under ? "<u>" : sBLNK}${t?.replaceAll("\\n", " ")}${under ? "</u>" : sBLNK}${color ? "</div>" : sBLNK}""".toString() }
 
 /* """ */
 static String htmlLine(String color="#1A77C9") { return "<hr style='background-color:${color}; height: 1px; border: 0;'>".toString() }
@@ -1535,13 +1534,13 @@ def appFooter() {
     }       
 }
 
-static String bulletItem(String inStr, String strVal) { return "${inStr == "" ? "" : "\n"} ${sBULLET} ${strVal}".toString() }
+static String bulletItem(String inStr, String strVal) { return "${inStr == sBLNK ? sBLNK : "\n"} ${sBULLET} ${strVal}".toString() }
 
-static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == "" && !newLine) ? "" : "\n"} - ${strVal}".toString() }
+static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == sBLNK && !newLine) ? sBLNK : "\n"} - ${strVal}".toString() }
 
 static String textDonateLink() { return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url" }
 
-static Integer versionStr2Int(String str) { return str ? str.tokenize("-")[0]?.replaceAll("\\.", "")?.toInteger() : null }
+static Integer versionStr2Int(String str) { return str ? str.tokenize("-")[0]?.replaceAll("\\.", sBLNK)?.toInteger() : null }
 
 static String versionCleanup(String str) { return str ? str.tokenize("-")[0] : sNULL }
 
@@ -1588,8 +1587,8 @@ private List codeUpdateItems(Boolean shrt=false) {
     Boolean plugUpd = pluginUpdAvail()
     List updItems = []
     if(appUpd || servUpd) {
-        if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : ""}App: (v${state?.appData?.versions?.mainApp?.toString()})")
-        if(plugUpd) updItems.push("${!shrt ? "\n" : ""}Plugin: (v${state?.appData?.versions?.server?.toString()})")
+        if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : sBLNK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
+        if(plugUpd) updItems.push("${!shrt ? "\n" : sBLNK}Plugin: (v${state?.appData?.versions?.server?.toString()})")
     }
     return updItems
 }
@@ -1722,7 +1721,7 @@ Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
             return diff
         }
     } else {
-        logError("GetTimeDiffSeconds Exception: (${sender ? "$sender | " : ""}lastDate: $lastDate): ${ex}")
+        logError("GetTimeDiffSeconds Exception: (${sender ? "$sender | " : sBLNK}lastDate: $lastDate): ${ex}")
     }
     return 10000L
 }
@@ -1747,13 +1746,13 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String)getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
-    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", "") // Replaces ## then **_ and _** in changelog data
+    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", sBLNK) // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
 
 private changeLogPage() {
-    return dynamicPage(name: "changeLogPage", title: "", nextPage: "mainPage", install: false) {
+    return dynamicPage(name: "changeLogPage", title: sBLNK, nextPage: "mainPage", install: false) {
         section(sectTS("Release Notes:", getAppImg("change_log", true), true)) { paragraph changeLogData() }
         state.curAppVer = appVersionFLD
         updInstData("shownChgLog", true)
