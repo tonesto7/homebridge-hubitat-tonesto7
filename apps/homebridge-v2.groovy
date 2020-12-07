@@ -1683,14 +1683,14 @@ private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
             if(resp?.data) {
-                if(text) { return resp.data.text?.toString() }
+                if(text) { return (String) resp.data.text }
                 return resp.data
             }
         }
     } catch (ex) {
         if(ex instanceof groovyx.net.http.HttpResponseException) {
             logWarn("${desc} file not found")
-        } else { logError("getWebData(params: $params, desc: $desc, text: $text) Exception: ${ex}") }
+        } else { logError("getWebData Exception | params: $params, desc: $desc, text: $text) | Error: ${ex}") }
     }
     if(text) return "${desc} info not found"
     return null
@@ -1745,7 +1745,7 @@ Integer getDaysSinceUpdated() {
 }
 
 String changeLogData() { 
-    String txt = (String)getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8"], "changelog")
+    String txt = (String) getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8", timeout: 20], "changelog", true)
     return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", sBLNK) // Replaces ## then **_ and _** in changelog data
 }
 
