@@ -1682,11 +1682,12 @@ void getConfigData() {
 private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
+            if(resp?.status != 200) logWarn("${resp?.status} $params")
 //            def a= resp?.status
 //            def b = resp?.data
 //            logDebug("getWebData $a   $b")
             if(resp?.data) {
-                if(text) { return (String) resp.data.text }
+                if(text) { return resp?.data.text.toString() }
                 return resp.data
             }
         }
@@ -1694,9 +1695,9 @@ private getWebData(Map params, String desc, Boolean text=true) {
         if(ex instanceof groovyx.net.http.HttpResponseException) {
             logWarn("${desc} file not found")
         } else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}") }
+        if(text) return "${desc} info not found"
+        return null
     }
-    if(text) return "${desc} info not found"
-    return null
 }
 
 /******************************************
