@@ -853,9 +853,9 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: "hsmSetArm", value: mode)
 }
 
-String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${state.accessToken}".toString() }
-String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${state.accessToken}".toString() }
-String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${state.accessToken}".toString() }
+String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${(String)state.accessToken}".toString() }
+String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${(String)state.accessToken}".toString() }
+String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${(String)state.accessToken}".toString() }
 
 String renderConfig() {
     Map jsonMap = [
@@ -866,7 +866,7 @@ String renderConfig() {
         app_id: app?.getId(),
         app_platform: platformFLD,
         use_cloud: (Boolean)settings.use_cloud_endpoint,
-        access_token: state.accessToken,
+        access_token: (String)state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
         validateTokenId: (Boolean)settings.validate_token,
         logConfig: [
@@ -1347,7 +1347,7 @@ void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
     } else { logError("execAsyncHttpCmd Error | Missing a required parameter") }
 }*/
 
-def asyncHttpCmdResp(response, data) {
+void asyncHttpCmdResp(response, data) {
     if(getTsVal(sDBG) == sTRU && (Boolean)data?.evtLog){
         def resp = response?.getData() // || null
         String src=data?.src ? (String)data.src : "Unknown"
@@ -1414,7 +1414,7 @@ void activateDirectUpdates(Boolean isLocal=false) {
     logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("initial", [
         app_id: app.getId(),
-        access_token: state.accessToken
+        access_token: (String)state.accessToken
     ], "activateDirectUpdates", (Boolean)settings.showDebugLogs)
 }
 
@@ -1422,7 +1422,7 @@ void attemptServiceRestart(Boolean isLocal=false) {
     logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("restart", [
         app_id: app.getId(),
-        access_token: state.accessToken
+        access_token: (String)state.accessToken
     ], "attemptServiceRestart", (Boolean)settings.showDebugLogs)
 }
 
@@ -1430,7 +1430,7 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
     logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("refreshDevices", [
         app_id: app.getId(),
-        access_token: state.accessToken
+        access_token: (String)state.accessToken
     ], "sendDeviceRefreshCmd", (Boolean)settings.showDebugLogs)
 }
 
@@ -1438,7 +1438,7 @@ void updateServicePrefs(Boolean isLocal=false) {
     logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
     sendHttpPost("updateprefs", [
         app_id: app.getId(),
-        access_token: state.accessToken,
+        access_token: (String)state.accessToken,
         use_cloud: (Boolean)settings.use_cloud_endpoint,
         validateTokenId: (Boolean)settings.validate_token,
         local_hub_ip: location?.hubs[0]?.localIP
@@ -1682,18 +1682,22 @@ void getConfigData() {
 private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
+            if(resp?.status != 200) logWarn("${resp?.status} $params")
+//            def a= resp?.status
+//            def b = resp?.data
+//            logDebug("getWebData $a   $b")
             if(resp?.data) {
-                if(text) { return (String) resp.data.text }
+                if(text) { return resp?.data.text.toString() }
                 return resp.data
             }
         }
     } catch (ex) {
         if(ex instanceof groovyx.net.http.HttpResponseException) {
             logWarn("${desc} file not found")
-        } else { logError("getWebData Exception | params: $params, desc: $desc, text: $text) | Error: ${ex}") }
+        } else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}") }
+        if(text) return "${desc} info not found"
+        return null
     }
-    if(text) return "${desc} info not found"
-    return null
 }
 
 /******************************************
@@ -1776,7 +1780,8 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
         return
     }
     eData.push([dt: getDtNow(), gt: now(), data: data])
-    if(!ssOk || eData.size() > max) { eData = eData.drop( (eData.size()-max) ) }
+    Integer lsiz=eData.size() 
+    if(!ssOk || lsiz > max) { eData = eData.drop( (lsiz-max) ) }
     updMemStoreItem(logKey, eData)
 
     releaseTheLock(sHMLF)
