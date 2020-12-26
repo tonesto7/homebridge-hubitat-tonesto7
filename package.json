@@ -13,7 +13,7 @@
         "request": "^2.88.2",
         "winston": "^3.3.3",
         "winston-daily-rotate-file": "^4.5.0",
-        "ws": "^7.4.0"
+        "ws": "^7.4.1"
     },
     "devDependencies": {
         "eslint": "^7.13.0",
