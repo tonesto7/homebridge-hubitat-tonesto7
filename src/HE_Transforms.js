@@ -136,7 +136,11 @@ module.exports = class Transforms {
                 }
             case "powerSource":
                 this.log.info(`powerSource: ${val}`);
-                if (val === undefined) return Characteristic.ChargingState.NOT_CHARGABLE;
+                if (val === undefined) {
+                    let out = Characteristic.ChargingState.NOT_CHARGABLE;
+                    this.log.info(`chargeState: ${out}`);
+                    return out;
+                }
                 switch (val) {
                     case "mains":
                     case "dc":
