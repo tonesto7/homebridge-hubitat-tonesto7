@@ -135,21 +135,21 @@ module.exports = class Transforms {
                     return Math.round(val);
                 }
             case "powerSource":
-                this.log.info(`powerSource: ${val}`);
-                if (val === undefined) {
-                    let out = Characteristic.ChargingState.NOT_CHARGABLE;
-                    this.log.info(`chargeState: ${out}`);
-                    return out;
-                }
+                // this.log.info(`powerSource: ${val}`);
+                // if (val === undefined) {
+                //     let out = Characteristic.ChargingState.NOT_CHARGABLE;
+                //     this.log.info(`chargeState: ${out}`, " | ", Characteristic.ChargingState);
+                //     return out;
+                // }
                 switch (val) {
                     case "mains":
                     case "dc":
                     case "USB Cable":
-                        return Characteristic.ChargingState.CHARGING;
+                        return 1;
                     case "battery":
-                        return Characteristic.ChargingState.NOT_CHARGING;
+                        return 0;
                     default:
-                        return Characteristic.ChargingState.NOT_CHARGABLE;
+                        return 2;
                 }
             case "hue":
                 return Math.round(val * 3.6) < 1 ? 1 : Math.round(val * 3.6);
