@@ -89,8 +89,8 @@ preferences {
         // nest camera
         "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
         // momentary buttons
-        "numberOfButtons", 
-        "released", "pushed", "held", "doubleTapped",
+        // "numberOfButtons", 
+        // "released", "pushed", "held", "doubleTapped",
         // tankUtility
         "lastreading",
         // intesisHome
@@ -98,7 +98,7 @@ preferences {
     ],
     capabilities: [
         "HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter",
-        "ReleasableButton", "PushableButton", "HoldableButton", "DoubleTapableButton"
+        // "ReleasableButton", "PushableButton", "HoldableButton", "DoubleTapableButton"
     ]
 ]
 
@@ -118,14 +118,17 @@ def mainPage() {
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : sBLNK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectTS("Device Configuration:", sNULL, true)) {
-            Boolean conf = (lightList || buttonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
+            Boolean conf = (lightList || pushableButtonList || holdableButtonList || releasableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
             String desc = """<small style="color:gray;">Tap to select devices...</small>"""
             Integer devCnt = getDeviceCnt()
             if(conf) {
                 desc  = sBLNK
                 desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : sBLNK}</b> (${lightList.size()})</small><br>""" : sBLNK
-                desc += buttonList ? """<small style="color:#2784D9;"><b>Button${buttonList.size() > 1 ? "s" : sBLNK}</b> (${buttonList.size()})</small><br>""" : sBLNK
+                desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLNK}</b> (${pushableButtonList.size()})</small><br>""" : sBLNK
+                desc += releasableButtonList ? """<small style="color:#2784D9;"><b>Releasable Button${releasableButtonList.size() > 1 ? "s" : sBLNK}</b> (${releasableButtonList.size()})</small><br>""" : sBLNK
+                desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLNK}</b> (${holdableButtonList.size()})</small><br>""" : sBLNK
+                desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLNK}</b> (${doubleTapableButtonList.size()})</small><br>""" : sBLNK
                 desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : sBLNK}</b> (${fansize})</small><br>""" : sBLNK
                 desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : sBLNK}</b> (${speakerList.size()})</small><br>""" : sBLNK
                 desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : sBLNK}</b> (${shadesList.size()})</small><br>""" : sBLNK
@@ -236,9 +239,14 @@ def deviceSelectPage() {
             paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
             input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
             input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
-            // input "buttonList", "capability.pushableButton", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
             input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
+        }
+        section(sectTS("Buttons:", sNULL, true)) {
+            input "pushableButtonList", "capability.pushableButton", title: inputTS("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "releasableButtonList", "capability.releasableButton", title: inputTS("Releasable Buttons: (${releasableButtonList ? releasableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "holdableButtonList", "capability.holdableButton", title: inputTS("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "doubleTapableButtonList", "capability.doubleTapableButton", title: inputTS("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectTS("Fans:", sNULL, true)) {
@@ -315,7 +323,10 @@ private void resetCapFilters() {
 private void inputDupeValidation() {
     Map clnUp = [d: [], o: []]
     Map items = [
-        d: ["fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", "buttonList": "Buttons", "lightList": "Lights", "shadesList": "Window Shades", "speakerList": "Speakers",
+        d: [
+            "fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", 
+            // "pushableButtonList": "Pushable Buttons", "releasableButtonList": "Releasable Buttons", "holdableButtonList": "Holdable Buttons", "doubleTapableButtonList": "Double Tap Buttons", 
+            "lightList": "Lights", "shadesList": "Window Shades", "speakerList": "Speakers",
             "garageList": "Garage Doors", "tstatList": "Thermostat", "tstatFanList": "Themostat + Fan", "tstatHeatList": "Thermostat (Heat Only)"
         ],
         o: ["deviceList": "Other", "sensorList": "Sensor", "switchList": "Switch"]
@@ -524,13 +535,19 @@ private Map getDeviceDebugMap(dev) {
             r.lastActivity = aa ?: null
             aa = dev.capabilities?.collect { (String)it.name }?.unique()?.sort()
             r.capabilities = aa ?: []
+            aa = deviceCapabilityList(dev)
+            r.capabilities_processed = aa ?: []
             aa = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort()
             r.commands = aa ?: []
+            aa = deviceCommandList(dev)
+            r.commands_processed = aa ?: []
             aa = getDeviceFlags(dev)
             r.customflags = aa ?: [:]
             r.attributes = [:]
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " it.unit" : sBLNK})" }
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
+            aa = deviceAttributeList(dev)
+            r.attributes_processed = aa ?: []
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
         }
@@ -1039,38 +1056,29 @@ Map deviceCapabilityList(device) {
     if(!device || !device.getId()) return [:]
     String devId = device.getId()
     Map<String,Integer> capItems = device.capabilities?.findAll{ !((String)it.name in ignoreListFLD.capabilities) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
-    if(isDeviceInInput("lightList", device.id)) {
-        capItems["LightBulb"] = 1
-    }
-    if(isDeviceInInput("buttonList", device.id)) {
-        capItems["Button"] = 1
-    }
-    if(isDeviceInInput("fanList", device.id)) {
-        capItems["Fan"] = 1
-    }
-    if(isDeviceInInput("speakerList", device.id)) {
-        capItems["Speaker"] = 1
-    }
-    if(isDeviceInInput("shadesList", device.id)) {
-        capItems["WindowShade"] = 1
-    }
-    if(isDeviceInInput("garageList", device.id)) {
-        capItems["GarageDoorControl"] = 1
-    }
-    if(isDeviceInInput("tstatList", device.id)) {
-        capItems["Thermostat"] = 1
-        capItems["ThermostatOperatingState"] = 1
-        capItems?.remove("ThermostatFanMode")
-    }
-    if(isDeviceInInput("tstatFanList", device.id)) {
-        capItems["Thermostat"] = 1
-        capItems["ThermostatOperatingState"] = 1
-    }
-    if(isDeviceInInput("tstatHeatList", device.id)) {
-        capItems["Thermostat"] = 1
-        capItems["ThermostatOperatingState"] = 1
-        capItems.remove("ThermostatCoolingSetpoint")
-    }
+
+    if(isDeviceInInput("lightList", device.id)) { capItems["LightBulb"] = 1 }
+    
+    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"]; }
+    else { capItems.remove("PushableButton") }
+
+    if(isDeviceInInput("releasableButtonList", device.id)) { capItems["Button"] = 1; capItems["ReleasableButton"]; }
+    else { capItems.remove("ReleasableButton") }
+    
+    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"]; }
+    else { capItems.remove("HoldableButton") }
+
+    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"]; } 
+    else { capItems.remove("DoubleTapableButton") }
+    
+    if(isDeviceInInput("fanList", device.id)) { capItems["Fan"] = 1 }
+    if(isDeviceInInput("speakerList", device.id)) { capItems["Speaker"] = 1 }
+    if(isDeviceInInput("shadesList", device.id)) { capItems["WindowShade"] = 1 }
+    if(isDeviceInInput("garageList", device.id)) { capItems["GarageDoorControl"] = 1 }
+    if(isDeviceInInput("tstatList", device.id)) { capItems["Thermostat"] = 1; capItems["ThermostatOperatingState"] = 1; capItems?.remove("ThermostatFanMode"); }
+    if(isDeviceInInput("tstatFanList", device.id)) { capItems["Thermostat"] = 1; capItems["ThermostatOperatingState"] = 1; }
+    if(isDeviceInInput("tstatHeatList", device.id)) { capItems["Thermostat"] = 1; capItems["ThermostatOperatingState"] = 1; capItems.remove("ThermostatCoolingSetpoint"); }
+    
     if(settings.noTemp && capItems["TemperatureMeasurement"] && (capItems["ContactSensor"] || capItems["WaterSensor"])) {
         Boolean remTemp = true
         if(settings.sensorAllowTemp && isDeviceInInput("sensorAllowTemp", device.id)) remTemp = false
@@ -1081,9 +1089,8 @@ Map deviceCapabilityList(device) {
     Map remCaps = [
        "Acceleration": "AccelerationSensor", "Battery": "Battery", "Button": "Button", "Color Control": "ColorControl", "Color Temperature": "ColorTemperature", "Contact": "ContactSensor", "Energy": "EnergyMeter", "Humidity": "RelativeHumidityMeasurement",
        "Illuminance": "IlluminanceMeasurement", "Level": "SwitchLevel", "Lock": "Lock", "Motion": "MotionSensor", "Power": "PowerMeter", "Presence": "PresenceSensor", "Switch": "Switch",
-       "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve", "PushableButton": "PushableButton", "HoldableButton": "HoldableButton", "DoubleTapableButton": "DoubleTapableButton"
+       "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve", "PushableButton": "PushableButton", "HoldableButton": "HoldableButton", "DoubleTapableButton": "DoubleTapableButton", "ReleasableButton": "ReleasableButton"
     ]
-
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith("remove") && it.value != null }.collect { (String)it.key }
     if(!remKeys) remKeys = []
     remKeys.each { String k->
@@ -1125,7 +1132,7 @@ def getAllData() {
 
 static Map deviceSettingKeys() {
     return [
-        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "buttonList": "Button Devices", "deviceList": "Other Devices",
+        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "pushableButtonList": "Pushable Button Devices", "releasableButtonList": "Releasable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices", "deviceList": "Other Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "switchList": "Switch Devices", "lightList": "Light Devices", "shadesList": "Window Shade Devices",
         "garageList": "Garage Devices", "tstatList": "T-Stat Devices", "tstatFanList": "T-Stat + Fan Devices", "tstatHeatList": "T-Stat Devices (Heat)"
     ]
@@ -1133,7 +1140,7 @@ static Map deviceSettingKeys() {
 
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
-    ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "buttonList": "Button Devices"]?.each { String k, String v->
+    ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "pushableButtonList": "Pushable Button Devices", "releasableButtonList": "Releasable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices"]?.each { String k, String v->
         logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
