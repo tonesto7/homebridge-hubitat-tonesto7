@@ -41,25 +41,27 @@ preferences {
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD = [plugin: 213]
-@Field static final String sNULL   = (String) null
-@Field static final String sBULLET = '\u2022'
-@Field static final String sSVR = 'svraddr'
-@Field static final String sBLNK = ''
-@Field static final String sCLN = ':'
-@Field static final String sNLCLN = 'null:null'
-@Field static final String sEVT = 'evt'
-@Field static final String sDBG = 'debug'
-@Field static final String sTRU = 'true'
-@Field static final String sUPD = 'update'
-@Field static final String sEVTUPD = 'EventUpdate'
-@Field static final String sAPPJSON = 'application/json'
-@Field static final String sSUCC = 'Success'
-@Field static final String sATK = 'acsT'
+@Field static final Boolean devModeFLD    = true
+@Field static final Map minVersionsFLD    = [plugin: 213]
+@Field static final String sNULL          = (String) null
+@Field static final String sBULLET        = '\u2022'
+@Field static final String sSVR           = 'svraddr'
+@Field static final String sBLNK          = ''
+@Field static final String sCLN           = ':'
+@Field static final String sNLCLN         = 'null:null'
+@Field static final String sEVT           = 'evt'
+@Field static final String sEVTLOGEN      = 'evtLogEn'
+@Field static final String sDBGLOGEN      = 'dbgLogEn'
+@Field static final String sDBG           = 'debug'
+@Field static final String sTRU           = 'true'
+@Field static final String sUPD           = 'update'
+@Field static final String sEVTUPD        = 'EventUpdate'
+@Field static final String sAPPJSON       = 'application/json'
+@Field static final String sSUCC          = 'Success'
+@Field static final String sATK           = 'accessToken'
 //@Field static final String sPOST = 'Post'
 @Field static final String sASYNCCR = 'asyncHttpCmdResp'
-@Field static final String sLASTWU = 'lastwebCoREUpdDt'
+@Field static final String sLASTWU  = 'lastwebCoREUpdDt'
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 
@@ -97,7 +99,7 @@ preferences {
         "iFanSpeed", "ihvvane", "ivvane", "online", "currentConfigCode", "currentTempOffset", "currentemitterPower", "currentsurroundIR", "swingMode"
     ],
     capabilities: [
-        "HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter",
+        "HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter", "ThreeAxis",
         // "ReleasableButton", "PushableButton", "HoldableButton", "DoubleTapableButton"
     ]
 ]
@@ -106,7 +108,7 @@ def startPage() {
     if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
-	healthCheck(true)
+	    healthCheck(true)
         if(showChgLogOk()) { return changeLogPage() }
         if(showDonationOk()) { return donationPage() }
         return mainPage()
@@ -287,18 +289,15 @@ def deviceSelectPage() {
 def settingsPage() {
     return dynamicPage(name: "settingsPage", title: sBLNK, install: false, uninstall: false) {
         section(sectTS("Logging:", sNULL, true)) {
-            input "showEventLogs", "bool", title: inputTS("Show Device/Location Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
             input "showCmdLogs", "bool", title: inputTS("Show Command Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
-            input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging?", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
+            input "showEventLogs", "bool", title: inputTS("Show Device/Location Events? (Turns Off After 12hours)", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
+            input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging? (Turns Off After 12hours)", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
         }
         section(sectTS("Security:", sNULL, true)) {
             paragraph paraTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", sNULL, false)
             input "resetAppToken", "bool", title: inputTS("Revoke and Recreate App Access Token?", getAppImg("reset", true)), defaultValue: false, submitOnChange: true
             if((Boolean)settings.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
         }
-        // section(sectTS("HTTP Requests:", sNULL, true)) {
-        //     input "use_sync_http", "bool", title: inputTS("Slow Commands? Use Synchronous HTTP?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
-        // }
     }
 }
 
@@ -481,6 +480,13 @@ def deviceDebugPage() {
             href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inputTS("View Device Data Sent to Homebridge...", getAppImg("info", true)), description: sBLNK, disabled: true
         }
 
+        if(devMode()) {
+            section(sectTS("TimeStamp Debug Data:")) {
+                Map tsMap = tsDtMapFLD[(String)app.getId()] ?: [:]
+                paragraph "${tsMap}"
+            }
+        }
+
         section(sectTS("View Individual Device Data:", sNULL, true)) {
             paragraph paraTS("Have a device that's not working under homekit like you want?\nSelect a device from one of the inputs below and it will show you all data about the device.", getAppImg("info", true), false, "#2784D9"), state: "complete"
             if(!debug_switch && !debug_other && !debug_garage && !debug_tstat)
@@ -534,22 +540,15 @@ private Map getDeviceDebugMap(dev) {
             r.manufacturer = dev.manufacturerName ?: "Unknown"
             r.model = dev?.modelName ?: dev?.getTypeName()
             r.deviceNetworkId = dev.getDeviceNetworkId()
-            def aa = dev.getLastActivity()
-            r.lastActivity = aa ?: null
-            aa = dev.capabilities?.collect { (String)it.name }?.unique()?.sort()
-            r.capabilities = aa ?: []
-            aa = deviceCapabilityList(dev).sort { it?.key }
-            r.capabilities_processed = aa ?: []
-            aa = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort()
-            r.commands = aa ?: []
-            aa = deviceCommandList(dev).sort { it?.key }
-            r.commands_processed = aa ?: []
-            aa = getDeviceFlags(dev)
-            r.customflags = aa ?: [:]
+            r.lastActivity = dev.getLastActivity() ?: null
+            r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
+            r.capabilities_processed = deviceCapabilityList(dev).sort { it?.key } ?: []
+            r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
+            r.commands_processed = deviceCommandList(dev).sort { it?.key } ?: []
+            r.customflags = getDeviceFlags(dev) ?: [:]
             r.attributes = [:]
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
-            aa = deviceAttributeList(dev).sort { it?.key }
-            r.attributes_processed = aa ?: []
+            r.attributes_processed = deviceAttributeList(dev).sort { it?.key } ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLNK})" }
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
@@ -560,16 +559,16 @@ private Map getDeviceDebugMap(dev) {
 
 private Integer getDeviceCnt(Boolean phyOnly=false) {
     List devices = []
-    List items = deviceSettingKeys().collect { (String)it.key }
-    items?.each { String item -> if(settings[item]?.size() > 0) devices = devices + settings[item] }
+    List items = deviceSettingKeys().collect { (String) it.key }
+    items?.each { String item -> if(settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "device_${it.getId()}" } }
     if(!phyOnly) {
         ["modeList", "pistonList"].each { String item->
-            if(settings[item]?.size() > 0) devices = devices + settings[item]
+            if(settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "${item.toString().replaceAll("List", "")}_${it}" }
         }
     }
     Integer dSize = devices?.unique()?.size()
     dSize = dSize != null ? dSize : 0
-    if((Boolean)settings.addSecurityDevice) dSize = dSize + 1
+    if((Boolean) settings.addSecurityDevice) dSize = dSize + 1
     return dSize
 }
 
@@ -595,6 +594,8 @@ def initialize() {
     if(getAccessToken()) {
         subscribeToEvts()
         runEvery5Minutes("healthCheck")
+        if(settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN) }
+        if(settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN) }
     } else { logError("initialize error: Unable to get or generate smartapp access token") }
 }
 
@@ -635,15 +636,16 @@ private void enableOauth(){
 
 void subscribeToEvts() {
     runIn(6, "registerDevices")
-    logInfo("Starting Device Subscription Process")
+    logInfo("Starting Device Subscription Process...")
     if((Boolean)settings.addSecurityDevice) {
+        logInfo("Subscribed to (HSM AlarmSystem)")
         subscribe(location, "hsmStatus", changeHandler)
     }
     if(settings.modeList) {
-        logDebug("Registering (${settings.modeList.size() ?: 0}) Virtual Mode Devices")
+        logInfo("Subscribed to (${settings.modeList.size() ?: 0} Location Modes)")
         subscribe(location, "mode", changeHandler)
     }
-//    state.subscriptionRenewed = 0
+    if(settings.pistonList) { logInfo("Subscribed to (${settings.pistonList.size()} WebCoRE Pistons)") }
     subscribe(location, "webCoRE", changeHandler)
 }
 
@@ -655,8 +657,10 @@ private void healthCheck(Boolean ui=false) {
         return
     }
     checkWebCoREData()
-    Integer lastUpd = getLastTsValSecs('upT')
+    Integer lastUpd = getLastTsValSecs('lastActTs')
     if(!ui && lastUpd > 14400) remTsVal(sSVR)
+    if(!ui && (Integer) getLastTsValSecs(sEVTLOGEN, 0) > 21600*2) remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool");
+    if(!ui && (Integer) getLastTsValSecs(sDBGLOGEN, 0) > 21600*2) remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool");
 }
 
 Boolean checkIfCodeUpdated(Boolean ui=false) {
@@ -708,15 +712,15 @@ private List renderDevices() {
                 try {
                     Map devObj = getDeviceData(item, dev)
                     devObj = devObj!=null ? devObj : [:]
-                    if(devObj.size()>0) { devMap[dev] = devObj }
+                    if(devObj.size() > 0) { devMap[(String) devObj.deviceid] = devObj }
                 } catch (ex) {
                     logError("Setting key $item Device (${dev?.displayName}) Render Exception: ${ex.message}")
                 }
             }
         }
     }
-    if((Boolean)settings.addSecurityDevice) { devList?.push(getSecurityDevice()) }
-    if(devMap.size()>0) { devMap.sort{ it.value.name }?.each { k,v-> devList.push(v) } }
+    if((Boolean) settings.addSecurityDevice) { devList?.push(getSecurityDevice()) }
+    if(devMap.size() > 0) { devMap.sort{ it.value.name }?.each { k,v-> devList.push(v) } }
     return devList
 }
 
@@ -1099,7 +1103,7 @@ Map deviceCapabilityList(device) {
     remKeys.each { String k->
         String capName = k.replaceAll("remove", sBLNK)
         String theCap= (String)remCaps[capName]
-        if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if((Boolean)settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
+        if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if((Boolean) settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
     return capItems?.sort { (String)it.key }
 }
@@ -1135,16 +1139,17 @@ def getAllData() {
 
 static Map deviceSettingKeys() {
     return [
-        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "pushableButtonList": "Pushable Button Devices", "releasableButtonList": "Releasable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices", "deviceList": "Other Devices",
+        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "deviceList": "Other Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "switchList": "Switch Devices", "lightList": "Light Devices", "shadesList": "Window Shade Devices",
-        "garageList": "Garage Devices", "tstatList": "T-Stat Devices", "tstatFanList": "T-Stat + Fan Devices", "tstatHeatList": "T-Stat Devices (Heat)"
+        "garageList": "Garage Devices", "tstatList": "T-Stat Devices", "tstatFanList": "T-Stat + Fan Devices", "tstatHeatList": "T-Stat Devices (Heat)",
+        "pushableButtonList": "Pushable Button Devices", "releasableButtonList": "Releasable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices"
     ]
 }
 
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     ["lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "pushableButtonList": "Pushable Button Devices", "releasableButtonList": "Releasable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices"]?.each { String k, String v->
-        logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
+        logDebug("Subscribed to (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
 //    runIn(3, "registerDevices2")
@@ -1154,7 +1159,7 @@ void registerDevices() {
 void registerDevices2() {
     //This has to be done at startup because it takes too long for a normal command.
     ["sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "deviceList": "Other Devices"]?.each { String k, String v->
-        logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
+        logDebug("Subscribed to (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
 //    runIn(3, "registerDevices3")
@@ -1164,13 +1169,13 @@ void registerDevices2() {
 void registerDevices3() {
     //This has to be done at startup because it takes too long for a normal command.
     ["switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", "tstatList": "Thermostat Devices", "tstatFanList": "Thermostat + Fan Devices", "tstatHeatList": "Thermostat (HeatOnly) Devices"]?.each { String k, String v->
-        logDebug("Registering (${settings?."${k}"?.size() ?: 0}) ${v}")
+        logDebug("Subscribed to (${settings?."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings?."${k}")
     }
-    logDebug("Registered (${getDeviceCnt(true)} Devices)")
+    logInfo("Subscribed to (${getDeviceCnt(true)} Physical Devices)")
     logDebug("-----------------------------------------------")
 
-    if((Boolean)settings.restartService) {
+    if((Boolean) settings.restartService) {
         logWarn("Sent Request to Homebridge Service to restart...")
         attemptServiceRestart()
         settingUpdate("restartService", "false", "bool")
@@ -1379,7 +1384,7 @@ String getServerAddress() {
         updTsVal(sDBG, ((Boolean)settings.showDebugLogs).toString())
         updTsVal(sEVT, ((Boolean)settings.showEventLogs).toString())
         updTsVal(sATK, (String)state.accessToken)
-        updTsVal('upT')
+        updTsVal('lastActTs')
     }
     return sv
 }
