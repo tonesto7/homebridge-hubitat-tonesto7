@@ -147,7 +147,7 @@ module.exports = class Transforms {
                         return Characteristic.ChargingState.NOT_CHARGABLE;
                 }
             case "hue":
-                return Math.round(val * 3.6);
+                return Math.round(val * 3.6) < 1 ? 1 : Math.round(val * 3.6);
             case "colorTemperature":
                 return parseInt(this.colorTempFromK(val));
             case "temperature":
