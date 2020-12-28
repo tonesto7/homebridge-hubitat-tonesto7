@@ -110,14 +110,14 @@ const serviceTests = [
             accessory.hasAttribute("fanSpeed") ||
             accessory.hasCapability("custom.airPurifierOperation")
         ),
-        true,
+        true
     ),
     new ServiceTest(
         "light",
         (accessory) =>
         accessory.hasCapability("Switch Level") &&
         (accessory.hasCapability("LightBulb") || accessory.hasCapability("Fan Light") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.includes("light") || accessory.hasAttribute("saturation") || accessory.hasAttribute("hue") || accessory.hasAttribute("colorTemperature") || accessory.hasCapability("Color Control")),
-        true,
+        true
     ),
     new ServiceTest("air_purifier", (accessory) => accessory.hasCapability("custom.airPurifierOperationMode")),
     new ServiceTest("garage_door", (accessory) => accessory.hasCapability("Garage Door Control")),
@@ -128,7 +128,7 @@ const serviceTests = [
     new ServiceTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
     new ServiceTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
     new ServiceTest("virtual_routine", (accessory) => accessory.hasCapability("Routine")),
-    new ServiceTest("button", (accessory) => (accessory.hasCapability("Button") || accessory.hasCapability("DoubleTapableButton") || accessory.hasCapability("HoldableButton") || accessory.hasCapability("PushableButton") || accessory.hasCapability("ReleasableButton"))),
+    new ServiceTest("button", (accessory) => accessory.hasCapability("Button") || accessory.hasCapability("DoubleTapableButton") || accessory.hasCapability("HoldableButton") || accessory.hasCapability("PushableButton") || accessory.hasCapability("ReleasableButton")),
     new ServiceTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Fan Light") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light")), true),
     new ServiceTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Fan Light") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || accessory.hasCapability("Button")), true),
     new ServiceTest("smoke_detector", (accessory) => accessory.hasCapability("Smoke Detector") && accessory.hasAttribute("smoke")),

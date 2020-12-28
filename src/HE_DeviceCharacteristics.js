@@ -174,10 +174,11 @@ module.exports = class DeviceCharacteristics {
     }
 
     button(_accessory, _service) {
+        this.log("button");
         let that = this;
         let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
         const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
-        console.log("btnCnt: ", btnCnt);
+        this.log.info("btnCnt: ", btnCnt);
         if (btnCnt >= 1) {
             for (let bNum = 1; bNum <= btnCnt; bNum++) {
                 const svc = _accessory.getOrAddServiceByName(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, bNum);
@@ -203,7 +204,7 @@ module.exports = class DeviceCharacteristics {
     }
 
     buttonEvent(btnNum, btnVal, devId, btnMap) {
-        console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
+        this.log.info("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
         let bSvc = btnMap[`${devId}_${btnNum}`];
         // console.log(bSvc);
         if (bSvc) {

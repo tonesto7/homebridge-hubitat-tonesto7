@@ -1,3 +1,8 @@
+## v2.2.0 Changes
+- [UPDATE] More optimizations (Thanks @nh.schottfam).
+- [UPDATE] Cleaned up change log layout.
+- [NEW] Toggle to hide command events from logging.
+
 ## v2.1.6 Changes
 - [UPDATE] So many optimizations to object types and state call reductions (Thanks @nh.schottfam).
 - [UPDATE] removed memstore lock warnings from logging.

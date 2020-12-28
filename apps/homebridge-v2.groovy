@@ -423,9 +423,10 @@ def capFilterPage() {
             paragraph paraTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", sNULL, false, "#2874D9")
             input "removeAcceleration", "capability.accelerationSensor", title: inputTS("Remove Acceleration from these Devices", getAppImg("acceleration", true)), multiple: true, submitOnChange: true, required: false
             input "removeBattery", "capability.battery", title: inputTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false
-            // input "removeHoldableButton", "capability.holdableButton", title: inputTS("Remove Holdable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            // input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inputTS("Remove Double Tapable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            // input "removePushableButton", "capability.pushableButton", title: inputTS("Remove Pushable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "removeHoldableButton", "capability.holdableButton", title: inputTS("Remove Holdable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inputTS("Remove Double Tapable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "removePushableButton", "capability.pushableButton", title: inputTS("Remove Pushable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            input "removeReleasableButton", "capability.releasableButton", title: inputTS("Remove Releasable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "removeContact", "capability.contactSensor", title: inputTS("Remove Contact from these Devices", getAppImg("contact", true)), multiple: true, submitOnChange: true, required: false
             input "removeColorControl", "capability.colorControl", title: inputTS("Remove Color Control from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
             input "removeColorTemp", "capability.colorTemperature", title: inputTS("Remove Color Temperature from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
@@ -493,7 +494,9 @@ def deviceDebugPage() {
             if(!debug_sensor && !debug_other && !debug_switch && !debug_garage)
                 input "debug_tstat", "capability.thermostat", title: inputTS("Thermostats: ", getAppImg("thermostat", true)), multiple: false, submitOnChange: true, required: false
             if(debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
-                href url: getAppEndpointUrl("deviceDebug"), style: "embedded", required: false, title: inputTS("Tap here to view Device Data...", getAppImg("info", true)), description: sBLNK, state: "complete"
+                paragraph paraTS("Device Data:", sNULL, true, "#2784D9")
+                paragraph """<textarea rows="30" class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>"""
+                // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", required: false, title: inputTS("Tap here to view Device Data...", getAppImg("info", true)), description: sBLNK, state: "complete"
             }
         }
     }
@@ -516,7 +519,7 @@ def viewDeviceDebug() {
     if(debug_tstat)  sDev = debug_tstat
     String json = new groovy.json.JsonOutput().toJson(getDeviceDebugMap(sDev))
     String jsonStr = new groovy.json.JsonOutput().prettyPrint(json)
-    render contentType: sAPPJSON, data: jsonStr
+    return jsonStr
 }
 
 private Map getDeviceDebugMap(dev) {
@@ -535,19 +538,19 @@ private Map getDeviceDebugMap(dev) {
             r.lastActivity = aa ?: null
             aa = dev.capabilities?.collect { (String)it.name }?.unique()?.sort()
             r.capabilities = aa ?: []
-            aa = deviceCapabilityList(dev)
+            aa = deviceCapabilityList(dev).sort { it?.key }
             r.capabilities_processed = aa ?: []
             aa = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort()
             r.commands = aa ?: []
-            aa = deviceCommandList(dev)
+            aa = deviceCommandList(dev).sort { it?.key }
             r.commands_processed = aa ?: []
             aa = getDeviceFlags(dev)
             r.customflags = aa ?: [:]
             r.attributes = [:]
-            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " it.unit" : sBLNK})" }
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
-            aa = deviceAttributeList(dev)
+            aa = deviceAttributeList(dev).sort { it?.key }
             r.attributes_processed = aa ?: []
+            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLNK})" }
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
         }
@@ -1184,7 +1187,7 @@ Boolean isDeviceInInput(String setKey, devId) {
 }
 
 @Field static final Map<String, String> attMapFLD = [
-    "acceleration": "Acceleration", "battery": "Battery", "button": "Button", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
+    "acceleration": "Acceleration", "battery": "Battery", "pushableButton": "Pushable Button","holdableButton": "Holdable Button","releasableButton": "Releasable Button","doubleTapableButton": "Double Tapable Button", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
     "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "switch": "Switch", "tamper": "Tamper",
     "temperature": "Temp", "valve": "Valve" 
 ]
@@ -1275,7 +1278,7 @@ def changeHandler(evt) {
             break
         default:
             def evtData = null
-//            if(attr == "button") { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
+            if(attr in ["pushableButton", "holdableButton", "releasableButton", "doubleTapableButton"]) { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
             break
     }
