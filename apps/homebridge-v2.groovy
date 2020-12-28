@@ -92,8 +92,8 @@ preferences {
         // nest camera
         "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
         // momentary buttons
-        "numberOfButtons", 
-        "released", //"pushed", "held", "doubleTapped",
+        "numberOfButtons", "released",
+        // "pushed", "held", "doubleTapped",
         // tankUtility
         "lastreading",
         // intesisHome
@@ -289,8 +289,8 @@ def settingsPage() {
     return dynamicPage(name: "settingsPage", title: sBLNK, install: false, uninstall: false) {
         section(sectTS("Logging:", sNULL, true)) {
             input "showCmdLogs", "bool", title: inputTS("Show Command Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
-            input "showEventLogs", "bool", title: inputTS("Show Device/Location Events? (Turns Off After 12hours)", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
-            input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging? (Turns Off After 12hours)", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
+            input "showEventLogs", "bool", title: inputTS("Show Device/Location Events? (Turns Off After 2 hours)", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
+            input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging? (Turns Off After 2 hours)", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
         }
         section(sectTS("Security:", sNULL, true)) {
             paragraph paraTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", sNULL, false)
@@ -660,9 +660,9 @@ private void healthCheck(Boolean ui=false) {
     Integer dbgLogSec = getLastTsValSecs(sDBGLOGEN, 0)
     if(!ui && lastUpd > 14400) { remTsVal(sSVR) }
     
-    if(evtLogSec > 21600*2) { log.warning "Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"; remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
+    if(evtLogSec > 3600*2) { log.warning "Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"; remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
     else if (evtLogSec == 0) { updTsVal(sEVTLOGEN) }
-    if(dbgLogSec > 21600*2) { log.warning "Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"; remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
+    if(dbgLogSec > 3600*2) { log.warning "Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"; remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
     else if (dbgLogSec == 0) { updTsVal(sDBGLOGEN) }
 }
 
@@ -1069,13 +1069,13 @@ Map deviceCapabilityList(device) {
 
     if(isDeviceInInput("lightList", device.id)) { capItems["LightBulb"] = 1 }
     
-    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"]; }
+    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
     else { capItems.remove("PushableButton") }
 
-    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"]; }
+    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1; }
     else { capItems.remove("HoldableButton") }
 
-    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"]; } 
+    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; } 
     else { capItems.remove("DoubleTapableButton") }
     
     if(isDeviceInInput("fanList", device.id)) { capItems["Fan"] = 1 }
@@ -1273,10 +1273,14 @@ def changeHandler(evt) {
             }
             logDebug("unknown webCoRE event $evt.value")
             break
+        case "held":
+        case "pushed":
+        case "doubleTapped":
+            Map evtData = [buttonNumber: value]
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: "button", evtValue: attr, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
+            break
         default:
-            def evtData = null
-            if(attr in ["pushableButton", "holdableButton", "doubleTapableButton"]) { evtData = parseJson(evt?.data) } // THIS IS LIKELY NOT RIGHT FOR HE
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: null])
             break
     }
 

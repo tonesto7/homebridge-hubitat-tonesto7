@@ -68,11 +68,19 @@ module.exports = class Transforms {
                         return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
                     case "held":
                         return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                    case "double":
+                    case "doubleTapped":
                         return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
                     default:
                         return null;
                 }
+
+            case "pushed":
+                return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
+            case "held":
+                return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
+            case "doubleTapped":
+                return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
+
             case "supportedButtonValues":
                 var validValues = [];
                 if (typeof val === "string") {
@@ -81,7 +89,7 @@ module.exports = class Transforms {
                             case "pushed":
                                 validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
                                 continue;
-                            case "double":
+                            case "doubleTapped":
                                 validValues.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
                                 continue;
                             case "held":
@@ -136,6 +144,11 @@ module.exports = class Transforms {
                 }
             case "powerSource":
                 // this.log.info(`powerSource: ${val}`);
+                // if (val === undefined) {
+                //     let out = Characteristic.ChargingState.NOT_CHARGABLE;
+                //     this.log.info(`chargeState: ${out}`, " | ", Characteristic.ChargingState);
+                //     return out;
+                // }
                 switch (val) {
                     case "mains":
                     case "dc":
@@ -159,6 +172,8 @@ module.exports = class Transforms {
             case "fanSpeed":
                 return this.fanSpeedIntToLevel(val);
             case "level":
+                return parseInt(val);
+                // return parseInt(val) >= 99 ? parseInt(100) : parseInt(val) || 0;
             case "saturation":
             case "volume":
                 return parseInt(val) || 0;

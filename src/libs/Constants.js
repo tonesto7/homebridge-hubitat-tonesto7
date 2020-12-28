@@ -66,7 +66,7 @@ module.exports = {
         "Refresh",
         // "Relative Humidity Measurement",
         "RelativeHumidityMeasurement",
-        "ReleasableButton",
+        // "ReleasableButton",
         "Routine",
         "Sensor",
         // "Smoke Detector",

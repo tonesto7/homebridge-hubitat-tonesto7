@@ -1,7 +1,8 @@
 ## v2.2.0 Changes
 - [UPDATE] More optimizations (Thanks @nh.schottfam).
 - [UPDATE] Cleaned up change log layout.
-- [NEW] Toggle to hide command events from logging.
+- [NEW] Device/Location event logging will automatically turn off after 6 hours to reduce unnessary logging.
+- [FIX] Changes to help eliminate duplicate accessories being created in the plugin.
 
 ## v2.1.6 Changes
 - [UPDATE] So many optimizations to object types and state call reductions (Thanks @nh.schottfam).

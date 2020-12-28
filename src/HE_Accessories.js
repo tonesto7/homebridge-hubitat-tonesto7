@@ -114,8 +114,8 @@ module.exports = class ST_Accessories {
     }
 
     processDeviceAttributeUpdate(change) {
-        // let that = this;
         return new Promise((resolve) => {
+            this.log.info("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
             let accessory = this.getAccessoryFromCache(change);
             // console.log(characteristics);
@@ -129,7 +129,6 @@ module.exports = class ST_Accessories {
                             char.getValue();
                             break;
                         case "button":
-                            // console.log(characteristics);
                             var btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
                             if (btnNum && accessory.buttonEvent !== undefined) {
                                 accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
@@ -198,7 +197,7 @@ module.exports = class ST_Accessories {
                     appEvts.emit("event:device_command", dev, cmd, vals);
                 },
                 d,
-                o,
+                o
             );
             acc.commandTimers[id]();
         }

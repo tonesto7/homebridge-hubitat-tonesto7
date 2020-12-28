@@ -174,11 +174,10 @@ module.exports = class DeviceCharacteristics {
     }
 
     button(_accessory, _service) {
-        this.log("button");
         let that = this;
         let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
         const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
-        this.log.info("btnCnt: ", btnCnt);
+        this.log.info(`${_accessory.context.name} | ButtonCnt: `, btnCnt);
         if (btnCnt >= 1) {
             for (let bNum = 1; bNum <= btnCnt; bNum++) {
                 const svc = _accessory.getOrAddServiceByName(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, bNum);
@@ -189,14 +188,16 @@ module.exports = class DeviceCharacteristics {
                 c.eventOnlyCharacteristic = false;
                 if (!c._events.get) {
                     that.accessories._buttonMap[`${_accessory.context.deviceData.deviceid}_${bNum}`] = svc;
-                    c.on("get", (callback) => {
-                        this.value = -1;
-                        callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
-                    });
+                    // c.on("get", (callback) => {
+                    //     this.value = -1;
+                    //     callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
+                    // });
                     _accessory.buttonEvent = this.buttonEvent.bind(_accessory);
                     this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
                 }
                 svc.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(bNum);
+                svc.getCharacteristic(Characteristic.Name).setValue("Button " + bNum);
+                // svc.getCharacteristic(Characteristic.ServiceLabelNameSpace).setValue(0);
             }
             _accessory.context.deviceGroups.push("button");
         }
@@ -204,11 +205,24 @@ module.exports = class DeviceCharacteristics {
     }
 
     buttonEvent(btnNum, btnVal, devId, btnMap) {
-        this.log.info("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
         let bSvc = btnMap[`${devId}_${btnNum}`];
         // console.log(bSvc);
         if (bSvc) {
-            bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).getValue();
+            console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
+            let newVal;
+            switch (btnVal) {
+                case "pushed":
+                    newVal = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
+                    break;
+                case "held":
+                    newVal = Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
+                    break;
+                case "doubleTapped":
+                    newVal = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
+                    break;
+            }
+            bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(newVal);
+            // bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).getValue(this.transforms.transformAttributeState(btnVal, this.context.deviceData.attributes[btnVal]));
         }
     }
 
