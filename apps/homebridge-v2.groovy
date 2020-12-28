@@ -2,7 +2,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018, 2019, 2020 Anthony Santilli
+ *  Copyright 2018, 2019, 2020, 2021 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 
@@ -36,12 +36,12 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.1.7"
-@Field static final String appModifiedFLD = "11-23-2020"
+@Field static final String appVersionFLD  = "2.2.0"
+@Field static final String appModifiedFLD = "12-28-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
-@Field static final Boolean devModeFLD    = true
+@Field static final Boolean devModeFLD    = false
 @Field static final Map minVersionsFLD = [plugin: 213]
 @Field static final String sNULL   = (String) null
 @Field static final String sBULLET = '\u2022'
@@ -90,13 +90,16 @@ preferences {
         "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
         // momentary buttons
         "numberOfButtons", 
-        // "released", "pushed", "held", "doubleTapped",
+        "released", "pushed", "held", "doubleTapped",
         // tankUtility
         "lastreading",
         // intesisHome
         "iFanSpeed", "ihvvane", "ivvane", "online", "currentConfigCode", "currentTempOffset", "currentemitterPower", "currentsurroundIR", "swingMode"
     ],
-    capabilities: ["HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter"]
+    capabilities: [
+        "HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter",
+        "ReleasableButton", "PushableButton", "HoldableButton", "DoubleTapableButton"
+    ]
 ]
 
 def startPage() {
@@ -147,7 +150,7 @@ def mainPage() {
 
         section(sectTS("Capability Filtering:", sNULL, true)) {
             Boolean conf = (
-                removeAcceleration || removeBattery || removeButton || removeContact || removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
+                removeAcceleration || removeBattery || removeButton || removeDoubleTapableButton || removePushableButton || removeHoldableButton || removeContact || removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
                 removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve
             )
             href "capFilterPage", title: inputTS("Filter out capabilities from your devices", getAppImg("filter", true)), required: false, state: (conf ? "complete" : sNULL), description: (conf ? "Tap to modify..." : "Tap to configure")
@@ -233,7 +236,7 @@ def deviceSelectPage() {
             paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
             input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
             input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
-            input "buttonList", "capability.pushableButton", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "buttonList", "capability.pushableButton", title: inputTS("Buttons: (${buttonList ? buttonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
             input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
         }
@@ -409,7 +412,9 @@ def capFilterPage() {
             paragraph paraTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", sNULL, false, "#2874D9")
             input "removeAcceleration", "capability.accelerationSensor", title: inputTS("Remove Acceleration from these Devices", getAppImg("acceleration", true)), multiple: true, submitOnChange: true, required: false
             input "removeBattery", "capability.battery", title: inputTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false
-            input "removeButton", "capability.button", title: inputTS("Remove Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "removeHoldableButton", "capability.holdableButton", title: inputTS("Remove Holdable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inputTS("Remove Double Tapable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "removePushableButton", "capability.pushableButton", title: inputTS("Remove Pushable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "removeContact", "capability.contactSensor", title: inputTS("Remove Contact from these Devices", getAppImg("contact", true)), multiple: true, submitOnChange: true, required: false
             input "removeColorControl", "capability.colorControl", title: inputTS("Remove Color Control from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
             input "removeColorTemp", "capability.colorTemperature", title: inputTS("Remove Color Temperature from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
@@ -555,7 +560,7 @@ def installed() {
 }
 
 def updated() {
-    log.debug("${app.name} | updated() has been called...")
+    logDebug("${app.name} | updated() has been called...")
     if(!state.installData) state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false]
     unsubscribe()
     stateCleanup()
@@ -1076,7 +1081,7 @@ Map deviceCapabilityList(device) {
     Map remCaps = [
        "Acceleration": "AccelerationSensor", "Battery": "Battery", "Button": "Button", "Color Control": "ColorControl", "Color Temperature": "ColorTemperature", "Contact": "ContactSensor", "Energy": "EnergyMeter", "Humidity": "RelativeHumidityMeasurement",
        "Illuminance": "IlluminanceMeasurement", "Level": "SwitchLevel", "Lock": "Lock", "Motion": "MotionSensor", "Power": "PowerMeter", "Presence": "PresenceSensor", "Switch": "Switch",
-       "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve"
+       "Tamper": "TamperAlert", "Temp": "TemperatureMeasurement", "Valve": "Valve", "PushableButton": "PushableButton", "HoldableButton": "HoldableButton", "DoubleTapableButton": "DoubleTapableButton"
     ]
 
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith("remove") && it.value != null }.collect { (String)it.key }
