@@ -40,8 +40,8 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - run: npm i yarn      
-      - run: yarn add snyk
+      - run: npm i snyk
       - run: snyk config set api=${{ secrets.SNYK_TOKEN }}
-      - run: yarn
-      - run: yarn run test
+      - run: npm i
+      - run: npm run test
         
