@@ -25,6 +25,7 @@ V2 of this plugin is a complete rewrite of the homebridge-hubitat-tonesto7 plugi
 
 ## Credits
 Big thanks for @Areson for his help/motivation in rewriting this.
+Another shout out to @nh.schotfam for your help on the optimizations for hubitat.
 
 I also wanted to mention the following projects I referenced for inspiration for a few minor items and fixes:
 * [homebridge-wink3](https://github.com/sibartlett/homebridge-wink3)
