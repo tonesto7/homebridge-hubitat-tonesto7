@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.2.0"
-@Field static final String appModifiedFLD = "12-28-2020"
+@Field static final String appVersionFLD  = "2.2.1"
+@Field static final String appModifiedFLD = "12-29-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -319,7 +319,7 @@ private void resetCapFilters() {
 }
 
 private void inputDupeValidation() {
-    Map clnUp = [d: [], o: []]
+    Map clnUp = [d: [:], o: [:]]
     Map items = [
         d: [
             "fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", 
@@ -344,7 +344,7 @@ private void inputDupeValidation() {
             }
 
             items.o.each { String k2, String v2->
-                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getLabel() } : null
+                def secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String) it?.getLabel() } : null
                 if(secItems) {
                     secItems?.retainAll(priItems)
                     if(secItems?.size()) {
@@ -538,15 +538,20 @@ private Map getDeviceDebugMap(dev) {
             r.manufacturer = dev.manufacturerName ?: "Unknown"
             r.model = dev?.modelName ?: dev?.getTypeName()
             r.deviceNetworkId = dev.getDeviceNetworkId()
-            r.lastActivity = dev.getLastActivity() ?: null
+            def aa = dev.getLastActivity()
+            r.lastActivity = aa ?: null
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
-            r.capabilities_processed = deviceCapabilityList(dev).sort { it?.key } ?: []
+            aa = deviceCapabilityList(dev).sort { it?.key }
+            r.capabilities_processed = aa ?: []
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
-            r.commands_processed = deviceCommandList(dev).sort { it?.key } ?: []
-            r.customflags = getDeviceFlags(dev) ?: [:]
+            aa = deviceCommandList(dev).sort { it?.key }
+            r.commands_processed = aa ?: []
+            aa = getDeviceFlags(dev)
+            r.customflags = aa ?: [:]
             r.attributes = [:]
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
-            r.attributes_processed = deviceAttributeList(dev).sort { it?.key } ?: []
+            aa = deviceAttributeList(dev).sort { it?.key }
+            r.attributes_processed = aa ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLNK})" }
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
@@ -1766,7 +1771,12 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String) getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8", timeout: 20], "changelog", true)
-    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", sBLNK) // Replaces ## then **_ and _** in changelog data
+    txt = txt?.toString()?.replaceAll("##", sBLNK)?.replaceAll(/(_\*\*)/, "<b>")?.replaceAll(/(\*\*\_)/, "</b>") // Replaces header format
+    txt = txt?.toString()?.replaceAll(/(- )/, "   ${sBULLET} ")
+    txt = txt?.toString()?.replaceAll(/(\[NEW\])/, "<u>[NEW]</u>")
+    txt = txt?.toString()?.replaceAll(/(\[UPDATE\])/, "<u>[FIX]</u>")
+    txt = txt?.toString()?.replaceAll(/(\[FIX\])/, "<u>[FIX]</u>")
+    return txt?.toString() // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }

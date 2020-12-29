@@ -1,5 +1,5 @@
 ## v2.2.0
-- [NEW] Support for virtual WebCoRE pistons.
+- [NEW] Create virtual devices under HomeKit to trigger your WebCoRE pistons.
 - [FIX] Tweaked value transforms for temperature, colorTemperature, to prevent errors.
 - [FIX] Stopped ChargingState errors in logs.
 - [FIX] Cleaned up unnecessary logging.

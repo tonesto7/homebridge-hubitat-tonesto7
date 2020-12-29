@@ -1,7 +1,11 @@
-## v2.2.0 Changes
+## _**v2.2.1 Changes**_
+- [FIX] java.lang.IllegalArgumentException: argument type mismatch error resolved.
+- [FIX] Fixed code reversion in device debug logic.
+
+## _**v2.2.0 Changes**_
 - [NEW] WebCoRE support... Create virtual devices to trigger WebCoRE pistons. (@nh.schottfam)
 - [NEW] Added new filters for colorTemp, and colorControl devices.
-- [NEW] Device/Location event logging will automatically turn off after 6 hours to reduce unnessary logging.
+- [NEW] Device/Location event logging will automatically turn off after 6 hours to reduce unnecessary logging.
 - [UPDATE] More code optimizations for significant performance boost. (@nh.schottfam)
 - [UPDATE] Cleaned up change log layout.
 - [UPDATE] Changed the device debug view view to show data inside the window. 
@@ -10,32 +14,32 @@
 - [FIX] Changes to help eliminate duplicate accessories being created in the plugin.
 - [FIX] Modified device count logic to be more accurate.
 
-## v2.1.6 Changes
+## _**v2.1.6 Changes**_
 - [UPDATE] So many optimizations to object types and state call reductions (Thanks @nh.schottfam).
 - [UPDATE] removed memstore lock warnings from logging.
 - [NEW] Toggle to hide command events from logging.
 
-## v2.1.5 Changes
+## _**v2.1.5 Changes**_
 - [FIX] Another attempt at fixing Concurrent modification error for device/command history (Thanks @nh.schottfam).
 
-## v2.1.4 Changes
+## _**v2.1.4 Changes**_
 - [FIX] Concurrent modification error for device/command history
 
-## v2.1.3 Changes
+## _**v2.1.3 Changes**_
 - [FIX] Last plugin update broke HSM events.
 - [UPDATE] Increased minimum plugin version to v2.1.3
 
-## v2.1.2 Changes
+## _**v2.1.2 Changes**_
 - [FIX] Fix for mode switches not working
 - [UPDATE] Cleaned up more attributes and capabilities from event subscriptions.
 
-## v2.1.1 Changes
+## _**v2.1.1 Changes**_
 - [FIX] Fix for thermostat + fan input
 - [FIX] Fixed Device debug not returning json data.
 - [FIX] Showing device events in live logs was broken unless debug logging was enabled.
 - [ADDED] Time to execute is now captured for all commands and events and added to history for reference.
 
-## v2.1.0 Changes
+## _**v2.1.0 Changes**_
 - [UPDATE] Calls to read/write from state (aka the DB) for all command and event history have been removed and stored in shared memory (Thanks @nh_schott_fam).
 - [UPDATE] Cleaned up code and removed references to ST version.
 - [UPDATE] Converted all plugin communications back to Async HTTP requests to reduce resource usage.
@@ -44,47 +48,4 @@
 - [UPDATE] Moved some of the plugin settings to the render config page.  This allows you to modify some of the plugin settings and it updates the rendered config realtime.
 - [UPDATE] Modified the app icon gradient to include hubitat green color.
 
-## v2.0.8 Changes
-- [NEW] Support for powerSource events
-
-## v2.0.7 Changes
-- [UPDATE] Modified the Other devices input to show all available devices
-
-## v2.0.6 Changes
-- [NEW] Updated version info to latest app and plugin.
-
-## v2.0.5 Changes
-- [NEW] View full device data output sent to Homebridge for debugging issues.
-
-## v2.0.4 Changes
-- [FIX] HSM status updates should now be sent to HomeKit correctly.
-- [FIX] Device filters should now work correctly again.
-- [UPDATE] Modified the plugin config to show under the UI instead of loading a web page.
-
-## v2.0.3 Changes
-- [FIX] Fixed device count to include HSM device when enabled.
-
-## v2.0.2 Changes
-- [UPDATE] App UI updates to the header, footer, and device selection inputs.  I borrowed some inspiration for the footer from Hubitat Package Manager (Thanks @dman2306). 
-
-## v2.0.0 Changes
-- [NEW] **_IMPORTANT NOTICE:_**
-  - **Due to the changes in the plugin API you can not directly update the plugin from v1, you will need to add as a new accessory and setup your devices/automations/scenes again.
-    On a positive note, you can use the same Hubitat App instance as long as you update to the latest code.**
-
-- [UPDATE] Restructured and cleaned up the app UI so it's more organized and easier to manage.
-- [UPDATE] Optimized the command/event streaming system to perform faster and more reliably.
-- [UPDATE] Added support for passing the pressed button number when provided (Buttons not fully tested on HE).
-- [UPDATE] Added option to validate the appId and token on all commands/requests made to the Hubitat app so if you have more than one instance of the Homebridge app it doesn't start sending events to the wrong plugin.
-- [UPDATE] Modified the event subscription logic to ignore many of the non-standard attributes to increase performance and reduce timeouts on subscription.
-- [NEW] The app now detects duplicate devices and cleans up the data so Homekit doesn't try to create duplicate devices and throw an error.
-- [NEW] Add acceleration sensors into homekit as motion sensors.
-- [NEW] Define devices as a garage door, thermostat, or heat-only thermostat under defined device types options.
-- [NEW] Device/Location Events and Commands history page to review events and commands sent and received by the plugin.
-- [NEW] Device data viewer where you can select a device and see all available attributes, capabilities, commands that will be sent to HomeKit as well as the last 30 device events.
-- [NEW] Expanded capability filters to include more capabilities.
-- [NEW] Added timeouts to all Groovy app HTTP commands (this was the cause of the progressive hub slowdowns in the previous version).
-- [FIX] Minor fixes to provide better Window Shade support in the plugin.
-- [FIX] Dozens of other bug fixes, tweaks, optimizations, and cleanups from v1.
-- [REMOVE] Energy and Power capabilities have been removed (they are not natively supported by HomeKit).
 
