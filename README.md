@@ -11,7 +11,7 @@
 ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/tonesto7/homebridge-hubitat-tonesto7/master?style=for-the-badge)
 ![Known Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/tonesto7/homebridge-hubitat-tonesto7?style=for-the-badge)
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/tonesto7/homebridge-hubitat-tonesto7/Node-CI/master?style=for-the-badge)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/tonesto7/homebridge-hubitat-tonesto7/Node.js%20CI/master?style=for-the-badge)
 
 [![Donate](https://img.shields.io/badge/donate-paypal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url)
 
