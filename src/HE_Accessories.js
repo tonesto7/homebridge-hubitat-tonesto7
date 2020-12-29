@@ -16,6 +16,7 @@ module.exports = class ST_Accessories {
         this.log = platform.log;
         this.hap = platform.hap;
         this.uuid = platform.uuid;
+        this._ = _;
         Service = platform.Service;
         Characteristic = platform.Characteristic;
         this.CommunityTypes = require("./libs/CommunityTypes")(Service, Characteristic);
@@ -23,7 +24,7 @@ module.exports = class ST_Accessories {
         this.comparator = this.comparator.bind(this);
         this.transforms = new Transforms(this, Characteristic);
         this.serviceTypes = new ServiceTypes(this, Service);
-        this.device_types = new DeviceTypes(this, Characteristic);
+        this.device_types = new DeviceTypes(this, Service, Characteristic);
         this._accessories = {};
         this._buttonMap = {};
         this._attributeLookup = {};
@@ -51,7 +52,7 @@ module.exports = class ST_Accessories {
             accessory.commandTimersTS = {};
             accessory.context.uuid = accessory.UUID || this.uuid.generate(`hubitat_v2_${accessory.deviceid}`);
             accessory.getOrAddService = this.getOrAddService.bind(accessory);
-            accessory.getOrAddServiceByName = this.getOrAddServiceByName.bind(accessory);
+            accessory.getOrAddServiceByNameType = this.getOrAddServiceByNameType.bind(accessory);
             accessory.getOrAddCharacteristic = this.getOrAddCharacteristic.bind(accessory);
             accessory.hasCapability = this.hasCapability.bind(accessory);
             accessory.getCapabilities = this.getCapabilities.bind(accessory);
@@ -64,6 +65,7 @@ module.exports = class ST_Accessories {
             accessory.updateCharacteristicVal = this.updateCharacteristicVal.bind(accessory);
             accessory.manageGetCharacteristic = this.device_types.manageGetCharacteristic.bind(accessory);
             accessory.manageGetSetCharacteristic = this.device_types.manageGetSetCharacteristic.bind(accessory);
+            accessory.setServiceLabelIndex = this.setServiceLabelIndex.bind(accessory);
             accessory.sendCommand = this.sendCommand.bind(accessory);
             return this.configureCharacteristics(accessory);
         } catch (err) {
@@ -271,16 +273,21 @@ module.exports = class ST_Accessories {
         return this.getService(svc) || this.addService(svc);
     }
 
-    getOrAddServiceByName(service, dName, sType) {
-        let svc = this.services.find((s) => s.displayName === dName);
+    getOrAddServiceByNameType(service, dispName, subType) {
+        // console.log(this.services);
+        let svc = dispName ? this.services.find((s) => (subType ? s.displayName === dispName && s.subType === subType : s.displayName === dispName)) : undefined;
         if (svc) {
             // console.log('service found');
             return svc;
         } else {
             // console.log('service not found adding new one...');
-            svc = this.addService(new service(dName, sType));
+            svc = this.addService(new service(dispName, subType));
             return svc;
         }
+    }
+
+    setServiceLabelIndex(service, index) {
+        service.setCharacteristic(Characteristic.ServiceLabelIndex, index);
     }
 
     getOrAddCharacteristic(service, characteristic) {

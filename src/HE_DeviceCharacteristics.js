@@ -1,10 +1,11 @@
-var Characteristic, CommunityTypes, accClass;
+var Characteristic, CommunityTypes, accClass, Service;
 
 module.exports = class DeviceCharacteristics {
-    constructor(accessories, char) {
+    constructor(accessories, svcs, char) {
         this.platform = accessories.mainPlatform;
         // this.appEvts = accessories.mainPlatform.appEvts;
         Characteristic = char;
+        Service = svcs;
         CommunityTypes = accessories.CommunityTypes;
         accClass = accessories;
         this.log = accessories.log;
@@ -177,6 +178,54 @@ module.exports = class DeviceCharacteristics {
         let that = this;
         let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
         const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
+        const devId = _accessory.context.deviceData.deviceid;
+        this._buttonSvcs = [];
+        this.log.info(`${_accessory.context.name} | ButtonCnt: `, btnCnt);
+        if (btnCnt >= 1) {
+            const lblSvc = new Service.ServiceLabel(_accessory.context.deviceData.name);
+            lblSvc.setCharacteristic(Characteristic.ServiceLabelNamespace, Characteristic.ServiceLabelNamespace.DOTS);
+            this._buttonSvcs.push(lblSvc);
+            for (let bNum = 0; bNum <= btnCnt; bNum++) {
+                console.log("btnNum: ", bNum);
+                const svc = _accessory.getOrAddServiceByNameType(_service, `${devId}_${bNum}`, parseInt(bNum) + 1);
+                svc.setCharacteristic(Characteristic.ServiceLabelIndex, parseInt(bNum) + 1);
+                console.log("svc: ", svc);
+                // let c = svc.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
+                // c.props.validValues = validValues;
+                // c.eventOnlyCharacteristic = false;
+                // if (!c._events.get) {
+                //     _accessory._buttonSvcs[`button_${devId}_${bNum}`] = svc;
+                //     c.on("get", (callback) => {
+                //         this.value = -1;
+                //         callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
+                //     });
+                //     _accessory.buttonEvent = this.buttonEvent.bind(_accessory);
+                //     this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
+                // }
+                // svc.setCharacteristic(Characteristic.ServiceLabelIndex, bNum);
+                // svc.setCharacteristic(Characteristic.Name, "Button " + bNum);
+            }
+            _accessory.context.deviceGroups.push("button");
+        }
+        return _accessory;
+    }
+
+    characteristic_ProgrammableSwitchEvent(service, getTopic, switchValues, restrictSwitchValues) {
+        let values = switchValues;
+        if (!values) {
+            values = ["1", "2", "L"]; // 1 means SINGLE_PRESS, 2 means DOUBLE_PRESS, L means LONG_PRESS
+        }
+        multiCharacteristic(service, "progswitch", Characteristic.ProgrammableSwitchEvent, null, getTopic, values, null, true);
+        if (restrictSwitchValues) {
+            let characteristic = service.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
+            characteristic.props.validValues = restrictSwitchValues;
+        }
+    }
+
+    buttonOld(_accessory, _service) {
+        let that = this;
+        let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
+        const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
         this.log.info(`${_accessory.context.name} | ButtonCnt: `, btnCnt);
         if (btnCnt >= 1) {
             for (let bNum = 1; bNum <= btnCnt; bNum++) {
@@ -188,10 +237,10 @@ module.exports = class DeviceCharacteristics {
                 c.eventOnlyCharacteristic = false;
                 if (!c._events.get) {
                     that.accessories._buttonMap[`${_accessory.context.deviceData.deviceid}_${bNum}`] = svc;
-                    // c.on("get", (callback) => {
-                    //     this.value = -1;
-                    //     callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
-                    // });
+                    c.on("get", (callback) => {
+                        this.value = -1;
+                        callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
+                    });
                     _accessory.buttonEvent = this.buttonEvent.bind(_accessory);
                     this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
                 }
