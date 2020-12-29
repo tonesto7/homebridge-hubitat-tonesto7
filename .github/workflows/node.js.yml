@@ -39,7 +39,9 @@ jobs:
           architecture: ${{ matrix.architecture }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - run: npm install
+      - run: npm i -g yarn
+      - run: yarn      
+      - run: yarn add global snyk
       - run: snyk config set api=${{ secrets.SNYK_TOKEN }}
-      - run: npm run test
+      - run: yarn run test
         
