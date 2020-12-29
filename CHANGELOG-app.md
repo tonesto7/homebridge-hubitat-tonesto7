@@ -1,8 +1,14 @@
 ## v2.2.0 Changes
-- [UPDATE] More optimizations (Thanks @nh.schottfam).
-- [UPDATE] Cleaned up change log layout.
+- [NEW] WebCoRE support... Create virtual devices to trigger WebCoRE pistons. (@nh.schottfam)
+- [NEW] Added new filters for colorTemp, and colorControl devices.
 - [NEW] Device/Location event logging will automatically turn off after 6 hours to reduce unnessary logging.
+- [UPDATE] More code optimizations for significant performance boost. (@nh.schottfam)
+- [UPDATE] Cleaned up change log layout.
+- [UPDATE] Changed the device debug view view to show data inside the window. 
+- [UPDATE] Added Oauth activation and tweaked access token logic.
+- [UPDATE] Streamlined device/location event subscription logic.
 - [FIX] Changes to help eliminate duplicate accessories being created in the plugin.
+- [FIX] Modified device count logic to be more accurate.
 
 ## v2.1.6 Changes
 - [UPDATE] So many optimizations to object types and state call reductions (Thanks @nh.schottfam).
