@@ -37,8 +37,6 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
-      - run: npm i snyk
-      - run: snyk config api=${{ secrets.SNYK_TOKEN }}
       - run: npm i
       - run: npm run test
         
