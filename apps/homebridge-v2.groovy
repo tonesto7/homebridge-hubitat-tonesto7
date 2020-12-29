@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.2.0"
-@Field static final String appModifiedFLD = "12-28-2020"
+@Field static final String appVersionFLD  = "2.2.1"
+@Field static final String appModifiedFLD = "12-29-2020"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
@@ -538,15 +538,20 @@ private Map getDeviceDebugMap(dev) {
             r.manufacturer = dev.manufacturerName ?: "Unknown"
             r.model = dev?.modelName ?: dev?.getTypeName()
             r.deviceNetworkId = dev.getDeviceNetworkId()
-            r.lastActivity = dev.getLastActivity() ?: null
+            def aa = dev.getLastActivity()
+            r.lastActivity = aa ?: null
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
-            r.capabilities_processed = deviceCapabilityList(dev).sort { it?.key } ?: []
+            aa = deviceCapabilityList(dev).sort { it?.key }
+            r.capabilities_processed = aa ?: []
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
-            r.commands_processed = deviceCommandList(dev).sort { it?.key } ?: []
-            r.customflags = getDeviceFlags(dev) ?: [:]
+            aa = deviceCommandList(dev).sort { it?.key }
+            r.commands_processed = aa ?: []
+            aa = getDeviceFlags(dev)
+            r.customflags = aa ?: [:]
             r.attributes = [:]
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
-            r.attributes_processed = deviceAttributeList(dev).sort { it?.key } ?: []
+            aa = deviceAttributeList(dev).sort { it?.key }
+            r.attributes_processed = aa ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLNK})" }
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
