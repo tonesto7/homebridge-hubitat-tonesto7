@@ -52,23 +52,21 @@ module.exports = class HE_Platform {
 
     getLogConfig() {
         let config = this.config;
-        return config.logConfig ?
-            {
-                debug: config.logConfig.debug === true,
-                showChanges: config.logConfig.showChanges === true,
-                hideTimestamp: config.logConfig.hideTimestamp === true,
-                hideNamePrefix: config.logConfig.hideNamePrefix === true,
-                file: {
-                    enabled: config.logConfig.file.enabled === true,
-                    level: config.logConfig.file.level || "good",
-                },
-            } :
-            {
-                debug: false,
-                showChanges: true,
-                hideTimestamp: false,
-                hideNamePrefix: false,
-            };
+        return config.logConfig ? {
+            debug: config.logConfig.debug === true,
+            showChanges: config.logConfig.showChanges === true,
+            hideTimestamp: config.logConfig.hideTimestamp === true,
+            hideNamePrefix: config.logConfig.hideNamePrefix === true,
+            file: {
+                enabled: config.logConfig.file.enabled === true,
+                level: config.logConfig.file.level || "good",
+            },
+        } : {
+            debug: false,
+            showChanges: true,
+            hideTimestamp: false,
+            hideNamePrefix: false,
+        };
     }
 
     findDirectPort() {
@@ -166,12 +164,12 @@ module.exports = class HE_Platform {
                             const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
                             that.log.warn(
                                 `Devices to Remove: (${Object.keys(toRemove).length})`,
-                                toRemove.map((i) => i.name)
+                                toRemove.map((i) => i.name),
                             );
                             that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`);
                             that.log.good(
                                 `Devices to Create: (${Object.keys(toCreate).length})`,
-                                toCreate.map((i) => i.name)
+                                toCreate.map((i) => i.name),
                             );
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
@@ -266,7 +264,7 @@ module.exports = class HE_Platform {
                 webApp.use(
                     bodyParser.urlencoded({
                         extended: false,
-                    })
+                    }),
                 );
                 webApp.use(bodyParser.json());
                 webApp.use((req, res, next) => {

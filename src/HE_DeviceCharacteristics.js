@@ -1,11 +1,10 @@
-var Characteristic, CommunityTypes, accClass, Service;
+var Characteristic, CommunityTypes, accClass;
 
 module.exports = class DeviceCharacteristics {
-    constructor(accessories, svcs, char) {
+    constructor(accessories, char) {
         this.platform = accessories.mainPlatform;
         // this.appEvts = accessories.mainPlatform.appEvts;
         Characteristic = char;
-        Service = svcs;
         CommunityTypes = accessories.CommunityTypes;
         accClass = accessories;
         this.log = accessories.log;
@@ -178,69 +177,14 @@ module.exports = class DeviceCharacteristics {
         let that = this;
         let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
         const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
-        const devId = _accessory.context.deviceData.deviceid;
-        this._buttonSvcs = [];
-        this.log.info(`${_accessory.context.name} | ButtonCnt: `, btnCnt);
-        if (btnCnt >= 1) {
-            const lblSvc = new Service.ServiceLabel(_accessory.context.deviceData.name);
-            lblSvc.setCharacteristic(Characteristic.ServiceLabelNamespace, Characteristic.ServiceLabelNamespace.DOTS);
-            this._buttonSvcs.push(lblSvc);
-            for (let bNum = 0; bNum <= btnCnt; bNum++) {
-                console.log("btnNum: ", bNum);
-                const svc = _accessory.getOrAddServiceByNameType(_service, `${devId}_${bNum}`, parseInt(bNum) + 1);
-                svc.setCharacteristic(Characteristic.ServiceLabelIndex, parseInt(bNum) + 1);
-                // console.log("svc: ", svc);
-                let c = svc.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
-                c.props.validValues = validValues;
-                c.eventOnlyCharacteristic = false;
-                if (!c._events.get) {
-                    this._buttonSvcs.push(svc);
-                    c.on("get", (callback) => {
-                        this.value = -1;
-                        callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
-                    });
-                    _accessory.buttonEvent = this.buttonEvent.bind(_accessory);
-                    this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
-                }
-                svc.setCharacteristic(Characteristic.Name, "Button " + bNum);
-            }
-            _accessory.context.deviceGroups.push("button");
-        }
-        return _accessory;
-    }
-
-    buttonEvent(btnNum, btnVal, devId, _accessory) {
-        let bSvc = _accessory.buttonSvcs.find((s) => s.displayName === `${devId}_${btnNum}` && s.subType === parseInt(btnNum));
-        console.log(bSvc);
-        if (bSvc) {
-            console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
-            let newVal;
-            switch (btnVal) {
-                case "pushed":
-                    newVal = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
-                    break;
-                case "held":
-                    newVal = Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                    break;
-                case "doubleTapped":
-                    newVal = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
-                    break;
-            }
-            bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(newVal);
-            // bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).getValue(this.transforms.transformAttributeState(btnVal, this.context.deviceData.attributes[btnVal]));
-        }
-    }
-
-    buttonOld(_accessory, _service) {
-        let that = this;
-        let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
-        const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
-        this.log.info(`${_accessory.context.name} | ButtonCnt: `, btnCnt);
+        // console.log('btnCnt: ', btnCnt);
         if (btnCnt >= 1) {
             for (let bNum = 1; bNum <= btnCnt; bNum++) {
                 const svc = _accessory.getOrAddServiceByName(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, bNum);
                 let c = svc.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
-                c.props.validValues = validValues;
+                c.setProps({
+                    validValues: validValues,
+                });
                 c.eventOnlyCharacteristic = false;
                 if (!c._events.get) {
                     that.accessories._buttonMap[`${_accessory.context.deviceData.deviceid}_${bNum}`] = svc;
@@ -252,12 +196,19 @@ module.exports = class DeviceCharacteristics {
                     this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
                 }
                 svc.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(bNum);
-                svc.getCharacteristic(Characteristic.Name).setValue("Button " + bNum);
-                // svc.getCharacteristic(Characteristic.ServiceLabelNameSpace).setValue(0);
             }
             _accessory.context.deviceGroups.push("button");
         }
         return _accessory;
+    }
+
+    buttonEvent(btnNum, btnVal, devId, btnMap) {
+        console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
+        let bSvc = btnMap[`${devId}_${btnNum}`];
+        // console.log(bSvc);
+        if (bSvc) {
+            bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).getValue();
+        }
     }
 
     carbon_dioxide(_accessory, _service) {
@@ -713,32 +664,6 @@ module.exports = class DeviceCharacteristics {
             c.updateValue(this.transforms.transformAttributeState("switch", _accessory.context.deviceData.attributes.switch));
         }
         _accessory.context.deviceGroups.push("virtual_mode");
-        return _accessory;
-    }
-
-    virtual_piston(_accessory, _service) {
-        let c = _accessory.getOrAddService(_service).getCharacteristic(Characteristic.On);
-        if (!c._events.get || !c._events.set) {
-            if (!c._events.get)
-                c.on("get", (callback) => {
-                    callback(null, false);
-                });
-            if (!c._events.set)
-                c.on("set", (value, callback) => {
-                    if (value) {
-                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "piston");
-                        setTimeout(() => {
-                            // console.log("pistonOff...");
-                            _accessory.context.deviceData.attributes.switch = "off";
-                            c.updateValue(false);
-                        }, 1000);
-                    }
-                });
-            this.accessories.storeCharacteristicItem("switch", _accessory.context.deviceData.deviceid, c);
-        } else {
-            c.updateValue(this.transforms.transformAttributeState("switch", _accessory.context.deviceData.attributes.switch));
-        }
-        _accessory.context.deviceGroups.push("virtual_piston");
         return _accessory;
     }
 

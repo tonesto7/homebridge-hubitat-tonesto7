@@ -1,10 +1,3 @@
-## v2.2.0
-- [NEW] Support for virtual WebCoRE pistons.
-- [FIX] Tweaked value transforms for temperature, colorTemperature, to prevent errors.
-- [FIX] Stopped ChargingState errors in logs.
-- [FIX] Cleaned up unnecessary logging.
-- [UPDATE] Code cleanups and optimizations.
-
 ## v2.1.3
 - [FIX] Last plugin update broke HSM events.
 - [FIX] Fixed validate token feature 
