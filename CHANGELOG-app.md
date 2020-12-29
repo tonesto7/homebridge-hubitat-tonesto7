@@ -1,4 +1,4 @@
-## v2.2.0 Changes
+## _**v2.2.0 Changes**_
 - [NEW] WebCoRE support... Create virtual devices to trigger WebCoRE pistons. (@nh.schottfam)
 - [NEW] Added new filters for colorTemp, and colorControl devices.
 - [NEW] Device/Location event logging will automatically turn off after 6 hours to reduce unnessary logging.

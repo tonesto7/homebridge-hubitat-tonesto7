@@ -1766,7 +1766,12 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String) getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8", timeout: 20], "changelog", true)
-    return txt?.toString()?.replaceAll("##", "${sBULLET}")?.replaceAll("[\\**_]", sBLNK) // Replaces ## then **_ and _** in changelog data
+    txt = txt?.toString()?.replaceAll("##", sBLNK)?.replaceAll(/(_\*\*)/, "<b>")?.replaceAll(/(\*\*\_)/, "</b>") // Replaces header format
+    txt = txt?.toString()?.replaceAll(/(- )/, "   ${sBULLET} ")
+    txt = txt?.toString()?.replaceAll(/(\[NEW\])/, "<u>[NEW]</u>")
+    txt = txt?.toString()?.replaceAll(/(\[UPDATE\])/, "<u>[FIX]</u>")
+    txt = txt?.toString()?.replaceAll(/(\[FIX\])/, "<u>[FIX]</u>")
+    return txt?.toString() // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
