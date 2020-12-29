@@ -37,11 +37,13 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
+      - uses: actions/checkout@master
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - run: npm i yarn      
       - run: npm i snyk
-      - run: snyk config set api=${{ secrets.SNYK_TOKEN }}
       - run: npm i
       - run: npm run test
         
