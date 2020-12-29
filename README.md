@@ -222,4 +222,4 @@ Defines the log entry levels that are written to the file. `good` (recommended) 
   <img width="200" height="200" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png">
 </p>
 
-[![PayPal Donations](https://img.shields.io/badge/donate-paypal-green.svg?style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url)
+[![PayPal Donations](https://img.shields.io/badge/donate-paypal-green.svg?style=for-the-badge)](https://www.paypal.com/donate?hosted_button_id=5GMA6C3RTLXH6)

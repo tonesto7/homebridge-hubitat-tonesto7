@@ -1556,7 +1556,7 @@ static String bulletItem(String inStr, String strVal) { return "${inStr == sBLNK
 
 static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == sBLNK && !newLine) ? sBLNK : "\n"} - ${strVal}".toString() }
 
-static String textDonateLink() { return "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url" }
+static String textDonateLink() { return "https://www.paypal.com/donate?hosted_button_id=5GMA6C3RTLXH6" }
 
 static Integer versionStr2Int(String str) { return str ? str.tokenize("-")[0]?.replaceAll("\\.", sBLNK)?.toInteger() : null }
 
