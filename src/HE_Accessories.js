@@ -134,7 +134,7 @@ module.exports = class ST_Accessories {
                             this.log.info("change: ", change);
                             var btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
                             if (btnNum && accessory.buttonEvent !== undefined) {
-                                accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
+                                accessory.buttonEvent(btnNum, change.value, change.deviceid, accessory);
                             }
                             break;
                         default:
@@ -284,6 +284,10 @@ module.exports = class ST_Accessories {
             svc = this.addService(new service(dispName, subType));
             return svc;
         }
+    }
+
+    getServiceByNameType(service, dispName, subType) {
+        return dispName ? this.services.find((s) => (subType ? s.displayName === dispName && s.subType === subType : s.displayName === dispName)) : undefined;
     }
 
     setServiceLabelIndex(service, index) {

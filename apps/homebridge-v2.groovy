@@ -93,7 +93,7 @@ preferences {
         "audioInputEnabled", "imageUrl", "imageUrlHtml", "isStreaming", "lastEventEnd", "lastEventStart", "lastEventType", "lastOnlineChange", "motionPerson", "publicShareEnabled", "publicShareUrl", "videoHistoryEnabled",
         // momentary buttons
         "numberOfButtons", "released",
-        // "pushed", "held", "doubleTapped",
+        "pushed", "held", "doubleTapped",
         // tankUtility
         "lastreading",
         // intesisHome
@@ -128,9 +128,9 @@ def mainPage() {
             if(conf) {
                 desc  = sBLNK
                 desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : sBLNK}</b> (${lightList.size()})</small><br>""" : sBLNK
-                desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLNK}</b> (${pushableButtonList.size()})</small><br>""" : sBLNK
-                desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLNK}</b> (${holdableButtonList.size()})</small><br>""" : sBLNK
-                desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLNK}</b> (${doubleTapableButtonList.size()})</small><br>""" : sBLNK
+                // desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLNK}</b> (${pushableButtonList.size()})</small><br>""" : sBLNK
+                // desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLNK}</b> (${holdableButtonList.size()})</small><br>""" : sBLNK
+                // desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLNK}</b> (${doubleTapableButtonList.size()})</small><br>""" : sBLNK
                 desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : sBLNK}</b> (${fansize})</small><br>""" : sBLNK
                 desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : sBLNK}</b> (${speakerList.size()})</small><br>""" : sBLNK
                 desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : sBLNK}</b> (${shadesList.size()})</small><br>""" : sBLNK
@@ -244,11 +244,11 @@ def deviceSelectPage() {
             input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
             input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
         }
-        section(sectTS("Buttons:", sNULL, true)) {
-            input "pushableButtonList", "capability.pushableButton", title: inputTS("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "holdableButtonList", "capability.holdableButton", title: inputTS("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "doubleTapableButtonList", "capability.doubleTapableButton", title: inputTS("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-        }
+        // section(sectTS("Buttons:", sNULL, true)) {
+        //     input "pushableButtonList", "capability.pushableButton", title: inputTS("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+        //     input "holdableButtonList", "capability.holdableButton", title: inputTS("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+        //     input "doubleTapableButtonList", "capability.doubleTapableButton", title: inputTS("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+        // }
 
         section(sectTS("Fans:", sNULL, true)) {
             input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
