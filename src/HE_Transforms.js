@@ -68,11 +68,19 @@ module.exports = class Transforms {
                         return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
                     case "held":
                         return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                    case "double":
+                    case "doubleTapped":
                         return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
                     default:
                         return null;
                 }
+
+            case "pushed":
+                return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
+            case "held":
+                return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
+            case "doubleTapped":
+                return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
+
             case "supportedButtonValues":
                 var validValues = [];
                 if (typeof val === "string") {
@@ -81,7 +89,7 @@ module.exports = class Transforms {
                             case "pushed":
                                 validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
                                 continue;
-                            case "double":
+                            case "doubleTapped":
                                 validValues.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
                                 continue;
                             case "held":
@@ -135,23 +143,23 @@ module.exports = class Transforms {
                     return Math.round(val);
                 }
             case "powerSource":
-                this.log.info(`powerSource: ${val}`);
+                // this.log.info(`powerSource: ${val}`);
                 switch (val) {
                     case "mains":
                     case "dc":
                     case "USB Cable":
-                        return Characteristic.ChargingState.CHARGING;
+                        return 1;
                     case "battery":
-                        return Characteristic.ChargingState.NOT_CHARGING;
+                        return 0;
                     default:
-                        return Characteristic.ChargingState.NOT_CHARGABLE;
+                        return 2;
                 }
             case "hue":
-                return Math.round(val * 3.6);
+                return Math.round(val * 3.6) < 1 ? 1 : Math.round(val * 3.6);
             case "colorTemperature":
-                return this.colorTempFromK(val);
+                return parseInt(this.colorTempFromK(val));
             case "temperature":
-                return this.tempConversion(val);
+                return parseFloat(this.tempConversion(val));
             case "heatingSetpoint":
             case "coolingSetpoint":
             case "thermostatSetpoint":
@@ -159,6 +167,8 @@ module.exports = class Transforms {
             case "fanSpeed":
                 return this.fanSpeedIntToLevel(val);
             case "level":
+                return parseInt(val);
+                // return parseInt(val) >= 99 ? parseInt(100) : parseInt(val) || 0;
             case "saturation":
             case "volume":
                 return parseInt(val) || 0;

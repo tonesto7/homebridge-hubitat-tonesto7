@@ -1,7 +1,7 @@
 const {
     // platformName,
     // platformDesc,
-    packageFile
+    packageFile,
 } = require("./Constants"),
     _ = require("lodash"),
     fs = require("fs"),
@@ -22,7 +22,7 @@ module.exports = class MyUtils {
     }
 
     toTitleCase(str) {
-        return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+        return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     }
 
     debounce(a, b, c) {
@@ -35,6 +35,42 @@ module.exports = class MyUtils {
                     (d = null), c || a.apply(e, f);
                 }, b)),
                 c && !d && a.apply(e, f);
+        };
+    }
+
+    debounceAlt(func, delay, immediate) {
+        let timerId;
+        return (...args) => {
+            const boundFunc = func.bind(this, ...args);
+            clearTimeout(timerId);
+            if (immediate && !timerId) {
+                boundFunc();
+            }
+            const calleeFunc = immediate ?
+                () => {
+                    timerId = null;
+                } :
+                boundFunc;
+            timerId = setTimeout(calleeFunc, delay);
+        };
+    }
+
+    throttle(func, delay, immediate) {
+        let timerId;
+        return (...args) => {
+            const boundFunc = func.bind(this, ...args);
+            if (timerId) {
+                return;
+            }
+            if (immediate && !timerId) {
+                boundFunc();
+            }
+            timerId = setTimeout(() => {
+                if (!immediate) {
+                    boundFunc();
+                }
+                timerId = null;
+            }, delay);
         };
     }
 
@@ -56,7 +92,7 @@ module.exports = class MyUtils {
         const configPath = this.homebridge.user.configPath();
         const file = fs.readFileSync(configPath);
         const config = JSON.parse(file);
-        const platConfig = config.platforms.find(x => x.name === this.config.name);
+        const platConfig = config.platforms.find((x) => x.name === this.config.name);
         _.extend(platConfig, newConfig);
         const serializedConfig = JSON.stringify(config, null, "  ");
         fs.writeFileSync(configPath, serializedConfig, "utf8");
@@ -66,27 +102,24 @@ module.exports = class MyUtils {
     checkVersion() {
         this.log.info("Checking Package Version for Updates...");
         return new Promise((resolve) => {
-            childProcess.exec(
-                `npm view ${packageFile.name} version`,
-                (error, stdout) => {
-                    const newVer = stdout && stdout.trim();
-                    if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
-                        this.log.warn(`---------------------------------------------------------------`);
-                        this.log.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
-                        this.log.warn(`---------------------------------------------------------------`);
-                        resolve({
-                            hasUpdate: true,
-                            newVersion: newVer
-                        });
-                    } else {
-                        this.log.info(`INFO: Your plugin version is up-to-date`);
-                        resolve({
-                            hasUpdate: false,
-                            newVersion: newVer
-                        });
-                    }
+            childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
+                const newVer = stdout && stdout.trim();
+                if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
+                    this.log.warn(`---------------------------------------------------------------`);
+                    this.log.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
+                    this.log.warn(`---------------------------------------------------------------`);
+                    resolve({
+                        hasUpdate: true,
+                        newVersion: newVer,
+                    });
+                } else {
+                    this.log.info(`INFO: Your plugin version is up-to-date`);
+                    resolve({
+                        hasUpdate: false,
+                        newVersion: newVer,
+                    });
                 }
-            );
+            });
         });
     }
 };

@@ -81,30 +81,6 @@ module.exports = class ST_Client {
         });
     }
 
-    getDevice(deviceid) {
-        let that = this;
-        return new Promise((resolve) => {
-            axios({
-                    method: "get",
-                    url: `${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/${deviceid}/query`,
-                    params: {
-                        access_token: that.configItems.access_token,
-                    },
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    timeout: 10000,
-                })
-                .then((response) => {
-                    resolve(response.data);
-                })
-                .catch((err) => {
-                    this.handleError("getDevice", err);
-                    resolve(undefined);
-                });
-        });
-    }
-
     sendDeviceCommand(devData, cmd, vals) {
         return new Promise((resolve) => {
             let that = this;
