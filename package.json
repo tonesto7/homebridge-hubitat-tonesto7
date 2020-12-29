@@ -50,7 +50,7 @@
         "url": "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url"
     },
     "scripts": {
-        "test": "snyk test && eslint .",
+        "test": "eslint .",
         "prettier": "prettier --write src/**/*.js",
         "freeport": "npx kill-port 8000",
         "start": "homebridge -D -P . -U .",
