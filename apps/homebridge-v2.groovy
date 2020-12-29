@@ -319,7 +319,7 @@ private void resetCapFilters() {
 }
 
 private void inputDupeValidation() {
-    Map clnUp = [d: [], o: []]
+    Map clnUp = [d: [:], o: [:]]
     Map items = [
         d: [
             "fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", 
@@ -344,7 +344,7 @@ private void inputDupeValidation() {
             }
 
             items.o.each { String k2, String v2->
-                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getLabel() } : null
+                def secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String) it?.getLabel() } : null
                 if(secItems) {
                     secItems?.retainAll(priItems)
                     if(secItems?.size()) {

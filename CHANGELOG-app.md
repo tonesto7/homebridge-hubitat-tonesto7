@@ -1,3 +1,7 @@
+## _**v2.2.1 Changes**_
+- [FIX] java.lang.IllegalArgumentException: argument type mismatch error resolved.
+- [FIX] Fixed code reversion in device debug logic.
+
 ## _**v2.2.0 Changes**_
 - [NEW] WebCoRE support... Create virtual devices to trigger WebCoRE pistons. (@nh.schottfam)
 - [NEW] Added new filters for colorTemp, and colorControl devices.
