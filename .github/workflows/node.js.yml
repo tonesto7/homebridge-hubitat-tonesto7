@@ -19,9 +19,9 @@ jobs:
           - macos-latest
           - windows-latest
         node_version:
-          - 10
           - 12
           - 14
+          - 15
         architecture:
           - x64
         # an extra windows-x86 run:
@@ -39,9 +39,9 @@ jobs:
           architecture: ${{ matrix.architecture }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - run: npm i -g yarn
-      - run: yarn      
-      - run: yarn add global snyk
+      - run: npm i yarn      
+      - run: yarn add snyk
       - run: snyk config set api=${{ secrets.SNYK_TOKEN }}
+      - run: yarn
       - run: yarn run test
         
