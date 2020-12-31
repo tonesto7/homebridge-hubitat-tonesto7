@@ -597,8 +597,8 @@ def initialize() {
     if(getAccessToken()) {
         subscribeToEvts()
         runEvery5Minutes("healthCheck")
-        if(settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { log.debug "setting event log ts: "; updTsVal(sEVTLOGEN); }
-        if(settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { log.debug "setting debug log ts: "; updTsVal(sDBGLOGEN); }
+        if(settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN); }
+        if(settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN); }
     } else { logError("initialize error: Unable to get or generate smartapp access token") }
 }
 
@@ -663,12 +663,13 @@ private void healthCheck(Boolean ui=false) {
     Integer lastUpd = getLastTsValSecs("lastActTs")
     Integer evtLogSec = getLastTsValSecs(sEVTLOGEN, 0)
     Integer dbgLogSec = getLastTsValSecs(sDBGLOGEN, 0)
+    log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if(!ui && lastUpd > 14400) { remTsVal(sSVR) }
     
-    if(evtLogSec > 3600*2) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
-    else if (evtLogSec == 0) { updTsVal(sEVTLOGEN) }
-    if(dbgLogSec > 3600*2) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
-    else if (dbgLogSec == 0) { updTsVal(sDBGLOGEN) }
+    if(evtLogSec > 60*1) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
+    else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
+    if(dbgLogSec > 60*1) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
+    else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
 }
 
 Boolean checkIfCodeUpdated(Boolean ui=false) {
