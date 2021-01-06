@@ -665,9 +665,9 @@ private void healthCheck(Boolean ui=false) {
     Integer dbgLogSec = getLastTsValSecs(sDBGLOGEN, 0)
     if(!ui && lastUpd > 14400) { remTsVal(sSVR) }
     
-    if(evtLogSec > 3600*2) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
+    if(settings.showEventLogs && evtLogSec > 3600*2) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
     else if (evtLogSec == 0) { updTsVal(sEVTLOGEN) }
-    if(dbgLogSec > 3600*2) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
+    if(settings.showDebugLogs && dbgLogSec > 3600*2) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
     else if (dbgLogSec == 0) { updTsVal(sDBGLOGEN) }
 }
 
