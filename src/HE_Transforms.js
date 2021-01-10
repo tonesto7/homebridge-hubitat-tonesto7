@@ -170,7 +170,7 @@ module.exports = class Transforms {
             case "level":
                 {
                     let lvl = parseInt(val);
-                    if (this.configItems.round_level === false) {
+                    if (this.configItems.round_levels === false) {
                         return lvl;
                     }
                     if (lvl < 5) lvl = 0;
@@ -326,7 +326,7 @@ module.exports = class Transforms {
                     return "sleep";
                 }
             case "level":
-                if (this.configItems.round_level === false) {
+                if (this.configItems.round_levels === false) {
                     return val;
                 }
                 if (val < 5) val = 0;

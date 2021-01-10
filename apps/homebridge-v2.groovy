@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.2.1"
-@Field static final String appModifiedFLD = "12-29-2020"
+@Field static final String appVersionFLD  = "2.2.2"
+@Field static final String appModifiedFLD = "01-10-2021"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 220]
+@Field static final Map minVersionsFLD    = [plugin: 222]
 @Field static final String sNULL          = (String) null
 @Field static final String sBULLET        = '\u2022'
 @Field static final String sDEGREES       = '\u00b0'
@@ -199,6 +199,7 @@ def pluginConfigPage() {
         section(sectTS("Plugin Communication Options:", sNULL, true)) {
             input "use_cloud_endpoint", "bool", title: inputTS("Communicate with Plugin Using Cloud Endpoint?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
             input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
+            input "round_levels",       "bool", title: inputTS("Round Levels <3% to 0% and >97% to 100%?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
             input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
         }
         
@@ -907,6 +908,7 @@ String renderConfig() {
         access_token: (String)state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
         validateTokenId: (Boolean)settings.validate_token,
+        round_levels: (Boolean)settings.round_levels != false,
         logConfig: [
             debug: false,
             showChanges: true,

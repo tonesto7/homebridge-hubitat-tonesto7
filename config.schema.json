@@ -114,9 +114,9 @@
                     "required": false,
                     "default": true
                 },
-                "round_level": {
+                "round_levels": {
                     "title": "Round Levels?",
-                    "description": "When a light level is below 3% round down to 0 and if above 97% round to 100",
+                    "description": "Round levels <3% to 0% and >97% to 100%",
                     "type": "boolean",
                     "required": false,
                     "default": true
