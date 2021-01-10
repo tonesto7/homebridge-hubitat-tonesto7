@@ -56,6 +56,13 @@
                 "default": 8000,
                 "required": false
             },
+            "round_level": {
+                "title": "Round Levels?",
+                "description": "When a light level is below 3% round down to 0 and if above 97% round to 100",
+                "type": "boolean",
+                "required": false,
+                "default": true
+            },
             "temperature_unit": {
                 "title": "Define Temperature Unit",
                 "type": "string",

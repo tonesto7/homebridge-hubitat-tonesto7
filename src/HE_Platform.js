@@ -86,6 +86,7 @@ module.exports = class HE_Platform {
             use_cloud: this.config.use_cloud === true,
             app_platform: this.config.app_platform,
             update_seconds: this.config.update_seconds || 30,
+            round_level: this.config.round_level === false,
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
             validateTokenId: this.config.validateTokenId === true,

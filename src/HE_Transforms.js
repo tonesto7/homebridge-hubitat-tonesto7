@@ -9,6 +9,7 @@ module.exports = class Transforms {
         Characteristic = char;
         CommunityTypes = platform.CommunityTypes;
         this.log = platform.log;
+        this.configItems = platform.getConfigItems();
     }
 
     transformStatus(val) {
@@ -167,7 +168,15 @@ module.exports = class Transforms {
             case "fanSpeed":
                 return this.fanSpeedIntToLevel(val);
             case "level":
-                return parseInt(val);
+                {
+                    let lvl = parseInt(val);
+                    if (this.configItems.round_level === false) {
+                        return lvl;
+                    }
+                    if (lvl < 5) lvl = 0;
+                    if (lvl > 95) lvl = 100;
+                    return lvl;
+                }
                 // return parseInt(val) >= 99 ? parseInt(100) : parseInt(val) || 0;
             case "saturation":
             case "volume":
@@ -316,6 +325,13 @@ module.exports = class Transforms {
                 } else {
                     return "sleep";
                 }
+            case "level":
+                if (this.configItems.round_level === false) {
+                    return val;
+                }
+                if (val < 5) val = 0;
+                if (val > 95) val = 100;
+                return val;
             default:
                 return val;
         }
