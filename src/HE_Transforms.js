@@ -170,14 +170,11 @@ module.exports = class Transforms {
             case "level":
                 {
                     let lvl = parseInt(val);
-                    if (this.configItems.round_levels === false) {
-                        return lvl;
-                    }
-                    if (lvl < 5) lvl = 0;
-                    if (lvl > 95) lvl = 100;
+                    if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
+                    if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
+                    // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
                     return lvl;
                 }
-                // return parseInt(val) >= 99 ? parseInt(100) : parseInt(val) || 0;
             case "saturation":
             case "volume":
                 return parseInt(val) || 0;
@@ -326,12 +323,13 @@ module.exports = class Transforms {
                     return "sleep";
                 }
             case "level":
-                if (this.configItems.round_levels === false) {
-                    return val;
+                {
+                    let lvl = parseInt(val);
+                    if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
+                    if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
+                    // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
+                    return lvl;
                 }
-                if (val < 5) val = 0;
-                if (val > 95) val = 100;
-                return val;
             default:
                 return val;
         }

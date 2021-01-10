@@ -199,7 +199,7 @@ def pluginConfigPage() {
         section(sectTS("Plugin Communication Options:", sNULL, true)) {
             input "use_cloud_endpoint", "bool", title: inputTS("Communicate with Plugin Using Cloud Endpoint?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
             input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
-            input "round_levels",       "bool", title: inputTS("Round Levels <3% to 0% and >97% to 100%?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
+            input "round_levels",       "bool", title: inputTS("Round Levels <5% to 0% and >95% to 100%?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
             input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
         }
         
