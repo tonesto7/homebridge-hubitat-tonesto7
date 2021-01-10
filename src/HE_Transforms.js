@@ -9,7 +9,7 @@ module.exports = class Transforms {
         Characteristic = char;
         CommunityTypes = platform.CommunityTypes;
         this.log = platform.log;
-        this.configItems = platform.getConfigItems();
+        this.configItems = platform.configItems;
     }
 
     transformStatus(val) {
