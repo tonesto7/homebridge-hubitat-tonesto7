@@ -15,7 +15,6 @@ module.exports = class DeviceCharacteristics {
         this.myUtils = accessories.myUtils;
         this.transforms = accessories.transforms;
         this.homebridge = accessories.homebridge;
-        this.configItems = accessories.platform.getConfigItems();
     }
 
     manageGetCharacteristic(svc, acc, char, attr, opts = {}) {
