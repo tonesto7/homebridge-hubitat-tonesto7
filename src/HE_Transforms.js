@@ -173,7 +173,7 @@ module.exports = class Transforms {
                     if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
                     if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
                     // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
-                    return lvl;
+                    return parseInt(lvl);
                 }
             case "saturation":
             case "volume":
@@ -328,7 +328,7 @@ module.exports = class Transforms {
                     if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
                     if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
                     // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
-                    return lvl;
+                    return parseInt(lvl);
                 }
             default:
                 return val;

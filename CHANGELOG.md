@@ -1,3 +1,7 @@
+## v2.2.2
+- [NEW] Added new config option for rounding levels <5 to 0 and > 95 to 100 (On by Default now).
+- [FIX] Log cleanups.
+
 ## v2.2.0
 - [NEW] Create virtual devices under HomeKit to trigger your WebCoRE pistons.
 - [FIX] Tweaked value transforms for temperature, colorTemperature, to prevent errors.
