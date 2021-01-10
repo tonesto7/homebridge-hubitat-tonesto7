@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.2.1"
-@Field static final String appModifiedFLD = "12-29-2020"
+@Field static final String appVersionFLD  = "2.2.2"
+@Field static final String appModifiedFLD = "01-10-2021"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 220]
+@Field static final Map minVersionsFLD    = [plugin: 222]
 @Field static final String sNULL          = (String) null
 @Field static final String sBULLET        = '\u2022'
 @Field static final String sDEGREES       = '\u00b0'
@@ -101,7 +101,7 @@ preferences {
     ],
     capabilities: [
         "HealthCheck", "Indicator", "WindowShadePreset", "ChangeLevel", "Outlet", "HealthCheck", "UltravioletIndex", "ColorMode", "VoltageMeasurement", "PowerMeter", "EnergyMeter", "ThreeAxis",
-        "ReleasableButton", //"PushableButton", "HoldableButton", "DoubleTapableButton"
+        "ReleasableButton", "PushableButton", "HoldableButton", "DoubleTapableButton"
     ]
 ]
 
@@ -199,6 +199,7 @@ def pluginConfigPage() {
         section(sectTS("Plugin Communication Options:", sNULL, true)) {
             input "use_cloud_endpoint", "bool", title: inputTS("Communicate with Plugin Using Cloud Endpoint?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
             input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
+            input "round_levels",       "bool", title: inputTS("Round Levels <5% to 0% and >95% to 100%?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
             input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
         }
         
@@ -323,7 +324,7 @@ private void inputDupeValidation() {
     Map items = [
         d: [
             "fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", 
-            // "pushableButtonList": "Pushable Buttons", "holdableButtonList": "Holdable Buttons", "doubleTapableButtonList": "Double Tap Buttons", 
+            "pushableButtonList": "Pushable Buttons", "holdableButtonList": "Holdable Buttons", "doubleTapableButtonList": "Double Tap Buttons", 
             "lightList": "Lights", "shadesList": "Window Shades", "speakerList": "Speakers",
             "garageList": "Garage Doors", "tstatList": "Thermostat", "tstatFanList": "Themostat + Fan", "tstatHeatList": "Thermostat (Heat Only)"
         ],
@@ -421,9 +422,9 @@ def capFilterPage() {
             paragraph paraTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", sNULL, false, "#2874D9")
             input "removeAcceleration", "capability.accelerationSensor", title: inputTS("Remove Acceleration from these Devices", getAppImg("acceleration", true)), multiple: true, submitOnChange: true, required: false
             input "removeBattery", "capability.battery", title: inputTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false
-            input "removeHoldableButton", "capability.holdableButton", title: inputTS("Remove Holdable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inputTS("Remove Double Tapable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "removePushableButton", "capability.pushableButton", title: inputTS("Remove Pushable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "removeHoldableButton", "capability.holdableButton", title: inputTS("Remove Holdable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inputTS("Remove Double Tapable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+            // input "removePushableButton", "capability.pushableButton", title: inputTS("Remove Pushable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
             input "removeContact", "capability.contactSensor", title: inputTS("Remove Contact from these Devices", getAppImg("contact", true)), multiple: true, submitOnChange: true, required: false
             input "removeColorControl", "capability.colorControl", title: inputTS("Remove Color Control from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
             input "removeColorTemp", "capability.colorTemperature", title: inputTS("Remove Color Temperature from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
@@ -597,8 +598,8 @@ def initialize() {
     if(getAccessToken()) {
         subscribeToEvts()
         runEvery5Minutes("healthCheck")
-        if(settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { log.debug "setting event log ts: "; updTsVal(sEVTLOGEN); }
-        if(settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { log.debug "setting debug log ts: "; updTsVal(sDBGLOGEN); }
+        if(settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN); }
+        if(settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN); }
     } else { logError("initialize error: Unable to get or generate smartapp access token") }
 }
 
@@ -663,12 +664,13 @@ private void healthCheck(Boolean ui=false) {
     Integer lastUpd = getLastTsValSecs("lastActTs")
     Integer evtLogSec = getLastTsValSecs(sEVTLOGEN, 0)
     Integer dbgLogSec = getLastTsValSecs(sDBGLOGEN, 0)
+    // log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if(!ui && lastUpd > 14400) { remTsVal(sSVR) }
     
-    if(evtLogSec > 3600*2) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
-    else if (evtLogSec == 0) { updTsVal(sEVTLOGEN) }
-    if(dbgLogSec > 3600*2) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
-    else if (dbgLogSec == 0) { updTsVal(sDBGLOGEN) }
+    if(evtLogSec > 60*1 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate("showEventLogs", "false", "bool"); }
+    else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
+    if(dbgLogSec > 60*1 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate("showDebugLogs", "false", "bool"); }
+    else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
 }
 
 Boolean checkIfCodeUpdated(Boolean ui=false) {
@@ -906,6 +908,7 @@ String renderConfig() {
         access_token: (String)state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
         validateTokenId: (Boolean)settings.validate_token,
+        round_levels: (Boolean)settings.round_levels != false,
         logConfig: [
             debug: false,
             showChanges: true,
@@ -1074,14 +1077,14 @@ Map deviceCapabilityList(device) {
 
     if(isDeviceInInput("lightList", device.id)) { capItems["LightBulb"] = 1 }
     
-    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
-    else { capItems.remove("PushableButton") }
+    // if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
+    // else { capItems.remove("PushableButton") }
 
-    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1; }
-    else { capItems.remove("HoldableButton") }
+    // if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1; }
+    // else { capItems.remove("HoldableButton") }
 
-    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; } 
-    else { capItems.remove("DoubleTapableButton") }
+    // if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; } 
+    // else { capItems.remove("DoubleTapableButton") }
     
     if(isDeviceInInput("fanList", device.id)) { capItems["Fan"] = 1 }
     if(isDeviceInInput("speakerList", device.id)) { capItems["Speaker"] = 1 }
@@ -1282,7 +1285,7 @@ def changeHandler(evt) {
         case "pushed":
         case "doubleTapped":
             Map evtData = [buttonNumber: value]
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: "button", evtValue: attr, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: evt.name, evtValue: attr, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
             break
         default:
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: null])

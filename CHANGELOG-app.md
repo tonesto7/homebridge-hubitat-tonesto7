@@ -1,3 +1,7 @@
+## _**v2.2.2 Changes**_
+- [FIX] Turning Off logs messages every few hours.
+- [FIX] Added support to the config generator for a new round_levels options which rounds levels <5 to 0 and > 95 to 100.
+
 ## _**v2.2.1 Changes**_
 - [FIX] java.lang.IllegalArgumentException: argument type mismatch error resolved.
 - [FIX] Fixed code reversion in device debug logic.

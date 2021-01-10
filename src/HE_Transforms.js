@@ -9,6 +9,7 @@ module.exports = class Transforms {
         Characteristic = char;
         CommunityTypes = platform.CommunityTypes;
         this.log = platform.log;
+        this.configItems = platform.configItems;
     }
 
     transformStatus(val) {
@@ -167,8 +168,13 @@ module.exports = class Transforms {
             case "fanSpeed":
                 return this.fanSpeedIntToLevel(val);
             case "level":
-                return parseInt(val);
-                // return parseInt(val) >= 99 ? parseInt(100) : parseInt(val) || 0;
+                {
+                    let lvl = parseInt(val);
+                    if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
+                    if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
+                    // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
+                    return parseInt(lvl);
+                }
             case "saturation":
             case "volume":
                 return parseInt(val) || 0;
@@ -315,6 +321,14 @@ module.exports = class Transforms {
                     return "high";
                 } else {
                     return "sleep";
+                }
+            case "level":
+                {
+                    let lvl = parseInt(val);
+                    if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
+                    if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
+                    // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
+                    return parseInt(lvl);
                 }
             default:
                 return val;

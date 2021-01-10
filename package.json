@@ -13,12 +13,12 @@
         "request": "^2.88.2",
         "winston": "^3.3.3",
         "winston-daily-rotate-file": "^4.5.0",
-        "ws": "^7.4.1"
+        "ws": "^7.4.2"
     },
     "devDependencies": {
-        "eslint": "^7.16.0",
+        "eslint": "^7.17.0",
         "eslint-config-prettier": "^7.1.0",
-        "eslint-plugin-prettier": "^3.3.0",
+        "eslint-plugin-prettier": "^3.3.1",
         "homebridge": "^1.1.7",
         "lint-staged": "^10.5.3",
         "prettier": "^2.2.1",
@@ -55,7 +55,7 @@
         "freeport": "npx kill-port 8000",
         "start": "homebridge -D -P . -U .",
         "snyk-protect": "snyk protect",
-        "prepare": "yarn run snyk-protect",
+        "prepare": "npm run snyk-protect",
         "hb_cleanup_win": "rmdir /Q /S accessories && rmdir /Q /S persist"
     },
     "main": "src/index.js",
@@ -66,6 +66,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.2.1",
+    "version": "2.2.2",
     "synk": true
 }

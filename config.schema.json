@@ -114,6 +114,13 @@
                     "required": false,
                     "default": true
                 },
+                "round_levels": {
+                    "title": "Round Levels?",
+                    "description": "Round levels <3% to 0% and >97% to 100%",
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
                 "file": {
                     "type": "object",
                     "properties": {

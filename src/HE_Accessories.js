@@ -118,6 +118,7 @@ module.exports = class ST_Accessories {
     processDeviceAttributeUpdate(change) {
         return new Promise((resolve) => {
             // this.log.info("change: ", change);
+            // console.log("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
             let accessory = this.getAccessoryFromCache(change);
             // console.log(characteristics);
@@ -131,10 +132,14 @@ module.exports = class ST_Accessories {
                             char.getValue();
                             break;
                         case "button":
-                            this.log.info("change: ", change);
+                        case "held":
+                        case "pushed":
+                        case "doubleTapped":
+                            // this.log.info("change: ", change);
+
                             var btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
                             if (btnNum && accessory.buttonEvent !== undefined) {
-                                accessory.buttonEvent(btnNum, change.value, change.deviceid, accessory);
+                                accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
                             }
                             break;
                         default:
