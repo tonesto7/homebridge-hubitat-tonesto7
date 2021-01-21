@@ -106,7 +106,7 @@ preferences {
 ]
 
 def startPage() {
-    if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph title: "OAuth Error", "OAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
+    if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph "OAuth Error\nOAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
     else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
 	    healthCheck(true)
@@ -118,6 +118,9 @@ def startPage() {
 
 def mainPage() {
     Boolean isInst = (state.isInstalled == true)
+    if(settings.enableWebCoRE) {
+        if (!webCoREFLD) webCoRE_init()
+    }
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : sBLNK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectTS("Device Configuration:", sNULL, true)) {
@@ -271,15 +274,21 @@ def deviceSelectPage() {
         }
 
         section(sectTS("Create Devices for Modes in HomeKit?", sNULL, true)) {
-            paragraph title: paraTS("What are these for?"), "A virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete"
+            paragraph paraTS("What are these for?")+"\nA virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete"
             def modes = location?.getModes()?.sort{it?.name}?.collect { [(it?.id):it?.name] }
             input "modeList", "enum", title: inputTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true
         }
 
         section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
-            paragraph title: paraTS("What are these for?"), "A virtual device will be created for each selected piston in HomeKit.\nThese are very useful for use in Home Kit scenes", state: "complete"
-            def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
-            input "pistonList", "enum", title: inputTS("Create Devices for these Pistons",getAppImg("webcore",true)),  required: false, multiple: true, options: pistons, submitOnChange: true 
+            input "enableWebCoRE", "bool", title: inputTS("Enable webCoRE Integration", webCore_icon()), required: false, defaultValue: false, submitOnChange: true
+            if(settings.enableWebCoRE) {
+                if(!webCoREFLD) webCoRE_init()
+                paragraph paraTS("What are these for?")+"\nA virtual device will be created for each selected piston in HomeKit.\nThese are useful for use in Home Kit scenes so they can execute piston(s)", state: "complete"
+                def pistons = webCoRE_list('name')
+
+//                def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
+                input "pistonList", "enum", title: inputTS("Create Devices for these Pistons", webCore_icon()),  required: false, multiple: true, options: pistons, submitOnChange: true
+            } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
         }
 
         inputDupeValidation()
@@ -377,7 +386,7 @@ private void inputDupeValidation() {
     }
     if(show && out) {
         section(sectTS("Duplicate Device Validation:")) {
-            paragraph title: paraTS("Duplicate Devices Found in these Inputs:"), paraTS(out + "\nPlease remove these duplicate items!", sNULL, false, "red"), required: true, state: null
+            paragraph paraTS("Duplicate Devices Found in these Inputs:")+"\n"+out+"\n"+ paraTS("Please remove these duplicate items!", sNULL, false, "red"), required: true, state: null
         }
     }
 }
@@ -404,7 +413,7 @@ def historyPage() {
         }
         section(sectTS("Last (${eHist.size()}) Events Sent to HomeKit:", sNULL, true)) {
             if(eHist.size()>0) {
-                eHist.each { Map h-> paragraph title: paraTS((String)h.dt), paraTS(" ${sBULLET} <b>Device</b>: ${h?.data?.device}\n ${sBULLET} <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n ${sBULLET} <b>Value:</b> (${h?.data?.value})" : sBLNK}\n ${sBULLET} <b>Date:</b> ${h.dt}${h?.data?.execTime ? "\n ${sBULLET} <b>ExecTime:</b> (${h?.data?.execTime}ms)" : sBLNK}", null, false, "#2784D9"), state: "complete" }
+                eHist.each { Map h-> paragraph paraTS((String)h.dt)+"\n"+ paraTS(" ${sBULLET} <b>Device</b>: ${h?.data?.device}\n ${sBULLET} <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n ${sBULLET} <b>Value:</b> (${h?.data?.value})" : sBLNK}\n ${sBULLET} <b>Date:</b> ${h.dt}${h?.data?.execTime ? "\n ${sBULLET} <b>ExecTime:</b> (${h?.data?.execTime}ms)" : sBLNK}", null, false, "#2784D9"), state: "complete" }
             } else {paragraph paraTS("No Event History Found...", sNULL, false) }
         }
     }
@@ -589,7 +598,7 @@ def updated() {
     stateCleanup()
     initialize()
     remTsVal(sLASTWU)
-    runIn(2, "checkWebCoREData")
+    if(settings.enableWebCoRE) webCoRE_poll(true)
 }
 
 def initialize() {
@@ -649,8 +658,11 @@ void subscribeToEvts() {
         logInfo("Subscribed to (${settings.modeList.size() ?: 0} Location Modes)")
         subscribe(location, "mode", changeHandler)
     }
-    if(settings.pistonList) { logInfo("Subscribed to (${settings.pistonList.size()} WebCoRE Pistons)") }
-    subscribe(location, "webCoRE", changeHandler)
+    if(settings.enableWebCoRE) {
+        webCoRE_init()
+//        if(settings.pistonList) { logInfo("Subscribed to (${settings.pistonList.size()} WebCoRE Pistons)") }
+//        subscribe(location, "webCoRE", changeHandler)
+    }
 }
 
 private void healthCheck(Boolean ui=false) {
@@ -660,7 +672,7 @@ private void healthCheck(Boolean ui=false) {
         updated()
         return
     }
-    checkWebCoREData()
+    webCoRE_poll()
     Integer lastUpd = getLastTsValSecs("lastActTs")
     Integer evtLogSec = getLastTsValSecs(sEVTLOGEN, 0)
     Integer dbgLogSec = getLastTsValSecs(sDBGLOGEN, 0)
@@ -688,14 +700,6 @@ Boolean checkIfCodeUpdated(Boolean ui=false) {
        return true
     }
     return false
-}
-
-private void checkWebCoREData(Boolean now = false) {
-    Integer lastUpd = getLastTsValSecs(sLASTWU)
-    if ((lastUpd > (3600*24)) || (now && lastUpd > 300)) {
-        sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
-        updTsVal(sLASTWU)
-    }
 }
 
 private void stateCleanup() {
@@ -1260,24 +1264,40 @@ def changeHandler(evt) {
             }
             break
         case "webCoRE":
-            sendEvt = false
-            if((String)evt.value == 'pistonList'){
-                def data = evt.jsonData ?: null
+            if(settings.enableWebCoRE) {
+                sendEvt = false
+                if((String)evt.value == 'pistonList'){
+
+                    List p=webCoREFLD?.pistons ?: [];
+                    Map d=evt.jsonData?:[:];
+                    if(d.id && d.pistons && (d.pistons instanceof List)){
+                        p.removeAll{it.iid==d.id};
+                        p+=d.pistons.collect{[iid:d.id]+it}.sort{it.name};
+                        def a = webCoREFLD?.cbk
+
+//                  Boolean aa = getTheLock(sHMLF, "webCoRE_Handler")
+                        webCoREFLD = [cbk: a, updated: now(), pistons: p]
+//                  releaseTheLock(sHMLF)
+                        updTsVal(sLASTWU)
+                    }
+
+/*                def data = evt.jsonData ?: null
                 if(data != null){
                     webCoREFLD = data
                     updTsVal(sLASTWU)
-                }
-                if(evtLog) logDebug("got webCoRE piston list event $data")
-                break
-            } else if((String)evt.value == 'pistonExecuted'){
-                settings?.pistonList?.each { id->
-                    Map rt = getPistonById(id)
-                    if(rt && rt.id) {
-                        sendEvt = true
-                        sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: sBLNK, evtDate: dt])
+                } */
+                    if(evtLog) logDebug("got webCoRE piston list event $webCoREFLD")
+                    break
+                } else if((String)evt.value == 'pistonExecuted'){
+                    settings?.pistonList?.each { id->
+                        Map rt = getPistonById(id)
+                        if(rt && rt.id) {
+                            sendEvt = true
+                            sendItems.push([evtSource: "PISTON", evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: "switch", evtValue: "off", evtUnit: sBLNK, evtDate: dt])
+                        }
                     }
+                    break
                 }
-                break
             }
             logDebug("unknown webCoRE event $evt.value")
             break
@@ -1403,11 +1423,44 @@ def getModeByName(String name) {
 
 @Field volatile static Map<String,Map> webCoREFLD = [:]
 
+private static String webCoRE_handle(){ return'webCoRE' }
+
+public static String webCore_icon(){ return "https://raw.githubusercontent.com/ady624/webCoRE/master/resources/icons/app-CoRE.png" }
+
+private webCoRE_init(pistonExecutedCbk=null){
+    if(settings.enableWebCoRE) {
+        if(settings.pistonList) { logInfo("Subscribed to (${settings.pistonList.size()} WebCoRE Pistons)") }
+        subscribe(location, webCoRE_handle(), changeHandler);
+        if(!webCoREFLD) {
+            webCoREFLD = [:] + [cbk:true] // pistonExecutedCbk]
+            webCoRE_poll(true)
+        }
+    }
+}
+
+private void webCoRE_poll(Boolean now = false) {
+    if(settings.enableWebCoRE) {
+        Integer lastUpd = getLastTsValSecs(sLASTWU)
+        if ((lastUpd > (3600*24)) || (now && lastUpd > 300)) {
+            sendLocationEvent(name: "webCoRE.poll", value: 'poll') // ask webCoRE for piston list
+            updTsVal(sLASTWU)
+        }
+    }
+}
+
+public List webCoRE_list(String mode){
+    return (List)webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
+}
+
 Map getPistonById(String rId) {
+//  Map a = webCoRE_list('name')?.find { it.containsKey(rId) }
+//  String aaa = (String)a?."${rId}"
+//  return aaa ?: "Refresh to display piston name..."
     return webCoREFLD?.pistons?.find{it?.id == rId}
 }
 
 Map getPistonByName(String name) {
+//    String i=(webCoREFLD?.pistons ?: []).find{(it.name==pistonIdOrName)||(it.id==pistonIdOrName)}?.id;
     return webCoREFLD?.pistons?.find{it?.name == name}
 }
 
