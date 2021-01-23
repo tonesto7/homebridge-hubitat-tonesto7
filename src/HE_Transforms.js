@@ -165,7 +165,7 @@ module.exports = class Transforms {
             case "coolingSetpoint":
             case "thermostatSetpoint":
                 return this.thermostatTempConversion(val);
-            case "fanSpeed":
+            case "speed":
                 return this.fanSpeedIntToLevel(val);
             case "level":
                 {
@@ -248,7 +248,7 @@ module.exports = class Transforms {
                 return val ? "fanOn" : "fanAuto";
             case "thermostatFanModeTarget":
                 return val ? Characteristic.TargetFanState.MANUAL : Characteristic.TargetFanState.AUTO;
-            case "fanSpeed":
+            case "speed":
             case "level":
             case "volume":
             case "thermostatMode":
@@ -284,7 +284,8 @@ module.exports = class Transforms {
                 return val === "muted" ? "mute" : "unmute";
             case "alarmSystemStatus":
                 return this.convertAlarmCmd(val);
-            case "fanSpeed":
+            case "speed":
+                return this.fanSpeedConversion(val);
                 if (val === 0) {
                     return 0;
                 } else if (val < 34) {
@@ -443,30 +444,24 @@ module.exports = class Transforms {
     }
 
     fanSpeedConversion(speedVal, has4Spd = false) {
+    fanSpeedConversion(speedVal) {
         if (speedVal <= 0) {
             return "off";
-        }
-        if (has4Spd) {
-            if (speedVal > 0 && speedVal <= 25) {
-                return "low";
-            } else if (speedVal > 25 && speedVal <= 50) {
-                return "med";
-            } else if (speedVal > 50 && speedVal <= 75) {
-                return "medhigh";
-            } else if (speedVal > 75 && speedVal <= 100) {
-                return "high";
-            }
-        } else {
-            if (speedVal > 0 && speedVal <= 33) {
-                return "low";
-            } else if (speedVal > 33 && speedVal <= 66) {
-                return "medium";
-            } else if (speedVal > 66 && speedVal <= 100) {
-                return "high";
-            }
+        } else if (speedVal > 0 && speedVal <= 20) {
+            return "low";
+        } else if (speedVal > 20 && speedVal <= 40) {
+            return "medium-low";
+        } else if (speedVal > 40 && speedVal <= 60) {
+            return "medium";
+        } else if (speedVal > 60 && speedVal <= 80) {
+            return "medium-high";
+        } else if (speedVal > 80 && speedVal <= 100) {
+            return "high";
         }
     }
 
+    // This doesn't seem to be used
+    //
     fanSpeedConversionInt(speedVal) {
         if (!speedVal || speedVal <= 0) {
             return "off";
@@ -484,16 +479,23 @@ module.exports = class Transforms {
             case 0:
                 return 0;
             case 1:
-                return 33;
+                return 20;
             case 2:
-                return 66;
+                return 40;
             case 3:
+                return 60;
+            case 4:
+                return 80;
+            case 5:
                 return 100;
+
             default:
                 return 0;
         }
     }
 
+    // This doesn't seem to be used
+    //
     fanSpeedLevelToInt(val) {
         if (val > 0 && val <= 33) {
             return 1;

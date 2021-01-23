@@ -121,8 +121,8 @@ def mainPage() {
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : sBLNK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectTS("Device Configuration:", sNULL, true)) {
-            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
-            Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
+            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || fan5SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
+            Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0) + (fan5SpdList?.size() ?: 0)
             String desc = """<small style="color:gray;">Tap to select devices...</small>"""
             Integer devCnt = getDeviceCnt()
             if(conf) {
@@ -131,7 +131,7 @@ def mainPage() {
                 // desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLNK}</b> (${pushableButtonList.size()})</small><br>""" : sBLNK
                 // desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLNK}</b> (${holdableButtonList.size()})</small><br>""" : sBLNK
                 // desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLNK}</b> (${doubleTapableButtonList.size()})</small><br>""" : sBLNK
-                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : sBLNK}</b> (${fansize})</small><br>""" : sBLNK
+                desc += (fanList || fan3SpdList || fan4SpdList || fan5SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : sBLNK}</b> (${fansize})</small><br>""" : sBLNK
                 desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : sBLNK}</b> (${speakerList.size()})</small><br>""" : sBLNK
                 desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : sBLNK}</b> (${shadesList.size()})</small><br>""" : sBLNK
                 desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : sBLNK}</b> (${garageList.size()})</small><br>""" : sBLNK
@@ -255,6 +255,7 @@ def deviceSelectPage() {
             input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
             input "fan3SpdList", "capability.switch", title: inputTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
             input "fan4SpdList", "capability.switch", title: inputTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+            input "fan5SpdList", "capability.switch", title: inputTS("Fans (5 Speeds): (${fan5SpdList ? fan5SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectTS("Thermostats:", sNULL, true)) {
@@ -323,7 +324,7 @@ private void inputDupeValidation() {
     Map clnUp = [d: [:], o: [:]]
     Map items = [
         d: [
-            "fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", 
+            "fanList": "Fans", "fan3SpdList": "Fans (3-Speed)", "fan4SpdList": "Fans (4-Speed)", "fan5SpdList": "Fans (5-Speed)", 
             "pushableButtonList": "Pushable Buttons", "holdableButtonList": "Holdable Buttons", "doubleTapableButtonList": "Double Tap Buttons", 
             "lightList": "Lights", "shadesList": "Window Shades", "speakerList": "Speakers",
             "garageList": "Garage Doors", "tstatList": "Thermostat", "tstatFanList": "Themostat + Fan", "tstatHeatList": "Thermostat (Heat Only)"
@@ -823,6 +824,9 @@ Map getDeviceFlags(device) {
     if(settings?.fan4SpdList?.find { it?.id == device?.id }) {
         opts["fan_4_spd"] = 1
     }
+    if(settings?.fan5SpdList?.find { it?.id == device?.id }) {
+        opts["fan_5_spd"] = 1
+    }
     // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
 }
@@ -1147,7 +1151,7 @@ def getAllData() {
 
 static Map deviceSettingKeys() {
     return [
-        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "deviceList": "Other Devices",
+        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "fan5SpdList": "Fans (5Spd) Devices", "deviceList": "Other Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "switchList": "Switch Devices", "lightList": "Light Devices", "shadesList": "Window Shade Devices",
         "garageList": "Garage Devices", "tstatList": "T-Stat Devices", "tstatFanList": "T-Stat + Fan Devices", "tstatHeatList": "T-Stat Devices (Heat)",
         "pushableButtonList": "Pushable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices"
@@ -1157,7 +1161,7 @@ static Map deviceSettingKeys() {
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     [
-        "lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices",
+        "lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", , "fan5SpdList": "Fans (5SPD) Devices",
         "pushableButtonList": "Pushable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "deviceList": "Other Devices",
         "switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", 

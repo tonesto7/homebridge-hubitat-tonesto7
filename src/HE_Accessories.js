@@ -164,7 +164,7 @@ module.exports = class ST_Accessories {
         switch (cmd) {
             case "setLevel":
             case "setVolume":
-            case "setFanSpeed":
+            case "setSpeed":
             case "setSaturation":
             case "setHue":
             case "setColorTemperature":
