@@ -286,15 +286,6 @@ module.exports = class Transforms {
                 return this.convertAlarmCmd(val);
             case "speed":
                 return this.fanSpeedConversion(val);
-                if (val === 0) {
-                    return 0;
-                } else if (val < 34) {
-                    return 1;
-                } else if (val < 67) {
-                    return 2;
-                } else {
-                    return 3;
-                }
             case "thermostatMode":
                 switch (val) {
                     case Characteristic.TargetHeatingCoolingState.COOL:
@@ -443,7 +434,6 @@ module.exports = class Transforms {
         return parseFloat(((temp - 32) / 1.8) * 10) / 10;
     }
 
-    fanSpeedConversion(speedVal, has4Spd = false) {
     fanSpeedConversion(speedVal) {
         if (speedVal <= 0) {
             return "off";

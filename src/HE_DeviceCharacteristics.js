@@ -282,7 +282,7 @@ module.exports = class DeviceCharacteristics {
         if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
         if (_accessory.hasDeviceFlag("fan_5_spd")) spdSteps = 20;
         let spdAttr = _accessory.hasAttribute("speed") ? "speed" : undefined;
-        if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
+        
         if (spdAttr) {
             this.log.debug(`Setting fan speed steps to ${spdSteps}`);
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
