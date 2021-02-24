@@ -12,7 +12,7 @@ definition(
     name: "Homebridge v2",
     namespace: "tonesto7",
     author: "Anthony Santilli",
-    description: "Provides the API interface between Homebridge (HomeKit) and "+platformFLD,
+    description: "Provides the API interface between Homebridge (HomeKit) and " + platformFLD,
     category: "My Apps",
     iconUrl:   "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/hb_tonesto7.png",
     iconX2Url: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/hb_tonesto7.png",
@@ -36,18 +36,28 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.2.2"
-@Field static final String appModifiedFLD = "01-10-2021"
+@Field static final String appVersionFLD  = "2.3.0"
+@Field static final String appModifiedFLD = "02-24-2021"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
 @Field static final Boolean devModeFLD    = false
 @Field static final Map minVersionsFLD    = [plugin: 222]
 @Field static final String sNULL          = (String) null
+@Field static final String sBLANK         = ''
+@Field static final String sSPACE         = ' '
 @Field static final String sBULLET        = '\u2022'
-@Field static final String sDEGREES       = '\u00b0'
+@Field static final String sFRNFACE       = '\u2639'
+@Field static final String okSymFLD       = "\u2713"
+@Field static final String notOkSymFLD    = "\u2715"
+@Field static final String sPAUSESymFLD   = "\u275A\u275A"
+@Field static final String sLINEBR        = '<br>'
+@Field static final String sFALSE         = 'false'
+@Field static final String sTRUE          = 'true'
+@Field static final String sBOOL          = 'bool'
+@Field static final String sENUM          = 'enum'
+@Field static final String sTIME          = 'time'
 @Field static final String sSVR           = 'svraddr'
-@Field static final String sBLNK          = ''
 @Field static final String sCLN           = ':'
 @Field static final String sNLCLN         = 'null:null'
 @Field static final String sEVT           = 'evt'
@@ -60,6 +70,20 @@ preferences {
 @Field static final String sAPPJSON       = 'application/json'
 @Field static final String sSUCC          = 'Success'
 @Field static final String sATK           = 'accessToken'
+@Field static final String sMEDIUM        = 'medium'
+@Field static final String sSMALL         = 'small'
+@Field static final String sCLR4D9        = '#2784D9'
+@Field static final String sCLRRED        = 'red'
+@Field static final String sCLRRED2       = '#cc2d3b'
+@Field static final String sCLRGRY        = 'gray'
+@Field static final String sCLRGRN        = 'green'
+@Field static final String sCLRGRN2       = '#43d843'
+@Field static final String sCLRORG        = 'orange'
+@Field static final String sTTM           = 'Tap to modify...'
+@Field static final String sTTC           = 'Tap to configure...'
+@Field static final String sTTP           = 'Tap to proceed...'
+@Field static final String sTTV           = 'Tap to view...'
+@Field static final String sTTS           = 'Tap to select...'
 //@Field static final String sPOST = 'Post'
 @Field static final String sASYNCCR = 'asyncHttpCmdResp'
 @Field static final String sLASTWU  = 'lastwebCoREUpdDt'
@@ -106,8 +130,9 @@ preferences {
 ]
 
 def startPage() {
-    if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { section() { paragraph "OAuth Error\nOAuth is not Enabled for ${app?.getName()}!.\n\nPlease click remove and Enable Oauth under the SmartApp App Settings in the IDE", required: true, state: null } } }
-    else {
+    if(!getAccessToken()) { return dynamicPage(name: "mainPage", install: false, uninstall: true) { 
+        section() { paragraph spanSmBldBr("OAuth Error", sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the SmartApp App Settings in the IDE") } } 
+    } else {
         if(!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
 	    healthCheck(true)
         if(showChgLogOk()) { return changeLogPage() }
@@ -123,74 +148,75 @@ def mainPage() {
     }
     return dynamicPage(name: "mainPage", nextPage: (isInst ? "confirmPage" : sBLNK), install: !isInst, uninstall: true) {
         appInfoSect()
-        section(sectTS("Device Configuration:", sNULL, true)) {
+        section(sectHead("Device Configuration:")) {
             Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
-            Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0)
-            String desc = """<small style="color:gray;">Tap to select devices...</small>"""
+            Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0) + (fan5SpdList?.size() ?: 0)
+            String desc = sNULL
             Integer devCnt = getDeviceCnt()
             if(conf) {
-                desc  = sBLNK
-                desc += lightList ? """<small style="color:#2784D9;"><b>Light${lightList.size() > 1 ? "s" : sBLNK}</b> (${lightList.size()})</small><br>""" : sBLNK
-                // desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLNK}</b> (${pushableButtonList.size()})</small><br>""" : sBLNK
-                // desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLNK}</b> (${holdableButtonList.size()})</small><br>""" : sBLNK
-                // desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLNK}</b> (${doubleTapableButtonList.size()})</small><br>""" : sBLNK
-                desc += (fanList || fan3SpdList || fan4SpdList) ? """<small style="color:#2784D9;"><b>Fan Device${fansize > 1 ? "s" : sBLNK}</b> (${fansize})</small><br>""" : sBLNK
-                desc += speakerList ? """<small style="color:#2784D9;"><b>Speaker${speakerList.size() > 1 ? "s" : sBLNK}</b> (${speakerList.size()})</small><br>""" : sBLNK
-                desc += shadesList ? """<small style="color:#2784D9;"><b>Shade${shadesList.size() > 1 ? "s" : sBLNK}</b> (${shadesList.size()})</small><br>""" : sBLNK
-                desc += garageList ? """<small style="color:#2784D9;"><b>Garage Door${garageList.size() > 1 ? "s" : sBLNK}</b> (${garageList.size()})</small><br>""" : sBLNK
-                desc += tstatList ? """<small style="color:#2784D9;"><b>Thermostat${tstatList.size() > 1 ? "s" : sBLNK}</b> (${tstatList.size()})</small><br>""" : sBLNK
-                desc += tstatFanList ? """<small style="color:#2784D9;"><b>Thermostat${tstatFanList.size() > 1 ? "s" : sBLNK} w/Fan</b> (${tstatFanList.size()})</small><br>""" : sBLNK
-                desc += tstatHeatList ? """<small style="color:#2784D9;"><b>Thermostat Heat${tstatHeatList.size() > 1 ? "s" : sBLNK}</b> (${tstatHeatList.size()})</small><br>""" : sBLNK
-                desc += sensorList ? """<small style="color:#2784D9;"><b>Sensor${sensorList.size() > 1 ? "s" : sBLNK}</b> (${sensorList.size()})</small><br>""" : sBLNK
-                desc += switchList ? """<small style="color:#2784D9;"><b>Switch${switchList.size() > 1 ? "es" : sBLNK}</b> (${switchList.size()})</small><br>""" : sBLNK
-                desc += deviceList ? """<small style="color:#2784D9;"><b>Other${deviceList.size() > 1 ? "s" : sBLNK}</b> (${deviceList.size()})</small><br>""" : sBLNK
-                desc += modeList ? """<small style="color:#2784D9;"><b>Mode${modeList.size() > 1 ? "s" : sBLNK}</b> (${modeList.size()})</small><br>""" : sBLNK
-                desc += pistonList ? """<small style="color:#2784D9;"><b>Piston${pistonList.size() > 1 ? "s" : sBLNK}</b> (${pistonList.size()})</small><br>""" : sBLNK
-                desc += (Boolean)settings.addSecurityDevice ? """<small style="color:#2784D9;"><b>HSM</b> (1)</small><br>""" : sBLNK
-                desc += """<hr style='background-color:#2784D9; height: 1px; width: 150px; border: 0;'><small style="color:#2784D9;"><b>Devices Selected:</b> (${devCnt})</small><br>"""
-                desc += (devCnt > 149) ? """<br><medium style="color:red;"><b>NOTICE:</b> Homebridge only allows 149 Devices per HomeKit Bridge!!!</medium><br>""" : sBLNK
-                desc += """<br><small style="color:#2784D9;">Tap to modify...</small>"""
+                desc  = sBLANK
+                desc += lightList ? spanSmBld("Light${lightList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${lightList.size()})") : sBLANK
+                // desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${pushableButtonList.size()})") : sBLANK
+                // desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${holdableButtonList.size()})") : sBLANK
+                // desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${doubleTapableButtonList.size()})") : sBLANK
+                desc += (fanList || fan3SpdList || fan4SpdList || fan5SpdList) ? spanSmBld("Fan Device${fansize > 1 ? "s" : sBLANK}") + spanSmBr(" (${fansize})") : sBLANK
+                desc += speakerList ? spanSmBld("Speaker${speakerList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${speakerList.size()})") : sBLANK
+                desc += shadesList ? spanSmBld("Shade${shadesList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${shadesList.size()})") : sBLANK
+                desc += garageList ? spanSmBld("Garage Door${garageList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${garageList.size()})") : sBLANK
+                desc += tstatList ? spanSmBld("Thermostat${tstatList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${tstatList.size()})") : sBLANK
+                desc += tstatFanList ? spanSmBld("Thermostat${tstatFanList.size() > 1 ? "s" : sBLANK} w/Fan}") + spanSmBr(" (${tstatFanList.size()})") : sBLANK
+                desc += tstatHeatList ? spanSmBld("Thermostat Heat${tstatHeatList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${tstatHeatList.size()})") : sBLANK
+                desc += sensorList ? spanSmBld("Sensor${sensorList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${sensorList.size()})") : sBLANK
+                desc += switchList ? spanSmBld("Switch${switchList.size() > 1 ? "es" : sBLANK}") + spanSmBr(" (${switchList.size()})") : sBLANK
+                desc += deviceList ? spanSmBld("Other${deviceList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${deviceList.size()})") : sBLANK
+                desc += modeList ? spanSmBld("Mode${modeList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${modeList.size()})") : sBLANK
+                desc += pistonList ? spanSmBld("Piston${pistonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${pistonList.size()})") : sBLANK
+                desc += (Boolean)settings.addSecurityDevice ? spanSmBld("HSM") + spanSmBr(" (1)") : sBLANK
+                desc += htmlLine(sCLR4D9, 150)
+                desc += spanSmBld("Devices Selected:")  + spanSmBr(" (${devCnt})")
+                desc += (devCnt > 149) ? lineBr() + spanSmBld("NOTICE: ", sCLRRED) + spanSmBr("Homebridge only allows 149 Devices per HomeKit Bridge!!!", sCLRRED) : sBLANK
+                desc += inputFooter(sTTM)
             }
-            href "deviceSelectPage", title: inputTS("Device Selection", getAppImg("devices2", true)), required: false, image: getAppImg("devices2"), state: (conf ? "complete" : sNULL), description: desc
+            href "deviceSelectPage", title: inTS1("Device Selection", "devices2"), required: false, description: (desc ? spanSm(desc, sCLR4D9) : inputFooter("Tap to select devices...", sCLRGRY, true))
         }
 
         inputDupeValidation()
 
-        section(sectTS("Capability Filtering:", sNULL, true)) {
+        section(sectHead("Capability Filtering:")) {
             Boolean conf = (
                 removeAcceleration || removeBattery || removeButton || removeDoubleTapableButton || removePushableButton || removeHoldableButton || removeContact || removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
                 removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve
             )
-            href "capFilterPage", title: inputTS("Filter out capabilities from your devices", getAppImg("filter", true)), required: false, state: (conf ? "complete" : sNULL), description: (conf ? "Tap to modify..." : "Tap to configure")
+            href "capFilterPage", title: inTS1("Filter out capabilities from your devices", "filter"), description: (conf ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
         }
 
-        section(sectTS("Location Options:", sNULL, true)) {
-            input "addSecurityDevice", "bool", title: inputTS("Allow ${getAlarmSystemName()} Control in HomeKit?", getAppImg("alarm_home", true)), required: false, defaultValue: true, submitOnChange: true           
+        section(sectHead("Location Options:")) {
+            input "addSecurityDevice", "bool", title: inTS1("Allow ${getAlarmSystemName()} Control in HomeKit?", "alarm_home"), required: false, defaultValue: true, submitOnChange: true           
         }
 
-        section(sectTS("HomeBridge Plugin Config:", sNULL, true)) {
-            href "pluginConfigPage", style: "embedded", required: false, title: inputTS("View Generated Config for HomeBridge", getAppImg("info", true)), description: "Tap to view...", state: "complete"
+        section(sectHead("HomeBridge Plugin Config:")) {
+            href "pluginConfigPage", style: "embedded", required: false, title: inTS1("View Generated Config for HomeBridge", "info"), description: inputFooter(sTTV, sCLRGRY, true)
         }
 
-        section(sectTS("History Data and Device Debug:", sNULL, true)) {
-            href "historyPage", title: inputTS("View Command and Event History", getAppImg("backup", true)), description: "Tap to view...", state: "complete"
-            href "deviceDebugPage", title: inputTS("View Device Debug Data", getAppImg("debug", true)), description: "Tap to view...", state: "complete"
+        section(sectHead("History Data and Device Debug:")) {
+            href "historyPage", title: inTS1("View Command and Event History", "backup"), description: inputFooter(sTTV, sCLRGRY, true)
+            href "deviceDebugPage", title: inTS1("View Device Debug Data", "debug"), description: inputFooter(sTTV, sCLRGRY, true)
         }
 
-        section(sectTS("App Preferences:", sNULL, true)) {
+        section(sectHead("App Preferences:")) {
             def sDesc = getSetDesc()
-            href "settingsPage", title: inputTS("App Settings", getAppImg("settings", true)), description: sDesc, state: (sDesc?.endsWith("modify...") ? "complete" : sNULL), required: false
-            href "changeLogPage", title: inputTS("View Changelog", getAppImg("change_log", true)), description: "Tap to view..."
-            label title: inputTS("Label this Instance (optional)", getAppImg("name_tag", true)), description: "Rename this App", defaultValue: app?.name, required: false
+            href "settingsPage", title: inTS1("App Settings", "settings"), description: sDesc
+            href "changeLogPage", title: inTS1("View Changelog", "change_log"), description: inputFooter(sTTV, sCLRGRY, true)
+            label title: inTS1("Label this Instance (optional)", "name_tag"), description: "Rename this App", defaultValue: app?.name, required: false
         }
 
         if(devMode()) {
-            section(sectTS("Dev Mode Options", sNULL, true)) {
-                input "sendViaNgrok", "bool", title: inputTS("Communicate with Plugin via Ngrok Http?", getAppImg("command", true)), defaultValue: false, submitOnChange: true
-                if(sendViaNgrok) { input "ngrokHttpUrl", "text", title: inputTS("Enter the ngrok code from the url"), required: true, submitOnChange: true }
+            section(sectHead("Dev Mode Options")) {
+                input "sendViaNgrok", "bool", title: inTS1("Communicate with Plugin via Ngrok Http?", "command"), defaultValue: false, submitOnChange: true
+                if(sendViaNgrok) { input "ngrokHttpUrl", "text", title: inTS1("Enter the ngrok code from the url"), required: true, submitOnChange: true }
             }
-            section(sectTS("Other Settings:", sNULL, true)) {
-                input "restartService", "bool", title: inputTS("Restart Homebridge plugin when you press Save?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true
+            section(sectHead("Other Settings:")) {
+                input "restartService", "bool", title: inTS1("Restart Homebridge plugin when you press Save?", "reset"), required: false, defaultValue: false, submitOnChange: true
             }
         }
         clearTestDeviceItems()
@@ -198,23 +224,22 @@ def mainPage() {
 }
 
 def pluginConfigPage() {
-    return dynamicPage(name: "pluginConfigPage", title: sBLNK, install: false, uninstall: false) {
-        section(sectTS("Plugin Communication Options:", sNULL, true)) {
-            input "use_cloud_endpoint", "bool", title: inputTS("Communicate with Plugin Using Cloud Endpoint?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
-            input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
-            input "round_levels",       "bool", title: inputTS("Round Levels <5% to 0% and >95% to 100%?", getAppImg("command", true)), required: false, defaultValue: true, submitOnChange: true
-            input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
+    return dynamicPage(name: "pluginConfigPage", title: sBLANK, install: false, uninstall: false) {
+        section(sectHead("Plugin Communication Options:")) {
+            input "use_cloud_endpoint", "bool", title: inTS1("Communicate with Plugin Using Cloud Endpoint?", "command"), required: false, defaultValue: false, submitOnChange: true
+            input "validate_token",     "bool", title: inTS1("Validate AppID & Token for All Communications?", "command"), required: false, defaultValue: false, submitOnChange: true
+            input "round_levels",       "bool", title: inTS1("Round Levels <5% to 0% and >95% to 100%?", "command"), required: false, defaultValue: true, submitOnChange: true
+            input "temp_unit",          "enum", title: inTS1("Temperature Unit?", "temp_unit"), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
         }
         
-        // section(sectTS("Plugin Device Options:", sNULL, true)) {
-        //     input "round_up_99", "bool", title: inputTS("Round Up Devices with 9?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
-        //     input "temp_unit",          "enum", title: inputTS("Temperature Unit?", getAppImg("temp_unit", true)), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
-        //     input "validate_token",     "bool", title: inputTS("Validate AppID & Token for All Communications?", getAppImg("command", true)), required: false, defaultValue: false, submitOnChange: true
+        // section(sectHead("Plugin Device Options:")) {
+        //     input "round_up_99", "bool", title: inTS1("Round Up Devices with 9?", "command")), required: false, defaultValue: false, submitOnChange: true
+        //     input "temp_unit",          "enum", title: inTS1("Temperature Unit?", "temp_unit")), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
+        //     input "validate_token",     "bool", title: inTS1("Validate AppID & Token for All Communications?", "command")), required: false, defaultValue: false, submitOnChange: true
         // }
 
-        section() {
-            paragraph paraTS("Generated HomeBridge Plugin Platform Config", sNULL, true, "#2784D9")
-            paragraph """<textarea rows=21 class='mdl-textfield' readonly='true'>${renderConfig()}</textarea>"""
+        section(sectHead("Generated HomeBridge Plugin Platform Config")) {
+            paragraph divSm("<textarea rows=21 class='mdl-textfield' readonly='true'>${renderConfig()}</textarea>")
         }
     }
 }
@@ -239,55 +264,57 @@ static def deviceValidationErrors() {
 }
 
 def deviceSelectPage() {
-    return dynamicPage(name: "deviceSelectPage", title: sBLNK, install: false, uninstall: false) {
-        section(sectTS("Define Specific Categories:", sNULL, true)) {
-            paragraph paraTS("NOTE: Please do not select a device here and then again in another input below.")
-            paragraph paraTS("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sNULL, false, "#2784D9"), state: "complete"
-            input "lightList", "capability.switch", title: inputTS("Lights: (${lightList ? lightList.size() : 0} Selected)", getAppImg("light_on", true)), multiple: true, submitOnChange: true, required: false
-            input "garageList", "capability.garageDoorControl", title: inputTS("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", getAppImg("garage_door", true)), multiple: true, submitOnChange: true, required: false
-            input "speakerList", "capability.switch", title: inputTS("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", getAppImg("media_player", true)), multiple: true, submitOnChange: true, required: false
-            input "shadesList", "capability.windowShade", title: inputTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", getAppImg("window_shade", true)), multiple: true, submitOnChange: true, required: false
+    return dynamicPage(name: "deviceSelectPage", title: sBLANK, install: false, uninstall: false) {
+        section(sectHead("Define Specific Categories:")) {
+            paragraph spanSmBldBr("Description:", sCLR4D9) + spanSm("Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit", sCLR4D9)
+            paragraph spanSmBldBr("NOTE: ") + spanSmBldBr("Please do not select a device more than once in the inputs below")
+            
+            input "lightList", "capability.switch", title: inTS1("Lights: (${lightList ? lightList.size() : 0} Selected)", "light_on"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "garageList", "capability.garageDoorControl", title: inTS1("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", "garage_door"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "speakerList", "capability.switch", title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", "media_player"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "shadesList", "capability.windowShade", title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", "window_shade"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
-        // section(sectTS("Buttons:", sNULL, true)) {
-        //     input "pushableButtonList", "capability.pushableButton", title: inputTS("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-        //     input "holdableButtonList", "capability.holdableButton", title: inputTS("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-        //     input "doubleTapableButtonList", "capability.doubleTapableButton", title: inputTS("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
+        // section(sectHead("Buttons:")) {
+        //     input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        //     input "holdableButtonList", "capability.holdableButton", title: inTS1("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        //     input "doubleTapableButtonList", "capability.doubleTapableButton", title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         // }
 
-        section(sectTS("Fans:", sNULL, true)) {
-            input "fanList", "capability.switch", title: inputTS("Fans: (${fanList ? fanList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
-            input "fan3SpdList", "capability.switch", title: inputTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
-            input "fan4SpdList", "capability.switch", title: inputTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", getAppImg("fan_on", true)), multiple: true, submitOnChange: true, required: false
+        section(sectHead("Fans:")) {
+            input "fanList", "capability.switch", title: inTS1("Fans: (${fanList ? fanList.size() : 0} Selected)", "fan_on"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "fan3SpdList", "capability.switch", title: inTS1("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", "fan_on"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "fan4SpdList", "capability.switch", title: inTS1("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", "fan_on"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "fan5SpdList", "capability.switch", title: inTS1("Fans (5 Speeds): (${fan5SpdList ? fan5SpdList.size() : 0} Selected)", "fan_on"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectTS("Thermostats:", sNULL, true)) {
-            input "tstatList", "capability.thermostat", title: inputTS("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatFanList", "capability.thermostat", title: inputTS("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
-            input "tstatHeatList", "capability.thermostat", title: inputTS("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", getAppImg("thermostat", true)), multiple: true, submitOnChange: true, required: false
+        section(sectHead("Thermostats:")) {
+            input "tstatList", "capability.thermostat", title: inTS1("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", "thermostat"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "tstatFanList", "capability.thermostat", title: inTS1("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", "thermostat"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "tstatHeatList", "capability.thermostat", title: inTS1("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", "thermostat"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectTS("All Other Devices:", sNULL, true)) {
-            input "sensorList", "capability.sensor", title: inputTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", getAppImg("sensors", true)), multiple: true, submitOnChange: true, required: false
-            input "switchList", "capability.switch", title: inputTS("Switches: (${switchList ? switchList.size() : 0} Selected)", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false
-            input "deviceList", "capability.*", title: inputTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", getAppImg("devices2", true)), multiple: true, submitOnChange: true, required: false
+        section(sectHead("All Other Devices:")) {
+            input "sensorList", "capability.sensor", title: inTS1("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", "sensors"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "switchList", "capability.switch", title: inTS1("Switches: (${switchList ? switchList.size() : 0} Selected)", "switch"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "deviceList", "capability.*", title: inTS1("Others: (${deviceList ? deviceList.size() : 0} Selected)", "devices2"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
 
         }
 
-        section(sectTS("Create Devices for Modes in HomeKit?", sNULL, true)) {
-            paragraph paraTS("What are these for?")+"\nA virtual switch will be created for each mode in HomeKit.\nThe switch will be ON when that mode is active.", state: "complete"
+        section(sectHead("Create Devices for Modes in HomeKit?")) {
+            paragraph spanSmBldBr("What are these for?", sCLRGRY) + spanSm("Creats a virtual device for selected modes in HomeKit.<br> ${sBULLET} The switch will be ON when that mode is active.", sCLRGRY)
             def modes = location?.getModes()?.sort{it?.name}?.collect { [(it?.id):it?.name] }
-            input "modeList", "enum", title: inputTS("Create Devices for these Modes", getAppImg("mode", true)), required: false, multiple: true, options: modes, submitOnChange: true
+            input "modeList", "enum", title: inTS1("Create Devices for these Modes", "mode"), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: modes, submitOnChange: true
         }
 
         section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
             input "enableWebCoRE", "bool", title: inputTS("Enable webCoRE Integration", webCore_icon()), required: false, defaultValue: false, submitOnChange: true
             if(settings.enableWebCoRE) {
                 if(!webCoREFLD) webCoRE_init()
-                paragraph paraTS("What are these for?")+"\nA virtual device will be created for each selected piston in HomeKit.\nThese are useful for use in Home Kit scenes so they can execute piston(s)", state: "complete"
+                paragraph spanSmBldBr("What are these for?", sCLRGRY) + spanSm("Creats a virtual device for selected pistons in HomeKit.<br> ${sBULLET} These are very useful for use in Home Kit scenes", sCLRGRY)
                 def pistons = webCoRE_list('name')
 
 //                def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
-                input "pistonList", "enum", title: inputTS("Create Devices for these Pistons", webCore_icon()),  required: false, multiple: true, options: pistons, submitOnChange: true
+                input "pistonList", "enum", title: inputTS("Create Devices for these Pistons", webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
             } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
         }
 
@@ -296,15 +323,15 @@ def deviceSelectPage() {
 }
 
 def settingsPage() {
-    return dynamicPage(name: "settingsPage", title: sBLNK, install: false, uninstall: false) {
-        section(sectTS("Logging:", sNULL, true)) {
-            input "showCmdLogs", "bool", title: inputTS("Show Command Events?", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
-            input "showEventLogs", "bool", title: inputTS("Show Device/Location Events? (Turns Off After 2 hours)", getAppImg("debug", true)), required: false, defaultValue: true, submitOnChange: true
-            input "showDebugLogs", "bool", title: inputTS("Show Detailed Logging? (Turns Off After 2 hours)", getAppImg("debug", true)), required: false, defaultValue: false, submitOnChange: true
+    return dynamicPage(name: "settingsPage", title: sBLANK, install: false, uninstall: false) {
+        section(sectHead("Logging:")) {
+            input "showCmdLogs", "bool", title: inTS1("Show Command Events?", "debug"), required: false, defaultValue: true, submitOnChange: true
+            input "showEventLogs", "bool", title: inTS1("Show Device/Location Events? (Turns Off After 2 hours)", "debug"), required: false, defaultValue: true, submitOnChange: true
+            input "showDebugLogs", "bool", title: inTS1("Show Detailed Logging? (Turns Off After 2 hours)", "debug"), required: false, defaultValue: false, submitOnChange: true
         }
-        section(sectTS("Security:", sNULL, true)) {
-            paragraph paraTS("This will allow you to clear you existing app accessToken and force a new one to be created.\nYou will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", sNULL, false)
-            input "resetAppToken", "bool", title: inputTS("Revoke and Recreate App Access Token?", getAppImg("reset", true)), defaultValue: false, submitOnChange: true
+        section(sectHead("Security:")) {
+            paragraph spanSmBldBr("Description:", sCLRGRY) + spanSm("This will allow you to clear you existing app accessToken and force a new one to be created.<br>You will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit", sCLRGRY)
+            input "resetAppToken", "bool", title: inTS1("Revoke and Recreate App Access Token?", "reset"), defaultValue: false, submitOnChange: true
             if((Boolean)settings.resetAppToken) { settingUpdate("resetAppToken", "false", "bool"); resetAppToken() }
         }
     }
@@ -340,10 +367,10 @@ private void inputDupeValidation() {
         o: ["deviceList": "Other", "sensorList": "Sensor", "switchList": "Switch"]
     ]
     items.d.each { String k, String v->
-        List priItems = (settings?."${k}"?.size()) ? settings?."${k}"?.collect { (String)it?.getLabel() } : null
-        if(priItems) {
+        List priItems = (settings?."${k}"?.size()) ? settings?."${k}"?.collect { (String)it?.getDisplayName() } : null
+        if(priItems && priItems.size()) {
             items.d.each { String k2, String v2->
-                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getLabel() } : null
+                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getDisplayName() } : null
                 if(k != k2 && secItems) {
                     secItems?.retainAll(priItems)
                     if(secItems?.size()) {
@@ -354,7 +381,7 @@ private void inputDupeValidation() {
             }
 
             items.o.each { String k2, String v2->
-                def secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String) it?.getLabel() } : null
+                def secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String) it?.getDisplayName() } : null
                 if(secItems) {
                     secItems?.retainAll(priItems)
                     if(secItems?.size()) {
@@ -365,28 +392,28 @@ private void inputDupeValidation() {
             }
         }
     }
-    String out = sBLNK
+    String out = sBLANK
     Boolean show = false
     Boolean first = true
-    if(clnUp.d.size()>0) {
+    if(clnUp.d.size() > 0) {
         show=true
         clnUp.d.each { String k, List v->
-            out += "${first ? sBLNK : "\n"}${items?.d[k]}:\n "
-            out += v?.join("\n ") + "\n"
+            out += (first ? sBLANK : lineBr()) + spanBldBr("${items?.d[k]}:")
+            out += spanBr(v.collect { " ${sBULLET} " + it.toString() }?.join(sLINEBR))
             first = false
         }
     }
     if(clnUp.o.size()>0) {
         show=true
         clnUp.o.each { String k, List v->
-            out += "${first ? sBLNK : "\n"}${items?.o[k]}:\n "
-            out += v?.join("\n ") + "\n"
+            out += (first ? sBLANK : lineBr()) + spanBldBr("${items?.o[k]}:")
+            out += spanBr(v.collect { " ${sBULLET} " + it.toString() }?.join(sLINEBR))
             first = false
         }
     }
     if(show && out) {
-        section(sectTS("Duplicate Device Validation:")) {
-            paragraph paraTS("Duplicate Devices Found in these Inputs:")+"\n"+out+"\n"+ paraTS("Please remove these duplicate items!", sNULL, false, "red"), required: true, state: null
+        section(sectHead("Duplicate Device Validation:")) {
+            paragraph spanBldBr("These Inputs Contain the Same Devices:", sCLRRED) + spanSmBr(out, sCLRRED) + spanSmBld("Please remove these duplicate items!", sCLRRED)
         }
     }
 }
@@ -396,121 +423,150 @@ String getSetDesc() {
     if((Boolean)settings.showEventLogs || (Boolean)settings.showEventLogs != false) s.push("${sBULLET} Device Event Logging")
     if((Boolean)settings.showCmdLogs || (Boolean)settings.showCmdLogs != false) s.push("${sBULLET} Command Event Logging")
     if((Boolean)settings.showDebugLogs) s.push("${sBULLET} Debug Logging")
-    return s.size()>0 ? "${s.join("\n")}\n\nTap to modify..." : "Tap to configure..."
+    return s.size()>0 ? spanSmBr("${s.join("<br>")}", sCLR4D9) + inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)
 }
 
 def historyPage() {
-    return dynamicPage(name: "historyPage", title: sBLNK, install: false, uninstall: false) {
+    return dynamicPage(name: "historyPage", title: sBLANK, install: false, uninstall: false) {
         List<Map> cHist = getCmdHistory()?.sort {(Long)it.gt}?.reverse()
         List<Map> eHist = getEvtHistory()?.sort {(Long)it.gt}?.reverse()
         section() {
-            paragraph paraTS("This history is only stored in memory.  It is erased after every code update and a Hub reboot.", getAppImg("info", true), false, "#2784D9"), state: "complete"
+            paragraph spanSmBldBr("Notice:", sCLRGRY, "info") + spanSm("This history is only stored in memory.  It is erased after every code update and Hub reboot.", sCLRGRY)
         }
-        section(sectTS("Last (${cHist.size()}) Commands Received From HomeKit:", sNULL, true)) {
+        section(sectHead("Last (${cHist.size()}) Commands Received From HomeKit:")) {
             if(cHist.size()>0) {
-                cHist.each { c-> paragraph paraTS(" ${sBULLET} <b>Device:</b> ${c?.data?.device}\n ${sBULLET} <b>Command:</b> (${c?.data?.cmd})${c?.data?.value1 ? "\n ${sBULLET} <b>Value1:</b> (${c?.data?.value1})" : sBLNK}${c?.data?.value2 ? "\n ${sBULLET} <b>Value2:</b> (${c?.data?.value2})" : sBLNK}\n ${sBULLET} <b>Date:</b> ${c.dt}${c?.data?.execTime ? "\n ${sBULLET} <b>ExecTime: </b> (${c?.data?.execTime}ms)" : sBLNK}", null, false, "#2784D9"), state: "complete" }
-            } else { paragraph paraTS("No Command History Found...", sNULL, false) }
+                cHist.each { c->
+                    List hList = []
+                    hList.push([name: "Device:", val: c?.data?.device])
+                    hList.push([name: "Command:", val: c?.data?.cmd])
+                    if(c?.data?.value1) hList.push([name: "Value1:", val: c?.data?.value1])
+                    if(c?.data?.value2) hList.push([name: "Value2:", val: c?.data?.value2])
+                    if(c?.data?.execTime) hList.push([name: "ExecTime:", val: "${c?.data?.execTime}ms"])
+                    hList.push([name: "Date:", val: c.dt])
+                    if(hList.size()) { paragraph kvListToHtmlTable(hList, sCLR4D9) }
+                }
+            } else { paragraph spanSm("No Command History Found...", sCLRGRY) }
         }
-        section(sectTS("Last (${eHist.size()}) Events Sent to HomeKit:", sNULL, true)) {
+        section(sectHead("Last (${eHist.size()}) Events Sent to HomeKit:")) {
             if(eHist.size()>0) {
-                eHist.each { Map h-> paragraph paraTS((String)h.dt)+"\n"+ paraTS(" ${sBULLET} <b>Device</b>: ${h?.data?.device}\n ${sBULLET} <b>Event:</b> (${h?.data?.name})${h?.data?.value ? "\n ${sBULLET} <b>Value:</b> (${h?.data?.value})" : sBLNK}\n ${sBULLET} <b>Date:</b> ${h.dt}${h?.data?.execTime ? "\n ${sBULLET} <b>ExecTime:</b> (${h?.data?.execTime}ms)" : sBLNK}", null, false, "#2784D9"), state: "complete" }
-            } else {paragraph paraTS("No Event History Found...", sNULL, false) }
+                eHist.each { Map h->
+                    List hList = []
+                    hList.push([name: "Device:", val: h?.data?.device])
+                    hList.push([name: "Event:", val: h?.data?.name])
+                    if(h?.data?.value) hList.push([name: "Value:", val: h?.data?.value])
+                    if(h?.data?.execTime) hList.push([name: "ExecTime:", val: "${h?.data?.execTime}ms"])
+                    if(hList.size()) { paragraph spanSmBldBr((String)h.dt, sCLR4D9) + kvListToHtmlTable(hList, sCLR4D9) }
+                }
+            } else { paragraph spanSm("No Event History Found...", sCLRGRY) }
         }
     }
 }
 
+private String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
+    String str = sBLANK
+    if(tabList?.size()) {
+        str += "<table style='border: 1px solid ${color};border-collapse: collapse;'>"
+        tabList.each { it->  
+            str += "<tr style='border: 1px solid ${color};'><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBld(it.name)}</td><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBr("${it.val}")}</td></tr>"
+        }
+        str += "</table>"
+    }
+    return str
+}
+
 def capFilterPage() {
     return dynamicPage(name: "capFilterPage", title: "Capability Filtering", install: false, uninstall: false) {
-        section(sectTS("Restrict Temp Device Creation", sNULL, true)) {
-            input "noTemp", "bool", title: inputTS("Remove Temperature from All Contacts and Water Sensors?", getAppImg("temperature", true)), required: false, defaultValue: false, submitOnChange: true
+        section(sectHead("Restrict Temp Device Creation")) {
+            input "noTemp", "bool", title: inTS1("Remove Temperature from All Contacts and Water Sensors?", "temperature"), required: false, defaultValue: false, submitOnChange: true
             if(settings?.noTemp) {
-                input "sensorAllowTemp", "capability.sensor", title: inputTS("Allow Temps on these sensors", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false
+                input "sensorAllowTemp", "capability.sensor", title: inTS1("Allow Temps on these sensors", "temperature"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             }
         }
-        section(sectTS("Remove Capabilities from Devices", sNULL, true)) {
-            paragraph paraTS("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", sNULL, false, "#2874D9")
-            input "removeAcceleration", "capability.accelerationSensor", title: inputTS("Remove Acceleration from these Devices", getAppImg("acceleration", true)), multiple: true, submitOnChange: true, required: false
-            input "removeBattery", "capability.battery", title: inputTS("Remove Battery from these Devices", getAppImg("battery", true)), multiple: true, submitOnChange: true, required: false
-            // input "removeHoldableButton", "capability.holdableButton", title: inputTS("Remove Holdable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            // input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inputTS("Remove Double Tapable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            // input "removePushableButton", "capability.pushableButton", title: inputTS("Remove Pushable Buttons from these Devices", getAppImg("button", true)), multiple: true, submitOnChange: true, required: false
-            input "removeContact", "capability.contactSensor", title: inputTS("Remove Contact from these Devices", getAppImg("contact", true)), multiple: true, submitOnChange: true, required: false
-            input "removeColorControl", "capability.colorControl", title: inputTS("Remove Color Control from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
-            input "removeColorTemp", "capability.colorTemperature", title: inputTS("Remove Color Temperature from these Devices", getAppImg("color", true)), multiple: true, submitOnChange: true, required: false
-            // input "removeEnergy", "capability.energyMeter", title: inputTS("Remove Energy Meter from these Devices", getAppImg("power", true)), multiple: true, submitOnChange: true, required: false
-            input "removeHumidity", "capability.relativeHumidityMeasurement", title: inputTS("Remove Humidity from these Devices", getAppImg("humidity", true)), multiple: true, submitOnChange: true, required: false
-            input "removeIlluminance", "capability.illuminanceMeasurement", title: inputTS("Remove Illuminance from these Devices", getAppImg("illuminance", true)), multiple: true, submitOnChange: true, required: false
-            input "removeLevel", "capability.switchLevel", title: inputTS("Remove Level from these Devices", getAppImg("speed_knob", true)), multiple: true, submitOnChange: true, required: false
-            input "removeLock", "capability.lock", title: inputTS("Remove Lock from these Devices", getAppImg("speed_knob", true)), multiple: true, submitOnChange: true, required: false
-            input "removeMotion", "capability.motionSensor", title: inputTS("Remove Motion from these Devices", getAppImg("motion", true)), multiple: true, submitOnChange: true, required: false
-            // input "removePower", "capability.powerMeter", title: inputTS("Remove Power Meter from these Devices", getAppImg("power", true)), multiple: true, submitOnChange: true, required: false
-            input "removePresence", "capability.presenceSensor", title: inputTS("Remove Presence from these Devices", getAppImg("presence", true)), multiple: true, submitOnChange: true, required: false
-            input "removeSwitch", "capability.switch", title: inputTS("Remove Switch from these Devices", getAppImg("switch", true)), multiple: true, submitOnChange: true, required: false
-            input "removeTamper", "capability.tamperAlert", title: inputTS("Remove Tamper from these Devices", getAppImg("tamper", true)), multiple: true, submitOnChange: true, required: false
-            input "removeTemp", "capability.temperatureMeasurement", title: inputTS("Remove Temperature from these Devices", getAppImg("temperature", true)), multiple: true, submitOnChange: true, required: false
-            input "removeValve", "capability.valve", title: inputTS("Remove Valve from these Devices", getAppImg("valve", true)), multiple: true, submitOnChange: true, required: false
+        section(sectHead("Remove Capabilities from Devices")) {
+            paragraph spanSmBldBr("Description:", sCLRGRY) + spanSm("These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit", sCLRGRY)
+            input "removeAcceleration", "capability.accelerationSensor", title: inTS1("Remove Acceleration from these Devices", "acceleration"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeBattery", "capability.battery", title: inTS1("Remove Battery from these Devices", "battery"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            // input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            // input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            // input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeContact", "capability.contactSensor", title: inTS1("Remove Contact from these Devices", "contact"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeColorControl", "capability.colorControl", title: inTS1("Remove Color Control from these Devices", "color"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeColorTemp", "capability.colorTemperature", title: inTS1("Remove Color Temperature from these Devices", "color"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            // input "removeEnergy", "capability.energyMeter", title: inTS1("Remove Energy Meter from these Devices", "power"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeHumidity", "capability.relativeHumidityMeasurement", title: inTS1("Remove Humidity from these Devices", "humidity"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeIlluminance", "capability.illuminanceMeasurement", title: inTS1("Remove Illuminance from these Devices", "illuminance"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeLevel", "capability.switchLevel", title: inTS1("Remove Level from these Devices", "speed_knob"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeLock", "capability.lock", title: inTS1("Remove Lock from these Devices", "speed_knob"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeMotion", "capability.motionSensor", title: inTS1("Remove Motion from these Devices", "motion"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            // input "removePower", "capability.powerMeter", title: inTS1("Remove Power Meter from these Devices", "power"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removePresence", "capability.presenceSensor", title: inTS1("Remove Presence from these Devices", "presence"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeSwitch", "capability.switch", title: inTS1("Remove Switch from these Devices", "switch"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeTamper", "capability.tamperAlert", title: inTS1("Remove Tamper from these Devices", "tamper"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeTemp", "capability.temperatureMeasurement", title: inTS1("Remove Temperature from these Devices", "temperature"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeValve", "capability.valve", title: inTS1("Remove Valve from these Devices", "valve"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
-        section(sectTS("Reset Selected Filters:", sNULL, true), hideable: true, hidden: true) {
-            input "resetCapFilters", "bool", title: inputTS("Clear All Selected Filters?", getAppImg("reset", true)), required: false, defaultValue: false, submitOnChange: true
+        section(sectHead("Reset Selected Filters:"), hideable: true, hidden: true) {
+            input "resetCapFilters", "bool", title: inTS1("Clear All Selected Filters?", "reset"), required: false, defaultValue: false, submitOnChange: true
             if(settings?.resetCapFilters) { settingUpdate("resetCapFilters", "false", "bool"); resetCapFilters() }
         }
     }
 }
 
 def donationPage() {
-    return dynamicPage(name: "donationPage", title: sBLNK, nextPage: "mainPage", install: false, uninstall: false) {
-        section(sBLNK) {
-            def str = sBLNK
-            str += "Hello User, \n\nPlease forgive the interuption but it's been 30 days since you installed/updated this SmartApp and I wanted to present you with this one time reminder that donations are accepted (We do not require them)."
-            str += "\n\nIf you have been enjoying the software and devices please remember that we have spent thousand's of hours of our spare time working on features and stability for those applications and devices."
-            str += "\n\nIf you have already donated, thank you very much for your support!"
-
-            str += "\n\nIf you are just not interested or have already donated please ignore this message and toggle the setting below"
-            str += "\n\nThanks again for using Homebridge Hubitat"
-            paragraph paraTS(str, sNULL, true, "red"), required: true, state: null
-            input "sentDonation", "bool", title: inputTS("Already Donated?"), defaultValue: false, submitOnChange: true
-            href url: textDonateLink(), style: "external", required: false, title: inputTS("Donations", getAppImg("donata", true)), description: "Tap to open in browser", state: "complete"
+    return dynamicPage(name: "donationPage", title: sBLANK, nextPage: "mainPage", install: false, uninstall: false) {
+        section(sBLANK) {
+            String str = sBLANK
+            str += spanSmBldBr("Hello User,") + spanSmBr("Please forgive the interuption but it's been 30 days since you installed/updated this App and I wanted to present you with this one time reminder that donations are accepted (We do not require them).")
+            str += spanSmBr("If you have been enjoying the software and devices please remember that we have spent thousand's of hours of our spare time working on features and stability for those applications and devices.")
+            str += spanSmBr("If you have already donated, thank you very much for your support!")
+            str += spanSmBr("If you are just not interested in donating please ignore this message")
+            str += spanSm("Thanks again for using Homebridge Hubitat")
+            paragraph divSm(str, sCLRRED)
+            input "sentDonation", "bool", title: inTS1("Already Donated?"), defaultValue: false, submitOnChange: true
+            href url: textDonateLink(), style: "external", required: false, title: inTS1("Donations", "donations"), description: inputFooter("Tap to open in browser", sCLRGRY, true)
         }
         updInstData("shownDonation", true)
     }
 }
 
 def confirmPage() {
-    return dynamicPage(name: "confirmPage", title: sBLNK, install: true, uninstall:true) {
-        section(sectH3TS("Confirmation Page", "A plugin restart is no longer required to apply device changes in this app to HomeKit.<br><br>Once you press <b>Done</b> the Homebridge plugin will refresh your device changes after 15-20 seconds.", getAppImg("info", true), "black")) { }
+    return dynamicPage(name: "confirmPage", title: sBLANK, install: true, uninstall:true) {
+        section(sectHead("Confirmation Page")) { 
+            paragraph spanSmBldBr("NOTICE:", sCLRGRY) + spanSm("The plugin no longer requires a restart to apply device changes in this app to HomeKit.<br><br>Once you press <b>Done</b> the Homebridge plugin will refresh your device changes after 15-20 seconds.")
+        }
         appFooter()
     }
 }
 
 def deviceDebugPage() {
-    return dynamicPage(name: "deviceDebugPage", title: sBLNK, install: false, uninstall: false) {
-        section(sectTS("View All Device Data Sent to HomeBridge:", sNULL, true)) {
-            href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inputTS("View Device Data Sent to Homebridge...", getAppImg("info", true)), description: sBLNK, disabled: true
+    return dynamicPage(name: "deviceDebugPage", title: sBLANK, install: false, uninstall: false) {
+        section(sectHead("View All Device Data Sent to HomeBridge:")) {
+            href url: getAppEndpointUrl("alldevices"), style: "embedded", required: false, title: inTS1("View Device Data Sent to Homebridge...", "info"), description: sBLANK, disabled: true
         }
 
         if(devMode()) {
-            section(sectTS("TimeStamp Debug Data:")) {
+            section(sectHead("TimeStamp Debug Data:")) {
                 Map tsMap = tsDtMapFLD[(String)app.getId()] ?: [:]
                 paragraph "${tsMap}"
             }
         }
 
-        section(sectTS("View Individual Device Data:", sNULL, true)) {
-            paragraph paraTS("Have a device that's not working under homekit like you want?\nSelect a device from one of the inputs below and it will show you all data about the device.", getAppImg("info", true), false, "#2784D9"), state: "complete"
+        section(sectHead("View Individual Device Data:")) {
+            paragraph spanSmBldBr("NOTICE:", sCLRGRY) + spanSm("Do you have a device that's not working under homekit like you want?<br> ${sBULLET} Select a device from one of the inputs below and it will show you all data about the device.", sCLRGRY)
             if(!debug_switch && !debug_other && !debug_garage && !debug_tstat)
-                input "debug_sensor", "capability.sensor", title:  inputTS("Sensors: ", getAppImg("sensors", true)), multiple: false, submitOnChange: true, required: false
+                input "debug_sensor", "capability.sensor", title:  inTS1("Sensors:", "sensors"), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
             if(!debug_sensor && !debug_other && !debug_garage && !debug_tstat)
-                input "debug_switch", "capability.actuator", title: inputTS("Switches: ", getAppImg("switch", true)) , multiple: false, submitOnChange: true, required: false
+                input "debug_switch", "capability.actuator", title: inTS1("Switches:", "switch"), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
             if(!debug_switch && !debug_sensor && !debug_garage && !debug_tstat)
-                input "debug_other", "capability.*", title: inputTS("Others Devices: ", getAppImg("devices2", true)), multiple: false, submitOnChange: true, required: false
+                input "debug_other", "capability.*", title: inTS1("Others Devices:", "devices2"), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
             if(!debug_sensor && !debug_other && !debug_switch && !debug_tstat)
-                input "debug_garage", "capability.garageDoorControl", title: inputTS("Garage Doors: ", getAppImg("garage_door", true)), multiple: false, submitOnChange: true, required: false
+                input "debug_garage", "capability.garageDoorControl", title: inTS1("Garage Doors:", "garage_door"), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
             if(!debug_sensor && !debug_other && !debug_switch && !debug_garage)
-                input "debug_tstat", "capability.thermostat", title: inputTS("Thermostats: ", getAppImg("thermostat", true)), multiple: false, submitOnChange: true, required: false
+                input "debug_tstat", "capability.thermostat", title: inTS1("Thermostats:", "thermostat"), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
             if(debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
-                paragraph paraTS("Device Data:", sNULL, true, "#2784D9")
-                paragraph """<textarea rows="30" class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>"""
-                // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", required: false, title: inputTS("Tap here to view Device Data...", getAppImg("info", true)), description: sBLNK, state: "complete"
+                paragraph spanSmBld("Device Data:", sCLR4D9)
+                paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>", sCLRGRY)
+                // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", title: inTS1("Tap here to view Device Data...", "info"), description: sBLANK
             }
         }
     }
@@ -541,7 +597,7 @@ private Map getDeviceDebugMap(dev) {
     if(dev) {
         try {
             r = [:]
-            r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLNK)
+            r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK)
             r.basename = dev.getName()
             r.deviceid = dev.getId()
             r.status = dev.getStatus()
@@ -562,7 +618,7 @@ private Map getDeviceDebugMap(dev) {
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
             aa = deviceAttributeList(dev).sort { it?.key }
             r.attributes_processed = aa ?: []
-            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLNK})" }
+            r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLANK})" }
         } catch(ex) {
             logError("Error while generating device data: ${ex}")
         }
@@ -634,17 +690,17 @@ Boolean getAccessToken(Boolean disableRetry=false) {
 }
 
 private void enableOauth(){
-        Map params=[
-                uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
-                headers: ['Content-Type':'text/html;charset=utf-8']
-        ]
-        try{
-                httpPost(params){ resp ->
-                        //LogTrace("response data: ${resp.data}")
-                }
-        } catch (e){
-                logError("enableOauth something went wrong: $e")
+    Map params = [
+        uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
+        headers: ['Content-Type':'text/html;charset=utf-8']
+    ]
+    try {
+        httpPost(params){ resp ->
+                //LogTrace("response data: ${resp.data}")
         }
+    } catch (e){
+            logError("enableOauth something went wrong: $e")
+    }
 }
 
 void subscribeToEvts() {
@@ -780,7 +836,7 @@ private Map getDeviceData(String type, sItem) {
     }
     if(curType && obj) {
         return [
-            name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLNK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLNK),
+            name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
             basename: !isVirtual ? sItem?.name : name,
             deviceid: !isVirtual ? sItem?.id : devId,
             status: !isVirtual ? sItem?.status : "Online",
@@ -826,6 +882,9 @@ Map getDeviceFlags(device) {
     }
     if(settings?.fan4SpdList?.find { it?.id == device?.id }) {
         opts["fan_4_spd"] = 1
+    }
+    if(settings?.fan5SpdList?.find { it?.id == device?.id }) {
+        opts["fan_5_spd"] = 1
     }
     // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
@@ -896,9 +955,9 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: "hsmSetArm", value: mode)
 }
 
-String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${(String)state.accessToken}".toString() }
-String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${(String)state.accessToken}".toString() }
-String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLNK}?access_token=${(String)state.accessToken}".toString() }
+String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
+String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
+String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
 
 String renderConfig() {
     Map jsonMap = [
@@ -952,7 +1011,7 @@ static Map getHttpHeaders(String headers) {
     Map obj = [:]
     new String(headers.decodeBase64()).split("\r\n")?.each {param ->
         List nameAndValue = param.split(sCLN)
-        obj[(String)nameAndValue[0]] = (nameAndValue.length == 1) ? sBLNK : nameAndValue[1].trim()
+        obj[(String)nameAndValue[0]] = (nameAndValue.length == 1) ? sBLANK : nameAndValue[1].trim()
     }
     return obj
 }
@@ -967,7 +1026,7 @@ def deviceCommand() {
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
-    if(shw) logInfo("Plugin called Process Command${local ? "(LOCAL)" : sBLNK} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLNK}${value2 ? " | Param2: ($value2)" : sBLNK}")
+    if(shw) logInfo("Plugin called Process Command${local ? "(LOCAL)" : sBLANK} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}")
     if(!devId) return
     String command = cmd
 
@@ -1003,7 +1062,7 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
             return CommandReply(shw, "Failure", "Device ${devN} does not have the command $command", 500)
         }
 
-        String cmdS= shw ? "Command Successful for Device ${devN} | Command [${command}(".toString() : sBLNK
+        String cmdS= shw ? "Command Successful for Device ${devN} | Command [${command}(".toString() : sBLANK
         try {
             if (value2 != null) {
                 device."$command"(value1,value2)
@@ -1113,7 +1172,7 @@ Map deviceCapabilityList(device) {
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith("remove") && it.value != null }.collect { (String)it.key }
     if(!remKeys) remKeys = []
     remKeys.each { String k->
-        String capName = k.replaceAll("remove", sBLNK)
+        String capName = k.replaceAll("remove", sBLANK)
         String theCap= (String)remCaps[capName]
         if(theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap);  if((Boolean) settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
@@ -1151,7 +1210,7 @@ def getAllData() {
 
 static Map deviceSettingKeys() {
     return [
-        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "deviceList": "Other Devices",
+        "fanList": "Fan Devices", "fan3SpdList": "Fans (3Spd) Devices", "fan4SpdList": "Fans (4Spd) Devices", "fan5SpdList": "Fans (5Spd) Devices", "deviceList": "Other Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "switchList": "Switch Devices", "lightList": "Light Devices", "shadesList": "Window Shade Devices",
         "garageList": "Garage Devices", "tstatList": "T-Stat Devices", "tstatFanList": "T-Stat + Fan Devices", "tstatHeatList": "T-Stat Devices (Heat)",
         "pushableButtonList": "Pushable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices"
@@ -1161,7 +1220,7 @@ static Map deviceSettingKeys() {
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     [
-        "lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices",
+        "lightList": "Light Devices", "fanList": "Fan Devices", "fan3SpdList": "Fans (3SPD) Devices", "fan4SpdList": "Fans (4SPD) Devices", "fan5SpdList": "Fans (5SPD) Devices",
         "pushableButtonList": "Pushable Button Devices", "doubleTapableButtonList": "Double Tapable Button Devices", "holdableButtonList": "Holdable Button Devices",
         "sensorList": "Sensor Devices", "speakerList": "Speaker Devices", "deviceList": "Other Devices",
         "switchList": "Switch Devices", "shadesList": "Window Shade Devices", "garageList": "Garage Door Devices", 
@@ -1239,14 +1298,14 @@ def changeHandler(evt) {
         case "hsmStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = "alarmSystemStatus"
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             break
         case "hsmAlert":
             if(evt?.value == "intrusion") {
                 deviceid = "alarmSystemStatus_${location?.id}"
                 attr = "alarmSystemStatus"
                 value = "alarm_active"
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt])
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else { sendEvt = false }
             break
         case "hsmRules":
@@ -1255,12 +1314,12 @@ def changeHandler(evt) {
             break
         case "alarmSystemStatus":
             deviceid = "alarmSystemStatus_${location?.id}"
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             break
         case "mode":
             settings?.modeList?.each { id->
                 def md = getModeById(id)
-                if(md && md.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: "switch", evtValue: modeSwitchState((String)md.name), evtUnit: sBLNK, evtDate: dt]) }
+                if(md && md.id) { sendItems?.push([evtSource: "MODE", evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: "switch", evtValue: modeSwitchState((String)md.name), evtUnit: sBLANK, evtDate: dt]) }
             }
             break
         case "webCoRE":
@@ -1305,10 +1364,10 @@ def changeHandler(evt) {
         case "pushed":
         case "doubleTapped":
             Map evtData = [buttonNumber: value]
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: evt.name, evtValue: attr, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: evtData])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: evt.name, evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
             break
         default:
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLNK, evtDate: dt, evtData: null])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
             break
     }
 
@@ -1321,7 +1380,7 @@ def changeHandler(evt) {
         //Send Using the Direct Mechanism
         sendItems.each { Map send->
             if(evtLog) { //if((Boolean)settings.showEventLogs) {
-                String unitStr = sBLNK
+                String unitStr = sBLANK
                 switch((String)send.evtAttr) {
                     case "temperature":
                         unitStr = "${send?.evtUnit}"
@@ -1341,7 +1400,7 @@ def changeHandler(evt) {
                         unitStr = "${send?.evtUnit}"
                         break
                 }
-                logInfo("Sending ${send?.evtSource ?: sBLNK} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : sBLNK} to Homebridge at (${server})")
+                logInfo("Sending ${send?.evtSource ?: sBLANK} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : sBLANK} to Homebridge at (${server})")
             }
             sendHttpPost(sUPD, [
                 change_name     : send.evtDeviceName,
@@ -1357,19 +1416,8 @@ def changeHandler(evt) {
         }
     }
 }
-/*
-private sendHttpGet(path, contentType) {
-    if((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) {
-        httpGet([
-            uri: ((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${getServerAddress()}/${path}".toString(),
-            requestContentType: contentType,
-            contentType: contentType,
-            timeout: 20
-        ])
-    } else { sendHubCommand(new hubitat.device.HubAction(method: "GET", path: "/${path}", headers: [HOST: getServerAddress()])) }
-}
-*/
-void sendHttpPost(String path, Map body, String src=sBLNK, Boolean evtLog, String contentType = sAPPJSON) {
+
+void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, String contentType = sAPPJSON) {
     String server= getServerAddress()
     if(!devMode() || !((Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl)){
         if(server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
@@ -1382,14 +1430,7 @@ void sendHttpPost(String path, Map body, String src=sBLNK, Boolean evtLog, Strin
         timeout: 20
     ]
     asynchttpPost(sASYNCCR, params, [execDt: now(), src: src, evtLog: evtLog])
-//    execAsyncHttpCmd(sPOST, params, [execDt: now(), src: src, evtLog: evtLog])
 }
-/*
-void execAsyncHttpCmd(String method, Map params, Map otherData = null) {
-    if(method && params) {
-        "asynchttp${method}"(sASYNCCR, params, otherData)
-    } else { logError("execAsyncHttpCmd Error | Missing a required parameter") }
-}*/
 
 void asyncHttpCmdResp(response, data) {
     if(getTsVal(sDBG) == sTRU && (Boolean)data?.evtLog){
@@ -1423,9 +1464,9 @@ def getModeByName(String name) {
 
 @Field volatile static Map<String,Map> webCoREFLD = [:]
 
-private static String webCoRE_handle(){ return'webCoRE' }
+private static String webCoRE_handle() { return 'webCoRE' }
 
-public static String webCore_icon(){ return "https://raw.githubusercontent.com/ady624/webCoRE/master/resources/icons/app-CoRE.png" }
+public static String webCore_icon() { return "https://raw.githubusercontent.com/ady624/webCoRE/master/resources/icons/app-CoRE.png" }
 
 private webCoRE_init(pistonExecutedCbk=null){
     if(settings.enableWebCoRE) {
@@ -1464,13 +1505,6 @@ Map getPistonByName(String name) {
     return webCoREFLD?.pistons?.find{it?.name == name}
 }
 
-/* will not work for HE....have to collect alerts as they happen
-def getShmIncidents() {
-    //Thanks Adrian
-    def incidentThreshold = now() - 604800000
-    return location.activeIncidents.collect{[date: it?.date?.time, title: it?.getTitle(), message: it?.getMessage(), args: it?.getMessageArgs(), sourceType: it?.getSourceType()]}.findAll{ it?.date >= incidentThreshold } ?: null
-}*/
-
 void settingUpdate(String name, String value, String type=sNULL) {
     if(name && type) {
         app.updateSetting(name, [type: type, value: value])
@@ -1488,7 +1522,7 @@ static Boolean devMode() {
 }
 
 void activateDirectUpdates(Boolean isLocal=false) {
-    logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
+    logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? " | (Local)" : sBLANK}")
     sendHttpPost("initial", [
         app_id: app.getId(),
         access_token: (String)state.accessToken
@@ -1496,7 +1530,7 @@ void activateDirectUpdates(Boolean isLocal=false) {
 }
 
 void attemptServiceRestart(Boolean isLocal=false) {
-    logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
+    logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? " | (Local)" : sBLANK}")
     sendHttpPost("restart", [
         app_id: app.getId(),
         access_token: (String)state.accessToken
@@ -1504,7 +1538,7 @@ void attemptServiceRestart(Boolean isLocal=false) {
 }
 
 void sendDeviceRefreshCmd(Boolean isLocal=false) {
-    logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
+    logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? " | (Local)" : sBLANK}")
     sendHttpPost("refreshDevices", [
         app_id: app.getId(),
         access_token: (String)state.accessToken
@@ -1512,7 +1546,7 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
 }
 
 void updateServicePrefs(Boolean isLocal=false) {
-    logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? " | (Local)" : sBLNK}")
+    logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? " | (Local)" : sBLANK}")
     sendHttpPost("updateprefs", [
         app_id: app.getId(),
         access_token: (String)state.accessToken,
@@ -1548,39 +1582,39 @@ def enableDirectUpdates() {
 }
 
 mappings {
-    path("/devices")				{ action: [GET: "getAllData"]       }
-    path("/alldevices")				{ action: [GET: "renderDevices"]    } // debug
-    path("/deviceDebug")			{ action: [GET: "viewDeviceDebug"]  } // debug
-    path("/location")				{ action: [GET: "renderLocation"]   } // debug
-    path("/pluginStatus")			{ action: [POST: "pluginStatus"]    }
-    path("/:id/command/:command")		{ action: [POST: "deviceCommand"]   }
-    // path("/:id/query")				{ action: [GET: "deviceQuery"]      }
-    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]  } // debug
+    path("/devices")				        { action: [GET: "getAllData"]           }
+    path("/alldevices")				        { action: [GET: "renderDevices"]        } // debug
+    path("/deviceDebug")			        { action: [GET: "viewDeviceDebug"]      } // debug
+    path("/location")				        { action: [GET: "renderLocation"]       } // debug
+    path("/pluginStatus")			        { action: [POST: "pluginStatus"]        }
+    path("/:id/command/:command")		    { action: [POST: "deviceCommand"]       }
+    // path("/:id/query")				    { action: [GET: "deviceQuery"]          }
+    path("/:id/attribute/:attribute")		{ action: [GET: "deviceAttribute"]      } // debug
     path("/startDirect/:ip/:port/:version")	{ action: [POST: "enableDirectUpdates"] }
 }
 
 def appInfoSect() {
 //    Map codeVer = state.codeVersions
     Boolean isNote = false
-    String tStr = """<small style="color: gray;"><b>Version:</b> v${appVersionFLD}</small>${state?.pluginDetails?.version ? """<br><small style="color: gray;"><b>Plugin:</b> v${state?.pluginDetails?.version}</small>""" : sBLNK}"""
-/* """ */
-    section (sectH3TS(app?.name, tStr, getAppImg("hb_tonesto7", true), "orange")) {
+    String tStr = spanSmBld("Version:", sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
+    tStr += state?.pluginDetails?.version ? spanSmBld("Plugin:", sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
+    section (sectH3TS(app?.name, tStr, getAppImg("hb_tonesto7"), "orange")) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
         if((Boolean)minUpdMap?.updRequired && ((List)minUpdMap.updItems).size()>0) {
             isNote=true
-            String str3 = """<small style="color: red;"><b>Updates Required:</b></small>"""
-            ((List)minUpdMap.updItems).each { item-> str3 += """<br><small style="color: red;">  ${sBULLET} ${item}</small>""" }
-            str3 += """<br><br><small style="color: red; font-weight: bold;">If you just updated the code please press Done/Next to let the app process the changes.</small>"""
+            String str3 = spanSmBldBr("Updates Required:", sCLRRED)
+            ((List)minUpdMap.updItems).each { item-> str3 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
+            str3 += lineBr() + spanSmBld("If you just updated the code please press Done/Next to let the app process the changes.", sCLRRED)
             paragraph str3
         } else if(codeUpdItems?.size()) {
             isNote=true
-            String str2 = """<small style="color: red;"><b>Code Updates Available:</b></small>"""
-            codeUpdItems?.each { item-> str2 += """<br><small style="color: red;">  ${sBULLET} ${item}</small>""" }
+            String str2 = spanSmBldBr("Code Updates Available:", sCLRRED)
+            codeUpdItems?.each { item-> str2 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
             paragraph str2
         }
-        if(!isNote) { paragraph """<small style="color: gray;">No Issues to Report</small>""" }
-        paragraph htmlLine("orange")
+        if(!isNote) { paragraph spanSm("No Issues to Report", sCLRGRY) }
+        paragraph htmlLine(sCLRGRY)
     }
 }
 
@@ -1588,38 +1622,69 @@ def appInfoSect() {
         APP HELPER FUNCTIONS
 ***********************************************/
 
-static String getAppImg(String imgName, Boolean frc=false, String ext=".png") { return frc ? "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}".toString() : sBLNK }
+static String getAppImg(String imgName, Boolean frc=false, String ext=".png") { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}" }
 
-static String getPublicImg(String imgName, Boolean frc=false) { return frc ? "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png".toString() : sBLNK }
+static String getPublicImg(String imgName) { return "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png" }
 
-static String sectTS(String t, String i = sNULL, Boolean bold=false) { return """<h3>${i ? """<img src="${i}" width="48"> """ : sBLNK} ${bold ? "<b>" : sBLNK}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : sBLNK}</h3>""".toString() }
-/* """ */
+static String sectH3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="48"> """ : sBLANK} ${t?.replaceAll("\\n", "<br>")}</h3>${st ?: sBLANK}""" }
+static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? """<div style="color: $color;">""" : sBLANK}${bold ? "<b>" : sBLANK}${i ? """<img src="${i}" width="48"> """ : sBLANK}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : sBLANK}${color ? "</div>" : sBLANK}".toString() }
+static String sectHead(String str, String img = sNULL) { return str ? "<h3 style='margin-top:0;margin-bottom:0;'>" + spanImgStr(img) + span(str, sCLR4D9, sNULL, true) + "</h3>" + "<hr style='background-color:${sCLRGRY};font-style:italic;height:1px;border:0;margin-top:0;margin-bottom:0;'>" : sBLANK }
+static String sTS(String t, String i = sNULL, Boolean bold=false) { return "<h3>${i ? "<img src='${i}' width='42'> " : sBLANK} ${bold ? "<b>" : sBLANK}${t?.replaceAll("\n", "<br>")}${bold ? "</b>" : sBLANK}</h3>" }
+static String s3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold;'>${i ? "<img src='${i}' width='42'> " : sBLANK} ${t?.replaceAll("\n", "<br>")}</h3>${st ? "${st}" : sBLANK}" }
+static String pTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? "<b>" : sBLANK}${i ? "<img src='${i}' width='42'> " : sBLANK}${t?.replaceAll("\n", "<br>")}${bold ? "</b>" : ""}${color ? "</div>" : ""}" }
 
-static String sectH3TS(String t, String st, String i = sNULL, String c="#1A77C9") { return """<h3 style="color:${c};font-weight: bold">${i ? """<img src="${i}" width="48"> """ : sBLNK} ${t?.replaceAll("\\n", "<br>")}</h3>${st ?: sBLNK}""".toString() }
-/* """ */
+static String inTS1(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return spanSmBldUnd(str, clr, img) }
+static String inTS(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return divSm(strUnder(str?.replaceAll("\n", " ").replaceAll("<br>", " "), und), clr, img) }
 
-static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? """<div style="color: $color;">""" : sBLNK}${bold ? "<b>" : sBLNK}${i ? """<img src="${i}" width="48"> """ : sBLNK}${t?.replaceAll("\\n", "<br>")}${bold ? "</b>" : sBLNK}${color ? "</div>" : sBLNK}".toString() }
+// Root HTML Objects
+static String span(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<span ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? "font-weight: bold;" : sBLANK}'" : sBLANK}>${str}</span>${br ? sLINEBR : sBLANK}" : sBLANK }
+static String div(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<div ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? "font-weight: bold;" : sBLANK}'" : sBLANK}>${str}</div>${br ? sLINEBR : sBLANK}" : sBLANK }
+static String spanImgStr(String img=sNULL) { return img ? span("<img src='${(!img.startsWith("http://") && !img.startsWith("https://")) ? getAppImg(img) : img}' width='42'> ") : sBLANK }
+static String divImgStr(String str, String img=sNULL) { return str ? div(img ? spanImg(img) + span(str) : str) : sBLANK }
+static String strUnder(String str, Boolean showUnd=true) { return str ? (showUnd ? "<u>${str}</u>" : str) : sBLANK }
+static String getOkOrNotSymHTML(Boolean ok) { return ok ? span("(${okSymFLD})", sCLRGRN2) : span("(${notOkSymFLD})", sCLRRED2) }
+static String htmlLine(String color=sCLR4D9, Integer width = null) { return "<hr style='background-color:${color};height:1px;border:0;margin-top:0;margin-bottom:0;${width ? "width: ${width}px;" : sBLANK}'>" }
+static String lineBr(Boolean show=true) { return show ? sLINEBR : sBLANK }
+static String inputFooter(String str, String clr=sCLR4D9, Boolean noBr=false) { return str ? lineBr(!noBr) + divSmBld(str, clr) : sBLANK }
+static String inactFoot(String str) { return str ? inputFooter(str, sCLRGRY, true) : sBLANK }
+static String actFoot(String str) { return str ? inputFooter(str, sCLR4D9, false) : sBLANK }
+static String optPrefix() { return spanSm(" (Optional)", "violet") }
 
-/* """ */
-static String inputTS(String t, String i = sNULL, String color=sNULL, Boolean under=true) { return """${color ? """<div style="color: $color;">""" : sBLNK}${i ? """<img src="${i}" width="48"> """ : sBLNK} ${under ? "<u>" : sBLNK}${t?.replaceAll("\\n", " ")}${under ? "</u>" : sBLNK}${color ? "</div>" : sBLNK}""".toString() }
+// Custom versions of the root objects above
+static String spanBld(String str, String clr=sNULL, String img=sNULL)      { return str ? spanImgStr(img) + span(str, clr, sNULL, true)             : sBLANK }
+static String spanBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sNULL, true, true)       : sBLANK }
+static String spanBr(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sNULL, false, true)      : sBLANK }
+static String spanSm(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sSMALL)                 : sBLANK }
+static String spanSmBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sSMALL, false, true)    : sBLANK }
+static String spanSmBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sSMALL, true)           : sBLANK }
+static String spanSmBldUnd(String str, String clr=sNULL, String img=sNULL) { return str ? spanImgStr(img) + span(strUnder(str), clr, sSMALL, true) : sBLANK }
+static String spanSmBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sSMALL, true, true)     : sBLANK }
+static String spanMd(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sMEDIUM)                : sBLANK }
+static String spanMdBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, false, true)   : sBLANK }
+static String spanMdBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true)          : sBLANK }
+static String spanMdBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true, true)    : sBLANK }
 
-/* """ */
-static String htmlLine(String color="#1A77C9") { return "<hr style='background-color:${color}; height: 1px; border: 0;'>".toString() }
+static String divBld(String str, String clr=sNULL, String img=sNULL)        { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, false)   : sBLANK }
+static String divBldBr(String str, String clr=sNULL, String img=sNULL)      { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, true)    : sBLANK }
+static String divBr(String str, String clr=sNULL, String img=sNULL)         { return str ? div(spanImgStr(img) + span(str), clr, sNULL, false, true)   : sBLANK }
+static String divSm(String str, String clr=sNULL, String img=sNULL)         { return str ? div(spanImgStr(img) + span(str), clr, sSMALL)              : sBLANK }
+static String divSmBr(String str, String clr=sNULL, String img=sNULL)       { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, false, true) : sBLANK }
+static String divSmBld(String str, String clr=sNULL, String img=sNULL)      { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, true)        : sBLANK }
+static String divSmBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, true, true)  : sBLANK }
 
 def appFooter() {
     section() {
         paragraph htmlLine("orange")
-        paragraph """<div style='color:orange;text-align:center'>Homebridge Hubitat<br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target="_blank"><img width="120" height="120" src="https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png"></a><br><br>Please consider donating if you find this integration useful.</div>"""
+        paragraph spanSm("<div style='text-align:center;'><b><u>Homebridge Hubitat</u></b><br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target='_blank'><img width='120' height='120' src='https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png'></a><br><br>Please consider donating if you find this integration useful.</div>", sCLRORG)
     }       
 }
 
-static String bulletItem(String inStr, String strVal) { return "${inStr == sBLNK ? sBLNK : "\n"} ${sBULLET} ${strVal}".toString() }
 
-static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == sBLNK && !newLine) ? sBLNK : "\n"} - ${strVal}".toString() }
+static String dashItem(String inStr, String strVal, newLine=false) { return "${(inStr == sBLANK && !newLine) ? sBLANK : "\n"} - ${strVal}".toString() }
 
 static String textDonateLink() { return "https://www.paypal.com/donate?hosted_button_id=5GMA6C3RTLXH6" }
 
-static Integer versionStr2Int(String str) { return str ? str.tokenize("-")[0]?.replaceAll("\\.", sBLNK)?.toInteger() : null }
+static Integer versionStr2Int(String str) { return str ? str.tokenize("-")[0]?.replaceAll("\\.", sBLANK)?.toInteger() : null }
 
 static String versionCleanup(String str) { return str ? str.tokenize("-")[0] : sNULL }
 
@@ -1665,8 +1730,8 @@ private List codeUpdateItems(Boolean shrt=false) {
     Boolean appUpd = appUpdAvail()
     Boolean plugUpd = pluginUpdAvail()
     List updItems = []
-    if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : sBLNK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
-    if(plugUpd) updItems.push("${!shrt ? "\n" : sBLNK}Plugin: (v${state?.appData?.versions?.plugin?.toString()})")
+    if(appUpd) updItems.push("${!shrt ? "\nHomebridge " : sBLANK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
+    if(plugUpd) updItems.push("${!shrt ? "\n" : sBLANK}Plugin: (v${state?.appData?.versions?.plugin?.toString()})")
     return updItems
 }
 
@@ -1802,7 +1867,7 @@ Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
             return diff
         }
     } else {
-        logError("GetTimeDiffSeconds Exception: (${sender ? "$sender | " : sBLNK}lastDate: $lastDate): ${ex}")
+        logError("GetTimeDiffSeconds Exception: (${sender ? "$sender | " : sBLANK}lastDate: $lastDate): ${ex}")
     }
     return 10000L
 }
@@ -1827,19 +1892,19 @@ Integer getDaysSinceUpdated() {
 
 String changeLogData() { 
     String txt = (String) getWebData([uri: "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md", contentType: "text/plain; charset=UTF-8", timeout: 20], "changelog", true)
-    txt = txt?.toString()?.replaceAll("##", sBLNK)?.replaceAll(/(_\*\*)/, "<b>")?.replaceAll(/(\*\*\_)/, "</b>") // Replaces header format
+    txt = txt?.toString()?.replaceAll("##", sBLANK)?.replaceAll(/(_\*\*)/, "<b>")?.replaceAll(/(\*\*\_)/, "</b>") // Replaces header format
     txt = txt?.toString()?.replaceAll(/(- )/, "   ${sBULLET} ")
-    txt = txt?.toString()?.replaceAll(/(\[NEW\])/, "<u>[NEW]</u>")
-    txt = txt?.toString()?.replaceAll(/(\[UPDATE\])/, "<u>[FIX]</u>")
-    txt = txt?.toString()?.replaceAll(/(\[FIX\])/, "<u>[FIX]</u>")
+    txt = txt?.toString()?.replaceAll(/(\[NEW\])/, spanSmBld("[NEW]"))
+    txt = txt?.toString()?.replaceAll(/(\[UPDATE\])/, spanSmBld("[FIX]"))
+    txt = txt?.toString()?.replaceAll(/(\[FIX\])/, spanSmBld("[FIX]"))
     return txt?.toString() // Replaces ## then **_ and _** in changelog data
 }
 
 Boolean showChgLogOk() { return ((Boolean)state.isInstalled && ((String)state.curAppVer != appVersionFLD || state?.installData?.shownChgLog != true)) }
 
 private changeLogPage() {
-    return dynamicPage(name: "changeLogPage", title: sBLNK, nextPage: "mainPage", install: false) {
-        section(sectTS("Release Notes:", getAppImg("change_log", true), true)) { paragraph changeLogData() }
+    return dynamicPage(name: "changeLogPage", title: sBLANK, nextPage: "mainPage", install: false) {
+        section(sectHead("Release Notes:", "change_log")) { paragraph spanSm(changeLogData()) }
         state.curAppVer = appVersionFLD
         updInstData("shownChgLog", true)
     }
@@ -1877,7 +1942,7 @@ private void logError(msg)  { myLog('error', msg.toString()) }
 
 private void myLog(String lvl, String msg){
     String pad=''
-    if(lvl in ['warn', 'info']) pad = " "
+    if(lvl in ['warn', 'info']) pad = sSPACE
     log."$lvl" pad + 'Homebridge (v'+appVersionFLD+') | ' + msg
 }
 
