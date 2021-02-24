@@ -1,3 +1,9 @@
+## _**v2.3.0 Changes**_
+- [UPDATE] Updated the UI theme to match Echo Speaks
+- [FIX] Added support for 5-speed fans.
+- [FIX] Fixed issue with Duplicate device message being empty.
+- [FIX] Other bugfixes and optimizations.
+
 ## _**v2.2.2 Changes**_
 - [FIX] Turning Off logs messages every few hours.
 - [FIX] Added support to the config generator for a new round_levels options which rounds levels <5 to 0 and > 95 to 100.

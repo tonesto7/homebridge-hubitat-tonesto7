@@ -1,11 +1,11 @@
-var Characteristic, CommunityTypes, accClass, Service;
+var Characteristic, CommunityTypes, accClass;
 
 module.exports = class DeviceCharacteristics {
     constructor(accessories, svcs, char) {
         this.platform = accessories.mainPlatform;
         // this.appEvts = accessories.mainPlatform.appEvts;
         Characteristic = char;
-        Service = svcs;
+        // Service = svcs;
         CommunityTypes = accessories.CommunityTypes;
         accClass = accessories;
         this.log = accessories.log;
@@ -24,8 +24,8 @@ module.exports = class DeviceCharacteristics {
                 if (attr === "status" && char === Characteristic.StatusActive) {
                     callback(null, accClass.transforms.transformStatus(this.context.deviceData.status));
                 } else {
-                    callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
-                    accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
+                    callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                    accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
                 }
             });
             if (opts.props && Object.keys(opts.props).length) c.setProps(opts.props);
@@ -36,8 +36,8 @@ module.exports = class DeviceCharacteristics {
             if (attr === "status" && char === Characteristic.StatusActive) {
                 c.updateValue(accClass.transforms.transformStatus(this.context.deviceData.status));
             } else {
-                c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
-                accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
+                c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
             }
         }
         if (!c._events.change) {
@@ -52,8 +52,8 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get) {
                 c.on("get", (callback) => {
-                    callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
-                    accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
+                    callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                    accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
                 });
             }
             if (!c._events.set) {
@@ -67,7 +67,7 @@ module.exports = class DeviceCharacteristics {
                     } else {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdVal);
                     }
-                    if (opts.updAttrVal) this.context.deviceData.attributes[attr] = accClass.transforms.transformAttributeState(opts.set_altAttr || attr, this.context.deviceData.attributes[opts.set_altValAttr || attr], c.displayName);
+                    if (opts.updAttrVal) this.context.deviceData.attributes[attr] = accClass.transforms.transformAttributeState(opts.set_altAttr || attr, this.context.deviceData.attributes[opts.set_altValAttr || attr], c.displayName, opts, opts);
                 });
                 if (opts.props && Object.keys(opts.props).length) c.setProps(opts.props);
                 if (opts.evtOnly && opts.evtOnly === true) c.eventOnlyCharacteristic = opts.evtOnly;
@@ -76,8 +76,8 @@ module.exports = class DeviceCharacteristics {
             c.getValue();
             accClass.storeCharacteristicItem(attr, this.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
-            accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName));
+            c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+            accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
         }
         if (!c._events.change) {
             c.on("change", (chg) => {
@@ -280,10 +280,13 @@ module.exports = class DeviceCharacteristics {
         let spdSteps = 1;
         if (_accessory.hasDeviceFlag("fan_3_spd")) spdSteps = 33;
         if (_accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
-        let spdAttr = _accessory.hasAttribute("level") ? "level" : _accessory.hasAttribute("fanSpeed") && _accessory.hasCommand("setFanSpeed") ? "fanSpeed" : undefined;
-        if (_accessory.hasAttribute("level") || _accessory.hasAttribute("fanSpeed")) {
+        if (_accessory.hasDeviceFlag("fan_5_spd")) spdSteps = 20;
+        let spdAttr = _accessory.hasAttribute("speed") && _accessory.hasCommand("setSpeed") ? "speed" : _accessory.hasAttribute("level") ? "level" : undefined;
+        // console.log("fanSpeed Attribute: ", spdAttr);
+        if (_accessory.hasAttribute("level") || _accessory.hasAttribute("speed")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.RotationSpeed, spdAttr, {
                 cmdHasVal: true,
+                spdSteps: spdSteps,
                 props: {
                     minStep: spdSteps,
                 },

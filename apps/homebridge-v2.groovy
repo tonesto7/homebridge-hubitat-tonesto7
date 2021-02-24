@@ -101,7 +101,7 @@ preferences {
         'maxCodeLength', 'maxCodes', 'readingUpdated', 'maxEnergyReading', 'monthCost', 'maxPowerReading', 'minPowerReading', 'monthCost', 'weekUsage', 'minEnergyReading',
         'codeReport', 'scanCodes', 'verticalAccuracy', 'horizontalAccuracyMetric', 'altitudeMetric', 'latitude', 'distanceMetric', 'closestPlaceDistanceMetric',
         'closestPlaceDistance', 'leavingPlace', 'currentPlace', 'codeChanged', 'codeLength', 'lockCodes', 'healthStatus', 'horizontalAccuracy', 'bearing', 'speedMetric',
-        'speed', 'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
+        'verticalAccuracyMetric', 'altitude', 'indicatorStatus', 'todayCost', 'longitude', 'distance', 'previousPlace','closestPlace', 'places', 'minCodeLength',
         'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'eventTime', 'eventSummary', 'endOffset', 'startOffset',
         'closeTime', 'endMsgTime', 'endMsg', 'openTime', 'startMsgTime', 'startMsg', 'calName', "deleteInfo", "eventTitle", "floor", "sleeping", "ultravioletIndex", "threeAxis",
         "LchildVer", "FchildVer", "LchildCurr", "FchildCurr", "lightStatus", "lastFanMode", "lightLevel", "coolingSetpointRange", "heatingSetpointRange", "thermostatSetpointRange",
@@ -297,7 +297,6 @@ def deviceSelectPage() {
             input "sensorList", "capability.sensor", title: inTS1("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", "sensors"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "switchList", "capability.switch", title: inTS1("Switches: (${switchList ? switchList.size() : 0} Selected)", "switch"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "deviceList", "capability.*", title: inTS1("Others: (${deviceList ? deviceList.size() : 0} Selected)", "devices2"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-
         }
 
         section(sectHead("Create Devices for Modes in HomeKit?")) {
@@ -306,15 +305,15 @@ def deviceSelectPage() {
             input "modeList", "enum", title: inTS1("Create Devices for these Modes", "mode"), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: modes, submitOnChange: true
         }
 
-        section(sectTS("Create Devices for WebCoRE Pistons in HomeKit?", sNULL, true)) {
-            input "enableWebCoRE", "bool", title: inputTS("Enable webCoRE Integration", webCore_icon()), required: false, defaultValue: false, submitOnChange: true
+        section(sectHead("Create Devices for WebCoRE Pistons in HomeKit?")) {
+            input "enableWebCoRE", "bool", title: inTS1("Enable webCoRE Integration", webCore_icon()), required: false, defaultValue: false, submitOnChange: true
             if(settings.enableWebCoRE) {
                 if(!webCoREFLD) webCoRE_init()
                 paragraph spanSmBldBr("What are these for?", sCLRGRY) + spanSm("Creats a virtual device for selected pistons in HomeKit.<br> ${sBULLET} These are very useful for use in Home Kit scenes", sCLRGRY)
                 def pistons = webCoRE_list('name')
 
 //                def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
-                input "pistonList", "enum", title: inputTS("Create Devices for these Pistons", webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
+                input "pistonList", "enum", title: inTS1("Create Devices for these Pistons", webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
             } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
         }
 
@@ -1251,7 +1250,7 @@ Boolean isDeviceInInput(String setKey, devId) {
 
 @Field static final Map<String, String> attMapFLD = [
     "acceleration": "Acceleration", "battery": "Battery", "contact": "Contact", "energy": "Energy", "humidity": "Humidity", "illuminance": "Illuminance",
-    "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "switch": "Switch", "tamper": "Tamper",
+    "level": "Level", "lock": "Lock", "motion": "Motion", "power": "Power", "presence": "Presence", "speed": "FanSpeed", "switch": "Switch", "tamper": "Tamper",
     "temperature": "Temp", "valve": "Valve", "pushed": "PushableButton", "held": "HoldableButton", "doubleTapped": "DoubleTapableButton"
 ]
 

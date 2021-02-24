@@ -1,3 +1,8 @@
+## v2.3.0
+- [NEW] Added support for FanControl capability and speed attributes in Fans.
+- [UPDATE] Stripped out unnecessary capabilities and attributes for fan devices
+- [FIX] Bug fixes and node package updates.
+
 ## v2.2.2
 - [NEW] Added new config option for rounding levels <5 to 0 and > 95 to 100 (On by Default now).
 - [FIX] Log cleanups.
