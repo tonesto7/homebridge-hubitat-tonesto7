@@ -1933,16 +1933,16 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
     releaseTheLock(sHMLF)
 }
 
-private void logDebug(msg)  { if((Boolean)settings.showDebugLogs) myLog(sDBG, msg.toString()) }
-private void logTrace(msg)  { if((Boolean)settings.showDebugLogs) myLog('trace', msg.toString()) }
-private void logInfo(msg)   { myLog('info', msg.toString()) }
-private void logWarn(msg)   { myLog('warn', msg.toString()) }
-private void logError(msg)  { myLog('error', msg.toString()) }
+private void logDebug(String msg)  { if((Boolean)settings.showDebugLogs) logPrefix(sDBG, msg.toString(), sCLR4D9) }
+private void logTrace(String msg)  { if((Boolean)settings.showDebugLogs) logPrefix('trace', msg.toString(), "#0299B1") }
+private void logInfo(String msg)   { logPrefix('info', msg.toString(), sCLRGRY) }
+private void logWarn(String msg)   { logPrefix('warn', msg.toString(), sCLRORG) }
+private void logError(String msg)  { logPrefix('error', msg.toString(), sCLRRED) }
 
-private void myLog(String lvl, String msg){
-    String pad=''
+private void logPrefix(String lvl, String msg, String color = sNULL) {
+    String pad = sBLANK
     if(lvl in ['warn', 'info']) pad = sSPACE
-    log."$lvl" pad + 'Homebridge (v'+appVersionFLD+') | ' + msg
+    log."$lvl" pad + span("Homebridge (v${appVersionFLD}) | ", sCLRGRY) + span(msg, color)
 }
 
 private List<Map> getCmdHistory() {
