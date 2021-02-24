@@ -6,7 +6,7 @@ const knownCapabilities = require("./libs/Constants").knownCapabilities,
     DeviceTypes = require("./HE_DeviceCharacteristics");
 var Service, Characteristic, appEvts;
 
-module.exports = class ST_Accessories {
+module.exports = class HE_Accessories {
     constructor(platform) {
         this.mainPlatform = platform;
         appEvts = platform.appEvts;
@@ -164,7 +164,7 @@ module.exports = class ST_Accessories {
         switch (cmd) {
             case "setLevel":
             case "setVolume":
-            case "setFanSpeed":
+            case "setSpeed":
             case "setSaturation":
             case "setHue":
             case "setColorTemperature":
@@ -205,7 +205,7 @@ module.exports = class ST_Accessories {
                     appEvts.emit("event:device_command", dev, cmd, vals);
                 },
                 d,
-                o
+                o,
             );
             acc.commandTimers[id]();
         }

@@ -23,7 +23,7 @@ module.exports = class Transforms {
         }
     }
 
-    transformAttributeState(attr, val, charName) {
+    transformAttributeState(attr, val, charName, opts) {
         switch (attr) {
             case "switch":
                 return val === "on";
@@ -156,7 +156,7 @@ module.exports = class Transforms {
                         return 2;
                 }
             case "hue":
-                return Math.round(val * 3.6) < 1 ? 1 : Math.round(val * 3.6);
+                return Math.round(val * 3.6) < 1 || val === undefined ? 1 : Math.round(val * 3.6);
             case "colorTemperature":
                 return parseInt(this.colorTempFromK(val));
             case "temperature":
@@ -165,8 +165,9 @@ module.exports = class Transforms {
             case "coolingSetpoint":
             case "thermostatSetpoint":
                 return this.thermostatTempConversion(val);
-            case "fanSpeed":
-                return this.fanSpeedIntToLevel(val);
+            case "speed":
+                // console.log("transformAttributeState(speed): ", this.fanSpeedToLevel(val));
+                return this.fanSpeedToLevel(val, opts);
             case "level":
                 {
                     let lvl = parseInt(val);
@@ -248,7 +249,7 @@ module.exports = class Transforms {
                 return val ? "fanOn" : "fanAuto";
             case "thermostatFanModeTarget":
                 return val ? Characteristic.TargetFanState.MANUAL : Characteristic.TargetFanState.AUTO;
-            case "fanSpeed":
+            case "speed":
             case "level":
             case "volume":
             case "thermostatMode":
@@ -284,16 +285,9 @@ module.exports = class Transforms {
                 return val === "muted" ? "mute" : "unmute";
             case "alarmSystemStatus":
                 return this.convertAlarmCmd(val);
-            case "fanSpeed":
-                if (val === 0) {
-                    return 0;
-                } else if (val < 34) {
-                    return 1;
-                } else if (val < 67) {
-                    return 2;
-                } else {
-                    return 3;
-                }
+            case "speed":
+                // console.log("transformCommandValue(speed): ", this.fanSpeedConversion(val));
+                return this.fanSpeedConversion(val);
             case "thermostatMode":
                 switch (val) {
                     case Characteristic.TargetHeatingCoolingState.COOL:
@@ -442,28 +436,20 @@ module.exports = class Transforms {
         return parseFloat(((temp - 32) / 1.8) * 10) / 10;
     }
 
-    fanSpeedConversion(speedVal, has4Spd = false) {
+    fanSpeedConversion(speedVal) {
+        // console.log("speedVal: ", speedVal);
         if (speedVal <= 0) {
             return "off";
-        }
-        if (has4Spd) {
-            if (speedVal > 0 && speedVal <= 25) {
-                return "low";
-            } else if (speedVal > 25 && speedVal <= 50) {
-                return "med";
-            } else if (speedVal > 50 && speedVal <= 75) {
-                return "medhigh";
-            } else if (speedVal > 75 && speedVal <= 100) {
-                return "high";
-            }
-        } else {
-            if (speedVal > 0 && speedVal <= 33) {
-                return "low";
-            } else if (speedVal > 33 && speedVal <= 66) {
-                return "medium";
-            } else if (speedVal > 66 && speedVal <= 100) {
-                return "high";
-            }
+        } else if (speedVal > 0 && speedVal <= 20) {
+            return "low";
+        } else if (speedVal > 20 && speedVal <= 40) {
+            return "medium-low";
+        } else if (speedVal > 40 && speedVal <= 60) {
+            return "medium";
+        } else if (speedVal > 60 && speedVal <= 80) {
+            return "medium-high";
+        } else if (speedVal > 80 && speedVal <= 100) {
+            return "high";
         }
     }
 
@@ -479,17 +465,27 @@ module.exports = class Transforms {
         }
     }
 
-    fanSpeedIntToLevel(speedVal) {
+    fanSpeedToLevel(speedVal, opts = {}) {
+        let spds = 3;
+        if (opts && Object.keys(opts).length && opts.spdSteps) {
+            spds = opts.spdSteps;
+        }
+        // console.log(`fanSpeedToLevel(${speedVal}) | steps: ${spds}`);
         switch (speedVal) {
-            case 0:
+            case "off":
                 return 0;
-            case 1:
+            case "low":
                 return 33;
-            case 2:
+            case "medium-low":
+                return 40;
+            case "medium":
                 return 66;
-            case 3:
+            case "medium-high":
+                return 80;
+            case "high":
                 return 100;
             default:
+                console.log("using default fanspeed of 0 | speedVal: ", speedVal);
                 return 0;
         }
     }
