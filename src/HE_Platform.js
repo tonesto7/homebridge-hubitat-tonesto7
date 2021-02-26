@@ -3,6 +3,7 @@ const { pluginName, platformName, platformDesc, pluginVersion } = require("./lib
     myUtils = require("./libs/MyUtils"),
     HEClient = require("./HE_Client"),
     HEAccessories = require("./HE_Accessories"),
+    // EveTypes = require("./types/eve_types.js"),
     express = require("express"),
     bodyParser = require("body-parser"),
     chalk = require("chalk"),
@@ -90,6 +91,8 @@ module.exports = class HE_Platform {
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
             validateTokenId: this.config.validateTokenId === true,
+            adaptive_lighting: this.config.adaptive_lighting !== false,
+            adaptive_lighting_offset: this.config.adaptive_lighting !== false && this.config.adaptive_lighting_offset !== undefined ? this.config.adaptive_lighting_offset : undefined,
         };
     }
 
@@ -123,7 +126,7 @@ module.exports = class HE_Platform {
     }
 
     didFinishLaunching() {
-        this.log.info(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of device data is being loaded!`);
+        this.log.info(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
         setInterval(this.refreshDevices.bind(this), this.polling_seconds * 1000);
         let that = this;
         this.refreshDevices("First Launch")
@@ -167,12 +170,12 @@ module.exports = class HE_Platform {
                             const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
                             that.log.warn(
                                 `Devices to Remove: (${Object.keys(toRemove).length})`,
-                                toRemove.map((i) => i.name)
+                                toRemove.map((i) => i.name),
                             );
                             that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`);
                             that.log.good(
                                 `Devices to Create: (${Object.keys(toCreate).length})`,
-                                toCreate.map((i) => i.name)
+                                toCreate.map((i) => i.name),
                             );
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
@@ -267,7 +270,7 @@ module.exports = class HE_Platform {
                 webApp.use(
                     bodyParser.urlencoded({
                         extended: false,
-                    })
+                    }),
                 );
                 webApp.use(bodyParser.json());
                 webApp.use((req, res, next) => {

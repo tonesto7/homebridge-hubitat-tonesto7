@@ -1,3 +1,7 @@
+## _**v2.3.1-v2.3.2 Changes**_
+- [NEW] Support for Adaptive Lighting config file settings.
+- [UPDATE] Updated the minimum plugin version to v2.3.1
+
 ## _**v2.3.0 Changes**_
 - [UPDATE] Updated the UI theme to match Echo Speaks
 - [FIX] Added support for 5-speed fans.

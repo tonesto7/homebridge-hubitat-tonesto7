@@ -158,7 +158,7 @@ module.exports = class Transforms {
             case "hue":
                 return Math.round(val * 3.6) < 1 || val === undefined ? 1 : Math.round(val * 3.6);
             case "colorTemperature":
-                return parseInt(this.colorTempFromK(val));
+                return parseInt(this.kelvinToMired(val));
             case "temperature":
                 return parseFloat(this.tempConversion(val));
             case "heatingSetpoint":
@@ -280,7 +280,7 @@ module.exports = class Transforms {
             case "hue":
                 return Math.round(val / 3.6);
             case "colorTemperature":
-                return this.colorTempToK(val);
+                return this.miredToKelvin(val);
             case "mute":
                 return val === "muted" ? "mute" : "unmute";
             case "alarmSystemStatus":
@@ -329,12 +329,28 @@ module.exports = class Transforms {
         }
     }
 
-    colorTempFromK(temp) {
-        return (1000000 / temp).toFixed();
+    toInt(value, minValue, maxValue) {
+        const n = parseInt(value);
+        if (isNaN(n) || n < minValue) {
+            return minValue;
+        }
+        if (n > maxValue) {
+            return maxValue;
+        }
+        return n;
     }
 
-    colorTempToK(temp) {
-        return (1000000 / temp).toFixed();
+    kelvinToMired(kelvin) {
+        let val = (1000000 / kelvin).toFixed();
+        val = this.toInt(val, 140, 500);
+        // console.log("kelvinToMired | k: ", kelvin, " | ct: ", val);
+        return val;
+    }
+
+    miredToKelvin(temp) {
+        let val = (1000000 / temp).toFixed();
+        // console.log("miredToKelvin | k: ", val, " | ct: ", temp);
+        return val;
     }
 
     thermostatTempConversion(temp, isSet = false) {
@@ -453,18 +469,6 @@ module.exports = class Transforms {
         }
     }
 
-    fanSpeedConversionInt(speedVal) {
-        if (!speedVal || speedVal <= 0) {
-            return "off";
-        } else if (speedVal === 1) {
-            return "low";
-        } else if (speedVal === 2) {
-            return "medium";
-        } else if (speedVal === 3) {
-            return "high";
-        }
-    }
-
     fanSpeedToLevel(speedVal, opts = {}) {
         let spds = 3;
         if (opts && Object.keys(opts).length && opts.spdSteps) {
@@ -490,18 +494,6 @@ module.exports = class Transforms {
         }
     }
 
-    fanSpeedLevelToInt(val) {
-        if (val > 0 && val <= 33) {
-            return 1;
-        } else if (val > 33 && val <= 66) {
-            return 2;
-        } else if (val > 66 && val <= 100) {
-            return 3;
-        } else {
-            return 0;
-        }
-    }
-
     convertAlarmState(value) {
         // console.log("convertAlarmState", value);
         switch (value) {
@@ -520,21 +512,21 @@ module.exports = class Transforms {
 
     convertAlarmCmd(value) {
         // console.log("convertAlarmCmd", value);
-        // Characteristic.SecuritySystemCurrentState.STAY_ARM = 0;
-        // Characteristic.SecuritySystemCurrentState.AWAY_ARM = 1;
-        // Characteristic.SecuritySystemCurrentState.NIGHT_ARM = 2;
-        // Characteristic.SecuritySystemCurrentState.DISARMED = 3;
-        // Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED = 4;
         switch (value) {
             case 0:
+            case Characteristic.SecuritySystemCurrentState.STAY_ARM:
                 return "armHome";
             case 2:
+            case Characteristic.SecuritySystemCurrentState.NIGHT_ARM:
                 return "armNight";
             case 1:
+            case Characteristic.SecuritySystemCurrentState.AWAY_ARM:
                 return "armAway";
             case 3:
+            case Characteristic.SecuritySystemCurrentState.DISARMED:
                 return "disarm";
             case 4:
+            case Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED:
                 return "alarm_active";
         }
     }
