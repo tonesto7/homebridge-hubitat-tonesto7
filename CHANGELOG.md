@@ -1,3 +1,8 @@
+## v2.3.1-v2.3.2
+- [NEW] Added support for HomeKit's new Adaptive Lighting (Only works with Bulbs supporting ColorTemp and Brightness) [Adaptive Lighting](https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.).
+  - Please note that this feature may not set the temps correctly for certain bulbs and may require some tweaks to the config file. (See: adaptive_lighting_offset in the readme)
+- [FIX] Tweaks colorTemp conversion logic.
+
 ## v2.3.0
 - [NEW] Added support for FanControl capability and speed attributes in Fans.
 - [UPDATE] Stripped out unnecessary capabilities and attributes for fan devices

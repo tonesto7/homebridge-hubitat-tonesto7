@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = "2.3.0"
-@Field static final String appModifiedFLD = "02-24-2021"
+@Field static final String appVersionFLD  = "2.3.2"
+@Field static final String appModifiedFLD = "02-26-2021"
 @Field static final String branchFLD      = "master"
 @Field static final String platformFLD    = "Hubitat"
 @Field static final String pluginNameFLD  = "Hubitat-v2"
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 222]
+@Field static final Map minVersionsFLD    = [plugin: 232]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -230,6 +230,15 @@ def pluginConfigPage() {
             input "validate_token",     "bool", title: inTS1("Validate AppID & Token for All Communications?", "command"), required: false, defaultValue: false, submitOnChange: true
             input "round_levels",       "bool", title: inTS1("Round Levels <5% to 0% and >95% to 100%?", "command"), required: false, defaultValue: true, submitOnChange: true
             input "temp_unit",          "enum", title: inTS1("Temperature Unit?", "temp_unit"), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
+        }
+
+        section(sectHead("HomeKit Adaptive Lighting")) {
+            String url = "https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day."
+            href url: url, style: "external", title: inTS1("What is Adaptive Lighting?", "info"), description: inputFooter("Tap to open in browser", sCLRGRY, true)
+            input "adaptive_lighting",  "bool", title: inTS1("Allow Supported Bulbs to Use HomeKit Adaptive Lighting?", "command"), required: false, defaultValue: true, submitOnChange: true
+            if(adaptive_lighting) {
+                input "adaptive_lighting_offset", "number", title: inTS1("Adaptive Lighting - Offset ColorTemp Conversions by +/- Mireds?", "command"), range: "-100..100", required: false, defaultValue: 0, submitOnChange: true
+            }
         }
         
         // section(sectHead("Plugin Device Options:")) {
@@ -970,6 +979,8 @@ String renderConfig() {
         access_token: (String)state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
         validateTokenId: (Boolean)settings.validate_token,
+        adaptive_lighting: (Boolean)settings.adaptive_lighting != false,
+        adaptive_lighting_offset: (settings.adaptive_lighting && settings.adaptive_lighting_offset) ? settings.adaptive_lighting_offset.toInteger() : 0,
         round_levels: (Boolean)settings.round_levels != false,
         logConfig: [
             debug: false,

@@ -10,11 +10,11 @@ module.exports = class DeviceCharacteristics {
         accClass = accessories;
         this.log = accessories.log;
         this.logConfig = accessories.logConfig;
+        this.configItems = accessories.configItems;
         this.accessories = accessories;
         this.client = accessories.client;
         this.myUtils = accessories.myUtils;
         this.transforms = accessories.transforms;
-        this.homebridge = accessories.homebridge;
     }
 
     manageGetCharacteristic(svc, acc, char, attr, opts = {}) {
@@ -364,9 +364,21 @@ module.exports = class DeviceCharacteristics {
         if (_accessory.hasAttribute("colorTemperature") && _accessory.hasCommand("setColorTemperature")) {
             _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.ColorTemperature, "colorTemperature", {
                 cmdHasIntVal: true,
+                props: {
+                    maxValue: 500,
+                    minValue: 140,
+                },
             });
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.ColorTemperature);
+        }
+        let canUseAL = this.configItems.adaptive_lighting !== false && _accessory.isAdaptiveLightingSupported && _accessory.hasAttribute("level") && _accessory.hasAttribute("colorTemperature");
+        if (canUseAL && !_accessory.adaptiveLightingController) {
+            _accessory.addAdaptiveLightingController(_accessory.getOrAddService(_service));
+            this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${_accessory.context.deviceData.name}]!!!`);
+        } else if (!canUseAL && _accessory.adaptiveLightingController) {
+            this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${_accessory.context.deviceData.name}]!!!`);
+            _accessory.removeAdaptiveLightingController();
         }
         _accessory.context.deviceGroups.push("light_bulb");
         return _accessory;

@@ -136,6 +136,8 @@ Installation comes in two parts:
       "direct_port": 8000,
       "temperature_unit": "F",
       "validateTokenId": false,
+      "adaptive_lighting": true,
+      "adaptive_lighting_offset": 0,
       "excluded_capabilities": {
          "HUBITAT-DEVICE-ID-1": [
             "Switch",
@@ -156,58 +158,85 @@ Installation comes in two parts:
 ```
 
 
- * `platform` & `name`  _Required_
-This information is used by homebridge to identify the plugin and should be the settings above.
+ * __<u>`platform`</u>__ & __<u>`name`</u>__  _Required_
 
- * `app_url_local` & `app_url_cloud` & `app_id` & `access_token`  _Required_
-To get this information, open the installed Hubitat Homebridge V2 App the Hubitat Web UI, and tap on `View Configuration Data for Homebridge`
-**Notice:** The app_url's in the example will be different for you.
+    This information is used by homebridge to identify the plugin and should be the settings above.
 
- * `use_cloud` _Required_ | _Default: `false`_
-This will enable the plugin to communicate with the hubitat app via the cloud url.  (Mostly useful for troubleshooting local communication issues via ports)
+ * __<u>`app_url_local`</u>__ & __<u>`app_url_cloud`</u>__ & __<u>`app_id`</u>__ & __<u>`access_token`</u>__  _Required_
+    
+    <span style="color: orange;"><b>NOTICE:</b> The app_url's in the example will be different for you.</span>
+    
+    To get this information, open the installed Hubitat Homebridge V2 App the Hubitat Web UI, and tap on `View Configuration Data for Homebridge`
+    
 
- * `communityUserName`  _Optional_ | _Default:_ ''
-Only needed when you are having issues with the plugin and you want me to be able to identify your reported exception errors.
+ * __<u>`use_cloud`</u>__ _Required_ | _Default: `false`_
 
- * `direct_ip`  _Optional_ | _Default: 'First available IP on your computer'_
-Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.
+    This will enable the plugin to communicate with the hubitat app via the cloud url.  (Mostly useful for troubleshooting local communication issues via ports)
 
- * `direct_port`  _Optional_ | _Default: `8000`_
-This is the port that the `homebridge-hubitat-tonesto7` plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your Hubitat hub IP address to your HomeBridge instance.
+ * __<u>`communityUserName`</u>__  _Optional_ | _Default:_ ''
+    
+    Only needed when you are having issues with the plugin and you want me to be able to identify your reported exception errors.
 
- * `temperature_unit`  _Optional_ | _Default: `F`_
-This will allow you to define the temp unit to use.  This can also be set in the SmartApp
+ * __<u>`direct_ip`</u>__  _Optional_ | _Default: 'First available IP on your computer'_
 
- * `validateTokenId`  _Optional_ | _Default: `false`_
-This forces the plugin to validate the Hubitat app token and location with that defined in the plugin configuration
+    Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.
 
- * `excluded_capabilities` _Optional_ | _Default: '{}' (None)_
-NOTICE: The Hubitat app offers many inputs to help filter out device capabilities. Only use this if the available inputs don't meet your needs. Specify the Hubitat device by ID and the associated capabilities you want the plugin to ignore.
-This prevents a Hubitat device creating unwanted or redundant HomeKit accessories.
+ * __<u>`direct_port`</u>__  _Optional_ | _Default: `8000`_
+    
+    This is the port that the `homebridge-hubitat-tonesto7` plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your Hubitat hub IP address to your HomeBridge instance.
 
- * `logConfig` _Optional_
-Define log output format options as well as enable the log file output.
+ * __<u>`temperature_unit`</u>__  _Optional_ | _Default: `F`_
+    
+    This will allow you to define the temp unit to use.  This can also be set in the SmartApp
 
-   - `debug` _Optional_ | _Default: `false`_
-Enables Debug log output.
+ * __<u>`validateTokenId`</u>__  _Optional_ | _Default: `false`_
+    
+    This forces the plugin to validate the Hubitat app token and location with that defined in the plugin configuration
 
-   - `showChanges` _Optional_ | _Default: `true`_
-Logs device event changes received from Hubitat.
+ * __<u>`adaptive_lighting`</u>__  _Optional_ | _Default: `true`_
+    
+    This enables support for bulbs with Color Temp and Brightness to use HomeKit's new [Adaptive Lighting](https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.) features.
 
-   - `hideTimestamp` _Optional_ | _Default: `false`_
-Hides timestamp prefix from console log output.
+* __<u>`adaptive_lighting_offset`</u>__  _Optional_ | _Default: `0`_
+    
+    Defines a custom temperature adjustment factor. This can be used to define a linear deviation from the HomeKit Controller defined ColorTemperature schedule. For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.
 
-   - `hideNamePrefix` _Optional_ | _Default: `false`_
-Hides pluglin name prefix `[Hubitat-v2]` from console log output
+ * __<u>`excluded_capabilities`</u>__ _Optional_ | _Default: '{}' (None)_
 
-   - `file` _Optional_
-Enable log file output and configure options
+    NOTICE: The Hubitat app offers many inputs to help filter out device capabilities. Only use this if the available inputs don't meet your needs. Specify the Hubitat device by ID and the associated capabilities you want the plugin to ignore.
+    This prevents a Hubitat device creating unwanted or redundant HomeKit accessories.
 
-     - `enabled` _Optional_ | _Default: `false`_
-Activates logging to file (homebridge-hubitat-tonesto7.log) stored in the same folder as the homebridge config.json
+ * __<u>`logConfig`</u>__ _Optional_
+    
+    Define log output format options as well as enable the log file output.
 
-     - `level` _Optional_ | _Default: `good`_
-Defines the log entry levels that are written to the file. `good` (recommended) is the default which will write all necessary entries.
+   - __<u>`debug`</u>__ _Optional_ | _Default: `false`_
+        
+        Enables Debug log output.
+
+   - __<u>`showChanges`</u>__ _Optional_ | _Default: `true`_
+
+    Logs device event changes received from Hubitat.
+
+   - __<u>`hideTimestamp`</u>__ _Optional_ | _Default: `false`_
+    
+    Hides timestamp prefix from console log output.
+
+   - __<u>`hideNamePrefix`</u>__ _Optional_ | _Default: `false`_
+    
+    Hides pluglin name prefix `[Hubitat-v2]` from console log output
+
+   - __<u>`file`</u>__ _Optional_
+    
+        Enable log file output and configure options
+
+      - __<u>`enabled`</u>__ _Optional_ | _Default: `false`_
+        
+        Activates logging to file (homebridge-hubitat-tonesto7.log) stored in the same folder as the homebridge config.json
+
+      - __<u>`level`</u>__ _Optional_ | _Default: `good`_
+        
+        Defines the log entry levels that are written to the file. `good` (recommended) is the default which will write all necessary entries.
 
 ## Frequently Asked Question:
 
