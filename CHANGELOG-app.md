@@ -1,3 +1,8 @@
+## v2.3.3
+
+- [NEW] Added new light input to block a light from supporting adaptive lighting .
+- [FIX] Code cleanups and optimizations.
+
 ## _**v2.3.1-v2.3.2 Changes**_
 - [NEW] Support for Adaptive Lighting config file settings.
 - [UPDATE] Updated the minimum plugin version to v2.3.1

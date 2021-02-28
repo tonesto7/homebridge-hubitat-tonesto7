@@ -42,15 +42,15 @@ preferences {
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 232]
+@Field static final Map minVersionsFLD    = [plugin: 233]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
 @Field static final String sBULLET        = '\u2022'
 @Field static final String sFRNFACE       = '\u2639'
-@Field static final String okSymFLD       = "\u2713"
-@Field static final String notOkSymFLD    = "\u2715"
-@Field static final String sPAUSESymFLD   = "\u275A\u275A"
+@Field static final String okSymFLD       = '\u2713'
+@Field static final String notOkSymFLD    = '\u2715'
+@Field static final String sPAUSESymFLD   = '\u275A\u275A'
 @Field static final String sLINEBR        = '<br>'
 @Field static final String sFALSE         = 'false'
 @Field static final String sTRUE          = 'true'
@@ -143,9 +143,7 @@ def startPage() {
 
 def mainPage() {
     Boolean isInst = (state.isInstalled == true)
-    if (settings.enableWebCoRE) {
-        if (!webCoREFLD) webCoRE_init()
-    }
+    if (settings.enableWebCoRE && !webCoREFLD) { webCoRE_init() }
     return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLNK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectHead('Device Configuration:')) {
@@ -156,6 +154,7 @@ def mainPage() {
             if (conf) {
                 desc  = sBLANK
                 desc += lightList ? spanSmBld("Light${lightList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${lightList.size()})") : sBLANK
+                desc += lightNoAlList ? spanSmBld("Light${lightNoAlList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${lightNoAlList.size()})") : sBLANK
                 // desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${pushableButtonList.size()})") : sBLANK
                 // desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${holdableButtonList.size()})") : sBLANK
                 // desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${doubleTapableButtonList.size()})") : sBLANK
@@ -279,6 +278,7 @@ def deviceSelectPage() {
             paragraph spanSmBldBr('NOTE: ') + spanSmBldBr('Please do not select a device more than once in the inputs below')
 
             input 'lightList', 'capability.switch', title: inTS1("Lights: (${lightList ? lightList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'lightNoAlList', 'capability.switch', title: inTS1("Lights (No Adaptive Lighting): (${lightNoAlList ? lightNoAlList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'garageList', 'capability.garageDoorControl', title: inTS1("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", 'garage_door'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'speakerList', 'capability.switch', title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", 'media_player'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'shadesList', 'capability.windowShade', title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -317,18 +317,15 @@ def deviceSelectPage() {
         section(sectHead('Create Devices for WebCoRE Pistons in HomeKit?')) {
             input 'enableWebCoRE', 'bool', title: inTS1('Enable webCoRE Integration', webCore_icon()), required: false, defaultValue: false, submitOnChange: true
             if (settings.enableWebCoRE) {
-                if (!webCoREFLD) webCoRE_init()
+                if (!webCoREFLD) { webCoRE_init() }
                 paragraph spanSmBldBr('What are these for?', sCLRGRY) + spanSm("Creats a virtual device for selected pistons in HomeKit.<br> ${sBULLET} These are very useful for use in Home Kit scenes", sCLRGRY)
                 def pistons = webCoRE_list('name')
-
-                //                def pistons = webCoREFLD?.pistons?.sort {it?.name}?.collect { [(it?.id): it?.aname?.replaceAll("<[^>]*>", sBLNK)] }
                 input 'pistonList', 'enum', title: inTS1('Create Devices for these Pistons', webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
-                } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
-            }
-
-        inputDupeValidation()
+            } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
         }
+        inputDupeValidation()
     }
+}
 
 def settingsPage() {
     return dynamicPage(name: 'settingsPage', title: sBLANK, install: false, uninstall: false) {
@@ -369,7 +366,7 @@ private void inputDupeValidation() {
         d: [
             'fanList': 'Fans', 'fan3SpdList': 'Fans (3-Speed)', 'fan4SpdList': 'Fans (4-Speed)',
             'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
-            'lightList': 'Lights', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
+            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
             'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)'
         ],
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
@@ -453,8 +450,8 @@ def historyPage() {
                     hList.push([name: 'Date:', val: c.dt])
                     if (hList.size()) { paragraph kvListToHtmlTable(hList, sCLR4D9) }
                 }
-                } else { paragraph spanSm('No Command History Found...', sCLRGRY) }
-            }
+            } else { paragraph spanSm('No Command History Found...', sCLRGRY) }
+        }
         section(sectHead("Last (${eHist.size()}) Events Sent to HomeKit:")) {
             if (eHist.size() > 0) {
                 eHist.each { Map h->
@@ -465,10 +462,10 @@ def historyPage() {
                     if (h?.data?.execTime) hList.push([name: 'ExecTime:', val: "${h?.data?.execTime}ms"])
                     if (hList.size()) { paragraph spanSmBldBr((String)h.dt, sCLR4D9) + kvListToHtmlTable(hList, sCLR4D9) }
                 }
-                } else { paragraph spanSm('No Event History Found...', sCLRGRY) }
-            }
+            } else { paragraph spanSm('No Event History Found...', sCLRGRY) }
         }
-        }
+    }
+}
 
 private String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
     String str = sBLANK
@@ -515,7 +512,7 @@ def capFilterPage() {
         }
         section(sectHead('Reset Selected Filters:'), hideable: true, hidden: true) {
             input 'resetCapFilters', 'bool', title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
-            if (settings?.resetCapFilters) { settingUpdate('resetCapFilters', 'false', 'bool'); resetCapFilters() }
+            if (settings?.resetCapFilters) { settingUpdate('resetCapFilters', 'false', 'bool'); resetCapFilters(); }
         }
     }
 }
@@ -579,7 +576,7 @@ def deviceDebugPage() {
             if (debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
                 paragraph spanSmBld('Device Data:', sCLR4D9)
                 paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>", sCLRGRY)
-            // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", title: inTS1("Tap here to view Device Data...", "info"), description: sBLANK
+                // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", title: inTS1("Tap here to view Device Data...", "info"), description: sBLANK
             }
         }
     }
@@ -595,11 +592,11 @@ public void clearTestDeviceItems() {
 
 def viewDeviceDebug() {
     def sDev = null
-    if (debug_other) sDev = debug_other
-    if (debug_sensor) sDev = debug_sensor
-    if (debug_switch) sDev = debug_switch
-    if (debug_garage) sDev = debug_garage
-    if (debug_tstat)  sDev = debug_tstat
+    if (debug_other)  { sDev = debug_other  }
+    if (debug_sensor) { sDev = debug_sensor }
+    if (debug_switch) { sDev = debug_switch }
+    if (debug_garage) { sDev = debug_garage }
+    if (debug_tstat)  { sDev = debug_tstat  }
     String json = new groovy.json.JsonOutput().toJson(getDeviceDebugMap(sDev))
     String jsonStr = new groovy.json.JsonOutput().prettyPrint(json)
     return jsonStr
@@ -645,12 +642,12 @@ private Integer getDeviceCnt(Boolean phyOnly=false) {
     items?.each { String item -> if (settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "device_${it.getId()}" } }
     if (!phyOnly) {
         ['modeList', 'pistonList'].each { String item->
-            if (settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "${item.toString().replaceAll('List', '')}_${it}" }
+            if (settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "${item.toString().replaceAll('List', sBLANK)}_${it}" }
         }
     }
     Integer dSize = devices?.unique()?.size()
     dSize = dSize != null ? dSize : 0
-    if ((Boolean) settings.addSecurityDevice) dSize = dSize + 1
+    if ((Boolean) settings.addSecurityDevice) { dSize = dSize + 1 }
     return dSize
 }
 
@@ -662,12 +659,12 @@ def installed() {
 
 def updated() {
     logDebug("${app.name} | updated() has been called...")
-    if (!state.installData) state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false]
+    if (!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
     unsubscribe()
     stateCleanup()
     initialize()
     remTsVal(sLASTWU)
-    if (settings.enableWebCoRE) webCoRE_poll(true)
+    if (settings.enableWebCoRE) { webCoRE_poll(true) }
 }
 
 def initialize() {
@@ -678,8 +675,8 @@ def initialize() {
         runEvery5Minutes('healthCheck')
         if (settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN) }
         if (settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN) }
-        } else { logError('initialize error: Unable to get or generate smartapp access token') }
-    }
+    } else { logError('initialize error: Unable to get or generate smartapp access token') }
+}
 
 Boolean getAccessToken(Boolean disableRetry=false) {
     try {
@@ -709,7 +706,7 @@ private void enableOauth() {
     ]
     try {
         httpPost(params) { resp ->
-        //LogTrace("response data: ${resp.data}")
+            //LogTrace("response data: ${resp.data}")
         }
     } catch (e) {
         logError("enableOauth something went wrong: $e")
@@ -727,11 +724,7 @@ void subscribeToEvts() {
         logInfo("Subscribed to (${settings.modeList.size() ?: 0} Location Modes)")
         subscribe(location, 'mode', changeHandler)
     }
-    if (settings.enableWebCoRE) {
-        webCoRE_init()
-    //        if(settings.pistonList) { logInfo("Subscribed to (${settings.pistonList.size()} WebCoRE Pistons)") }
-    //        subscribe(location, "webCoRE", changeHandler)
-    }
+    if (settings.enableWebCoRE) { webCoRE_init() }
 }
 
 private void healthCheck(Boolean ui=false) {
@@ -749,9 +742,9 @@ private void healthCheck(Boolean ui=false) {
     if (!ui && lastUpd > 14400) { remTsVal(sSVR) }
 
     if (evtLogSec > 60*1 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', 'false', 'bool'); }
-        else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
+    else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
     if (dbgLogSec > 60*1 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', 'false', 'bool'); }
-        else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
+    else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
 }
 
 Boolean checkIfCodeUpdated(Boolean ui=false) {
@@ -844,9 +837,9 @@ private Map getDeviceData(String type, sItem) {
             // Define firmware variable and initialize it out of device handler attribute`
             try {
                 if (sItem?.hasAttribute('firmware')) { firmware = sItem?.currentValue('firmware')?.toString() }
-                } catch (ex) { firmware = sNULL }
+            } catch (ex) { firmware = sNULL }
             break
-            }
+    }
     if (curType && obj) {
         return [
             name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
@@ -865,7 +858,7 @@ private Map getDeviceData(String type, sItem) {
         ]
     }
     return null
-    }
+}
 
 String modeSwitchState(String mode) {
     return (location?.getMode() == mode) ? 'on' : 'off'
@@ -892,23 +885,26 @@ Map getDeviceFlags(device) {
     Map opts = [:]
     if (settings?.fan3SpdList?.find { it?.id == device?.id }) {
         opts['fan_3_spd'] = 1
-}
+    }
     if (settings?.fan4SpdList?.find { it?.id == device?.id }) {
         opts['fan_4_spd'] = 1
-}
+    }
     if (settings?.fan5SpdList?.find { it?.id == device?.id }) {
         opts['fan_5_spd'] = 1
-}
+    }
+    if (setings?.lightNoAlList?.find { it?.id == device?.id }) {
+        opts['light_no_al'] = 1
+    }
     // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
-    }
+}
 
 def findDevice(dev_id) {
     List allDevs = []
     deviceSettingKeys().collect { (String)it.key }?.each { String key->
         def setVal = settings?."${key}"
         allDevs = allDevs + (setVal ?: [])
-}
+    }
     def aa = allDevs.find { it.id = dev_id }
     return aa ?: null
 }
@@ -921,10 +917,9 @@ static String getAlarmSystemName(Boolean abbr=false) {
     return (abbr ? 'HSM' : 'Hubitat Safety Monitor')
 }
 
+/* groovylint-disable-next-line NoDef */
 def getSecurityStatus(Boolean retInt=false) {
     String cur = (String)location.hsmStatus
-    // def inc = getShmIncidents()
-    // if(inc != null && inc?.size()) { cur = 'alarm_active' }
     if (retInt) {
         switch (cur) {
             case 'armedHome':
@@ -942,30 +937,31 @@ def getSecurityStatus(Boolean retInt=false) {
             case 'alarm_active':
                 return 4
         }
-        } else { return cur ?: 'disarmed' }
-    }
+    } else { return cur ?: 'disarmed' }
+}
 
 void setAlarmSystemMode(String mode) {
+    String nMode = sNULL
     switch (mode) {
         case 'armAway':
         case 'away':
-            mode = 'armAway'
+            sMode = 'armAway'
             break
         case 'armNight':
-            mode = 'armNight'
+            sMode = 'armNight'
             break
         case 'armHome':
         case 'night':
         case 'stay':
-            mode = 'armHome'
+            sMode = 'armHome'
             break
         case 'disarm':
         case 'off':
-            mode = 'disarm'
+            sMode = 'disarm'
             break
     }
-    logInfo("Setting the ${getAlarmSystemName()} Mode to (${mode})...")
-    sendLocationEvent(name: 'hsmSetArm', value: mode)
+    logInfo("Setting the ${getAlarmSystemName()} Mode to (${sMode})...")
+    sendLocationEvent(name: 'hsmSetArm', value: sMode)
 }
 
 String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
@@ -1041,8 +1037,8 @@ def deviceCommand() {
 private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
-    if (shw) logInfo("Plugin called Process Command${local ? '(LOCAL)' : sBLANK} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}")
-    if (!devId) return
+    if (shw) { logInfo("Plugin called Process Command${local ? '(LOCAL)' : sBLANK} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
+    if (!devId) { return }
     String command = cmd
 
     if (devId == "alarmSystemStatus_${location?.id}" && (Boolean)settings.addSecurityDevice) {
@@ -1051,13 +1047,13 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command $command", 200)
     }  else if (command == 'mode' &&  settings.modeList) {
-        if (shw)logDebug("Virtual Mode Received: ${devId}")
+        if (shw) { logDebug("Virtual Mode Received: ${devId}") }
         changeMode(devId, shw)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: 'Mode Device', value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
     } else if (command == 'piston' && settings.pistonList) {
-        if (shw)logDebug("Virtual Piston Received: ${devId}")
+        if (shw) { logDebug("Virtual Piston Received: ${devId}") }
         String aa = runPiston(devId, shw)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: 'Piston Device', value1: value1, value2: value2, execTime: pt])
@@ -1078,15 +1074,15 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
         try {
             if (value2 != null) {
                 device."$command"(value1, value2)
-                if (shw)cmdS = cmdS + "$value1, $value2)]".toString()
+                if (shw) { cmdS = cmdS + "$value1, $value2)]".toString() }
             } else if (value1 != null) {
                 device."$command"(value1)
-                if (shw)cmdS = cmdS + "$value1)]".toString()
+                if (shw) { cmdS = cmdS + "$value1)]".toString() }
             } else {
                 device."$command"()
-                if (shw)cmdS = cmdS + ')]'
+                if (shw) { cmdS = cmdS + ')]' }
             }
-            if (shw) logInfo(cmdS)
+            if (shw) { logInfo(cmdS) }
             Long pt = execDt ? (now() - execDt) : 0L
             logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
             return CommandReply(shw, sSUCC, " | ${devN} | Command [${command}()] | Process Time: (${pt}ms)", 200)
@@ -1101,25 +1097,25 @@ private void changeMode(modeId, Boolean shw) {
     if (modeId) {
         def mode = findVirtModeDevice(modeId)
         if (mode) {
-            if (shw)logInfo("Setting the Location Mode to (${mode})...")
+            if (shw) { logInfo("Setting the Location Mode to (${mode})...") }
             setLocationMode(mode as String)
-            } else { logError("Unable to find a matching mode for the id: ${modeId}") }
-        }
+        } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
+}
 
 private runPiston(rtId, Boolean shw) {
     if (rtId) {
         Map rt = findVirtPistonDevice(rtId)
         String nm = (String)rt?.name
         if (nm) {
-            if (shw)logInfo("Executing the (${nm}) Piston...")
+            if (shw) { logInfo("Executing the (${nm}) Piston...") }
             sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: 'Execute Piston from homebridge', descriptionText: "Homebridge piston execute ${nm}", data: [:])
             runIn(2, 'endPiston', [data: [id:rtId, name:nm]])
             return nm
-            } else { logError("Unable to find a matching piston for the id: ${rtId}") }
-        }
-    return null
+        } else { logError("Unable to find a matching piston for the id: ${rtId}") }
     }
+    return null
+}
 
 void endPiston(evt) {
     changeHandler([deviceId:evt.id , name: 'webCoRE', value: 'pistonExecuted', displayName: evt.name, date: new Date()])
@@ -1146,10 +1142,8 @@ Map findVirtPistonDevice(id) {
 }
 
 Map deviceCapabilityList(device) {
-    if (!device || !device.getId()) return [:]
+    if (!device || !device.getId()) { return [:] }
     Map<String,Integer> capItems = device.capabilities?.findAll { !((String)it.name in ignoreListFLD.capabilities) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
-
-    if (isDeviceInInput('lightList', device.id)) { capItems['LightBulb'] = 1 }
 
     // if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
     // else { capItems.remove("PushableButton") }
@@ -1159,7 +1153,8 @@ Map deviceCapabilityList(device) {
 
     // if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; }
     // else { capItems.remove("DoubleTapableButton") }
-
+    
+    if (isDeviceInInput('lightList', device.id)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('fanList', device.id)) { capItems['Fan'] = 1 }
     if (isDeviceInInput('speakerList', device.id)) { capItems['Speaker'] = 1 }
     if (isDeviceInInput('shadesList', device.id)) { capItems['WindowShade'] = 1 }
@@ -1170,7 +1165,7 @@ Map deviceCapabilityList(device) {
 
     if (settings.noTemp && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
         Boolean remTemp = true
-        if (settings.sensorAllowTemp && isDeviceInInput('sensorAllowTemp', device.id)) remTemp = false
+        if (settings.sensorAllowTemp && isDeviceInInput('sensorAllowTemp', device.id)) { remTemp = false }
         if (remTemp) { capItems.remove('TemperatureMeasurement') }
     }
 
@@ -1191,7 +1186,7 @@ Map deviceCapabilityList(device) {
 }
 
 Map deviceCommandList(device) {
-    if (!device || !device.getId()) return [:]
+    if (!device || !device.getId()) { return [:] }
     Map cmds = device.supportedCommands?.findAll { !((String)it.name in ignoreListFLD.commands) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
     if (isDeviceInInput('tstatList', device.id)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
     if (isDeviceInInput('tstatHeatList', device.id)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
@@ -1199,7 +1194,7 @@ Map deviceCommandList(device) {
 }
 
 Map deviceAttributeList(device) {
-    if (!device || !device.getId()) return [:]
+    if (!device || !device.getId()) { return [:] }
     Map atts = device.supportedAttributes?.findAll { !((String) it.name in ignoreListFLD.attributes) }?.collectEntries { attribute->
         try {
             [((String) attribute.name): device.currentValue((String) attribute.name)]
@@ -1231,7 +1226,7 @@ static Map deviceSettingKeys() {
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     [
-        'lightList': 'Light Devices', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
+        'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (No Adaptive Lighting)', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices',
         'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'garageList': 'Garage Door Devices',
@@ -1295,7 +1290,6 @@ void registerChangeHandler(devices, Boolean showlog=false) {
 def changeHandler(evt) {
     Long execDt = now()
     List<Map> sendItems = []
-    //    Integer sendNum = 1
     String src = evt?.source
     def deviceid = evt?.deviceId
     String deviceName = (String)evt?.displayName
@@ -1303,7 +1297,7 @@ def changeHandler(evt) {
     def value = evt?.value
     Date dt = (Date)evt.date
     Boolean sendEvt = true
-    Boolean evtLog = (getTsVal(sEVT) == sTRU) //if((Boolean)settings.showEventLogs)
+    Boolean evtLog = (getTsVal(sEVT) == sTRU)
 
     switch ((String)evt.name) {
         case 'hsmStatus':
@@ -1317,7 +1311,7 @@ def changeHandler(evt) {
                 attr = 'alarmSystemStatus'
                 value = 'alarm_active'
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
-                } else { sendEvt = false }
+            } else { sendEvt = false }
             break
         case 'hsmRules':
         case 'hsmSetArm':
@@ -1343,19 +1337,11 @@ def changeHandler(evt) {
                         p.removeAll { it.iid == d.id };
                         p += d.pistons.collect { [iid:d.id] + it }.sort { it.name };
                         def a = webCoREFLD?.cbk
-
-                        //                  Boolean aa = getTheLock(sHMLF, "webCoRE_Handler")
                         webCoREFLD = [cbk: a, updated: now(), pistons: p]
-                        //                  releaseTheLock(sHMLF)
                         updTsVal(sLASTWU)
                     }
 
-/*                def data = evt.jsonData ?: null
-                if(data != null){
-                    webCoREFLD = data
-                    updTsVal(sLASTWU)
-                } */
-                    if (evtLog) logDebug("got webCoRE piston list event $webCoREFLD")
+                    if (evtLog) { logDebug("got webCoRE piston list event $webCoREFLD") }
                     break
                 } else if ((String)evt.value == 'pistonExecuted') {
                     settings?.pistonList?.each { id->
@@ -1379,7 +1365,7 @@ def changeHandler(evt) {
         default:
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
             break
-            }
+    }
 
     if (sendEvt && sendItems.size() > 0) {
         String server = getServerAddress()
@@ -1504,22 +1490,16 @@ public List webCoRE_list(String mode) {
 }
 
 Map getPistonById(String rId) {
-    //  Map a = webCoRE_list('name')?.find { it.containsKey(rId) }
-    //  String aaa = (String)a?."${rId}"
-    //  return aaa ?: "Refresh to display piston name..."
     return webCoREFLD?.pistons?.find { it?.id == rId }
 }
 
 Map getPistonByName(String name) {
-    //    String i=(webCoREFLD?.pistons ?: []).find{(it.name==pistonIdOrName)||(it.id==pistonIdOrName)}?.id;
     return webCoREFLD?.pistons?.find { it?.name == name }
 }
 
 void settingUpdate(String name, String value, String type=sNULL) {
-    if (name && type) {
-        app.updateSetting(name, [type: type, value: value])
-    }
-        else if (name && type == sNULL) { app.updateSetting(name, value) }
+    if (name && type) { app.updateSetting(name, [type: type, value: value]) }
+    else if (name && type == sNULL) { app.updateSetting(name, value) }
 }
 
 void settingRemove(String name) {
@@ -1593,13 +1573,12 @@ def enableDirectUpdates() {
 
 mappings {
     path('/devices')                        { action: [GET: 'getAllData']           }
-    path('/alldevices')                     { action: [GET: 'renderDevices']        } // debug
-    path('/deviceDebug')                    { action: [GET: 'viewDeviceDebug']      } // debug
-    path('/location')                       { action: [GET: 'renderLocation']       } // debug
+    path('/alldevices')                     { action: [GET: 'renderDevices']        }
+    path('/deviceDebug')                    { action: [GET: 'viewDeviceDebug']      }
+    path('/location')                       { action: [GET: 'renderLocation']       }
     path('/pluginStatus')                   { action: [POST: 'pluginStatus']        }
     path('/:id/command/:command')           { action: [POST: 'deviceCommand']       }
-    // path("/:id/query")                   { action: [GET: "deviceQuery"]          }
-    path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      } // debug
+    path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }
     path('/startDirect/:ip/:port/:version') { action: [POST: 'enableDirectUpdates'] }
 }
 
@@ -1641,10 +1620,10 @@ static String paraTS(String t, String i = sNULL, Boolean bold=true, String color
 static String sectHead(String str, String img = sNULL) { return str ? "<h3 style='margin-top:0;margin-bottom:0;'>" + spanImgStr(img) + span(str, sCLR4D9, sNULL, true) + '</h3>' + "<hr style='background-color:${sCLRGRY};font-style:italic;height:1px;border:0;margin-top:0;margin-bottom:0;'>" : sBLANK }
 static String sTS(String t, String i = sNULL, Boolean bold=false) { return "<h3>${i ? "<img src='${i}' width='42'> " : sBLANK} ${bold ? '<b>' : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}</h3>" }
 static String s3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold;'>${i ? "<img src='${i}' width='42'> " : sBLANK} ${t?.replaceAll('\n', '<br>')}</h3>${st ? "${st}" : sBLANK}" }
-static String pTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='42'> " : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : ''}${color ? '</div>' : ''}" }
+static String pTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='42'> " : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}" }
 
 static String inTS1(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return spanSmBldUnd(str, clr, img) }
-static String inTS(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return divSm(strUnder(str?.replaceAll('\n', ' ').replaceAll('<br>', ' '), und), clr, img) }
+static String inTS(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return divSm(strUnder(str?.replaceAll('\n', sSPACE).replaceAll('<br>', sSPACE), und), clr, img) }
 
 // Root HTML Objects
 static String span(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<span ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? 'font-weight: bold;' : sBLANK}'" : sBLANK}>${str}</span>${br ? sLINEBR : sBLANK}" : sBLANK }
@@ -1717,7 +1696,6 @@ static Boolean codeUpdIsAvail(String newVer, String curVer, String type) {
 }
 
 Boolean appUpdAvail() { return (state?.appData?.versions && state?.codeVersions?.mainApp && codeUpdIsAvail((String)state?.appData?.versions?.mainApp, appVersionFLD, 'main_app')) }
-
 Boolean pluginUpdAvail() { return (state?.appData?.versions && state?.codeVersions?.plugin && codeUpdIsAvail((String)state?.appData?.versions?.plugin, (String)state?.codeVersions?.plugin, 'plugin')) }
 
 private Map getMinVerUpdsRequired() {
@@ -1764,13 +1742,12 @@ private void remTsVal(key) {
     String appId = app.getId()
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) {
-        if (key instanceof List) {
-            key.each { String k-> if (data?.containsKey(k)) { data?.remove(k) } }
-            } else { if (data?.containsKey((String)key)) { data?.remove((String)key) } }
+        if (key instanceof List) { key.each { String k-> if (data?.containsKey(k)) { data?.remove(k) } } }
+        else { if (data?.containsKey((String)key)) { data?.remove((String)key) } }
         tsDtMapFLD[appId] = data
         tsDtMapFLD = tsDtMapFLD
-        }
     }
+}
 
 private String getTsVal(String val) {
     String appId = app.getId()
@@ -1786,15 +1763,6 @@ private void updCodeVerMap(String key, String val) {
     if (cv.containsKey(key) && val == sNULL) { cv.remove(key) }
     state.codeVersions = cv
 }
-/*
-private void cleanUpdVerMap() {
-    Map<String, String> cv = state.codeVersions
-    if(cv == null) cv = [:]
-    List ri = []
-    cv.each { String k, String v-> if(v == null) ri.push(k) }
-    ri.each { cv.remove(it) }
-    state.codeVersions = cv
-}*/
 
 private void updInstData(String key, val) {
     Map iData = state.installData ?: [:]
@@ -1833,30 +1801,26 @@ void getConfigData() {
 private getWebData(Map params, String desc, Boolean text=true) {
     try {
         httpGet(params) { resp ->
-            if (resp?.status != 200) logWarn("${resp?.status} $params")
-            //            def a= resp?.status
-            //            def b = resp?.data
-            //            logDebug("getWebData $a   $b")
+            if (resp?.status != 200) { logWarn("${resp?.status} $params") }
             if (resp?.data) {
                 if (text) { return resp?.data.text.toString() }
                 return resp.data
             }
         }
     } catch (ex) {
-        if (ex instanceof groovyx.net.http.HttpResponseException) {
-            logWarn("${desc} file not found")
-            } else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}") }
-        if (text) return "${desc} info not found"
+        if (ex instanceof groovyx.net.http.HttpResponseException) { logWarn("${desc} file not found") } 
+        else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}") }
+        if (text) { return "${desc} info not found" }
         return null
-        }
     }
+}
 
 /******************************************
 |       DATE | TIME HELPERS
 ******************************************/
 String formatDt(Date dt, Boolean tzChg=true) {
     def tf = new java.text.SimpleDateFormat('E MMM dd HH:mm:ss z yyyy')
-    if (tzChg) { if (location.timeZone) { tf.setTimeZone(location?.timeZone) } }
+    if (tzChg && location.timeZone) { tf.setTimeZone(location?.timeZone) }
     return tf?.format(dt)
 }
 
@@ -1895,7 +1859,7 @@ Integer getDaysSinceUpdated() {
     }
     Date start = Date.parse('E MMM dd HH:mm:ss z yyyy', updDt)
     Date stop = new Date()
-    if (start && stop) {    return (stop - start) }
+    if (start && stop) { return (stop - start) }
     return 0
 }
 
@@ -1919,13 +1883,10 @@ private changeLogPage() {
     }
 }
 
-//Integer stateSize() { String j = new groovy.json.JsonOutput().toJson(state); return j.length() }
-//Integer stateSizePerc() { return (int) ((stateSize() / 100000)*100).toDouble().round(0) }
-
 private void addToHistory(String logKey, Map data, Integer max=10) {
     String appId = app.getId()
-    Boolean ssOk = true // (stateSizePerc() > 70)
-
+    Boolean ssOk = true
+    /* groovylint-disable-next-line UnusedVariable */
     Boolean aa = getTheLock(sHMLF, "addToHistory(${logKey})")
     // log.trace "lock wait: ${aa}"
 
@@ -2036,7 +1997,8 @@ private Integer getSemaNum(String name) {
 
 java.util.concurrent.Semaphore getSema(Integer snum) {
     switch (snum) {
-        case 0: return histMapLockFLD
+        case 0:
+            return histMapLockFLD
         default: log.error "bad hash result $snum"
             return null
     }
@@ -2059,12 +2021,12 @@ Boolean getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
             lockTimesFLD[semaSNum] = timeL
             lockTimesFLD = lockTimesFLD
         }
-        if (devMode()) log.warn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}"
+        if (devMode()) { log.warn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}" }
         pauseExecution(waitT)
         wait = true
         if ((now() - timeL) > 30000L) {
             releaseTheLock(qname)
-            if (devMode()) log.warn "overriding lock $meth"
+            if (devMode()) { log.warn "overriding lock $meth" }
         }
     }
     lockTimesFLD[semaSNum] = now()
