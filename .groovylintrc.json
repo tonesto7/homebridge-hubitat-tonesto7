@@ -1,0 +1,38 @@
+{
+    "extends": "recommended",
+    "rules": {
+        "DuplicateNumberLiteral": {
+            "enabled": false
+        },
+        "DuplicateStringLiteral": {
+            "enabled": false
+        },
+        "ImplicitClosureParameter": {
+            "enabled": false
+        },
+        "LineLength": {
+            "enabled": false
+        },
+        "MethodReturnTypeRequired": {
+            "enabled": false
+        },
+        "NoDef": {
+            "enabled": false
+        },
+        "PublicMethodsBeforeNonPublicMethods": {
+            "enabled": false
+        },
+        "StaticMethodsBeforeInstanceMethods": {
+            "enabled": false
+        },
+        "UnnecessaryGString": {
+            "enabled": true
+        },
+        "UnnecessaryGetter": {
+            "enabled": false
+        },
+        "UnnecessaryToString": {
+            "enabled": false
+        }
+    }
+}

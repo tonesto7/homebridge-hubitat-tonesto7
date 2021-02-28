@@ -1,18 +1,29 @@
+#
+
+## v2.3.3
+
+- [NEW] Added support for the new light input to block a light from supporting adaptive lighting .
+- [FIX] Node package updates.
+
 ## v2.3.1-v2.3.2
+
 - [NEW] Added support for HomeKit's new Adaptive Lighting (Only works with Bulbs supporting ColorTemp and Brightness) [Adaptive Lighting](https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.).
   - Please note that this feature may not set the temps correctly for certain bulbs and may require some tweaks to the config file. (See: adaptive_lighting_offset in the readme)
 - [FIX] Tweaks colorTemp conversion logic.
 
 ## v2.3.0
+
 - [NEW] Added support for FanControl capability and speed attributes in Fans.
 - [UPDATE] Stripped out unnecessary capabilities and attributes for fan devices
 - [FIX] Bug fixes and node package updates.
 
 ## v2.2.2
+
 - [NEW] Added new config option for rounding levels <5 to 0 and > 95 to 100 (On by Default now).
 - [FIX] Log cleanups.
 
 ## v2.2.0
+
 - [NEW] Create virtual devices under HomeKit to trigger your WebCoRE pistons.
 - [FIX] Tweaked value transforms for temperature, colorTemperature, to prevent errors.
 - [FIX] Stopped ChargingState errors in logs.
@@ -20,31 +31,37 @@
 - [UPDATE] Code cleanups and optimizations.
 
 ## v2.1.3
+
 - [FIX] Last plugin update broke HSM events.
-- [FIX] Fixed validate token feature 
+- [FIX] Fixed validate token feature
 
 ## v2.1.2
-- [NEW] Added logging for the PowerSource value 
+
+- [NEW] Added logging for the PowerSource value
 
 ## v2.1.1
+
 - [FIX] Fix for https responses.
 
 ## v2.1.0
+
 - [FIX] There was an issue with the plugin not sending back the response to the HE app as JSON which would throw a 500 error.
 - [UPDATE] Slight cleanup of the logic of updating config settings from Hubitat.
 - [UPDATE] @jorhett submitted some logging cleanups and made them more human friendly on the plugin side.
 - [UPDATE] Minor code cleanups and tweaks.
 
-
 ## v2.0.7
+
 - [UPDATE] Restored support for charging state under batteries in HomeKit.
 
 ## v2.0.6
+
 - [UPDATE] Added fan characteristic to thermostats.
 - [FIX] Shades devices that don't use level commands should now work with setPosition.
 - [FIX] Generic Zigbee RGBW bulb drivers were throwing error for setColorTemperature commands not being an integer.
 
 ## v2.0.2
+
 - [FIX] HSM status updates should now work correctly.
 
 ## v2.0.0
