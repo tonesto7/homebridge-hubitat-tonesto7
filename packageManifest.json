@@ -7,7 +7,7 @@
     "documentationLink": "https://github.com/tonesto7/homebridge-hubitat-tonesto7#readme",
     "communityLink": "https://community.hubitat.com/t/release-homebridge-hubitat-v2-0/54056",
     "licenseFile": "",
-    "releaseNotes": "Please see Changelog at https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/changelog-app.md for recent changes.",
+    "releaseNotes": "Please see Changelog at https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG-app.md for recent changes.",
     "apps": [{
         "id": "d355b1b6-148e-4a67-a1b0-3e570ad1b6b5",
         "name": "Homebridge v2",
