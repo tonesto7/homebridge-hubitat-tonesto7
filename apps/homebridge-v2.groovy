@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.3.3'
-@Field static final String appModifiedFLD = '02-28-2021'
+@Field static final String appVersionFLD  = '2.3.4'
+@Field static final String appModifiedFLD = '03-02-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -125,7 +125,7 @@ preferences {
     ],
     capabilities: [
         'HealthCheck', 'Indicator', 'WindowShadePreset', 'ChangeLevel', 'Outlet', 'HealthCheck', 'UltravioletIndex', 'ColorMode', 'VoltageMeasurement', 'PowerMeter', 'EnergyMeter', 'ThreeAxis',
-        'ReleasableButton', 'PushableButton', 'HoldableButton', 'DoubleTapableButton'
+        'ReleasableButton', 'PushableButton', 'HoldableButton', 'DoubleTapableButton', 'Initialize', 'LightEffects', 'SignalStrength'
     ]
 ]
 

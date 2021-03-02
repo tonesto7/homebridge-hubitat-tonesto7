@@ -1,5 +1,7 @@
 #
+## v2.3.4
 
+- [FIX] Bug fixes.
 ## v2.3.3
 
 - [NEW] Added support for the new light input to block a light from supporting adaptive lighting .
