@@ -905,7 +905,7 @@ def findDevice(dev_id) {
         def setVal = settings?."${key}"
         allDevs = allDevs + (setVal ?: [])
     }
-    def aa = allDevs.find { it.id = dev_id }
+    def aa = allDevs.find { it.id == dev_id }
     return aa ?: null
 }
 
