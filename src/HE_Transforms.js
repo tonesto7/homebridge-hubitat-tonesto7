@@ -23,6 +23,29 @@ module.exports = class Transforms {
         }
     }
 
+    getSupportedButtonVals(_acc) {
+        var validValues = [];
+        if (_acc && _acc.getCapabilities().length) {
+            if (_acc.hasCapability("PushableButton")) {
+                validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+            }
+            if (_acc.hasCapability("DoubleTapableButton")) {
+                validValues.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+            }
+            if (_acc.hasCapability("HoldableButton")) {
+                validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+            }
+            if (validValues.length < 1) {
+                validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+                validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+            }
+        } else {
+            validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+            validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+        }
+        return validValues;
+    }
+
     transformAttributeState(attr, val, charName, opts) {
         switch (attr) {
             case "switch":
@@ -82,31 +105,6 @@ module.exports = class Transforms {
             case "doubleTapped":
                 return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
 
-            case "supportedButtonValues":
-                var validValues = [];
-                if (typeof val === "string") {
-                    for (const v of JSON.parse(val)) {
-                        switch (v) {
-                            case "pushed":
-                                validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
-                                continue;
-                            case "doubleTapped":
-                                validValues.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
-                                continue;
-                            case "held":
-                                validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
-                                continue;
-                            default:
-                                validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
-                                validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
-                                continue;
-                        }
-                    }
-                } else {
-                    validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
-                    validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
-                }
-                return validValues;
             case "fanState":
                 return val === "off" || val === "auto" ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR;
             case "fanTargetState":
@@ -180,6 +178,9 @@ module.exports = class Transforms {
             case "volume":
                 return parseInt(val) || 0;
             case "illuminance":
+                if (isNaN(val)) {
+                    return undefined;
+                }
                 return Math.round(Math.ceil(parseFloat(val)), 0);
 
             case "energy":

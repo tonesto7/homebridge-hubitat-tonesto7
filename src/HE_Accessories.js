@@ -56,7 +56,7 @@ module.exports = class HE_Accessories {
             accessory.homebridgeApi = this.homebridge;
             accessory.getPlatformConfig = this.mainPlatform.getConfigItems();
             accessory.getOrAddService = this.getOrAddService.bind(accessory);
-            accessory.getOrAddServiceByNameType = this.getOrAddServiceByNameType.bind(accessory);
+            accessory.getOrAddServiceByName = this.getOrAddServiceByName.bind(accessory);
             accessory.getOrAddCharacteristic = this.getOrAddCharacteristic.bind(accessory);
             accessory.hasCapability = this.hasCapability.bind(accessory);
             accessory.getCapabilities = this.getCapabilities.bind(accessory);
@@ -146,18 +146,17 @@ module.exports = class HE_Accessories {
                             char.getValue();
                             break;
                         case "button":
-                        case "held":
-                        case "pushed":
-                        case "doubleTapped":
-                            // this.log.info("change: ", change);
-
+                            // this.log.info("button change: ", change);
                             var btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
                             if (btnNum && accessory.buttonEvent !== undefined) {
                                 accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
                             }
                             break;
                         default:
-                            char.updateValue(this.transforms.transformAttributeState(change.attribute, change.value, char.displayName));
+                            var val = this.transforms.transformAttributeState(change.attribute, change.value, char.displayName);
+                            if (val) {
+                                char.updateValue(val);
+                            }
                             break;
                     }
                 });
@@ -292,9 +291,9 @@ module.exports = class HE_Accessories {
         return this.getService(svc) || this.addService(svc);
     }
 
-    getOrAddServiceByNameType(service, dispName, subType) {
+    getOrAddServiceByName(service, dispName, subType) {
         // console.log(this.services);
-        let svc = dispName ? this.services.find((s) => (subType ? s.displayName === dispName && s.subType === subType : s.displayName === dispName)) : undefined;
+        let svc = this.services.find((s) => s.displayName === dispName);
         if (svc) {
             // console.log('service found');
             return svc;

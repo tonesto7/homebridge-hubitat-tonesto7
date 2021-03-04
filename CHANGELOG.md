@@ -1,5 +1,9 @@
-#
 
+## v2.4.0
+
+- [NEW] Finally Added support for buttons/remotes under HomeKit.
+- [FIX] Tried to add a check for values to detect if they are empty
+- [FIX] Bug fixes.
 ## v2.3.3
 
 - [NEW] Added support for the new light input to block a light from supporting adaptive lighting .

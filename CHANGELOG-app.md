@@ -1,5 +1,8 @@
-## v2.3.3
+## v2.4.0
+- [NEW] Added support to include buttons/remotes under HomeKit
+- [FIX] Bug fixes.
 
+## v2.3.3
 - [NEW] Added new light input to block a light from supporting adaptive lighting .
 - [FIX] Code cleanups and optimizations.
 
@@ -66,5 +69,3 @@
 - [UPDATE] Added more attribute filters to prevent many dozens of event subscriptions for attributes that will not be used by HomeKit.
 - [UPDATE] Moved some of the plugin settings to the render config page.  This allows you to modify some of the plugin settings and it updates the rendered config realtime.
 - [UPDATE] Modified the app icon gradient to include hubitat green color.
-
-

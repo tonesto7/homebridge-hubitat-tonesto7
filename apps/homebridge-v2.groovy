@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.3.3'
-@Field static final String appModifiedFLD = '02-28-2021'
+@Field static final String appVersionFLD  = '2.4.0'
+@Field static final String appModifiedFLD = '03-04-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -116,8 +116,8 @@ preferences {
         // nest camera
         'audioInputEnabled', 'imageUrl', 'imageUrlHtml', 'isStreaming', 'lastEventEnd', 'lastEventStart', 'lastEventType', 'lastOnlineChange', 'motionPerson', 'publicShareEnabled', 'publicShareUrl', 'videoHistoryEnabled',
         // momentary buttons
-        'numberOfButtons', 'released',
-        'pushed', 'held', 'doubleTapped',
+        // 'numberOfButtons', 'released',
+        // 'pushed', 'held', 'doubleTapped',
         // tankUtility
         'lastreading',
         // intesisHome
@@ -125,7 +125,7 @@ preferences {
     ],
     capabilities: [
         'HealthCheck', 'Indicator', 'WindowShadePreset', 'ChangeLevel', 'Outlet', 'HealthCheck', 'UltravioletIndex', 'ColorMode', 'VoltageMeasurement', 'PowerMeter', 'EnergyMeter', 'ThreeAxis',
-        'ReleasableButton', 'PushableButton', 'HoldableButton', 'DoubleTapableButton'
+        'ReleasableButton', 'PushableButton', 'HoldableButton', 'DoubleTapableButton', 'Initialize', 'LightEffects', 'SignalStrength'
     ]
 ]
 
@@ -155,9 +155,9 @@ def mainPage() {
                 desc  = sBLANK
                 desc += lightList ? spanSmBld("Light${lightList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${lightList.size()})") : sBLANK
                 desc += lightNoAlList ? spanSmBld("Light${lightNoAlList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${lightNoAlList.size()})") : sBLANK
-                // desc += pushableButtonList ? """<small style="color:#2784D9;"><b>Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${pushableButtonList.size()})") : sBLANK
-                // desc += holdableButtonList ? """<small style="color:#2784D9;"><b>Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${holdableButtonList.size()})") : sBLANK
-                // desc += doubleTapableButtonList ? """<small style="color:#2784D9;"><b>Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLANK}" + spanSmBr(" (${doubleTapableButtonList.size()})") : sBLANK
+                desc += pushableButtonList ? spanSmBld("Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${pushableButtonList.size()})") : sBLANK
+                desc += holdableButtonList ? spanSmBld("Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${holdableButtonList.size()})") : sBLANK
+                desc += doubleTapableButtonList ? spanSmBld("Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${doubleTapableButtonList.size()})") : sBLANK
                 desc += (fanList || fan3SpdList || fan4SpdList || fan5SpdList) ? spanSmBld("Fan Device${fansize > 1 ? 's' : sBLANK}") + spanSmBr(" (${fansize})") : sBLANK
                 desc += speakerList ? spanSmBld("Speaker${speakerList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${speakerList.size()})") : sBLANK
                 desc += shadesList ? spanSmBld("Shade${shadesList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${shadesList.size()})") : sBLANK
@@ -283,11 +283,11 @@ def deviceSelectPage() {
             input 'speakerList', 'capability.switch', title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", 'media_player'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'shadesList', 'capability.windowShade', title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
-        // section(sectHead("Buttons:")) {
-        //     input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        //     input "holdableButtonList", "capability.holdableButton", title: inTS1("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        //     input "doubleTapableButtonList", "capability.doubleTapableButton", title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        // }
+        section(sectHead("Buttons:")) {
+            input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "holdableButtonList", "capability.holdableButton", title: inTS1("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "doubleTapableButtonList", "capability.doubleTapableButton", title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
 
         section(sectHead('Fans:')) {
             input 'fanList', 'capability.switch', title: inTS1("Fans: (${fanList ? fanList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -365,7 +365,7 @@ private void inputDupeValidation() {
     Map items = [
         d: [
             'fanList': 'Fans', 'fan3SpdList': 'Fans (3-Speed)', 'fan4SpdList': 'Fans (4-Speed)',
-            'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
+            // 'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
             'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
             'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)'
         ],
@@ -491,9 +491,9 @@ def capFilterPage() {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit', sCLRGRY)
             input 'removeAcceleration', 'capability.accelerationSensor', title: inTS1('Remove Acceleration from these Devices', 'acceleration'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeBattery', 'capability.battery', title: inTS1('Remove Battery from these Devices', 'battery'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            // input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            // input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            // input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeContact', 'capability.contactSensor', title: inTS1('Remove Contact from these Devices', 'contact'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove Color Control from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeColorTemp', 'capability.colorTemperature', title: inTS1('Remove Color Temperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -741,9 +741,9 @@ private void healthCheck(Boolean ui=false) {
     // log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if (!ui && lastUpd > 14400) { remTsVal(sSVR) }
 
-    if (evtLogSec > 60*1 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', 'false', 'bool'); }
+    if (evtLogSec > 60*60*2 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', 'false', 'bool'); }
     else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
-    if (dbgLogSec > 60*1 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', 'false', 'bool'); }
+    if (dbgLogSec > 60*60*2 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', 'false', 'bool'); }
     else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
 }
 
@@ -1145,14 +1145,14 @@ Map deviceCapabilityList(device) {
     if (!device || !device.getId()) { return [:] }
     Map<String,Integer> capItems = device.capabilities?.findAll { !((String)it.name in ignoreListFLD.capabilities) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
 
-    // if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
-    // else { capItems.remove("PushableButton") }
+    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
+    else { capItems.remove("PushableButton") }
 
-    // if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1; }
-    // else { capItems.remove("HoldableButton") }
+    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1; }
+    else { capItems.remove("HoldableButton") }
 
-    // if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; }
-    // else { capItems.remove("DoubleTapableButton") }
+    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; }
+    else { capItems.remove("DoubleTapableButton") }
     
     if (isDeviceInInput('lightList', device.id)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('fanList', device.id)) { capItems['Fan'] = 1 }
@@ -1360,7 +1360,7 @@ def changeHandler(evt) {
         case 'pushed':
         case 'doubleTapped':
             Map evtData = [buttonNumber: value]
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: evt.name, evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: "button", evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
             break
         default:
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])

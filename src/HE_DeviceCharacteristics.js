@@ -176,12 +176,13 @@ module.exports = class DeviceCharacteristics {
 
     button(_accessory, _service) {
         let that = this;
-        let validValues = this.transforms.transformAttributeState("supportedButtonValues", _accessory.context.deviceData.attributes.supportedButtonValues) || [0, 2];
+        let validValues = this.transforms.getSupportedButtonVals(_accessory) || [0, 2];
+        // console.log("validValues:", validValues);
         const btnCnt = _accessory.context.deviceData.attributes.numberOfButtons || 1;
-        console.log("btnCnt: ", btnCnt);
+        // console.log("btnCnt: ", btnCnt);
         if (btnCnt >= 1) {
             for (let bNum = 1; bNum <= btnCnt; bNum++) {
-                const svc = _accessory.getOrAddServiceByNameType(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, parseInt(bNum));
+                const svc = _accessory.getOrAddServiceByName(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, bNum);
                 let c = svc.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
                 c.setProps({
                     validValues: validValues,
@@ -190,8 +191,8 @@ module.exports = class DeviceCharacteristics {
                 if (!c._events.get) {
                     that.accessories._buttonMap[`${_accessory.context.deviceData.deviceid}_${bNum}`] = svc;
                     c.on("get", (callback) => {
-                        // this.value = -1;
-                        callback(null, (this.value = -1));
+                        this.value = -1;
+                        callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
                     });
                     _accessory.buttonEvent = this.buttonEvent.bind(_accessory);
                     this.accessories.storeCharacteristicItem("button", _accessory.context.deviceData.deviceid, c);
@@ -206,21 +207,22 @@ module.exports = class DeviceCharacteristics {
     buttonEvent(btnNum, btnVal, devId, btnMap) {
         console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
         let bSvc = btnMap[`${devId}_${btnNum}`];
-        console.log(bSvc);
+        // console.log(bSvc);
         if (bSvc) {
+            let btnOut = undefined;
             switch (btnVal) {
                 case "pushed":
-                    bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+                    btnOut = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
                     break;
                 case "held":
-                    bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+                    btnOut = Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
                     break;
                 case "doubleTapped":
-                    bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+                    btnOut = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
                     break;
             }
-            // bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue();
-            bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).getValue();
+            // console.log("btnOut: ", btnOut);
+            bSvc.getCharacteristic(Characteristic.ProgrammableSwitchEvent).setValue(btnOut);
         }
     }
 
@@ -372,7 +374,7 @@ module.exports = class DeviceCharacteristics {
         } else {
             _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.ColorTemperature);
         }
-        let canUseAL = this.configItems.adaptive_lighting !== false && _accessory.isAdaptiveLightingSupported && !_accessory.hasDeviceFlag('light_no_al') && _accessory.hasAttribute("level") && _accessory.hasAttribute("colorTemperature");
+        let canUseAL = this.configItems.adaptive_lighting !== false && _accessory.isAdaptiveLightingSupported && !_accessory.hasDeviceFlag("light_no_al") && _accessory.hasAttribute("level") && _accessory.hasAttribute("colorTemperature");
         if (canUseAL && !_accessory.adaptiveLightingController) {
             _accessory.addAdaptiveLightingController(_accessory.getOrAddService(_service));
             this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${_accessory.context.deviceData.name}]!!!`);
