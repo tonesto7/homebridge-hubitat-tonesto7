@@ -1,6 +1,8 @@
-#
-## v2.3.4
 
+## v2.4.0
+
+- [NEW] Finally Added support for buttons/remotes under HomeKit.
+- [FIX] Tried to add a check for values to detect if they are empty
 - [FIX] Bug fixes.
 ## v2.3.3
 
