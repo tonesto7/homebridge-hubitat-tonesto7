@@ -1,8 +1,9 @@
 
-## v2.4.0
+## v2.4.1
 
 - [NEW] Finally Added support for buttons/remotes under HomeKit.
 - [FIX] Tried to add a check for values to detect if they are empty
+- [FIX] Fixed issue with Adaptive Lighting not being removed when disabling via app or config file.
 - [FIX] Bug fixes.
 ## v2.3.3
 
