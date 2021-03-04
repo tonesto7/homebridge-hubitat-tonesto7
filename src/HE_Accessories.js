@@ -427,23 +427,28 @@ module.exports = class HE_Accessories {
     addAdaptiveLightingController(_service) {
         let that = this;
         const offset = this.getPlatformConfig.adaptive_lighting_offset || 0;
+        const controlMode = this.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC;
         if (_service) {
-            this.adaptiveLightingController = new this.homebridgeApi.hap.AdaptiveLightingController(_service, { controllerMode: this.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC, customTemperatureAdjustment: offset });
+            this.adaptiveLightingController = new this.homebridgeApi.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
             this.adaptiveLightingController.on("update", (evt) => {
                 this.log.debug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
             });
             this.adaptiveLightingController.on("disable", (evt) => {
                 this.log.debug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
             });
-
             this.configureController(this.adaptiveLightingController);
+            this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
         } else {
             this.log.error("Unable to add adaptiveLightingController because the required service parameter was missing...");
         }
     }
 
     removeAdaptiveLightingController() {
-        this.adaptiveLightingController = undefined;
+        if (this.adaptiveLightingController) {
+            this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
+            this.removeController(this.adaptiveLightingController);
+            delete this["adaptiveLightingController"];
+        }
     }
 
     getAdaptiveLightingController() {

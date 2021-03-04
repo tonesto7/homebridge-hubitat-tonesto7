@@ -1,5 +1,6 @@
 ## v2.4.0
 - [NEW] Added support to include buttons/remotes under HomeKit
+- [FIX] Fixed issue with Adaptive Lighting not being removed when disabling via app or config file.
 - [FIX] Bug fixes.
 
 ## v2.3.3

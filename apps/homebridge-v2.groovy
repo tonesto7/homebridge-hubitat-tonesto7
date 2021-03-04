@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.4.0'
+@Field static final String appVersionFLD  = '2.4.1'
 @Field static final String appModifiedFLD = '03-04-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 240]
+@Field static final Map minVersionsFLD    = [plugin: 241]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -115,9 +115,6 @@ preferences {
         'powerSourceNest', 'softwareVer', 'uiColor',
         // nest camera
         'audioInputEnabled', 'imageUrl', 'imageUrlHtml', 'isStreaming', 'lastEventEnd', 'lastEventStart', 'lastEventType', 'lastOnlineChange', 'motionPerson', 'publicShareEnabled', 'publicShareUrl', 'videoHistoryEnabled',
-        // momentary buttons
-        // 'numberOfButtons', 'released',
-        // 'pushed', 'held', 'doubleTapped',
         // tankUtility
         'lastreading',
         // intesisHome
@@ -546,7 +543,7 @@ def confirmPage() {
 def deviceDebugPage() {
     return dynamicPage(name: 'deviceDebugPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('View All Device Data Sent to HomeBridge:')) {
-            href url: getAppEndpointUrl('alldevices'), style: 'embedded', required: false, title: inTS1('View Device Data Sent to Homebridge...', 'info'), description: sBLANK, disabled: true
+            href url: getAppEndpointUrl('alldevices'), style: 'external', required: false, title: inTS1('View Device Data Sent to Homebridge...', 'info'), description: sBLANK, disabled: true
         }
 
         if (devMode()) {
@@ -882,18 +879,11 @@ def getSecurityDevice() {
 }
 
 Map getDeviceFlags(device) {
-    Map opts = [:]
-    if (settings?.fan3SpdList?.find { it?.id == device?.id }) {
-        opts['fan_3_spd'] = 1
-    }
-    if (settings?.fan4SpdList?.find { it?.id == device?.id }) {
-        opts['fan_4_spd'] = 1
-    }
-    if (settings?.fan5SpdList?.find { it?.id == device?.id }) {
-        opts['fan_5_spd'] = 1
-    }
-    if (setings?.lightNoAlList?.find { it?.id == device?.id }) {
-        opts['light_no_al'] = 1
+    Map<String, Integer> opts = [:]
+    [fan3SpdList: "fan_3_spd", fan4SpdList: "fan_4_spd", fan5SpdList: "fan_5_spd", lightNoAlList: "light_no_al"].each { String k, String v -> 
+        if (isDeviceInInput(k, device.id)) {
+            opts[v] = 1
+        }
     }
     // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
@@ -1155,6 +1145,7 @@ Map deviceCapabilityList(device) {
     else { capItems.remove("DoubleTapableButton") }
     
     if (isDeviceInInput('lightList', device.id)) { capItems['LightBulb'] = 1 }
+    if (isDeviceInInput('lightNoAlList', device.id)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('fanList', device.id)) { capItems['Fan'] = 1 }
     if (isDeviceInInput('speakerList', device.id)) { capItems['Speaker'] = 1 }
     if (isDeviceInInput('shadesList', device.id)) { capItems['WindowShade'] = 1 }
@@ -1217,7 +1208,7 @@ def getAllData() {
 static Map deviceSettingKeys() {
     return [
         'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3Spd) Devices', 'fan4SpdList': 'Fans (4Spd) Devices', 'fan5SpdList': 'Fans (5Spd) Devices', 'deviceList': 'Other Devices',
-        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'shadesList': 'Window Shade Devices',
+        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices',
         'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices'
     ]
@@ -1226,7 +1217,7 @@ static Map deviceSettingKeys() {
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     [
-        'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (No Adaptive Lighting)', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
+        'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Block Adaptive Lighting)', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices',
         'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'garageList': 'Garage Door Devices',
