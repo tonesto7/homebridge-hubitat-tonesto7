@@ -154,7 +154,7 @@ module.exports = class HE_Accessories {
                             break;
                         default:
                             var val = this.transforms.transformAttributeState(change.attribute, change.value, char.displayName);
-                            if (val) {
+                            if (val !== undefined && val !== null) {
                                 char.updateValue(val);
                             }
                             break;

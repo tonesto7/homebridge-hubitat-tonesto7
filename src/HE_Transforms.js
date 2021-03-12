@@ -470,11 +470,12 @@ module.exports = class Transforms {
         }
     }
 
+    // eslint-disable-next-line no-unused-vars
     fanSpeedToLevel(speedVal, opts = {}) {
-        let spds = 3;
-        if (opts && Object.keys(opts).length && opts.spdSteps) {
-            spds = opts.spdSteps;
-        }
+        // let spds = 3;
+        // if (opts && Object.keys(opts).length && opts.spdSteps) {
+        //     spds = opts.spdSteps;
+        // }
         // console.log(`fanSpeedToLevel(${speedVal}) | steps: ${spds}`);
         switch (speedVal) {
             case "off":
