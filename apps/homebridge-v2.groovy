@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.4.1'
-@Field static final String appModifiedFLD = '03-04-2021'
+@Field static final String appVersionFLD  = '2.4.2'
+@Field static final String appModifiedFLD = '03-12-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 241]
+@Field static final Map minVersionsFLD    = [plugin: 242]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '

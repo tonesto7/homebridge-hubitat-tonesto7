@@ -1,4 +1,7 @@
 
+## v2.4.2
+
+- [FIX] Switch status updates should now work correctly.
 ## v2.4.1
 
 - [NEW] Finally Added support for buttons/remotes under HomeKit.
