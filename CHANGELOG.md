@@ -1,5 +1,5 @@
 
-## v2.5.-
+## v2.5.0
 
 - [FIX] Switch status updates should now work correctly.
 - [REMOVE] Removed custom logger and switched to native homebridge logging interface

@@ -190,7 +190,7 @@ module.exports = class HE_Platform {
                             const toUpdate = this.HEAccessories.intersection(resp.deviceList);
                             const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
                             that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
-                            that.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})` + toUpdate.map((i) => i.name));
+                            that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
                             that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
