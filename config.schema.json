@@ -42,12 +42,6 @@
             "type": "string",
             "required": true
         },
-        "communityUserName": {
-            "title": "Hubitat Community Username",
-            "description": "Only need to set this when you are having issues with the plugin and you want me to be able to identify your reported exception errors.",
-            "type": "string",
-            "required": false
-        },
         "direct_ip": {
             "title": "Direct IP",
             "description": "Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.",
@@ -75,6 +69,13 @@
                     "enum": ["C"]
                 }
             ]
+        },
+        "round_levels": {
+            "title": "Round Levels?",
+            "description": "Round levels <3% to 0% and >97% to 100%",
+            "type": "boolean",
+            "required": false,
+            "default": true
         },
         "adaptive_lighting": {
             "title": "Support Adaptive Lighting?",
@@ -115,70 +116,6 @@
                     "type": "boolean",
                     "required": false,
                     "default": true
-                },
-                "hideTimestamp": {
-                    "title": "Hide TimeStamp Prefix inLogs?",
-                    "description": "This will remove the prefix from all console log output.",
-                    "type": "boolean",
-                    "required": false,
-                    "default": true
-                },
-                "hideNamePrefix": {
-                    "title": "Hide Plugin Name Prefix in Logs?",
-                    "description": "This will remove the prefix from all console log output.",
-                    "type": "boolean",
-                    "required": false,
-                    "default": true
-                },
-                "round_levels": {
-                    "title": "Round Levels?",
-                    "description": "Round levels <3% to 0% and >97% to 100%",
-                    "type": "boolean",
-                    "required": false,
-                    "default": true
-                },
-                "file": {
-                    "type": "object",
-                    "properties": {
-                        "enabled": {
-                            "title": "Enable Logging to file",
-                            "description": "This log will be created as homebridge-hubitat-tonesto7.log in the same folder as this config.json file.",
-                            "type": "boolean",
-                            "required": false,
-                            "default": true
-                        },
-                        "level": {
-                            "title": "Log File Output Level",
-                            "type": "string",
-                            "default": "good",
-                            "oneOf": [{
-                                    "title": "Debug",
-                                    "enum": ["debug"]
-                                },
-                                {
-                                    "title": "Good",
-                                    "enum": ["good"]
-                                },
-                                {
-                                    "title": "Notice",
-                                    "enum": ["pink"]
-                                },
-                                {
-                                    "title": "Alert",
-                                    "enum": ["alert"]
-                                },
-                                {
-                                    "title": "Warnings",
-                                    "enum": ["warn"]
-                                },
-                                {
-                                    "title": "Errors",
-                                    "enum": ["error"]
-                                }
-                            ],
-                            "required": false
-                        }
-                    }
                 }
             }
         }

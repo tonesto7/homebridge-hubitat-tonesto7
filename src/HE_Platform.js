@@ -7,7 +7,6 @@ const { pluginName, platformName, platformDesc, pluginVersion } = require("./lib
     express = require("express"),
     bodyParser = require("body-parser"),
     chalk = require("chalk"),
-    Logging = require("./libs/Logger"),
     webApp = express(),
     fs = require("fs"),
     _ = require("lodash"),
@@ -31,10 +30,17 @@ module.exports = class HE_Platform {
         this.direct_port = this.findDirectPort();
         this.logConfig = this.getLogConfig();
         this.appEvts = new events.EventEmitter();
-        this.logging = new Logging(this, this.config["name"], this.logConfig);
-        this.log = this.logging.getLogger();
-        this.log.info(`Homebridge Version: ${api.version}`);
-        this.log.info(`${platformName} Plugin Version: ${pluginVersion}`);
+        this.log = log;
+        this.logInfo = this.logInfo.bind(this);
+        this.logGreen = this.logGreen.bind(this);
+        this.logAlert = this.logAlert.bind(this);
+        this.logNotice = this.logNotice.bind(this);
+        this.logError = this.logError.bind(this);
+        this.logInfo = this.logInfo.bind(this);
+        this.logDebug = this.logDebug.bind(this);
+
+        this.logInfo(`Homebridge Version: ${api.version}`);
+        this.logInfo(`${platformName} Plugin Version: ${pluginVersion}`);
         this.polling_seconds = config.polling_seconds || 3600;
         this.excludedAttributes = this.config.excluded_attributes || [];
         this.excludedCapabilities = this.config.excluded_capabilities || [];
@@ -53,23 +59,10 @@ module.exports = class HE_Platform {
 
     getLogConfig() {
         let config = this.config;
-        return config.logConfig ?
-            {
-                debug: config.logConfig.debug === true,
-                showChanges: config.logConfig.showChanges === true,
-                hideTimestamp: config.logConfig.hideTimestamp === true,
-                hideNamePrefix: config.logConfig.hideNamePrefix === true,
-                file: {
-                    enabled: config.logConfig.file.enabled === true,
-                    level: config.logConfig.file.level || "good",
-                },
-            } :
-            {
-                debug: false,
-                showChanges: true,
-                hideTimestamp: false,
-                hideNamePrefix: false,
-            };
+        return {
+            debug: config.logConfig ? config.logConfig.debug === true : false,
+            showChanges: config.logConfig ? config.logConfig.showChanges === true : true,
+        };
     }
 
     findDirectPort() {
@@ -96,6 +89,34 @@ module.exports = class HE_Platform {
         };
     }
 
+    logAlert(args) {
+        this.log.info(chalk.yellow(args));
+    }
+
+    logGreen(args) {
+        this.log.info(chalk.green(args));
+    }
+
+    logNotice(args) {
+        this.log.info(chalk.blueBright(args));
+    }
+
+    logWarn(args) {
+        this.log.warn(chalk.keyword("orange").bold(args));
+    }
+
+    logError(args) {
+        this.log.error(chalk.bold.red(args));
+    }
+
+    logInfo(args) {
+        this.log.info(chalk.white(args));
+    }
+
+    logDebug(args) {
+        if (this.logConfig.debug === true) this.log.debug(chalk.gray(args));
+    }
+
     loadConfig() {
         const configPath = this.homebridge.user.configPath();
         const file = fs.readFileSync(configPath);
@@ -117,7 +138,7 @@ module.exports = class HE_Platform {
     }
 
     updateTempUnit(unit) {
-        this.log.notice(`Temperature Unit is Now: (${unit})`);
+        this.logNotice(`Temperature Unit is Now: (${unit})`);
         this.temperature_unit = unit;
     }
 
@@ -126,19 +147,19 @@ module.exports = class HE_Platform {
     }
 
     didFinishLaunching() {
-        this.log.info(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
+        this.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
         setInterval(this.refreshDevices.bind(this), this.polling_seconds * 1000);
         let that = this;
         this.refreshDevices("First Launch")
             .then(() => {
                 that.WebServerInit(that)
-                    .catch((err) => that.log.error("WebServerInit Error: ", err))
+                    .catch((err) => that.logError("WebServerInit Error: ", err))
                     .then((resp) => {
                         if (resp && resp.status === "OK") this.appEvts.emit("event:plugin_start_direct");
                     });
             })
             .catch((err) => {
-                that.log.error(`didFinishLaunching | refreshDevices Exception:`, err);
+                that.logError(`didFinishLaunching | refreshDevices Exception:` + err);
             });
     }
 
@@ -147,11 +168,11 @@ module.exports = class HE_Platform {
         let starttime = new Date();
         return new Promise((resolve, reject) => {
             try {
-                that.log.good(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
+                that.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
                 this.client
                     .getDevices()
                     .catch((err) => {
-                        that.log.error("getDevices Exception:", err);
+                        that.logError("getDevices Exception: " + err);
                         reject(err.message);
                     })
                     .then((resp) => {
@@ -164,32 +185,26 @@ module.exports = class HE_Platform {
                             }
                         }
                         if (resp && resp.deviceList && resp.deviceList instanceof Array) {
-                            // that.log.debug("Received All Device Data");
+                            // that.logDebug("Received All Device Data");
                             const toCreate = this.HEAccessories.diffAdd(resp.deviceList);
                             const toUpdate = this.HEAccessories.intersection(resp.deviceList);
                             const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
-                            that.log.warn(
-                                `Devices to Remove: (${Object.keys(toRemove).length})`,
-                                toRemove.map((i) => i.name),
-                            );
-                            that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`);
-                            that.log.good(
-                                `Devices to Create: (${Object.keys(toCreate).length})`,
-                                toCreate.map((i) => i.name),
-                            );
+                            that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
+                            that.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})` + toUpdate.map((i) => i.name));
+                            that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
                             toUpdate.forEach((device) => this.updateDevice(device));
                             toCreate.forEach((device) => this.addDevice(device));
                         }
-                        that.log.alert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
-                        that.log.notice(`Unknown Capabilities: ${JSON.stringify(that.unknownCapabilities)}`);
-                        that.log.info(`${platformDesc} DeviceCache Size: (${Object.keys(this.HEAccessories.getAllAccessoriesFromCache()).length})`);
+                        that.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
+                        that.logNotice(`Unknown Capabilities: ${JSON.stringify(that.unknownCapabilities)}`);
+                        that.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.HEAccessories.getAllAccessoriesFromCache()).length})`);
                         if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
                         resolve(true);
                     });
             } catch (ex) {
-                this.log.error("refreshDevices Error: ", ex);
+                this.logError("refreshDevices Error: ", ex);
                 resolve(false);
             }
         });
@@ -206,18 +221,18 @@ module.exports = class HE_Platform {
         let accessory;
         const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
-        this.log.debug(`Initializing New Device (${device.name} | ${device.deviceid})`);
+        this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
         accessory = this.getNewAccessory(device, new_uuid);
         this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
         this.HEAccessories.addAccessoryToCache(accessory);
-        this.log.info(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
+        this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
     }
 
     updateDevice(device) {
         let cachedAccessory = this.HEAccessories.getAccessoryFromCache(device);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         cachedAccessory.context.deviceData = device;
-        this.log.debug(`Loading Existing Device (${device.name}) | (${device.deviceid})`);
+        this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
         cachedAccessory = this.HEAccessories.initializeAccessory(cachedAccessory);
         this.HEAccessories.addAccessoryToCache(cachedAccessory);
     }
@@ -225,19 +240,19 @@ module.exports = class HE_Platform {
     removeAccessory(accessory) {
         if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-            this.log.info(`Removed: ${accessory.context.name} (${accessory.context.deviceid})`);
+            this.logInfo(`Removed: ${accessory.context.name} (${accessory.context.deviceid})`);
         }
     }
 
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
-        this.log.debug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
+        this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
         let cachedAccessory = this.HEAccessories.initializeAccessory(accessory, true);
         this.HEAccessories.addAccessoryToCache(cachedAccessory);
     }
 
     processIncrementalUpdate(data, that) {
-        that.log.debug("new data: " + data);
+        that.logDebug("new data: " + data);
         if (data && data.attributes && data.attributes instanceof Array) {
             for (let i = 0; i < data.attributes.length; i++) {
                 that.processDeviceAttributeUpdate(data.attributes[i], that);
@@ -250,7 +265,7 @@ module.exports = class HE_Platform {
             return true;
         }
         if (app_id && access_token && this.getConfigItems().app_id && this.getConfigItems().access_token && access_token === this.getConfigItems().access_token && parseInt(app_id) === parseInt(this.getConfigItems().app_id)) return true;
-        this.log.error(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
+        this.logError(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
         return false;
     }
 
@@ -260,11 +275,11 @@ module.exports = class HE_Platform {
         return new Promise((resolve) => {
             try {
                 let ip = that.configItems.direct_ip || that.myUtils.getIPAddress();
-                that.log.info("WebServer Initiated...");
+                that.logInfo("WebServer Initiated...");
 
                 // Start the HTTP Server
                 webApp.listen(that.configItems.direct_port, () => {
-                    that.log.info(`Direct Connect Active | Listening at ${ip}:${that.configItems.direct_port}`);
+                    that.logInfo(`Direct Connect Active | Listening at ${ip}:${that.configItems.direct_port}`);
                 });
 
                 webApp.use(
@@ -286,7 +301,7 @@ module.exports = class HE_Platform {
                 webApp.post("/initial", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "initial")) {
-                        that.log.info(`${platformName} Hub Communication Established`);
+                        that.logGreen(`${platformName} Hub Communication Established`);
                         res.send({
                             status: "OK",
                         });
@@ -298,7 +313,7 @@ module.exports = class HE_Platform {
                 });
 
                 webApp.get("/debugOpts", (req, res) => {
-                    that.log.info(`${platformName} Debug Option Request(${req.query.option})...`);
+                    that.logInfo(`${platformName} Debug Option Request(${req.query.option})...`);
                     if (req.query && req.query.option) {
                         let accs = this.HEAccessories.getAllAccessoriesFromCache();
                         // let accsKeys = Object.keys(accs);
@@ -331,7 +346,7 @@ module.exports = class HE_Platform {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "restartService")) {
                         let delay = 10 * 1000;
-                        that.log.info(`Received request from ${platformName} to restart homebridge service in (${delay / 1000} seconds) | NOTICE: If you using PM2 or Systemd the Homebridge Service should start back up`);
+                        that.logInfo(`Received request from ${platformName} to restart homebridge service in (${delay / 1000} seconds) | NOTICE: If you using PM2 or Systemd the Homebridge Service should start back up`);
                         setTimeout(() => {
                             process.exit(1);
                         }, parseInt(delay));
@@ -348,13 +363,13 @@ module.exports = class HE_Platform {
                 webApp.post("/refreshDevices", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
-                        that.log.good(`Received request from ${platformName} to refresh devices`);
+                        that.logGreen(`Received request from ${platformName} to refresh devices`);
                         that.refreshDevices("ST Requested");
                         res.send({
                             status: "OK",
                         });
                     } else {
-                        that.log.error(`Unable to start device refresh because we didn't receive a valid access_token and app_id`);
+                        that.logError(`Unable to start device refresh because we didn't receive a valid access_token and app_id`);
                         res.send({
                             status: "Failed: Missing access_token or app_id",
                         });
@@ -364,23 +379,23 @@ module.exports = class HE_Platform {
                 webApp.post("/updateprefs", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "updateprefs")) {
-                        that.log.info(platformName + " Hub Sent Preference Updates");
+                        that.logInfo(platformName + " Hub Sent Preference Updates");
                         let sendUpd = false;
                         // if (body && Object.keys(body).length > 0) {
                         //     Object.keys(body).forEach((key) => {});
                         // }
                         if (body.use_cloud && that.configItems.use_cloud !== body.use_cloud) {
                             sendUpd = true;
-                            that.log.info(`${platformName} Updated Use Cloud Preference | Before: ${that.configItems.use_cloud} | Now: ${body.use_cloud}`);
+                            that.logInfo(`${platformName} Updated Use Cloud Preference | Before: ${that.configItems.use_cloud} | Now: ${body.use_cloud}`);
                             that.configItems.use_cloud = body.use_cloud;
                         }
                         if (body.validateTokenId && that.configItems.validateTokenId !== body.validateTokenId) {
-                            that.log.info(`${platformName} Updated Validate Token & Id Preference | Before: ${that.configItems.validateTokenId} | Now: ${body.validateTokenId}`);
+                            that.logInfo(`${platformName} Updated Validate Token & Id Preference | Before: ${that.configItems.validateTokenId} | Now: ${body.validateTokenId}`);
                             that.configItems.validateTokenId = body.validateTokenId;
                         }
                         if (body.local_hub_ip && that.local_hub_ip !== body.local_hub_ip) {
                             sendUpd = true;
-                            that.log.info(`${platformName} Updated Hub IP Preference | Before: ${that.local_hub_ip} | Now: ${body.local_hub_ip}`);
+                            that.logInfo(`${platformName} Updated Hub IP Preference | Before: ${that.local_hub_ip} | Now: ${body.local_hub_ip}`);
                             that.local_hub_ip = body.local_hub_ip;
                         }
                         if (sendUpd) {
@@ -410,7 +425,7 @@ module.exports = class HE_Platform {
                             };
                             that.HEAccessories.processDeviceAttributeUpdate(newChange).then((resp) => {
                                 if (that.logConfig.showChanges) {
-                                    that.log.info(chalk `[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
+                                    that.logInfo(chalk `[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
                                 }
                                 res.send({
                                     evtSource: `Homebridge_${platformName}_${this.configItems.app_id}`,
@@ -439,7 +454,7 @@ module.exports = class HE_Platform {
                     status: "OK",
                 });
             } catch (ex) {
-                that.log.error("WebServerInit Exception: ", ex.message);
+                that.logError("WebServerInit Exception: ", ex.message);
                 resolve({
                     status: ex.message,
                 });

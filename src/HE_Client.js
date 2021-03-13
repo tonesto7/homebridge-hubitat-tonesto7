@@ -5,6 +5,12 @@ module.exports = class ST_Client {
     constructor(platform) {
         this.platform = platform;
         this.log = platform.log;
+        this.logInfo = platform.logInfo;
+        this.logAlert = platform.logAlert;
+        this.logNotice = platform.logNotice;
+        this.logDebug = platform.logDebug;
+        this.logError = platform.logError;
+        this.logWarn = platform.logWarn;
         this.logConfig = platform.logConfig;
         this.appEvts = platform.appEvts;
         this.hubIp = platform.local_hub_ip;
@@ -30,7 +36,7 @@ module.exports = class ST_Client {
     }
 
     updateGlobals(hubIp, use_cloud = false) {
-        this.log.notice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
+        this.logNotice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
         this.hubIp = hubIp;
         this.configItems.use_cloud = use_cloud === true;
     }
@@ -38,22 +44,22 @@ module.exports = class ST_Client {
     handleError(src, err) {
         switch (err.status) {
             case 401:
-                this.log.error(`${src} Error | Hubitat Token Error: ${err.response} | Message: ${err.message}`);
+                this.logError(`${src} Error | Hubitat Token Error: ${err.response} | Message: ${err.message}`);
                 break;
             case 403:
-                this.log.error(`${src} Error | Hubitat Authentication Error: ${err.response} | Message: ${err.message}`);
+                this.logError(`${src} Error | Hubitat Authentication Error: ${err.response} | Message: ${err.message}`);
                 break;
             default:
                 if (err.message.startsWith("getaddrinfo EAI_AGAIN")) {
-                    this.log.error(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
+                    this.logError(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
                 } else {
                     // console.error(err);
-                    this.log.error(`${src} ${err.response && err.response.defined !== undefined ? err.response : "Connection failure"} | Message: ${err.message}`);
+                    this.logError(`${src} ${err.response && err.response.defined !== undefined ? err.response : "Connection failure"} | Message: ${err.message}`);
                 }
                 break;
         }
         if (this.logConfig.debug === true) {
-            this.log.debug(`${src} ${JSON.stringify(err)}`);
+            this.logDebug(`${src} ${JSON.stringify(err)}`);
         }
     }
 
@@ -100,11 +106,11 @@ module.exports = class ST_Client {
             };
             // console.log("config: ", config);
             try {
-                that.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${that.configItems.use_cloud === true})`);
+                that.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${that.configItems.use_cloud === true})`);
                 axios(config)
                     .then((response) => {
                         // console.log("command response:", response);
-                        this.log.debug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
+                        this.logDebug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
                         resolve(true);
                     })
                     .catch((err) => {
@@ -120,7 +126,7 @@ module.exports = class ST_Client {
     sendUpdateStatus() {
         return new Promise((resolve) => {
             this.platform.myUtils.checkVersion().then((res) => {
-                this.log.notice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
+                this.logNotice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
                 axios({
                         method: "post",
                         url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,
@@ -141,7 +147,7 @@ module.exports = class ST_Client {
                     .then((response) => {
                         // console.log(response.data);
                         if (response.data) {
-                            this.log.debug(`sendUpdateStatus Resp: ${JSON.stringify(response.data)}`);
+                            this.logDebug(`sendUpdateStatus Resp: ${JSON.stringify(response.data)}`);
                             resolve(response.data);
                         } else {
                             resolve(null);
@@ -174,13 +180,13 @@ module.exports = class ST_Client {
                 },
                 timeout: 10000,
             };
-            that.log.info(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${that.configItems.use_cloud === true})`);
+            that.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${that.configItems.use_cloud === true})`);
             try {
                 axios(config)
                     .then((response) => {
-                        // that.log.info('sendStartDirect Resp:', body);
+                        // that.logInfo('sendStartDirect Resp:', body);
                         if (response.data) {
-                            this.log.debug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
+                            this.logDebug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
                             resolve(response.data);
                         } else {
                             resolve(null);

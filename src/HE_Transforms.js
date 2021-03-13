@@ -4,6 +4,13 @@ var CommunityTypes;
 module.exports = class Transforms {
     constructor(platform, char) {
         this.accessories = platform;
+        this.logInfo = platform.logInfo;
+        this.logAlert = platform.logAlert;
+        this.logGreen = platform.logGreen;
+        this.logNotice = platform.logNotice;
+        this.logDebug = platform.logDebug;
+        this.logError = platform.logError;
+        this.logWarn = platform.logWarn;
         this.platform = platform.mainPlatform;
         this.client = platform.client;
         Characteristic = char;
@@ -142,7 +149,7 @@ module.exports = class Transforms {
                     return Math.round(val);
                 }
             case "powerSource":
-                // this.log.info(`powerSource: ${val}`);
+                // this.logInfo(`powerSource: ${val}`);
                 switch (val) {
                     case "mains":
                     case "dc":
@@ -470,11 +477,12 @@ module.exports = class Transforms {
         }
     }
 
+    // eslint-disable-next-line no-unused-vars
     fanSpeedToLevel(speedVal, opts = {}) {
-        let spds = 3;
-        if (opts && Object.keys(opts).length && opts.spdSteps) {
-            spds = opts.spdSteps;
-        }
+        // let spds = 3;
+        // if (opts && Object.keys(opts).length && opts.spdSteps) {
+        //     spds = opts.spdSteps;
+        // }
         // console.log(`fanSpeedToLevel(${speedVal}) | steps: ${spds}`);
         switch (speedVal) {
             case "off":

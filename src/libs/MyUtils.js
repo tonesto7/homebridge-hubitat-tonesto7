@@ -14,6 +14,12 @@ module.exports = class MyUtils {
         this.platform = platform;
         this.client = platform.client;
         this.log = platform.log;
+        this.logInfo = platform.logInfo;
+        this.logAlert = platform.logAlert;
+        this.logNotice = platform.logNotice;
+        this.logDebug = platform.logDebug;
+        this.logError = platform.logError;
+        this.logWarn = platform.logWarn;
         this.homebridge = platform.homebridge;
     }
 
@@ -100,20 +106,20 @@ module.exports = class MyUtils {
     }
 
     checkVersion() {
-        this.log.info("Checking Package Version for Updates...");
+        this.logInfo("Checking Package Version for Updates...");
         return new Promise((resolve) => {
             childProcess.exec(`npm view ${packageFile.name} version`, (error, stdout) => {
                 const newVer = stdout && stdout.trim();
                 if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
-                    this.log.warn(`---------------------------------------------------------------`);
-                    this.log.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
-                    this.log.warn(`---------------------------------------------------------------`);
+                    this.logWarn(`---------------------------------------------------------------`);
+                    this.logWarn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
+                    this.logWarn(`---------------------------------------------------------------`);
                     resolve({
                         hasUpdate: true,
                         newVersion: newVer,
                     });
                 } else {
-                    this.log.info(`INFO: Your plugin version is up-to-date`);
+                    this.logInfo(`INFO: Your plugin version is up-to-date`);
                     resolve({
                         hasUpdate: false,
                         newVersion: newVer,

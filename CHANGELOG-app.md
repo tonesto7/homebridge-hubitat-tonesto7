@@ -1,4 +1,7 @@
-## v2.4.0
+## v2.5.0
+- [UPDATE] Increased minimum plugin version to 2.5.0.
+
+## v2.4.0-2.4.1
 - [NEW] Added support to include buttons/remotes under HomeKit
 - [FIX] Fixed issue with Adaptive Lighting not being removed when disabling via app or config file.
 - [FIX] Bug fixes.

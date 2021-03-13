@@ -146,13 +146,7 @@ Installation comes in two parts:
       },
       "logConfig": {
          "debug": false,
-         "showChanges": true,
-         "hideTimestamp": false,
-         "hideNamePrefix": false,
-         "file": {
-            "enabled": true,
-            "level": "good"
-         }
+         "showChanges": true
       }
    }
 ```
@@ -218,25 +212,6 @@ Installation comes in two parts:
 
     Logs device event changes received from Hubitat.
 
-   - __<u>`hideTimestamp`</u>__ _Optional_ | _Default: `false`_
-    
-    Hides timestamp prefix from console log output.
-
-   - __<u>`hideNamePrefix`</u>__ _Optional_ | _Default: `false`_
-    
-    Hides pluglin name prefix `[Hubitat-v2]` from console log output
-
-   - __<u>`file`</u>__ _Optional_
-    
-        Enable log file output and configure options
-
-      - __<u>`enabled`</u>__ _Optional_ | _Default: `false`_
-        
-        Activates logging to file (homebridge-hubitat-tonesto7.log) stored in the same folder as the homebridge config.json
-
-      - __<u>`level`</u>__ _Optional_ | _Default: `good`_
-        
-        Defines the log entry levels that are written to the file. `good` (recommended) is the default which will write all necessary entries.
 
 ## Frequently Asked Question:
 
