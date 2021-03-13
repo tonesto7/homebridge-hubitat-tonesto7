@@ -1,8 +1,12 @@
+## v2.5.2
+
+- [FIX] Resolved bugs from recent log changes.
 
 ## v2.5.0
 
 - [FIX] Switch status updates should now work correctly.
 - [REMOVE] Removed custom logger and switched to native homebridge logging interface
+  
 ## v2.4.1
 
 - [NEW] Finally Added support for buttons/remotes under HomeKit.

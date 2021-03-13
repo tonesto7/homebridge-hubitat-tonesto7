@@ -51,7 +51,7 @@ module.exports = class HE_Accessories {
             accessory.context.name = accessory.context.deviceData.name;
             accessory.context.deviceid = accessory.context.deviceData.deviceid;
         } else {
-            this.logDebug(`Initializing Cached Device ${accessory.context.name}`, ` | ${accessory.context.deviceid}`);
+            this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.context.deviceid}`);
             accessory.deviceid = accessory.context.deviceid;
             accessory.name = accessory.context.name;
         }
@@ -90,8 +90,8 @@ module.exports = class HE_Accessories {
             accessory.disableAdaptiveLighting = this.disableAdaptiveLighting.bind(accessory);
             return this.configureCharacteristics(accessory);
         } catch (err) {
-            this.logError(`initializeAccessory (fromCache: ${fromCache}) Error:`, err);
-            // console.error(err);
+            this.logError(`initializeAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ` + err);
+            console.error(err);
             return accessory;
         }
     }
@@ -432,21 +432,21 @@ module.exports = class HE_Accessories {
 
     // Adaptive Lighting Functions
     addAdaptiveLightingController(_service) {
-        let that = this;
+        // let that = this;
         const offset = this.getPlatformConfig.adaptive_lighting_offset || 0;
         const controlMode = this.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC;
         if (_service) {
             this.adaptiveLightingController = new this.homebridgeApi.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
-            this.adaptiveLightingController.on("update", (evt) => {
-                this.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
-            });
-            this.adaptiveLightingController.on("disable", (evt) => {
-                this.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
-            });
+            // this.adaptiveLightingController.on("update", (evt) => {
+            //     this.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
+            // });
+            // this.adaptiveLightingController.on("disable", (evt) => {
+            //     this.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
+            // });
             this.configureController(this.adaptiveLightingController);
-            this.logInfo(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
+            this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
         } else {
-            this.logError("Unable to add adaptiveLightingController because the required service parameter was missing...");
+            this.log.error("Unable to add adaptiveLightingController because the required service parameter was missing...");
         }
     }
 

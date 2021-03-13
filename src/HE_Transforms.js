@@ -498,7 +498,7 @@ module.exports = class Transforms {
             case "high":
                 return 100;
             default:
-                console.log("using default fanspeed of 0 | speedVal: ", speedVal);
+                // console.log("using default fanspeed of 0 | speedVal: ", speedVal);
                 return 0;
         }
     }
