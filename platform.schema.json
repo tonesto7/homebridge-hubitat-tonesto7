@@ -42,12 +42,6 @@
                 "type": "string",
                 "required": true
             },
-            "communityUserName": {
-                "title": "Hubitat Community Username",
-                "description": "Only need to set this when you are having issues with the plugin and you want me to be able to identify your reported exception errors.",
-                "type": "string",
-                "required": false
-            },
             "direct_port": {
                 "title": "Direct Port",
                 "description": "This is the port that the plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address. (This is now a dynamic port selection)",
@@ -117,63 +111,6 @@
                         "type": "boolean",
                         "required": false,
                         "default": true
-                    },
-                    "hideTimestamp": {
-                        "title": "Hide timeStamp prefix in logs?",
-                        "description": "This will remove the prefix from all console log output.",
-                        "type": "boolean",
-                        "required": false,
-                        "default": true
-                    },
-                    "hideNamePrefix": {
-                        "title": "Hide plugin name prefix in logs?",
-                        "description": "This will remove the prefix from all console log output.",
-                        "type": "boolean",
-                        "required": false,
-                        "default": true
-                    },
-                    "file": {
-                        "type": "object",
-                        "properties": {
-                            "enabled": {
-                                "title": "Enable Logging to file",
-                                "description": "This log will be created as homebridge-hubitat-tonesto7.log in the same folder as this config.json file.",
-                                "type": "boolean",
-                                "required": false,
-                                "default": true
-                            },
-                            "level": {
-                                "title": "Log File Output Level",
-                                "type": "string",
-                                "default": "Good",
-                                "enum": [{
-                                        "text": "Debug",
-                                        "value": "debug"
-                                    },
-                                    {
-                                        "text": "Good",
-                                        "value": "good"
-                                    },
-                                    {
-                                        "text": "Notice",
-                                        "value": "pink"
-                                    },
-                                    {
-                                        "text": "Alert",
-                                        "value": "alert"
-                                    },
-                                    {
-                                        "text": "Warnings",
-                                        "value": "warn"
-                                    },
-                                    {
-                                        "text": "Errors",
-                                        "value": "error"
-                                    }
-                                ],
-                                "required": false
-                            }
-                        }
                     }
                 }
             }

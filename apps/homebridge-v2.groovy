@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.4.2'
+@Field static final String appVersionFLD  = '2.5.0'
 @Field static final String appModifiedFLD = '03-12-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 242]
+@Field static final Map minVersionsFLD    = [plugin: 241]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -73,6 +73,7 @@ preferences {
 @Field static final String sMEDIUM        = 'medium'
 @Field static final String sSMALL         = 'small'
 @Field static final String sCLR4D9        = '#2784D9'
+@Field static final String sCLR9B1        = '#0299B1'
 @Field static final String sCLRRED        = 'red'
 @Field static final String sCLRRED2       = '#cc2d3b'
 @Field static final String sCLRGRY        = 'gray'
@@ -966,21 +967,16 @@ String renderConfig() {
         app_url_cloud: "${getApiServerUrl()}/${getHubUID()}/apps/".toString(),
         app_id: app?.getId(),
         app_platform: platformFLD,
-        use_cloud: (Boolean)settings.use_cloud_endpoint,
+        use_cloud: (Boolean)settings.use_cloud_endpoint == true,
         access_token: (String)state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
-        validateTokenId: (Boolean)settings.validate_token,
+        validateTokenId: (Boolean)settings.validate_token == true,
         adaptive_lighting: (Boolean)settings.adaptive_lighting != false,
         adaptive_lighting_offset: (settings.adaptive_lighting && settings.adaptive_lighting_offset) ? settings.adaptive_lighting_offset.toInteger() : 0,
         round_levels: (Boolean)settings.round_levels != false,
         logConfig: [
             debug: false,
-            showChanges: true,
-            hideTimestamp: false,
-            hideNamePrefix: false,
-            file: [
-                enabled: true
-            ]
+            showChanges: true
         ]
     ]
     String cj = new groovy.json.JsonOutput().toJson(jsonMap)
@@ -1896,7 +1892,7 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
 }
 
 private void logDebug(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix(sDBG, msg.toString(), sCLR4D9) }
-private void logTrace(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix('trace', msg.toString(), '#0299B1') }
+private void logTrace(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix('trace', msg.toString(), sCLR9B1) }
 private void logInfo(String msg)   { logPrefix('info', msg.toString(), sCLRGRY) }
 private void logWarn(String msg)   { logPrefix('warn', msg.toString(), sCLRORG) }
 private void logError(String msg)  { logPrefix('error', msg.toString(), sCLRRED) }

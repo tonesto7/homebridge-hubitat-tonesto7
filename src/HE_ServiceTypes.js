@@ -5,6 +5,13 @@ module.exports = class ServiceTypes {
     constructor(accessories, srvc) {
         this.platform = accessories;
         this.log = accessories.log;
+        this.logInfo = accessories.logInfo;
+        this.logAlert = accessories.logAlert;
+        this.logGreen = accessories.logGreen;
+        this.logNotice = accessories.logNotice;
+        this.logDebug = accessories.logDebug;
+        this.logError = accessories.logError;
+        this.logWarn = accessories.logWarn;
         this.logConfig = accessories.logConfig;
         this.accessories = accessories;
         this.client = accessories.client;
@@ -57,7 +64,7 @@ module.exports = class ServiceTypes {
                 const blockSvc = svcTest.onlyOnNoGrps === true && servicesFound.length > 0;
                 if (blockSvc) {
                     servicesBlocked.push(svcTest.Name);
-                    this.log.debug(`(${accessory.name}) | Service BLOCKED | name: ${svcTest.Name} | Cnt: ${servicesFound.length} | svcs: ${JSON.stringify(servicesFound)}`);
+                    this.logDebug(`(${accessory.name}) | Service BLOCKED | name: ${svcTest.Name} | Cnt: ${servicesFound.length} | svcs: ${JSON.stringify(servicesFound)}`);
                 }
                 if (!blockSvc && this.serviceMap[svcTest.Name]) {
                     servicesFound.push({
@@ -68,7 +75,7 @@ module.exports = class ServiceTypes {
             }
         }
         if (servicesBlocked.length) {
-            this.log.debug(`(${accessory.name}) | Services BLOCKED | ${servicesBlocked}`);
+            this.logDebug(`(${accessory.name}) | Services BLOCKED | ${servicesBlocked}`);
         }
         return servicesFound;
     }

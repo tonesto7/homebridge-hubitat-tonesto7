@@ -9,6 +9,13 @@ module.exports = class DeviceCharacteristics {
         CommunityTypes = accessories.CommunityTypes;
         accClass = accessories;
         this.log = accessories.log;
+        this.logInfo = accessories.logInfo;
+        this.logAlert = accessories.logAlert;
+        this.logGreen = accessories.logGreen;
+        this.logNotice = accessories.logNotice;
+        this.logDebug = accessories.logDebug;
+        this.logError = accessories.logError;
+        this.logWarn = accessories.logWarn;
         this.logConfig = accessories.logConfig;
         this.configItems = accessories.configItems;
         this.accessories = accessories;
@@ -449,7 +456,7 @@ module.exports = class DeviceCharacteristics {
                     if (isSonos) {
                         if (value > 0 && value !== lastVolumeWriteValue) {
                             lastVolumeWriteValue = value;
-                            this.log.debug(`Existing volume: ${_accessory.context.deviceData.attributes.volume}, set to ${lastVolumeWriteValue}`);
+                            this.logDebug(`Existing volume: ${_accessory.context.deviceData.attributes.volume}, set to ${lastVolumeWriteValue}`);
                             _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setVolume", {
                                 value1: lastVolumeWriteValue,
                             });
