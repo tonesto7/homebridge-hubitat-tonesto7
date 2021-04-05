@@ -154,32 +154,7 @@
     lodash.invert "^4.3.0"
     lodash.isempty "^4.4.0"
 
-"@snyk/dep-graph@1.23.1":
-  version "1.23.1"
-  resolved "https://registry.yarnpkg.com/@snyk/dep-graph/-/dep-graph-1.23.1.tgz#c884811669983febb6685f9107b322b3c0603f42"
-  integrity sha512-bSlTRVJP0PHtvoilhE463AMt0fhsf9PxCEqJ28VHCVSe5QFzIlgGdljtytV+2DheadGwu27BgLGqPDGMdTBHRQ==
-  dependencies:
-    lodash.clone "^4.5.0"
-    lodash.constant "^3.0.0"
-    lodash.filter "^4.6.0"
-    lodash.foreach "^4.5.0"
-    lodash.has "^4.5.2"
-    lodash.isempty "^4.4.0"
-    lodash.isequal "^4.5.0"
-    lodash.isfunction "^3.0.9"
-    lodash.isundefined "^3.0.1"
-    lodash.keys "^4.2.0"
-    lodash.map "^4.6.0"
-    lodash.reduce "^4.6.0"
-    lodash.size "^4.2.0"
-    lodash.transform "^4.6.0"
-    lodash.union "^4.6.0"
-    lodash.values "^4.3.0"
-    object-hash "^2.0.3"
-    semver "^6.0.0"
-    tslib "^1.13.0"
-
-"@snyk/dep-graph@^1.19.3", "@snyk/dep-graph@^1.21.0", "@snyk/dep-graph@^1.23.0", "@snyk/dep-graph@^1.23.1":
+"@snyk/dep-graph@^1.19.3", "@snyk/dep-graph@^1.21.0", "@snyk/dep-graph@^1.23.0", "@snyk/dep-graph@^1.23.1", "@snyk/dep-graph@^1.27.1":
   version "1.27.1"
   resolved "https://registry.yarnpkg.com/@snyk/dep-graph/-/dep-graph-1.27.1.tgz#4fb789fffd5fc73748ddb9513b05592b9bdc7900"
   integrity sha512-YevGMdKdmiybrpISvkp8qk84elAxr0vmLuHyB3ijHlhSZVhRtCBmDeHmavHc4E9Xv4RWZF+oT5PfcuNvnmph/w==
@@ -1423,10 +1398,10 @@ eslint-visitor-keys@^2.0.0:
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-2.0.0.tgz#21fdc8fbcd9c795cc0321f0563702095751511a8"
   integrity sha512-QudtT6av5WXels9WjIM7qz1XD1cWGvX4gGXvp/zBn9nXG02D0utdU3Em2m/QjTnrsk6bBjmCygl3rmj118msQQ==
 
-eslint@^7.21.0:
-  version "7.21.0"
-  resolved "https://registry.yarnpkg.com/eslint/-/eslint-7.21.0.tgz#4ecd5b8c5b44f5dedc9b8a110b01bbfeb15d1c83"
-  integrity sha512-W2aJbXpMNofUp0ztQaF40fveSsJBjlSCSWpy//gzfTvwC+USs/nceBrKmlJOiM8r1bLwP2EuYkCqArn/6QTIgg==
+eslint@^7.22.0:
+  version "7.22.0"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-7.22.0.tgz#07ecc61052fec63661a2cab6bd507127c07adc6f"
+  integrity sha512-3VawOtjSJUQiiqac8MQc+w457iGLfuNGLFn8JmF051tTKbh5/x/0vlcEj8OgDCaw7Ysa2Jn8paGshV7x2abKXg==
   dependencies:
     "@babel/code-frame" "7.12.11"
     "@eslint/eslintrc" "^0.4.0"
@@ -1445,7 +1420,7 @@ eslint@^7.21.0:
     file-entry-cache "^6.0.1"
     functional-red-black-tree "^1.0.1"
     glob-parent "^5.0.0"
-    globals "^12.1.0"
+    globals "^13.6.0"
     ignore "^4.0.6"
     import-fresh "^3.0.0"
     imurmurhash "^0.1.4"
@@ -1453,7 +1428,7 @@ eslint@^7.21.0:
     js-yaml "^3.13.1"
     json-stable-stringify-without-jsonify "^1.0.1"
     levn "^0.4.1"
-    lodash "^4.17.20"
+    lodash "^4.17.21"
     minimatch "^3.0.4"
     natural-compare "^1.4.0"
     optionator "^0.9.1"
@@ -1831,6 +1806,13 @@ globals@^12.1.0:
   dependencies:
     type-fest "^0.8.1"
 
+globals@^13.6.0:
+  version "13.6.0"
+  resolved "https://registry.yarnpkg.com/globals/-/globals-13.6.0.tgz#d77138e53738567bb96a3916ff6f6b487af20ef7"
+  integrity sha512-YFKCX0SiPg7l5oKYCJ2zZGxcXprVXHcSnVuvzrT3oSENQonVLqM5pf9fN5dLGZGyCjhw8TN8Btwe/jKnZ0pjvQ==
+  dependencies:
+    type-fest "^0.20.2"
+
 got@11.4.0:
   version "11.4.0"
   resolved "https://registry.yarnpkg.com/got/-/got-11.4.0.tgz#1f0910310572af4efcc6890e1dacd7affb710b39"
@@ -1887,10 +1869,10 @@ hap-nodejs-community-types@0.3.1:
   resolved "https://registry.yarnpkg.com/hap-nodejs-community-types/-/hap-nodejs-community-types-0.3.1.tgz#ed9a793b180567cee5527cbe8666001505a4a724"
   integrity sha512-yXwar5xVaxqf/FU3O8Eo8O7rhumSHZSiUJnF3VjFqRNAkbet+cT8rkThn5gQ/LUi7RgsichKDy/DZPKjGpjX6w==
 
-hap-nodejs@0.9.3:
-  version "0.9.3"
-  resolved "https://registry.yarnpkg.com/hap-nodejs/-/hap-nodejs-0.9.3.tgz#384aeb4c38542479519957f453601ad7101fa32f"
-  integrity sha512-5CcoN86K2Kh9tm7gxK35uXb0ORWAANPr7UOorupOGs/Tb+3dAHgibwX3+w4MI2r2q7leZGQpKZQysUuowbiB9A==
+hap-nodejs@0.9.4:
+  version "0.9.4"
+  resolved "https://registry.yarnpkg.com/hap-nodejs/-/hap-nodejs-0.9.4.tgz#cd224674532bf17354449529f21bb64d643347ef"
+  integrity sha512-wGYq6nQ8c5+V7iLr9Fa7XpOGAntmB0ejfOsjoIhXe/WHOXX9gGDwYgQTHg+dwmJZjW7RBoOyRRdB7/oa/NYovw==
   dependencies:
     "@homebridge/ciao" "~1.1.2"
     bonjour-hap "~3.6.2"
@@ -1944,15 +1926,15 @@ hcl-to-json@^0.1.1:
     lodash.get "^4.4.2"
     lodash.set "^4.3.2"
 
-homebridge@^1.3.3:
-  version "1.3.3"
-  resolved "https://registry.yarnpkg.com/homebridge/-/homebridge-1.3.3.tgz#7c5a0ff5d19e2777edbf53c572778362e3db89b0"
-  integrity sha512-NIMHlvCGqoBeGctvJK8GLpGiLgx2yh7fvQ6VpMVw49X6GiYV8wcBOSHiHASNmbAb8uQ07j6miOHoyx9j9OXUpg==
+homebridge@^1.3.4:
+  version "1.3.4"
+  resolved "https://registry.yarnpkg.com/homebridge/-/homebridge-1.3.4.tgz#387198602979f9b3e84f324e0b971f9ff6d0eeef"
+  integrity sha512-I2vxabWpKHly3htXvOgnJbO79pXzrorz6/htRUCD3UTWXnzURqUFhevv9c/Mji3YeKxluIXCyXyiGAuDfx1m3A==
   dependencies:
     chalk "^4.1.0"
     commander "5.1.0"
     fs-extra "^9.1.0"
-    hap-nodejs "0.9.3"
+    hap-nodejs "0.9.4"
     qrcode-terminal "^0.12.0"
     semver "^7.3.4"
     source-map-support "^0.5.19"
@@ -2960,11 +2942,6 @@ nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
-
-node-machine-id@^1.1.12:
-  version "1.1.12"
-  resolved "https://registry.yarnpkg.com/node-machine-id/-/node-machine-id-1.1.12.tgz#37904eee1e59b320bb9c5d6c0a59f3b469cb6267"
-  integrity sha512-QNABxbrPa3qEIfrE6GOJ7BYIuignnJw7iQ2YPbc3Nla1HzRJjXzZOiikfF8m7eAMfichLt3M4VgLOetqgDmgGQ==
 
 node-persist@^0.0.11:
   version "0.0.11"
@@ -4010,15 +3987,15 @@ snyk-try-require@^2.0.0:
     lodash.clonedeep "^4.3.0"
     lru-cache "^5.1.1"
 
-snyk@^1.485.0:
-  version "1.485.0"
-  resolved "https://registry.yarnpkg.com/snyk/-/snyk-1.485.0.tgz#66e3de2725b8eb26ee600d9ca72d8df18f96dd36"
-  integrity sha512-y1GjejxsxGcevvvB22689JWzw2dBUPDZLhyjiiK+XoMO/VNw0yWriBiDszXrcLV2sFkM42c47rAO6aj+7lRJCQ==
+snyk@^1.491.0:
+  version "1.491.0"
+  resolved "https://registry.yarnpkg.com/snyk/-/snyk-1.491.0.tgz#c7d6237ffb8be8ae91afdb97abe14415e0aa56da"
+  integrity sha512-/OzVNfYC6ksjeKmUZIS157YcjJcdK+BUmkPW8ahgX64JjG5gkChThgh8V6KyL/y/fP7K+JiuTUL549jYuLjxkA==
   dependencies:
     "@open-policy-agent/opa-wasm" "^1.2.0"
     "@snyk/cli-interface" "2.11.0"
     "@snyk/code-client" "3.1.4"
-    "@snyk/dep-graph" "1.23.1"
+    "@snyk/dep-graph" "^1.27.1"
     "@snyk/gemfile" "1.2.0"
     "@snyk/graphlib" "^2.1.9-patch.3"
     "@snyk/inquirer" "^7.3.3-patch"
@@ -4453,6 +4430,11 @@ type-fest@^0.11.0:
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.11.0.tgz#97abf0872310fed88a5c466b25681576145e33f1"
   integrity sha512-OdjXJxnCN1AvyLSzeKIgXTXxV+99ZuXl3Hpo9XpJAv9MBcHrrJOQ5kV7ypXOuQie+AmWG25hLbiKdwYTifzcfQ==
+
+type-fest@^0.20.2:
+  version "0.20.2"
+  resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.20.2.tgz#1bf207f4b28f91583666cb5fbd327887301cd5f4"
+  integrity sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==
 
 type-fest@^0.8.1:
   version "0.8.1"

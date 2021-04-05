@@ -364,7 +364,7 @@ module.exports = class HE_Platform {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
                         that.logGreen(`Received request from ${platformName} to refresh devices`);
-                        that.refreshDevices("ST Requested");
+                        that.refreshDevices("Hubitat Requested");
                         res.send({
                             status: "OK",
                         });
