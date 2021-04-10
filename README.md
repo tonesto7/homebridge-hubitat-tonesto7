@@ -83,7 +83,7 @@ Installation comes in two parts:
    * Click `OK` on the confirmation prompt
 * Click **`Save`** and wait for the spining wheel to disappear and the page refreshes
 * Click on the `OAUTH` button:
-   * Click **`Enable OAuth in Smartapp`**
+   * Click **`Enable OAuth in App`**
    * Click **`Update`** at the bottom.
    * (If you are upgrading from a previous version of this project, OAuth will likely already be enabled and you can safely disregard this step)
 
@@ -181,7 +181,7 @@ Installation comes in two parts:
 
  * __<u>`temperature_unit`</u>__  _Optional_ | _Default: `F`_
     
-    This will allow you to define the temp unit to use.  This can also be set in the SmartApp
+    This will allow you to define the temp unit to use.  This can also be set in the HUbitat App
 
  * __<u>`validateTokenId`</u>__  _Optional_ | _Default: `false`_
     

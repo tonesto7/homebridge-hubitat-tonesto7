@@ -40,7 +40,7 @@ module.exports = class HE_Platform {
         this.logDebug = this.logDebug.bind(this);
 
         this.logInfo(`Homebridge Version: ${api.version}`);
-        this.logInfo(`${platformName} Plugin Version: ${pluginVersion}`);
+        this.logInfo(`Plugin Version: ${pluginVersion}`);
         this.polling_seconds = config.polling_seconds || 3600;
         this.excludedAttributes = this.config.excluded_attributes || [];
         this.excludedCapabilities = this.config.excluded_capabilities || [];
@@ -271,7 +271,7 @@ module.exports = class HE_Platform {
 
     WebServerInit() {
         let that = this;
-        // Get the IP address that we will send to the SmartApp. This can be overridden in the config file.
+        // Get the IP address that we will send to the Hubitat App. This can be overridden in the config file.
         return new Promise((resolve) => {
             try {
                 let ip = that.configItems.direct_ip || that.myUtils.getIPAddress();
@@ -364,7 +364,7 @@ module.exports = class HE_Platform {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
                         that.logGreen(`Received request from ${platformName} to refresh devices`);
-                        that.refreshDevices("Hubitat Requested");
+                        that.refreshDevices("Hubitat App Requested");
                         res.send({
                             status: "OK",
                         });
