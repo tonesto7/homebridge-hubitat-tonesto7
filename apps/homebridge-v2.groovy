@@ -801,7 +801,7 @@ private List renderDevices() {
 }
 
 private Map getDeviceData(String type, sItem) {
-    log.debug "getDeviceData($type, $sItem)"
+    // log.debug "getDeviceData($type, $sItem)"
     String curType = sNULL
     String devId = sItem
     Boolean isVirtual = false
