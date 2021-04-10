@@ -1,12 +1,16 @@
-## v2.5.0
+## _**v2.5.1**_
+- [NEW] Added filter for WaterSensors.
+- [UPDATE] Increased minimum plugin version to 2.5.2.
+
+## _**v2.5.0**_
 - [UPDATE] Increased minimum plugin version to 2.5.0.
 
-## v2.4.0-2.4.1
+## _**v2.4.0-2.4.1**_
 - [NEW] Added support to include buttons/remotes under HomeKit
 - [FIX] Fixed issue with Adaptive Lighting not being removed when disabling via app or config file.
 - [FIX] Bug fixes.
 
-## v2.3.3
+## _**v2.3.3**_
 - [NEW] Added new light input to block a light from supporting adaptive lighting .
 - [FIX] Code cleanups and optimizations.
 

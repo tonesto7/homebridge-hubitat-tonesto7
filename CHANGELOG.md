@@ -1,3 +1,7 @@
+## v2.5.3
+
+- [FIX] Logging tweaks and cleanups.
+
 ## v2.5.2
 
 - [FIX] Resolved bugs from recent log changes.

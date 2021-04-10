@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.0'
-@Field static final String appModifiedFLD = '03-12-2021'
+@Field static final String appVersionFLD  = '2.5.1'
+@Field static final String appModifiedFLD = '04-10-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 241]
+@Field static final Map minVersionsFLD    = [plugin: 252]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -129,7 +129,7 @@ preferences {
 
 def startPage() {
     if (!getAccessToken()) { return dynamicPage(name: 'mainPage', install: false, uninstall: true) {
-            section() { paragraph spanSmBldBr('OAuth Error', sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the SmartApp App Settings in the IDE") } }
+            section() { paragraph spanSmBldBr('OAuth Error', sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the Hubitat App Settings in the App Code page.") } }
     } else {
         if (!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
         healthCheck(true)
@@ -181,8 +181,9 @@ def mainPage() {
 
         section(sectHead('Capability Filtering:')) {
             Boolean conf = (
-                removeAcceleration || removeBattery || removeButton || removeDoubleTapableButton || removePushableButton || removeHoldableButton || removeContact || removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
-                removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve
+                removeAcceleration || removeBattery || removeButton || removeDoubleTapableButton || removePushableButton || removeHoldableButton || removeContact || 
+                removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
+                removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve || removeWater
             )
             href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: (conf ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
         }
@@ -507,6 +508,7 @@ def capFilterPage() {
             input 'removeTamper', 'capability.tamperAlert', title: inTS1('Remove Tamper from these Devices', 'tamper'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeTemp', 'capability.temperatureMeasurement', title: inTS1('Remove Temperature from these Devices', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeValve', 'capability.valve', title: inTS1('Remove Valve from these Devices', 'valve'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeWater', 'capability.waterSensor', title: inTS1('Remove Water from these Devices', 'water'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
         section(sectHead('Reset Selected Filters:'), hideable: true, hidden: true) {
             input 'resetCapFilters', 'bool', title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
@@ -673,7 +675,7 @@ def initialize() {
         runEvery5Minutes('healthCheck')
         if (settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN) }
         if (settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN) }
-    } else { logError('initialize error: Unable to get or generate smartapp access token') }
+    } else { logError('initialize error: Unable to get or generate app access token') }
 }
 
 Boolean getAccessToken(Boolean disableRetry=false) {
@@ -681,7 +683,7 @@ Boolean getAccessToken(Boolean disableRetry=false) {
         if (!state.accessToken) {
             state.accessToken = createAccessToken()
             remTsVal(sSVR)
-            logWarn('SmartApp Access Token Missing... Generating New Token!!!')
+            logWarn('App Access Token Missing... Generating New Token!!!')
             return true
         }
         return true
@@ -756,7 +758,7 @@ Boolean checkIfCodeUpdated(Boolean ui=false) {
             iData['shownDonation'] = false
         }
         state.installData = iData
-        logInfo('Code Version Change Detected... | Re-Initializing SmartApp in 5 seconds')
+        logInfo('Code Version Change Detected... | Re-Initializing Homebridge App in 5 seconds')
         return true
     }
     return false
@@ -799,7 +801,7 @@ private List renderDevices() {
 }
 
 private Map getDeviceData(String type, sItem) {
-    // log.debug "getDeviceData($type, $sItem)"
+    log.debug "getDeviceData($type, $sItem)"
     String curType = sNULL
     String devId = sItem
     Boolean isVirtual = false
@@ -1159,7 +1161,7 @@ Map deviceCapabilityList(device) {
     //This will filter out selected capabilities from the devices selected in filtering inputs.
     Map remCaps = [
        'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'Color Control': 'ColorControl', 'Color Temperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
-       'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch',
+       'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
        'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
     ]
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
@@ -1627,9 +1629,9 @@ static String actFoot(String str) { return str ? inputFooter(str, sCLR4D9, false
 static String optPrefix() { return spanSm(' (Optional)', 'violet') }
 
 // Custom versions of the root objects above
-static String spanBld(String str, String clr=sNULL, String img=sNULL)      { return str ? spanImgStr(img) + span(str, clr, sNULL, true)             : sBLANK }
-static String spanBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sNULL, true, true)       : sBLANK }
-static String spanBr(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sNULL, false, true)      : sBLANK }
+static String spanBld(String str, String clr=sNULL, String img=sNULL)      { return str ? spanImgStr(img) + span(str, clr, sNULL, true)            : sBLANK }
+static String spanBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sNULL, true, true)      : sBLANK }
+static String spanBr(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sNULL, false, true)     : sBLANK }
 static String spanSm(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sSMALL)                 : sBLANK }
 static String spanSmBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sSMALL, false, true)    : sBLANK }
 static String spanSmBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sSMALL, true)           : sBLANK }
