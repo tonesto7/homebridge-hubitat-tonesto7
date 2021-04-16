@@ -1,3 +1,6 @@
+## _**v2.5.2**_
+- [FIX] NP error resolved in main app
+
 ## _**v2.5.1**_
 - [NEW] Added filter for WaterSensors.
 - [UPDATE] Increased minimum plugin version to 2.5.2.
