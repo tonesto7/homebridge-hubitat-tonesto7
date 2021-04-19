@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.2'
-@Field static final String appModifiedFLD = '04-16-2021'
+@Field static final String appVersionFLD  = '2.5.3'
+@Field static final String appModifiedFLD = '04-19-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -142,7 +142,7 @@ def startPage() {
 def mainPage() {
     Boolean isInst = (state.isInstalled == true)
     if (settings.enableWebCoRE && !webCoREFLD) { webCoRE_init() }
-    return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLNK), install: !isInst, uninstall: true) {
+    return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectHead('Device Configuration:')) {
             Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
@@ -801,7 +801,7 @@ private List renderDevices() {
 }
 
 private Map getDeviceData(String type, sItem) {
-    log.debug "getDeviceData($type, $sItem)"
+    // log.debug "getDeviceData($type, $sItem)"
     String curType = sNULL
     String devId = sItem
     Boolean isVirtual = false
@@ -1337,7 +1337,7 @@ def changeHandler(evt) {
                         Map rt = getPistonById(id)
                         if (rt && rt.id) {
                             sendEvt = true
-                            sendItems.push([evtSource: 'PISTON', evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: 'switch', evtValue: 'off', evtUnit: sBLNK, evtDate: dt])
+                            sendItems.push([evtSource: 'PISTON', evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: 'switch', evtValue: 'off', evtUnit: sBLANK, evtDate: dt])
                         }
                     }
                     break
@@ -1475,7 +1475,7 @@ private void webCoRE_poll(Boolean now = false) {
 }
 
 public List webCoRE_list(String mode) {
-    return (List)webCoREFLD?.pistons?.sort { it?.name }?.collect { [(it?.id): it?.aname?.replaceAll('<[^>]*>', sBLNK)] }
+    return (List)webCoREFLD?.pistons?.sort { it?.name }?.collect { [(it?.id): it?.aname?.replaceAll('<[^>]*>', sBLANK)] }
 }
 
 Map getPistonById(String rId) {
