@@ -1,4 +1,4 @@
-## _**v2.5.2**_
+## _**v2.5.2-2.5.3**_
 - [FIX] NP error resolved in main app
 
 ## _**v2.5.1**_
