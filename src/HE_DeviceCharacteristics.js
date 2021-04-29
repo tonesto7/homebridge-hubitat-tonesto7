@@ -758,7 +758,7 @@ module.exports = class DeviceCharacteristics {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.LeakDetected, "water");
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
         if (_accessory.hasCapability("Tamper Alert")) _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
-        _accessory.context.deviceGroups.push("window_shade");
+        _accessory.context.deviceGroups.push("water_sensor");
         return _accessory;
     }
 
