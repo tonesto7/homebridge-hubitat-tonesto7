@@ -1,3 +1,6 @@
+## _**v2.5.5**_
+- [NEW] Support for marking switches as Outlets under HomeKit.
+
 ## _**v2.5.4**_
 - [FIX] Set the minimum plugin version to v2.5.4
 

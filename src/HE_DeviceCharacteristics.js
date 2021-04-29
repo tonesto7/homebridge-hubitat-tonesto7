@@ -428,6 +428,15 @@ module.exports = class DeviceCharacteristics {
         return _accessory;
     }
 
+    outlet(_accessory, _service) {
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.On, "switch");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.OutletInUse, "switch", {
+            get_altAttr: "outlet",
+        });
+        _accessory.context.deviceGroups.push("outlet");
+        return _accessory;
+    }
+
     smoke_detector(_accessory, _service) {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SmokeDetected, "smoke");
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");

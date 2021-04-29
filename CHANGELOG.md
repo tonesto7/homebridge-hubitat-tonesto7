@@ -1,3 +1,7 @@
+## v2.5.5
+
+- [NEW] Support for marking switches as Outlets under HomeKit.
+
 ## v2.5.4
 
 - [FIX] Minor fix for some water sensors not working.

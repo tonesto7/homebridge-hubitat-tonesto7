@@ -118,6 +118,8 @@ module.exports = class Transforms {
                 return val === "auto" ? Characteristic.TargetFanState.AUTO : Characteristic.TargetFanState.MANUAL;
             case "valve":
                 return val === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
+            case "outlet":
+                return val === "on";
             case "mute":
                 return val === "muted";
             case "smoke":
