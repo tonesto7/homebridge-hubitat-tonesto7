@@ -15,7 +15,7 @@
         "location": "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/apps/homebridge-v2.groovy",
         "required": true,
         "oauth": true,
-        "version": "2.5.3"
+        "version": "2.5.4"
     }],
     "drivers": []
 }

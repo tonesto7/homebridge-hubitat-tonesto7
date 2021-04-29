@@ -1,3 +1,6 @@
+## _**v2.5.4**_
+- [FIX] Set the minimum plugin version to v2.5.4
+
 ## _**v2.5.2-2.5.3**_
 - [FIX] NP error resolved in main app
 
