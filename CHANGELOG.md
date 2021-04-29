@@ -1,3 +1,7 @@
+## v2.5.4
+
+- [FIX] Minor fix for some water sensors not working.
+
 ## v2.5.3
 
 - [FIX] Logging tweaks and cleanups.
