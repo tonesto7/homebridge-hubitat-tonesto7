@@ -452,7 +452,7 @@ module.exports = class HE_Accessories {
 
     removeAdaptiveLightingController() {
         if (this.adaptiveLightingController) {
-            this.logInfo(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
+            this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
             this.removeController(this.adaptiveLightingController);
             delete this["adaptiveLightingController"];
         }

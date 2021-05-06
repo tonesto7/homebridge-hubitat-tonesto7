@@ -1,3 +1,7 @@
+## v2.5.6
+
+- [FIX] Fixed exception when removing adaptive lighting from a device.
+
 ## v2.5.5
 
 - [NEW] Support for marking switches as Outlets under HomeKit.
