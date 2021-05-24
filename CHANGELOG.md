@@ -1,3 +1,8 @@
+## v2.5.7
+
+- [FIX] Fixed AlarmSystem Triggers for Intrusion Alerts for HSM. 
+  - Please note that when alerts occur you will see a warning in the logs like this: ```This plugin generated a warning from the characteristic 'Security System Target State': characteristic was supplied illegal value: number 4 exceeded maximum of 3. See https://git.io/JtMGR for more info.``` This error is harmless
+
 ## v2.5.6
 
 - [FIX] Fixed exception when removing adaptive lighting from a device.

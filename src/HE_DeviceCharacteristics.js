@@ -59,14 +59,22 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get) {
                 c.on("get", (callback) => {
-                    callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
-                    accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                    let val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
+                    if (opts.alarmTarget === true) {
+                        val = accClass.transforms.convertAlarmTargetState(this.context.deviceData.attributes[attr]);
+                        // console.log("alarmTarget[GET]: ", val);
+                    }
+                    callback(null, val);
+                    accClass.log_get(attr, char, acc, val);
                 });
             }
             if (!c._events.set) {
                 c.on("set", async(value, callback) => {
                     let cmdName = accClass.transforms.transformCommandName(opts.set_altAttr || attr, value);
                     let cmdVal = accClass.transforms.transformCommandValue(opts.set_altAttr || attr, value);
+                    // if (opts.alarmTarget === true) {
+                    //     console.log("alarmTarget[SET]: ", cmdVal);
+                    // }
                     if (opts.cmdHasVal === true || opts.cmdHasIntVal === true) {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdName, {
                             value1: opts.cmdHasIntVal === true ? parseInt(cmdVal) : cmdVal,
@@ -168,7 +176,7 @@ module.exports = class DeviceCharacteristics {
 
     alarm_system(_accessory, _service) {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SecuritySystemCurrentState, "alarmSystemStatus");
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.SecuritySystemTargetState, "alarmSystemStatus");
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.SecuritySystemTargetState, "alarmSystemStatus", { alarmTarget: true });
         _accessory.context.deviceGroups.push("alarm_system");
         return _accessory;
     }

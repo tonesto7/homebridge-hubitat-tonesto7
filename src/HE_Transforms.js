@@ -232,6 +232,7 @@ module.exports = class Transforms {
                     return Characteristic.PositionState.STOPPED;
                 }
             case "alarmSystemStatus":
+                // console.log(`transformAttributeState | char: (${charName}) | attr: ${attr} | val: ${this.convertAlarmState(val)}`);
                 return this.convertAlarmState(val);
             default:
                 return val;
@@ -250,7 +251,6 @@ module.exports = class Transforms {
                 } else {
                     return "close";
                 }
-
             case "lock":
                 return val === 1 || val === true ? "lock" : "unlock";
             case "mute":
@@ -516,8 +516,30 @@ module.exports = class Transforms {
                 return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
             case "disarmed":
                 return Characteristic.SecuritySystemCurrentState.DISARMED;
-            case "alarm_active":
+            case "intrusion-home":
+            case "intrusion-away":
+            case "intrusion-night":
                 return Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+        }
+    }
+
+    convertAlarmTargetState(value) {
+        // console.log("convertAlarmTargetState", value);
+        switch (value) {
+            case "armedHome":
+                return Characteristic.SecuritySystemCurrentState.STAY_ARM;
+            case "armedNight":
+                return Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+            case "armedAway":
+                return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+            case "disarmed":
+                return Characteristic.SecuritySystemCurrentState.DISARMED;
+            case "intrusion-home":
+                return Characteristic.SecuritySystemCurrentState.STAY_ARM;
+            case "intrusion-away":
+                return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+            case "intrusion-night":
+                return Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
         }
     }
 
@@ -527,18 +549,20 @@ module.exports = class Transforms {
             case 0:
             case Characteristic.SecuritySystemCurrentState.STAY_ARM:
                 return "armHome";
-            case 2:
-            case Characteristic.SecuritySystemCurrentState.NIGHT_ARM:
-                return "armNight";
             case 1:
             case Characteristic.SecuritySystemCurrentState.AWAY_ARM:
                 return "armAway";
+            case 2:
+            case Characteristic.SecuritySystemCurrentState.NIGHT_ARM:
+                return "armNight";
             case 3:
             case Characteristic.SecuritySystemCurrentState.DISARMED:
                 return "disarm";
-            case 4:
-            case Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED:
-                return "alarm_active";
+            default:
+                return "disarm";
+                // case 4:
+                // case Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED:
+                //     return "alarm_active";
         }
     }
 };

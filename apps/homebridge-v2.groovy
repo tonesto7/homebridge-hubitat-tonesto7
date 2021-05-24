@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.6'
-@Field static final String appModifiedFLD = '05-06-2021'
+@Field static final String appVersionFLD  = '2.5.7'
+@Field static final String appModifiedFLD = '05-24-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 256]
+@Field static final Map minVersionsFLD    = [plugin: 257]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -719,8 +719,9 @@ void subscribeToEvts() {
     runIn(6, 'registerDevices')
     logInfo('Starting Device Subscription Process...')
     if ((Boolean)settings.addSecurityDevice) {
-        logInfo('Subscribed to (HSM AlarmSystem)')
+        logInfo('Subscribed to (HSM AlarmSystem Events)')
         subscribe(location, 'hsmStatus', changeHandler)
+        subscribe(location, 'hsmAlert', changeHandler)
     }
     if (settings.modeList) {
         logInfo("Subscribed to (${settings.modeList.size() ?: 0} Location Modes)")
@@ -912,8 +913,7 @@ static String getAlarmSystemName(Boolean abbr=false) {
     return (abbr ? 'HSM' : 'Hubitat Safety Monitor')
 }
 
-/* groovylint-disable-next-line NoDef */
-def getSecurityStatus(Boolean retInt=false) {
+String getSecurityStatus(Boolean retInt=false) {
     String cur = (String)location.hsmStatus
     if (retInt) {
         switch (cur) {
@@ -929,7 +929,9 @@ def getSecurityStatus(Boolean retInt=false) {
             case 'disarmed':
             case 'off':
                 return 3
-            case 'alarm_active':
+            case 'intrusion-home':
+            case 'intrusion-away':
+            case 'intrusion-night':
                 return 4
         }
     } else { return cur ?: 'disarmed' }
@@ -1291,6 +1293,9 @@ def changeHandler(evt) {
     Boolean sendEvt = true
     Boolean evtLog = (getTsVal(sEVT) == sTRU)
 
+    // if(evt.name.startsWith('hsm')) {
+    //     log.debug "${evt.name}: [evtSource: ${src}, evtDeviceName: ${deviceName}, evtDeviceId: ${deviceid}, evtAttr: ${attr}, evtValue: ${value}, evtUnit: ${evt?.unit ?: sBLANK}, evtDate: ${dt}]"
+    // }
     switch ((String)evt.name) {
         case 'hsmStatus':
             deviceid = "alarmSystemStatus_${location?.id}"
@@ -1298,11 +1303,12 @@ def changeHandler(evt) {
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             break
         case 'hsmAlert':
-            if (evt?.value == 'intrusion') {
-                deviceid = "alarmSystemStatus_${location?.id}"
-                attr = 'alarmSystemStatus'
-                value = 'alarm_active'
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+            deviceid = "alarmSystemStatus_${location?.id}"
+            attr = 'alarmSystemStatus'
+            if (evt?.value.startsWith('intrusion')) {
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: evt.value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+            } else if (evt?.value.toString() == 'cancel') { 
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else { sendEvt = false }
             break
         case 'hsmRules':

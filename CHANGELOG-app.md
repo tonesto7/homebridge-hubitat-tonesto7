@@ -1,3 +1,6 @@
+## _**v2.5.7**_
+- [FIX] Fixed AlarmSystem Triggers for Intrusion Alerts for HSM. 
+
 ## _**v2.5.6**_
 - [FIX] Set the minimum plugin version to v2.5.6
 
