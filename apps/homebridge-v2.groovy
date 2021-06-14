@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.7'
-@Field static final String appModifiedFLD = '05-24-2021'
+@Field static final String appVersionFLD  = '2.5.8'
+@Field static final String appModifiedFLD = '06-14-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -578,7 +578,6 @@ def deviceDebugPage() {
             if (debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
                 paragraph spanSmBld('Device Data:', sCLR4D9)
                 paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>", sCLRGRY)
-                // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", title: inTS1("Tap here to view Device Data...", "info"), description: sBLANK
             }
         }
     }
@@ -621,6 +620,7 @@ private Map getDeviceDebugMap(dev) {
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
             aa = deviceCapabilityList(dev).sort { it?.key }
             r.capabilities_processed = aa ?: []
+            r.capabilities_filtered = filteredOutCaps(dev) ?: []
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
             aa = deviceCommandList(dev).sort { it?.key }
             r.commands_processed = aa ?: []
@@ -1164,19 +1164,32 @@ Map deviceCapabilityList(device) {
     }
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
-    Map remCaps = [
-       'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'Color Control': 'ColorControl', 'Color Temperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
-       'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
-       'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
-    ]
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (!remKeys) remKeys = []
     remKeys.each { String k->
         String capName = k.replaceAll('remove', sBLANK)
-        String theCap = (String)remCaps[capName]
+        String theCap = (String)capFilterFLD[capName]
         if (theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap); if ((Boolean) settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
     return capItems?.sort { (String)it.key }
+}
+
+@Field static final Map<String, String> capFilterFLD = [
+    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'Color Control': 'ColorControl', 'Color Temperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
+    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
+    'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
+]
+
+private List filteredOutCaps(device) {
+    List capsFiltered = []
+    List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+    if (!remKeys) remKeys = []
+    remKeys.each { String k->
+        String capName = k.replaceAll('remove', sBLANK)
+        String theCap = (String)capFilterFLD[capName]
+        if (theCap && isDeviceInInput(k, device.id)) { capsFiltered.push(theCap) }
+    }
+    return capsFiltered
 }
 
 Map deviceCommandList(device) {
