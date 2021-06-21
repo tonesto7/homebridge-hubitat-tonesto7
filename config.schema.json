@@ -93,6 +93,13 @@
             "default": 0,
             "required": false
         },
+        "consider_fan_by_name": {
+            "title": "Assign Device as Fan when Fan in Device Name?",
+            "description": "By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.",
+            "type": "boolean",
+            "required": false,
+            "default": true
+        },
         "validateTokenId": {
             "title": "Validate App Endpoint Access Token and AppID?",
             "description": "This will help secure your plugin by validating that the plugin is receiving data from the correct Hubitat App if you have multiple instances of the App.",

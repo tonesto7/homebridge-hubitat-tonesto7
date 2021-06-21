@@ -1,3 +1,6 @@
+## _**v2.5.8**_
+- [NEW] Added Config Parameter to stop homebridge plugin from assigning device as a fan because device has Fan in the name. 
+
 ## _**v2.5.7**_
 - [FIX] Fixed AlarmSystem Triggers for Intrusion Alerts for HSM. 
 

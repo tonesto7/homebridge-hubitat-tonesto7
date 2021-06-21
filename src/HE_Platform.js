@@ -84,6 +84,7 @@ module.exports = class HE_Platform {
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
             validateTokenId: this.config.validateTokenId === true,
+            consider_fan_by_name: this.config.consider_fan_by_name !== false,
             adaptive_lighting: this.config.adaptive_lighting !== false,
             adaptive_lighting_offset: this.config.adaptive_lighting !== false && this.config.adaptive_lighting_offset !== undefined ? this.config.adaptive_lighting_offset : undefined,
         };

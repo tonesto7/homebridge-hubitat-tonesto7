@@ -1,5 +1,6 @@
 // const debounce = require('debounce-promise');
-var Service;
+var Service,
+    configure_fan_by_name = true;
 
 module.exports = class ServiceTypes {
     constructor(accessories, srvc) {
@@ -53,6 +54,7 @@ module.exports = class ServiceTypes {
             water_sensor: Service.LeakSensor,
             window_shade: Service.WindowCovering,
         };
+        configure_fan_by_name = this.platform.mainPlatform.getConfigItems().consider_fan_by_name !== false;
     }
 
     getServiceTypes(accessory) {
@@ -116,7 +118,7 @@ const serviceTests = [
     new ServiceTest("lock", (accessory) => accessory.hasCapability("Lock")),
     new ServiceTest("valve", (accessory) => accessory.hasCapability("Valve")),
     new ServiceTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
-    new ServiceTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || accessory.context.deviceData.name.toLowerCase().includes("fan") || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
+    new ServiceTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (configure_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
     new ServiceTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
     new ServiceTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
     new ServiceTest("virtual_routine", (accessory) => accessory.hasCapability("Routine")),
