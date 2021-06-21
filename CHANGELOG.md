@@ -1,3 +1,21 @@
+## _**v2.5.8**_
+
+- [NEW] Added Config Parameter (configure_fan_by_name) to stop homebridge plugin from assigning device as a fan because device has Fan in the name.
+
+
+## v2.5.7
+
+- [FIX] Fixed AlarmSystem Triggers for Intrusion Alerts for HSM. 
+  - Please note that when alerts occur you will see a warning in the logs like this: ```This plugin generated a warning from the characteristic 'Security System Target State': characteristic was supplied illegal value: number 4 exceeded maximum of 3. See https://git.io/JtMGR for more info.``` This error is harmless
+
+## v2.5.6
+
+- [FIX] Fixed exception when removing adaptive lighting from a device.
+
+## v2.5.5
+
+- [NEW] Support for marking switches as Outlets under HomeKit.
+
 ## v2.5.4
 
 - [FIX] Minor fix for some water sensors not working.

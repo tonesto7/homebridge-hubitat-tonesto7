@@ -1,3 +1,15 @@
+## _**v2.5.8**_
+- [NEW] Added Config Parameter to stop homebridge plugin from assigning device as a fan because device has Fan in the name. 
+
+## _**v2.5.7**_
+- [FIX] Fixed AlarmSystem Triggers for Intrusion Alerts for HSM. 
+
+## _**v2.5.6**_
+- [FIX] Set the minimum plugin version to v2.5.6
+
+## _**v2.5.5**_
+- [NEW] Support for marking switches as Outlets under HomeKit.
+
 ## _**v2.5.4**_
 - [FIX] Set the minimum plugin version to v2.5.4
 

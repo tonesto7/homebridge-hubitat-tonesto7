@@ -191,9 +191,13 @@ Installation comes in two parts:
     
     This enables support for bulbs with Color Temp and Brightness to use HomeKit's new [Adaptive Lighting](https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.) features.
 
-* __<u>`adaptive_lighting_offset`</u>__  _Optional_ | _Default: `0`_
+ * __<u>`adaptive_lighting_offset`</u>__  _Optional_ | _Default: `0`_
     
     Defines a custom temperature adjustment factor. This can be used to define a linear deviation from the HomeKit Controller defined ColorTemperature schedule. For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.
+
+ * __<u>`consider_fan_by_name`</u>__  _Optional_ | _Default: `true`_
+    
+    By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.
 
  * __<u>`excluded_capabilities`</u>__ _Optional_ | _Default: '{}' (None)_
 

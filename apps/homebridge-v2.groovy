@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.4'
-@Field static final String appModifiedFLD = '04-29-2021'
+@Field static final String appVersionFLD  = '2.5.8'
+@Field static final String appModifiedFLD = '06-21-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 254]
+@Field static final Map minVersionsFLD    = [plugin: 258]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -119,7 +119,8 @@ preferences {
         // tankUtility
         'lastreading',
         // intesisHome
-        'iFanSpeed', 'ihvvane', 'ivvane', 'online', 'currentConfigCode', 'currentTempOffset', 'currentemitterPower', 'currentsurroundIR', 'swingMode'
+        'iFanSpeed', 'ihvvane', 'ivvane', 'online', 'currentConfigCode', 'currentTempOffset', 'currentemitterPower', 'currentsurroundIR', 'swingMode',
+        'hubMeshDisabled'
     ],
     capabilities: [
         'HealthCheck', 'Indicator', 'WindowShadePreset', 'ChangeLevel', 'Outlet', 'HealthCheck', 'UltravioletIndex', 'ColorMode', 'VoltageMeasurement', 'PowerMeter', 'EnergyMeter', 'ThreeAxis',
@@ -145,7 +146,7 @@ def mainPage() {
     return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectHead('Device Configuration:')) {
-            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
+            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || outletList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0) + (fan5SpdList?.size() ?: 0)
             String desc = sNULL
             Integer devCnt = getDeviceCnt()
@@ -153,6 +154,7 @@ def mainPage() {
                 desc  = sBLANK
                 desc += lightList ? spanSmBld("Light${lightList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${lightList.size()})") : sBLANK
                 desc += lightNoAlList ? spanSmBld("Light${lightNoAlList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${lightNoAlList.size()})") : sBLANK
+                desc += outletList ? spanSmBld("Outlet${outletList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${outletList.size()})") : sBLANK
                 desc += pushableButtonList ? spanSmBld("Pushable Button${pushableButtonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${pushableButtonList.size()})") : sBLANK
                 desc += holdableButtonList ? spanSmBld("Holdable Button${holdableButtonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${holdableButtonList.size()})") : sBLANK
                 desc += doubleTapableButtonList ? spanSmBld("Double Tapable Button${doubleTapableButtonList.size() > 1 ? "s" : sBLANK}") + spanSmBr(" (${doubleTapableButtonList.size()})") : sBLANK
@@ -224,10 +226,11 @@ def mainPage() {
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('Plugin Communication Options:')) {
-            input 'use_cloud_endpoint', 'bool', title: inTS1('Communicate with Plugin Using Cloud Endpoint?', 'command'), required: false, defaultValue: false, submitOnChange: true
-            input 'validate_token',     'bool', title: inTS1('Validate AppID & Token for All Communications?', 'command'), required: false, defaultValue: false, submitOnChange: true
-            input 'round_levels',       'bool', title: inTS1('Round Levels <5% to 0% and >95% to 100%?', 'command'), required: false, defaultValue: true, submitOnChange: true
-            input 'temp_unit',          'enum', title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
+            input 'consider_fan_by_name',   'bool', title: inTS1('Use the word Fan in device name to determine if device is a Fan?', 'command'), required: false, defaultValue: true, submitOnChange: true
+            input 'use_cloud_endpoint',     'bool', title: inTS1('Communicate with Plugin Using Cloud Endpoint?', 'command'), required: false, defaultValue: false, submitOnChange: true
+            input 'validate_token',         'bool', title: inTS1('Validate AppID & Token for All Communications?', 'command'), required: false, defaultValue: false, submitOnChange: true
+            input 'round_levels',           'bool', title: inTS1('Round Levels <5% to 0% and >95% to 100%?', 'command'), required: false, defaultValue: true, submitOnChange: true
+            input 'temp_unit',              'enum', title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
         }
 
         section(sectHead('HomeKit Adaptive Lighting')) {
@@ -277,6 +280,7 @@ def deviceSelectPage() {
             paragraph spanSmBldBr('NOTE: ') + spanSmBldBr('Please do not select a device more than once in the inputs below')
 
             input 'lightList', 'capability.switch', title: inTS1("Lights: (${lightList ? lightList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'outletList', 'capability.switch', title: inTS1("Outlets: (${outletList ? outletList.size() : 0} Selected)", 'outlet'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'lightNoAlList', 'capability.switch', title: inTS1("Lights (No Adaptive Lighting): (${lightNoAlList ? lightNoAlList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'garageList', 'capability.garageDoorControl', title: inTS1("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", 'garage_door'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'speakerList', 'capability.switch', title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", 'media_player'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -365,7 +369,7 @@ private void inputDupeValidation() {
         d: [
             'fanList': 'Fans', 'fan3SpdList': 'Fans (3-Speed)', 'fan4SpdList': 'Fans (4-Speed)',
             // 'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
-            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
+            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'outletList': 'Outlets', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
             'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)'
         ],
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
@@ -576,7 +580,6 @@ def deviceDebugPage() {
             if (debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
                 paragraph spanSmBld('Device Data:', sCLR4D9)
                 paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>", sCLRGRY)
-                // href url: getAppEndpointUrl("deviceDebug"), style: "embedded", title: inTS1("Tap here to view Device Data...", "info"), description: sBLANK
             }
         }
     }
@@ -619,6 +622,7 @@ private Map getDeviceDebugMap(dev) {
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
             aa = deviceCapabilityList(dev).sort { it?.key }
             r.capabilities_processed = aa ?: []
+            r.capabilities_filtered = filteredOutCaps(dev) ?: []
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
             aa = deviceCommandList(dev).sort { it?.key }
             r.commands_processed = aa ?: []
@@ -717,8 +721,9 @@ void subscribeToEvts() {
     runIn(6, 'registerDevices')
     logInfo('Starting Device Subscription Process...')
     if ((Boolean)settings.addSecurityDevice) {
-        logInfo('Subscribed to (HSM AlarmSystem)')
+        logInfo('Subscribed to (HSM AlarmSystem Events)')
         subscribe(location, 'hsmStatus', changeHandler)
+        subscribe(location, 'hsmAlert', changeHandler)
     }
     if (settings.modeList) {
         logInfo("Subscribed to (${settings.modeList.size() ?: 0} Location Modes)")
@@ -910,8 +915,7 @@ static String getAlarmSystemName(Boolean abbr=false) {
     return (abbr ? 'HSM' : 'Hubitat Safety Monitor')
 }
 
-/* groovylint-disable-next-line NoDef */
-def getSecurityStatus(Boolean retInt=false) {
+String getSecurityStatus(Boolean retInt=false) {
     String cur = (String)location.hsmStatus
     if (retInt) {
         switch (cur) {
@@ -927,7 +931,9 @@ def getSecurityStatus(Boolean retInt=false) {
             case 'disarmed':
             case 'off':
                 return 3
-            case 'alarm_active':
+            case 'intrusion-home':
+            case 'intrusion-away':
+            case 'intrusion-night':
                 return 4
         }
     } else { return cur ?: 'disarmed' }
@@ -974,6 +980,7 @@ String renderConfig() {
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
         validateTokenId: (Boolean)settings.validate_token == true,
         adaptive_lighting: (Boolean)settings.adaptive_lighting != false,
+        consider_fan_by_name: (Boolean)settings.consider_fan_by_name != false,
         adaptive_lighting_offset: (settings.adaptive_lighting && settings.adaptive_lighting_offset) ? settings.adaptive_lighting_offset.toInteger() : 0,
         round_levels: (Boolean)settings.round_levels != false,
         logConfig: [
@@ -1143,6 +1150,7 @@ Map deviceCapabilityList(device) {
     else { capItems.remove("DoubleTapableButton") }
     
     if (isDeviceInInput('lightList', device.id)) { capItems['LightBulb'] = 1 }
+    if (isDeviceInInput('outletList', device.id)) { capItems['Outlet'] = 1 }
     if (isDeviceInInput('lightNoAlList', device.id)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('fanList', device.id)) { capItems['Fan'] = 1 }
     if (isDeviceInInput('speakerList', device.id)) { capItems['Speaker'] = 1 }
@@ -1159,19 +1167,32 @@ Map deviceCapabilityList(device) {
     }
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
-    Map remCaps = [
-       'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'Color Control': 'ColorControl', 'Color Temperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
-       'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
-       'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
-    ]
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (!remKeys) remKeys = []
     remKeys.each { String k->
         String capName = k.replaceAll('remove', sBLANK)
-        String theCap = (String)remCaps[capName]
+        String theCap = (String)capFilterFLD[capName]
         if (theCap && capItems[theCap] && isDeviceInInput(k, device.id)) { capItems?.remove(theCap); if ((Boolean) settings.showDebugLogs) { logDebug("Filtering ${capName}") } }
     }
     return capItems?.sort { (String)it.key }
+}
+
+@Field static final Map<String, String> capFilterFLD = [
+    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'Color Control': 'ColorControl', 'Color Temperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
+    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
+    'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
+]
+
+private List filteredOutCaps(device) {
+    List capsFiltered = []
+    List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+    if (!remKeys) remKeys = []
+    remKeys.each { String k->
+        String capName = k.replaceAll('remove', sBLANK)
+        String theCap = (String)capFilterFLD[capName]
+        if (theCap && isDeviceInInput(k, device.id)) { capsFiltered.push(theCap) }
+    }
+    return capsFiltered
 }
 
 Map deviceCommandList(device) {
@@ -1207,7 +1228,7 @@ static Map deviceSettingKeys() {
     return [
         'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3Spd) Devices', 'fan4SpdList': 'Fans (4Spd) Devices', 'fan5SpdList': 'Fans (5Spd) Devices', 'deviceList': 'Other Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices',
-        'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)',
+        'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)', 'outletList': 'Outlet Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices'
     ]
 }
@@ -1217,7 +1238,7 @@ void registerDevices() {
     [
         'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Block Adaptive Lighting)', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices',
-        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices',
+        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices', 'outletList': 'Outlet Devices',
         'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'garageList': 'Garage Door Devices',
         'tstatList': 'Thermostat Devices', 'tstatFanList': 'Thermostat + Fan Devices', 'tstatHeatList': 'Thermostat (HeatOnly) Devices'
     ]?.each { String k, String v->
@@ -1288,6 +1309,9 @@ def changeHandler(evt) {
     Boolean sendEvt = true
     Boolean evtLog = (getTsVal(sEVT) == sTRU)
 
+    // if(evt.name.startsWith('hsm')) {
+    //     log.debug "${evt.name}: [evtSource: ${src}, evtDeviceName: ${deviceName}, evtDeviceId: ${deviceid}, evtAttr: ${attr}, evtValue: ${value}, evtUnit: ${evt?.unit ?: sBLANK}, evtDate: ${dt}]"
+    // }
     switch ((String)evt.name) {
         case 'hsmStatus':
             deviceid = "alarmSystemStatus_${location?.id}"
@@ -1295,11 +1319,12 @@ def changeHandler(evt) {
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             break
         case 'hsmAlert':
-            if (evt?.value == 'intrusion') {
-                deviceid = "alarmSystemStatus_${location?.id}"
-                attr = 'alarmSystemStatus'
-                value = 'alarm_active'
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+            deviceid = "alarmSystemStatus_${location?.id}"
+            attr = 'alarmSystemStatus'
+            if (evt?.value.startsWith('intrusion')) {
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: evt.value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+            } else if (evt?.value.toString() == 'cancel') { 
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else { sendEvt = false }
             break
         case 'hsmRules':

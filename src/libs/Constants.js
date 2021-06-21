@@ -44,6 +44,7 @@ module.exports = {
         "PowerSource",
         "PresenceSensor",
         "PushableButton",
+        "Outlet",
         "Refresh",
         "RelativeHumidityMeasurement",
         // "ReleasableButton",
