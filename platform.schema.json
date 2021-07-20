@@ -74,11 +74,18 @@
                 "required": false
             },
             "consider_fan_by_name": {
-                "title": "Assign Device as Fan when Fan in Device Name?",
+                "title": "Assign Device as Fan when Device has the word Fan in the Name?",
                 "description": "By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.",
                 "type": "boolean",
                 "required": false,
                 "default": true
+            },
+            "consider_light_by_name": {
+                "title": "Assign Device as Light when Device has the word Light in the Name?",
+                "description": "By default the plugin will not identify a Light device by using a devices label, and whether it has Light in the label.",
+                "type": "boolean",
+                "required": false,
+                "default": false
             },
             "temperature_unit": {
                 "title": "Define Temperature Unit",

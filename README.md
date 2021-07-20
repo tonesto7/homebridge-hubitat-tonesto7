@@ -199,6 +199,10 @@ Installation comes in two parts:
     
     By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.
 
+ * __<u>`consider_light_by_name`</u>__  _Optional_ | _Default: `false`_
+    
+    By default the plugin will identify a light device by using a devices label, and whether it has Light in the label.
+
  * __<u>`excluded_capabilities`</u>__ _Optional_ | _Default: '{}' (None)_
 
     NOTICE: The Hubitat app offers many inputs to help filter out device capabilities. Only use this if the available inputs don't meet your needs. Specify the Hubitat device by ID and the associated capabilities you want the plugin to ignore.
