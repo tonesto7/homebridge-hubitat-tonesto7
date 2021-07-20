@@ -1,3 +1,9 @@
+## _**v2.5.9**_
+- [FIX] Fix for colorTemperature filters not filtering out the capability. (Thanks @jtp10181)
+- [FIX] Fixed missing Filter icons for some of the inputs.
+- [NEW] Added Config Parameter to stop homebridge plugin from assigning device as a light because device has light in the name.
+- [NEW] Added description for selected capability filters on the main page so you can see each selected capability filter.
+
 ## _**v2.5.8**_
 - [NEW] Added Config Parameter to stop homebridge plugin from assigning device as a fan because device has Fan in the name. 
 

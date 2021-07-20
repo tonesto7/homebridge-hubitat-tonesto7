@@ -1,6 +1,7 @@
 // const debounce = require('debounce-promise');
 var Service,
-    configure_fan_by_name = true;
+    configure_fan_by_name = true,
+    configure_light_by_name = false;
 
 module.exports = class ServiceTypes {
     constructor(accessories, srvc) {
@@ -55,6 +56,7 @@ module.exports = class ServiceTypes {
             window_shade: Service.WindowCovering,
         };
         configure_fan_by_name = this.platform.mainPlatform.getConfigItems().consider_fan_by_name !== false;
+        configure_light_by_name = this.platform.mainPlatform.getConfigItems().consider_light_by_name === true;
     }
 
     getServiceTypes(accessory) {
@@ -123,9 +125,9 @@ const serviceTests = [
     new ServiceTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
     new ServiceTest("virtual_routine", (accessory) => accessory.hasCapability("Routine")),
     new ServiceTest("button", (accessory) => accessory.hasCapability("Button") || accessory.hasCapability("DoubleTapableButton") || accessory.hasCapability("HoldableButton") || accessory.hasCapability("PushableButton") || accessory.hasCapability("ReleasableButton")),
-    new ServiceTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light")), true),
+    new ServiceTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (configure_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))), true),
     new ServiceTest("outlet", (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"), true),
-    new ServiceTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || accessory.hasCapability("Button")), true),
+    new ServiceTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || (configure_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")) || accessory.hasCapability("Button")), true),
     new ServiceTest("smoke_detector", (accessory) => accessory.hasCapability("Smoke Detector") && accessory.hasAttribute("smoke")),
     new ServiceTest("carbon_monoxide", (accessory) => accessory.hasCapability("Carbon Monoxide Detector") && accessory.hasAttribute("carbonMonoxide")),
     new ServiceTest("carbon_dioxide", (accessory) => accessory.hasCapability("Carbon Dioxide Measurement") && accessory.hasAttribute("carbonDioxideMeasurement")),

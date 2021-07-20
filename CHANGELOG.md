@@ -1,7 +1,10 @@
+## _**v2.5.9**_
+
+- [NEW] Added Config Parameter (configure_light_by_name) to stop homebridge plugin from assigning device as a light because device has light in the name.
+  
 ## _**v2.5.8**_
 
 - [NEW] Added Config Parameter (configure_fan_by_name) to stop homebridge plugin from assigning device as a fan because device has Fan in the name.
-
 
 ## v2.5.7
 

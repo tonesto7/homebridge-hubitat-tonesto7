@@ -36,13 +36,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.8'
-@Field static final String appModifiedFLD = '06-21-2021'
+@Field static final String appVersionFLD  = '2.5.9'
+@Field static final String appModifiedFLD = '07-20-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 258]
+@Field static final Map minVersionsFLD    = [plugin: 259]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -92,10 +92,13 @@ preferences {
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 
 @Field static final Map ignoreListFLD =  [
-    commands: ['indicatorWhenOn', 'indicatorWhenOff', 'ping', 'refresh', 'indicatorNever', 'configure', 'poll', 'reset'],
+    commands: ['indicatorWhenOn', 'indicatorWhenOff', 'ping', 'refresh', 'indicatorNever', 'configure', 'poll', 'reset', 'childOff', 'childOn', 'childRefresh', 'childSetLevel', 'componentOff', 
+        'componentOn', 'componentRefresh', 'componentSetColor', 'componentSetColorTemperature', 'componentSetLevel', 'setAssociationGroup', 'setConfigParameter', 'setIndicator', 'stopNotification',
+        'startNotification'
+    ],
     attributes: [
         'DeviceWatch-Enroll', 'DeviceWatch-Status', 'checkInterval', 'LchildVer', 'FchildVer', 'LchildCurr', 'FchildCurr', 'lightStatus', 'lastFanMode', 'lightLevel',
-        'coolingSetpointRange', 'heatingSetpointRange', 'thermostatSetpointRange', 'power', 'energy'
+        'coolingSetpointRange', 'heatingSetpointRange', 'thermostatSetpointRange', 'power', 'energy', 'colorMode', 'RGB', 'colorName',
     ],
     evt_attributes: [
         'DeviceWatch-DeviceStatus', 'DeviceWatch-Enroll', 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
@@ -124,7 +127,7 @@ preferences {
     ],
     capabilities: [
         'HealthCheck', 'Indicator', 'WindowShadePreset', 'ChangeLevel', 'Outlet', 'HealthCheck', 'UltravioletIndex', 'ColorMode', 'VoltageMeasurement', 'PowerMeter', 'EnergyMeter', 'ThreeAxis',
-        'ReleasableButton', 'PushableButton', 'HoldableButton', 'DoubleTapableButton', 'Initialize', 'LightEffects', 'SignalStrength'
+        'ReleasableButton', 'PushableButton', 'HoldableButton', 'DoubleTapableButton', 'Initialize', 'LightEffects', 'SignalStrength', 'Configuration', 
     ]
 ]
 
@@ -182,12 +185,8 @@ def mainPage() {
         inputDupeValidation()
 
         section(sectHead('Capability Filtering:')) {
-            Boolean conf = (
-                removeAcceleration || removeBattery || removeButton || removeDoubleTapableButton || removePushableButton || removeHoldableButton || removeContact || 
-                removeColorControl || removeColorTemperature || removeEnergy || removeHumidity || removeIlluminance || removeLevel || removeLock || removeMotion ||
-                removePower || removePresence || removeSwitch || removeTamper || removeTemp || removeValve || removeWater
-            )
-            href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: (conf ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+            String filterDesc = getFilterDesc()
+            href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: filterDesc + (capFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
         }
 
         section(sectHead('Location Options:')) {
@@ -227,6 +226,7 @@ def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('Plugin Communication Options:')) {
             input 'consider_fan_by_name',   'bool', title: inTS1('Use the word Fan in device name to determine if device is a Fan?', 'command'), required: false, defaultValue: true, submitOnChange: true
+            input 'consider_light_by_name', 'bool', title: inTS1('Use the word Light in device name to determine if device is a Light?', 'command'), required: false, defaultValue: false, submitOnChange: true
             input 'use_cloud_endpoint',     'bool', title: inTS1('Communicate with Plugin Using Cloud Endpoint?', 'command'), required: false, defaultValue: false, submitOnChange: true
             input 'validate_token',         'bool', title: inTS1('Validate AppID & Token for All Communications?', 'command'), required: false, defaultValue: false, submitOnChange: true
             input 'round_levels',           'bool', title: inTS1('Round Levels <5% to 0% and >95% to 100%?', 'command'), required: false, defaultValue: true, submitOnChange: true
@@ -355,12 +355,29 @@ private void resetAppToken() {
 }
 
 private void resetCapFilters() {
-    List items = settings?.each?.findAll { ((String)it.key).startsWith('remove') }?.collect { (String)it.key }
-    if (items.size() > 0) {
-        items.each { String item->
-            settingRemove(item)
+    List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') }.collect { (String)it.key }
+    if (remKeys?.size() > 0) {
+        remKeys.each { String k->
+            settingRemove(k)
         }
     }
+}
+
+private Boolean capFiltersSelected() {
+    return (settings.findAll { ((String)it.key).startsWith('remove') && it.value }.collect { (String)it.key })?.size() > 0
+}
+
+private String getFilterDesc() {
+    String desc = ''
+    List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+    if (remKeys?.size()) {
+        remKeys?.sort().each { String k->
+            String capName = k.replaceAll('remove', sBLANK)
+            Integer capSize = settings[k]?.size()
+            desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
+        }
+    }
+    return desc
 }
 
 private void inputDupeValidation() {
@@ -498,13 +515,13 @@ def capFilterPage() {
             input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeContact', 'capability.contactSensor', title: inTS1('Remove Contact from these Devices', 'contact'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove Color Control from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeColorTemp', 'capability.colorTemperature', title: inTS1('Remove Color Temperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove ColorControl from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeColorTemperature', 'capability.colorTemperature', title: inTS1('Remove ColorTemperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             // input "removeEnergy", "capability.energyMeter", title: inTS1("Remove Energy Meter from these Devices", "power"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeHumidity', 'capability.relativeHumidityMeasurement', title: inTS1('Remove Humidity from these Devices', 'humidity'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeIlluminance', 'capability.illuminanceMeasurement', title: inTS1('Remove Illuminance from these Devices', 'illuminance'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeLevel', 'capability.switchLevel', title: inTS1('Remove Level from these Devices', 'speed_knob'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeLock', 'capability.lock', title: inTS1('Remove Lock from these Devices', 'speed_knob'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeLock', 'capability.lock', title: inTS1('Remove Lock from these Devices', 'lock'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeMotion', 'capability.motionSensor', title: inTS1('Remove Motion from these Devices', 'motion'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             // input "removePower", "capability.powerMeter", title: inTS1("Remove Power Meter from these Devices", "power"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removePresence', 'capability.presenceSensor', title: inTS1('Remove Presence from these Devices', 'presence'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -665,7 +682,7 @@ def updated() {
     logDebug("${app.name} | updated() has been called...")
     if (!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
     unsubscribe()
-    stateCleanup()
+    appCleanup()
     initialize()
     remTsVal(sLASTWU)
     if (settings.enableWebCoRE) { webCoRE_poll(true) }
@@ -769,7 +786,7 @@ Boolean checkIfCodeUpdated(Boolean ui=false) {
     return false
 }
 
-private void stateCleanup() {
+private void appCleanup() {
     List<String> removeItems = ['hubPlatform', 'cmdHistory', 'evtHistory', 'tsDtMap', 'lastMode', 'pollBlocked', 'devchanges', 'subscriptionRenewed']
     if (state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
@@ -780,6 +797,8 @@ private void stateCleanup() {
         removeItems.push('directPort')
     }
     removeItems.each { String it -> if (state?.containsKey(it)) state.remove(it) }
+    List<String> removeSettings = ['removeColorTemp']
+    removeSettings.each { String it -> if (settings?.containsKey(it)) settingRemove(it) }
 }
 
 private List renderDevices() {
@@ -981,6 +1000,7 @@ String renderConfig() {
         validateTokenId: (Boolean)settings.validate_token == true,
         adaptive_lighting: (Boolean)settings.adaptive_lighting != false,
         consider_fan_by_name: (Boolean)settings.consider_fan_by_name != false,
+        consider_light_by_name: (Boolean)settings.consider_fan_by_name == true,
         adaptive_lighting_offset: (settings.adaptive_lighting && settings.adaptive_lighting_offset) ? settings.adaptive_lighting_offset.toInteger() : 0,
         round_levels: (Boolean)settings.round_levels != false,
         logConfig: [
@@ -1178,7 +1198,7 @@ Map deviceCapabilityList(device) {
 }
 
 @Field static final Map<String, String> capFilterFLD = [
-    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'Color Control': 'ColorControl', 'Color Temperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
+    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
     'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
     'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
 ]
