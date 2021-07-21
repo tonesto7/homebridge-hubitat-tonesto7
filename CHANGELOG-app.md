@@ -1,3 +1,6 @@
+## _**v2.5.10**_
+- [FIX] Another fix to help filter out the color controls from devices in homekit (Thanks @jtp10181).
+
 ## _**v2.5.9**_
 - [FIX] Fix for colorTemperature filters not filtering out the capability. (Thanks @jtp10181)
 - [FIX] Fixed missing Filter icons for some of the inputs.
