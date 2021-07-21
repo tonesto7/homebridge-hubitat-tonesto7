@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.9'
-@Field static final String appModifiedFLD = '07-20-2021'
+@Field static final String appVersionFLD  = '2.5.10'
+@Field static final String appModifiedFLD = '07-21-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -94,7 +94,7 @@ preferences {
 @Field static final Map ignoreListFLD =  [
     commands: ['indicatorWhenOn', 'indicatorWhenOff', 'ping', 'refresh', 'indicatorNever', 'configure', 'poll', 'reset', 'childOff', 'childOn', 'childRefresh', 'childSetLevel', 'componentOff', 
         'componentOn', 'componentRefresh', 'componentSetColor', 'componentSetColorTemperature', 'componentSetLevel', 'setAssociationGroup', 'setConfigParameter', 'setIndicator', 'stopNotification',
-        'startNotification'
+        'startNotification', 'stopLevelChange', 'startLevelChange',
     ],
     attributes: [
         'DeviceWatch-Enroll', 'DeviceWatch-Status', 'checkInterval', 'LchildVer', 'FchildVer', 'LchildCurr', 'FchildCurr', 'lightStatus', 'lastFanMode', 'lightLevel',
@@ -1220,6 +1220,8 @@ Map deviceCommandList(device) {
     Map cmds = device.supportedCommands?.findAll { !((String)it.name in ignoreListFLD.commands) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
     if (isDeviceInInput('tstatList', device.id)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
     if (isDeviceInInput('tstatHeatList', device.id)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
+    if (isDeviceInInput('removeColorControl', device.id)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
+    if (isDeviceInInput('removeColorTemperature', device.id)) { cmds.remove('setColorTemperature') }
     return cmds
 }
 
@@ -1233,6 +1235,8 @@ Map deviceAttributeList(device) {
         }
 }
     if (isDeviceInInput('tstatHeatList', device.id)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange') }
+    if (isDeviceInInput('removeColorControl', device.id)) { atts.remove('RGB'); atts.remove('color'); atts.remove('hue'); atts.remove('saturation') }
+    if (isDeviceInInput('removeColorTemperature', device.id)) { atts.remove('colorTemperature') }
     return atts
 }
 
