@@ -36,8 +36,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.10'
-@Field static final String appModifiedFLD = '07-21-2021'
+@Field static final String appVersionFLD  = '2.5.11'
+@Field static final String appModifiedFLD = '07-30-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -651,7 +651,7 @@ private Map getDeviceDebugMap(dev) {
             r.attributes_processed = aa ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLANK})" }
         } catch (ex) {
-            logError("Error while generating device data: ${ex}")
+            logError("Error while generating device data: ${ex}", ex)
         }
     }
     return r
@@ -729,8 +729,8 @@ private void enableOauth() {
         httpPost(params) { resp ->
             //LogTrace("response data: ${resp.data}")
         }
-    } catch (e) {
-        logError("enableOauth something went wrong: $e")
+    } catch (ex) {
+        logError("enableOauth something went wrong: ${ex}", ex)
     }
 }
 
@@ -814,7 +814,7 @@ private List renderDevices() {
                     devObj = devObj != null ? devObj : [:]
                     if (devObj.size() > 0) { devMap[(String) devObj.deviceid] = devObj }
                 } catch (ex) {
-                    logError("Setting key $item Device (${dev?.displayName}) Render Exception: ${ex.message}")
+                    logError("Setting key $item Device (${dev?.displayName}) | Render Exception: ${ex.message}", ex)
                 }
             }
         }
@@ -1029,7 +1029,7 @@ Map renderLocation() {
 
 def CommandReply(Boolean shw, String statusOut, String messageOut, Integer code) {
     String replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
-    if (shw)logInfo(messageOut)
+    if (shw) { logInfo(messageOut) }
     render contentType: sAPPJSON, data: replyJson, code: code
 }
 
@@ -1049,10 +1049,10 @@ def deviceCommand() {
     return processCmd(params?.id, params?.command, val1, val2)
 }
 
-private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
+private processCmd(devId, String cmd, value1, value2) {
     Long execDt = now()
     Boolean shw = (Boolean)settings.showCmdLogs
-    if (shw) { logInfo("Plugin called Process Command${local ? '(LOCAL)' : sBLANK} | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
+    if (shw) { logInfo("Plugin called Process Command | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
     if (!devId) { return }
     String command = cmd
 
@@ -1060,19 +1060,19 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
         setAlarmSystemMode(command)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Security Alarm, Command $command", 200)
+        return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
     }  else if (command == 'mode' &&  settings.modeList) {
         if (shw) { logDebug("Virtual Mode Received: ${devId}") }
         changeMode(devId, shw)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: 'Mode Device', value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Mode Device | Command $command | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Mode Device | Command: [$command] | Process Time: (${pt}ms)", 200)
     } else if (command == 'piston' && settings.pistonList) {
         if (shw) { logDebug("Virtual Piston Received: ${devId}") }
         String aa = runPiston(devId, shw)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: 'Piston Device', value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Piston | ${aa} | Command $command | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Piston | ${aa} | Command: [$command] | Process Time: (${pt}ms)", 200)
     } else {
         def device = findDevice(devId)
         String devN = device?.displayName
@@ -1085,7 +1085,7 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
             return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
         }
 
-        String cmdS = shw ? "Command Successful for Device ${devN} | Command [${command}(".toString() : sBLANK
+        String cmdS = shw ? "Command Successful for Device | Name: ${devN} | Command: [${command}(".toString() : sBLANK
         try {
             if (value2 != null) {
                 device."$command"(value1, value2)
@@ -1100,9 +1100,9 @@ private processCmd(devId, String cmd, value1, value2, Boolean local=false) {
             if (shw) { logInfo(cmdS) }
             Long pt = execDt ? (now() - execDt) : 0L
             logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
-            return CommandReply(shw, sSUCC, " | ${devN} | Command [${command}()] | Process Time: (${pt}ms)", 200)
-        } catch (e) {
-            logError("Error Occurred for Device ${devN} | Command [${command}()] ${e}")
+            return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}()] | Process Time: (${pt}ms)", 200)
+        } catch (ex) {
+            logError("Error Occurred for Device | Name: ${devN} | Command: [${command}()] ${ex}", ex)
             return CommandReply(shw, 'Failure', "Error Occurred For Device ${devN} | Command [${command}()]", 500)
         }
     }
@@ -1585,7 +1585,7 @@ void updateServicePrefs(Boolean isLocal=false) {
 }
 
 def pluginStatus() {
-    logTrace('Plugin called Status')
+    logTrace('Plugin called... pluginStatus()')
     def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if (body?.version) { updCodeVerMap('plugin', (String)body?.version) }
@@ -1594,7 +1594,7 @@ def pluginStatus() {
 }
 
 def enableDirectUpdates() {
-    logTrace('Plugin called enable direct updates')
+    logTrace('Plugin called enableDirectUpdates()')
     // log.trace "enableDirectUpdates: ($params)"
     state.pluginDetails = [
         directIP: params?.ip,
@@ -1621,7 +1621,6 @@ mappings {
 }
 
 def appInfoSect() {
-    //    Map codeVer = state.codeVersions
     Boolean isNote = false
     String tStr = spanSmBld('Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
     tStr += state?.pluginDetails?.version ? spanSmBld('Plugin:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
@@ -1745,7 +1744,7 @@ private Map getMinVerUpdsRequired() {
         try {
             if (codeItems?.containsKey(k) && v != null && (versionStr2Int(v) < (Integer)minVersionsFLD[k])) { updRequired = true; updItems.push(codeItems[k]) }
         } catch (ex) {
-            logError("getMinVerUpdsRequired Error: ${ex}")
+            logError("getMinVerUpdsRequired Error: ${ex}", ex)
         }
     }
     return [updRequired: updRequired, updItems: updItems]
@@ -1847,7 +1846,7 @@ private getWebData(Map params, String desc, Boolean text=true) {
         }
     } catch (ex) {
         if (ex instanceof groovyx.net.http.HttpResponseException) { logWarn("${desc} file not found") } 
-        else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}") }
+        else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}", ex) }
         if (text) { return "${desc} info not found" }
         return null
     }
@@ -1942,15 +1941,23 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
     releaseTheLock(sHMLF)
 }
 
-private void logDebug(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix(sDBG, msg.toString(), sCLR4D9) }
-private void logTrace(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix('trace', msg.toString(), sCLR9B1) }
-private void logInfo(String msg)   { logPrefix('info', msg.toString(), sCLRGRY) }
-private void logWarn(String msg)   { logPrefix('warn', msg.toString(), sCLRORG) }
-private void logError(String msg)  { logPrefix('error', msg.toString(), sCLRRED) }
+private void logDebug(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix(sDBG, msg, "purple") }
+private void logTrace(String msg)  { if ((Boolean)settings.showDebugLogs) logPrefix('trace', msg, sCLRGRY) }
+private void logInfo(String msg)   { logPrefix('info', msg, sCLR9B1) }
+private void logWarn(String msg)   { logPrefix('warn', msg, sCLRORG) }
+private void logError(String msg, ex=null)  { 
+    logPrefix('error', msg, sCLRRED) 
+    String a
+    try {
+        if (ex) a = getExceptionMessageWithLine(ex)
+    } catch (ignored) {
+    }
+    if(a) { logPrefix('error', a, sCLRRED) }
+}
 
 private void logPrefix(String lvl, String msg, String color = sNULL) {
     String pad = sBLANK
-    if (lvl in ['warn', 'info']) pad = sSPACE
+    if (lvl in ['warn', 'info']) { pad = sSPACE }
     log."$lvl" pad + span("Homebridge (v${appVersionFLD}) | ", sCLRGRY) + span(msg, color)
 }
 
