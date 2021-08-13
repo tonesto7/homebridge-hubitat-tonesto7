@@ -1,3 +1,6 @@
+## _**v2.5.11**_
+- [FIX] Code Optimizations and Bug fixes (Thanks @nh.schotfam).
+
 ## _**v2.5.10**_
 - [FIX] Another fix to help filter out the color controls from devices in homekit (Thanks @jtp10181).
 
