@@ -59,10 +59,10 @@ preferences {
 //@Field static final String notOkSymFLD    = '\u2715'
 //@Field static final String sPAUSESymFLD   = '\u275A\u275A'
 @Field static final String sLINEBR        = '<br>'
-//@Field static final String sFALSE         = 'false'
-//@Field static final String sTRUE          = 'true'
-//@Field static final String sBOOL          = 'bool'
-//@Field static final String sENUM          = 'enum'
+@Field static final String sFALSE         = 'false'
+@Field static final String sTRUE          = 'true'
+@Field static final String sBOOL          = 'bool'
+@Field static final String sENUM          = 'enum'
 //@Field static final String sTIME          = 'time'
 @Field static final String sSVR           = 'svraddr'
 @Field static final String sCLN           = ':'
@@ -71,7 +71,6 @@ preferences {
 @Field static final String sEVTLOGEN      = 'evtLogEn'
 @Field static final String sDBGLOGEN      = 'dbgLogEn'
 @Field static final String sDBG           = 'debug'
-@Field static final String sTRU           = 'true'
 @Field static final String sUPD           = 'update'
 @Field static final String sEVTUPD        = 'EventUpdate'
 @Field static final String sAPPJSON       = 'application/json'
@@ -197,7 +196,7 @@ def mainPage() {
         }
 
         section(sectHead('Location Options:')) {
-            input 'addSecurityDevice', 'bool', title: inTS1("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
+            input 'addSecurityDevice', sBOOL, title: inTS1("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
         }
 
         section(sectHead('HomeBridge Plugin Config:')) {
@@ -218,11 +217,11 @@ def mainPage() {
 
         if (devMode()) {
             section(sectHead('Dev Mode Options')) {
-                input 'sendViaNgrok', 'bool', title: inTS1('Communicate with Plugin via Ngrok Http?', 'command'), defaultValue: false, submitOnChange: true
+                input 'sendViaNgrok', sBOOL, title: inTS1('Communicate with Plugin via Ngrok Http?', 'command'), defaultValue: false, submitOnChange: true
                 if (sendViaNgrok) { input 'ngrokHttpUrl', 'text', title: inTS1('Enter the ngrok code from the url'), required: true, submitOnChange: true }
             }
             section(sectHead('Other Settings:')) {
-                input 'restartService', 'bool', title: inTS1('Restart Homebridge plugin when you press Save?', 'reset'), required: false, defaultValue: false, submitOnChange: true
+                input 'restartService', sBOOL, title: inTS1('Restart Homebridge plugin when you press Save?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             }
         }
         clearTestDeviceItems()
@@ -232,18 +231,18 @@ def mainPage() {
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('Plugin Communication Options:')) {
-            input 'consider_fan_by_name',   'bool', title: inTS1('Use the word Fan in device name to determine if device is a Fan?', 'command'), required: false, defaultValue: true, submitOnChange: true
-            input 'consider_light_by_name', 'bool', title: inTS1('Use the word Light in device name to determine if device is a Light?', 'command'), required: false, defaultValue: false, submitOnChange: true
-            input 'use_cloud_endpoint',     'bool', title: inTS1('Communicate with Plugin Using Cloud Endpoint?', 'command'), required: false, defaultValue: false, submitOnChange: true
-            input 'validate_token',         'bool', title: inTS1('Validate AppID & Token for All Communications?', 'command'), required: false, defaultValue: false, submitOnChange: true
-            input 'round_levels',           'bool', title: inTS1('Round Levels <5% to 0% and >95% to 100%?', 'command'), required: false, defaultValue: true, submitOnChange: true
-            input 'temp_unit',              'enum', title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
+            input 'consider_fan_by_name',   sBOOL, title: inTS1('Use the word Fan in device name to determine if device is a Fan?', 'command'), required: false, defaultValue: true, submitOnChange: true
+            input 'consider_light_by_name', sBOOL, title: inTS1('Use the word Light in device name to determine if device is a Light?', 'command'), required: false, defaultValue: false, submitOnChange: true
+            input 'use_cloud_endpoint',     sBOOL, title: inTS1('Communicate with Plugin Using Cloud Endpoint?', 'command'), required: false, defaultValue: false, submitOnChange: true
+            input 'validate_token',         sBOOL, title: inTS1('Validate AppID & Token for All Communications?', 'command'), required: false, defaultValue: false, submitOnChange: true
+            input 'round_levels',           sBOOL, title: inTS1('Round Levels <5% to 0% and >95% to 100%?', 'command'), required: false, defaultValue: true, submitOnChange: true
+            input 'temp_unit',              sENUM, title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
         }
 
         section(sectHead('HomeKit Adaptive Lighting')) {
             String url = 'https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.'
             href url: url, style: 'external', title: inTS1('What is Adaptive Lighting?', 'info'), description: inputFooter('Tap to open in browser', sCLRGRY, true)
-            input 'adaptive_lighting',  'bool', title: inTS1('Allow Supported Bulbs to Use HomeKit Adaptive Lighting?', 'command'), required: false, defaultValue: true, submitOnChange: true
+            input 'adaptive_lighting',  sBOOL, title: inTS1('Allow Supported Bulbs to Use HomeKit Adaptive Lighting?', 'command'), required: false, defaultValue: true, submitOnChange: true
             if (adaptive_lighting) {
                 input 'adaptive_lighting_offset', 'number', title: inTS1('Adaptive Lighting - Offset ColorTemp Conversions by +/- Mireds?', 'command'), range: '-100..100', required: false, defaultValue: 0, submitOnChange: true
             }
@@ -321,16 +320,16 @@ def deviceSelectPage() {
         section(sectHead('Create Devices for Modes in HomeKit?')) {
             paragraph spanSmBldBr('What are these for?', sCLRGRY) + spanSm("Creats a virtual device for selected modes in HomeKit.<br> ${sBULLET} The switch will be ON when that mode is active.", sCLRGRY)
             def modes = location?.getModes()?.sort { it?.name }?.collect { [(it?.id):it?.name] }
-            input 'modeList', 'enum', title: inTS1('Create Devices for these Modes', 'mode'), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: modes, submitOnChange: true
+            input 'modeList', sENUM, title: inTS1('Create Devices for these Modes', 'mode'), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: modes, submitOnChange: true
         }
 
         section(sectHead('Create Devices for WebCoRE Pistons in HomeKit?')) {
-            input 'enableWebCoRE', 'bool', title: inTS1('Enable webCoRE Integration', webCore_icon()), required: false, defaultValue: false, submitOnChange: true
+            input 'enableWebCoRE', sBOOL, title: inTS1('Enable webCoRE Integration', webCore_icon()), required: false, defaultValue: false, submitOnChange: true
             if (settings.enableWebCoRE) {
                 if (!webCoREFLD) { webCoRE_init() }
                 paragraph spanSmBldBr('What are these for?', sCLRGRY) + spanSm("Creats a virtual device for selected pistons in HomeKit.<br> ${sBULLET} These are very useful for use in Home Kit scenes", sCLRGRY)
                 def pistons = webCoRE_list('name')
-                input 'pistonList', 'enum', title: inTS1('Create Devices for these Pistons', webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
+                input 'pistonList', sENUM, title: inTS1('Create Devices for these Pistons', webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
             } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
         }
         inputDupeValidation()
@@ -340,14 +339,14 @@ def deviceSelectPage() {
 def settingsPage() {
     return dynamicPage(name: 'settingsPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('Logging:')) {
-            input 'showCmdLogs', 'bool', title: inTS1('Show Command Events?', 'debug'), required: false, defaultValue: true, submitOnChange: true
-            input 'showEventLogs', 'bool', title: inTS1('Show Device/Location Events? (Turns Off After 2 hours)', 'debug'), required: false, defaultValue: true, submitOnChange: true
-            input 'showDebugLogs', 'bool', title: inTS1('Show Detailed Logging? (Turns Off After 2 hours)', 'debug'), required: false, defaultValue: false, submitOnChange: true
+            input 'showCmdLogs', sBOOL, title: inTS1('Show Command Events?', 'debug'), required: false, defaultValue: true, submitOnChange: true
+            input 'showEventLogs', sBOOL, title: inTS1('Show Device/Location Events? (Turns Off After 2 hours)', 'debug'), required: false, defaultValue: true, submitOnChange: true
+            input 'showDebugLogs', sBOOL, title: inTS1('Show Detailed Logging? (Turns Off After 2 hours)', 'debug'), required: false, defaultValue: false, submitOnChange: true
         }
         section(sectHead('Security:')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This will allow you to clear you existing app accessToken and force a new one to be created.<br>You will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit', sCLRGRY)
-            input 'resetAppToken', 'bool', title: inTS1('Revoke and Recreate App Access Token?', 'reset'), defaultValue: false, submitOnChange: true
-            if ((Boolean)settings.resetAppToken) { settingUpdate('resetAppToken', 'false', 'bool'); resetAppToken() }
+            input 'resetAppToken', sBOOL, title: inTS1('Revoke and Recreate App Access Token?', 'reset'), defaultValue: false, submitOnChange: true
+            if ((Boolean)settings.resetAppToken) { settingUpdate('resetAppToken', sFALSE, sBOOL); resetAppToken() }
         }
     }
 }
@@ -509,7 +508,7 @@ private static String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
 def capFilterPage() {
     return dynamicPage(name: 'capFilterPage', title: 'Capability Filtering', install: false, uninstall: false) {
         section(sectHead('Restrict Temp Device Creation')) {
-            input 'noTemp', 'bool', title: inTS1('Remove Temperature from All Contacts and Water Sensors?', 'temperature'), required: false, defaultValue: false, submitOnChange: true
+            input 'noTemp', sBOOL, title: inTS1('Remove Temperature from All Contacts and Water Sensors?', 'temperature'), required: false, defaultValue: false, submitOnChange: true
             if (settings.noTemp) {
                 input 'sensorAllowTemp', 'capability.sensor', title: inTS1('Allow Temps on these sensors', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             }
@@ -539,8 +538,8 @@ def capFilterPage() {
             input 'removeWater', 'capability.waterSensor', title: inTS1('Remove Water from these Devices', 'water'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
         section(sectHead('Reset Selected Filters:'), hideable: true, hidden: true) {
-            input 'resetCapFilters', 'bool', title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
-            if (settings.resetCapFilters) { settingUpdate('resetCapFilters', 'false', 'bool'); resetCapFilters() }
+            input 'resetCapFilters', sBOOL, title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
+            if (settings.resetCapFilters) { settingUpdate('resetCapFilters', sFALSE, sBOOL); resetCapFilters() }
         }
     }
 }
@@ -555,7 +554,7 @@ def donationPage() {
             str += spanSmBr('If you are just not interested in donating please ignore this message')
             str += spanSm('Thanks again for using Homebridge Hubitat')
             paragraph divSm(str, sCLRRED)
-            input 'sentDonation', 'bool', title: inTS1('Already Donated?'), defaultValue: false, submitOnChange: true
+            input 'sentDonation', sBOOL, title: inTS1('Already Donated?'), defaultValue: false, submitOnChange: true
             href url: textDonateLink(), style: 'external', required: false, title: inTS1('Donations', 'donations'), description: inputFooter('Tap to open in browser', sCLRGRY, true)
         }
         updInstData('shownDonation', true)
@@ -770,9 +769,9 @@ private void healthCheck(Boolean ui=false) {
     // log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if (!ui && lastUpd > 14400) { remTsVal(sSVR) }
 
-    if (evtLogSec > 60*60*2 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', 'false', 'bool') }
+    if (evtLogSec > 60*60*2 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', sFALSE, sBOOL) }
     else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
-    if (dbgLogSec > 60*60*2 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', 'false', 'bool') }
+    if (dbgLogSec > 60*60*2 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', sFALSE, sBOOL) }
     else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
 }
 
@@ -1285,7 +1284,7 @@ void registerDevices() {
     if ((Boolean) settings.restartService) {
         logWarn('Sent Request to Homebridge Service to restart...')
         attemptServiceRestart()
-        settingUpdate('restartService', 'false', 'bool')
+        settingUpdate('restartService', sFALSE, sBOOL)
     }
     runIn(5, 'updateServicePrefs')
     runIn(8, 'sendDeviceRefreshCmd')
@@ -1340,7 +1339,7 @@ def changeHandler(evt) {
     def value = evt?.value
     Date dt = (Date)evt.date
     Boolean sendEvt = true
-    Boolean evtLog = (getTsVal(sEVT) == sTRU)
+    Boolean evtLog = (getTsVal(sEVT) == sTRUE)
 
     // if(evt.name.startsWith('hsm')) {
     //     log.debug "${evt.name}: [evtSource: ${src}, evtDeviceName: ${deviceName}, evtDeviceId: ${deviceid}, evtAttr: ${attr}, evtValue: ${value}, evtUnit: ${evt?.unit ?: sBLANK}, evtDate: ${dt}]"
@@ -1476,7 +1475,7 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
 }
 
 void asyncHttpCmdResp(response, data) {
-    if (getTsVal(sDBG) == sTRU && (Boolean)data?.evtLog) {
+    if (getTsVal(sDBG) == sTRUE && (Boolean)data?.evtLog) {
         def resp = response?.getData() // || null
         String src = data?.src ? (String)data.src : 'Unknown'
         logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
