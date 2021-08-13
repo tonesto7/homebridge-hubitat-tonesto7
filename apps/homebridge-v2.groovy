@@ -5,8 +5,15 @@
  *  Copyright 2018, 2019, 2020, 2021 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
+//file:noinspection GroovySillyAssignment
+//file:noinspection GroovyUnusedAssignment
 
+
+import groovy.json.JsonOutput
 import groovy.transform.Field
+
+import java.text.SimpleDateFormat
+import java.util.concurrent.Semaphore
 
 definition(
     name: 'Homebridge v2',
@@ -37,7 +44,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '2.5.11'
-@Field static final String appModifiedFLD = '07-30-2021'
+//@Field static final String appModifiedFLD = '07-30-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -47,16 +54,16 @@ preferences {
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
 @Field static final String sBULLET        = '\u2022'
-@Field static final String sFRNFACE       = '\u2639'
-@Field static final String okSymFLD       = '\u2713'
-@Field static final String notOkSymFLD    = '\u2715'
-@Field static final String sPAUSESymFLD   = '\u275A\u275A'
+//@Field static final String sFRNFACE       = '\u2639'
+//@Field static final String okSymFLD       = '\u2713'
+//@Field static final String notOkSymFLD    = '\u2715'
+//@Field static final String sPAUSESymFLD   = '\u275A\u275A'
 @Field static final String sLINEBR        = '<br>'
-@Field static final String sFALSE         = 'false'
-@Field static final String sTRUE          = 'true'
-@Field static final String sBOOL          = 'bool'
-@Field static final String sENUM          = 'enum'
-@Field static final String sTIME          = 'time'
+//@Field static final String sFALSE         = 'false'
+//@Field static final String sTRUE          = 'true'
+//@Field static final String sBOOL          = 'bool'
+//@Field static final String sENUM          = 'enum'
+//@Field static final String sTIME          = 'time'
 @Field static final String sSVR           = 'svraddr'
 @Field static final String sCLN           = ':'
 @Field static final String sNLCLN         = 'null:null'
@@ -70,19 +77,19 @@ preferences {
 @Field static final String sAPPJSON       = 'application/json'
 @Field static final String sSUCC          = 'Success'
 @Field static final String sATK           = 'accessToken'
-@Field static final String sMEDIUM        = 'medium'
+//@Field static final String sMEDIUM        = 'medium'
 @Field static final String sSMALL         = 'small'
 @Field static final String sCLR4D9        = '#2784D9'
 @Field static final String sCLR9B1        = '#0299B1'
 @Field static final String sCLRRED        = 'red'
-@Field static final String sCLRRED2       = '#cc2d3b'
+//@Field static final String sCLRRED2       = '#cc2d3b'
 @Field static final String sCLRGRY        = 'gray'
-@Field static final String sCLRGRN        = 'green'
-@Field static final String sCLRGRN2       = '#43d843'
+//@Field static final String sCLRGRN        = 'green'
+//@Field static final String sCLRGRN2       = '#43d843'
 @Field static final String sCLRORG        = 'orange'
 @Field static final String sTTM           = 'Tap to modify...'
 @Field static final String sTTC           = 'Tap to configure...'
-@Field static final String sTTP           = 'Tap to proceed...'
+//@Field static final String sTTP           = 'Tap to proceed...'
 @Field static final String sTTV           = 'Tap to view...'
 @Field static final String sTTS           = 'Tap to select...'
 //@Field static final String sPOST = 'Post'
@@ -371,7 +378,7 @@ private String getFilterDesc() {
     String desc = ''
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (remKeys?.size()) {
-        remKeys?.sort().each { String k->
+        remKeys.sort().each { String k->
             String capName = k.replaceAll('remove', sBLANK)
             Integer capSize = settings[k]?.size()
             desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
@@ -392,10 +399,10 @@ private void inputDupeValidation() {
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
     ]
     items.d.each { String k, String v->
-        List priItems = (settings?."${k}"?.size()) ? settings?."${k}"?.collect { (String)it?.getDisplayName() } : null
+        List priItems = (settings."${k}"?.size()) ? settings."${k}"?.collect { (String)it?.getDisplayName() } : null
         if (priItems && priItems.size()) {
             items.d.each { String k2, String v2->
-                List secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String)it?.getDisplayName() } : null
+                List secItems = (settings."${k2}"?.size()) ? settings."${k2}"?.collect { (String)it?.getDisplayName() } : null
                 if (k != k2 && secItems) {
                     secItems?.retainAll(priItems)
                     if (secItems?.size()) {
@@ -406,7 +413,7 @@ private void inputDupeValidation() {
             }
 
             items.o.each { String k2, String v2->
-                def secItems = (settings?."${k2}"?.size()) ? settings?."${k2}"?.collect { (String) it?.getDisplayName() } : null
+                def secItems = (settings."${k2}"?.size()) ? settings."${k2}"?.collect { (String) it?.getDisplayName() } : null
                 if (secItems) {
                     secItems?.retainAll(priItems)
                     if (secItems?.size()) {
@@ -487,12 +494,12 @@ def historyPage() {
     }
 }
 
-private String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
+private static String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
     String str = sBLANK
     if (tabList?.size()) {
         str += "<table style='border: 1px solid ${color};border-collapse: collapse;'>"
         tabList.each { it->
-            str += "<tr style='border: 1px solid ${color};'><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBld(it.name)}</td><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBr("${it.val}")}</td></tr>"
+            str += "<tr style='border: 1px solid ${color};'><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBld((String)it.name)}</td><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBr("${it.val}")}</td></tr>"
         }
         str += '</table>'
     }
@@ -503,7 +510,7 @@ def capFilterPage() {
     return dynamicPage(name: 'capFilterPage', title: 'Capability Filtering', install: false, uninstall: false) {
         section(sectHead('Restrict Temp Device Creation')) {
             input 'noTemp', 'bool', title: inTS1('Remove Temperature from All Contacts and Water Sensors?', 'temperature'), required: false, defaultValue: false, submitOnChange: true
-            if (settings?.noTemp) {
+            if (settings.noTemp) {
                 input 'sensorAllowTemp', 'capability.sensor', title: inTS1('Allow Temps on these sensors', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             }
         }
@@ -533,7 +540,7 @@ def capFilterPage() {
         }
         section(sectHead('Reset Selected Filters:'), hideable: true, hidden: true) {
             input 'resetCapFilters', 'bool', title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
-            if (settings?.resetCapFilters) { settingUpdate('resetCapFilters', 'false', 'bool'); resetCapFilters(); }
+            if (settings.resetCapFilters) { settingUpdate('resetCapFilters', 'false', 'bool'); resetCapFilters() }
         }
     }
 }
@@ -617,8 +624,8 @@ def viewDeviceDebug() {
     if (debug_switch) { sDev = debug_switch }
     if (debug_garage) { sDev = debug_garage }
     if (debug_tstat)  { sDev = debug_tstat  }
-    String json = new groovy.json.JsonOutput().toJson(getDeviceDebugMap(sDev))
-    String jsonStr = new groovy.json.JsonOutput().prettyPrint(json)
+    String json = new JsonOutput().toJson(getDeviceDebugMap(sDev))
+    String jsonStr = new JsonOutput().prettyPrint(json)
     return jsonStr
 }
 
@@ -714,7 +721,7 @@ Boolean getAccessToken(Boolean disableRetry=false) {
             return getAccessToken(true)
         } else {
             String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under in the HE console 'Apps Code'"
-            logError("getAccessToken Exception: ${msg}")
+            logError("getAccessToken Exception: ${msg}",ex)
             return false
         }
     }
@@ -763,9 +770,9 @@ private void healthCheck(Boolean ui=false) {
     // log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if (!ui && lastUpd > 14400) { remTsVal(sSVR) }
 
-    if (evtLogSec > 60*60*2 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', 'false', 'bool'); }
+    if (evtLogSec > 60*60*2 && (Boolean) settings.showEventLogs) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', 'false', 'bool') }
     else if (evtLogSec == 0 && (Boolean) settings.showEventLogs) { updTsVal(sEVTLOGEN) }
-    if (dbgLogSec > 60*60*2 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', 'false', 'bool'); }
+    if (dbgLogSec > 60*60*2 && (Boolean) settings.showDebugLogs) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', 'false', 'bool') }
     else if (dbgLogSec == 0 && (Boolean) settings.showDebugLogs) { updTsVal(sDBGLOGEN) }
 }
 
@@ -798,7 +805,7 @@ private void appCleanup() {
     }
     removeItems.each { String it -> if (state?.containsKey(it)) state.remove(it) }
     List<String> removeSettings = ['removeColorTemp']
-    removeSettings.each { String it -> if (settings?.containsKey(it)) settingRemove(it) }
+    removeSettings.each { String it -> if (settings.containsKey(it)) settingRemove(it) }
 }
 
 private List renderDevices() {
@@ -826,14 +833,14 @@ private List renderDevices() {
 
 private Map getDeviceData(String type, sItem) {
     // log.debug "getDeviceData($type, $sItem)"
-    String curType = sNULL
+    String curType //= sNULL
     String devId = sItem
     Boolean isVirtual = false
     String firmware = sNULL
     String name = sNULL
     Map optFlags = [:]
     def attrVal = null
-    def obj = null
+    def obj //= null
     switch (type) {
         case 'pistonList':
             isVirtual = true
@@ -861,7 +868,7 @@ private Map getDeviceData(String type, sItem) {
             // Define firmware variable and initialize it out of device handler attribute`
             try {
                 if (sItem?.hasAttribute('firmware')) { firmware = sItem?.currentValue('firmware')?.toString() }
-            } catch (ex) { firmware = sNULL }
+            } catch (ignored) { firmware = sNULL }
             break
     }
     if (curType && obj) {
@@ -919,7 +926,7 @@ Map getDeviceFlags(device) {
 def findDevice(dev_id) {
     List allDevs = []
     deviceSettingKeys().collect { (String)it.key }?.each { String key->
-        def setVal = settings?."${key}"
+        def setVal = settings."${key}"
         allDevs = allDevs + (setVal ?: [])
     }
     def aa = allDevs.find { it.id == dev_id }
@@ -955,11 +962,13 @@ String getSecurityStatus(Boolean retInt=false) {
             case 'intrusion-night':
                 return 4
         }
-    } else { return cur ?: 'disarmed' }
+    //} else { return cur ?: 'disarmed' }
+    }
+    return cur ?: 'disarmed'
 }
 
 void setAlarmSystemMode(String mode) {
-    String nMode = sNULL
+    String nMode //= sNULL
     switch (mode) {
         case 'armAway':
         case 'away':
@@ -1008,8 +1017,8 @@ String renderConfig() {
             showChanges: true
         ]
     ]
-    String cj = new groovy.json.JsonOutput().toJson(jsonMap)
-    String cs = new groovy.json.JsonOutput().prettyPrint(cj)
+    String cj = new JsonOutput().toJson(jsonMap)
+    String cs = new JsonOutput().prettyPrint(cj)
     return cs
 }
 
@@ -1028,7 +1037,7 @@ Map renderLocation() {
 }
 
 def CommandReply(Boolean shw, String statusOut, String messageOut, Integer code) {
-    String replyJson = new groovy.json.JsonOutput().toJson([status: statusOut, message: messageOut])
+    String replyJson = new JsonOutput().toJson([status: statusOut, message: messageOut])
     if (shw) { logInfo(messageOut) }
     render contentType: sAPPJSON, data: replyJson, code: code
 }
@@ -1046,7 +1055,7 @@ def deviceCommand() {
     // log.info("Command Request: $params")
     def val1 = request?.JSON?.value1 ?: null
     def val2 = request?.JSON?.value2 ?: null
-    return processCmd(params?.id, params?.command, val1, val2)
+    return processCmd(params?.id, (String)params?.command, val1, val2)
 }
 
 private processCmd(devId, String cmd, value1, value2) {
@@ -1151,7 +1160,7 @@ def findVirtModeDevice(id) {
     return aa ?: null
 }
 
-Map findVirtPistonDevice(id) {
+static Map findVirtPistonDevice(id) {
     Map aa = getPistonById(id)
     return aa ?: null
 }
@@ -1160,13 +1169,13 @@ Map deviceCapabilityList(device) {
     if (!device || !device.getId()) { return [:] }
     Map<String,Integer> capItems = device.capabilities?.findAll { !((String)it.name in ignoreListFLD.capabilities) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
 
-    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1; }
+    if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1 }
     else { capItems.remove("PushableButton") }
 
-    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1; }
+    if(isDeviceInInput("holdableButtonList", device.id)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1 }
     else { capItems.remove("HoldableButton") }
 
-    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1; }
+    if(isDeviceInInput("doubleTapableButtonList", device.id)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1 }
     else { capItems.remove("DoubleTapableButton") }
     
     if (isDeviceInInput('lightList', device.id)) { capItems['LightBulb'] = 1 }
@@ -1176,9 +1185,9 @@ Map deviceCapabilityList(device) {
     if (isDeviceInInput('speakerList', device.id)) { capItems['Speaker'] = 1 }
     if (isDeviceInInput('shadesList', device.id)) { capItems['WindowShade'] = 1 }
     if (isDeviceInInput('garageList', device.id)) { capItems['GarageDoorControl'] = 1 }
-    if (isDeviceInInput('tstatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode'); }
-    if (isDeviceInInput('tstatFanList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; }
-    if (isDeviceInInput('tstatHeatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint'); }
+    if (isDeviceInInput('tstatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode') }
+    if (isDeviceInInput('tstatFanList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
+    if (isDeviceInInput('tstatHeatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
 
     if (settings.noTemp && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
         Boolean remTemp = true
@@ -1230,7 +1239,7 @@ Map deviceAttributeList(device) {
     Map atts = device.supportedAttributes?.findAll { !((String) it.name in ignoreListFLD.attributes) }?.collectEntries { attribute->
         try {
             [((String) attribute.name): device.currentValue((String) attribute.name)]
-        } catch (e) {
+        } catch (ignored) {
             [((String) attribute.name): null]
         }
 }
@@ -1243,7 +1252,7 @@ Map deviceAttributeList(device) {
 def getAllData() {
     logTrace('Plugin called to Renew subscriptions')
     //    state.subscriptionRenewed = now()
-    String deviceJson = new groovy.json.JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
+    String deviceJson = new JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
     updTsVal('lastDeviceDataQueryDt')
     render contentType: sAPPJSON, data: deviceJson
 }
@@ -1266,8 +1275,8 @@ void registerDevices() {
         'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'garageList': 'Garage Door Devices',
         'tstatList': 'Thermostat Devices', 'tstatFanList': 'Thermostat + Fan Devices', 'tstatHeatList': 'Thermostat (HeatOnly) Devices'
     ]?.each { String k, String v->
-        logDebug("Subscribed to (${settings?."${k}"?.size() ?: 0}) ${v}")
-        registerChangeHandler(settings?."${k}")
+        logDebug("Subscribed to (${settings."${k}"?.size() ?: 0}) ${v}")
+        registerChangeHandler(settings."${k}")
     }
 
     logInfo("Subscribed to (${getDeviceCnt(true)} Physical Devices)")
@@ -1345,9 +1354,9 @@ def changeHandler(evt) {
         case 'hsmAlert':
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = 'alarmSystemStatus'
-            if (evt?.value.startsWith('intrusion')) {
+            if (value?.toString()?.startsWith('intrusion')) {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: evt.value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
-            } else if (evt?.value.toString() == 'cancel') { 
+            } else if (value?.toString() == 'cancel') {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else { sendEvt = false }
             break
@@ -1360,7 +1369,7 @@ def changeHandler(evt) {
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             break
         case 'mode':
-            settings?.modeList?.each { id->
+            ((List<String>)settings.modeList)?.each { id->
                 def md = getModeById(id)
                 if (md && md.id) { sendItems?.push([evtSource: 'MODE', evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: 'switch', evtValue: modeSwitchState((String)md.name), evtUnit: sBLANK, evtDate: dt]) }
             }
@@ -1369,11 +1378,11 @@ def changeHandler(evt) {
             if (settings.enableWebCoRE) {
                 sendEvt = false
                 if ((String)evt.value == 'pistonList') {
-                    List p = webCoREFLD?.pistons ?: []
+                    List p = (List)webCoREFLD?.pistons ?: []
                     Map d = evt.jsonData ?: [:]
                     if (d.id && d.pistons && (d.pistons instanceof List)) {
-                        p.removeAll { it.iid == d.id };
-                        p += d.pistons.collect { [iid:d.id] + it }.sort { it.name };
+                        p.removeAll { it.iid == d.id }
+                        p += d.pistons.collect { [iid:d.id] + it }.sort { it.name }
                         def a = webCoREFLD?.cbk
                         webCoREFLD = [cbk: a, updated: now(), pistons: p]
                         updTsVal(sLASTWU)
@@ -1382,7 +1391,7 @@ def changeHandler(evt) {
                     if (evtLog) { logDebug("got webCoRE piston list event $webCoREFLD") }
                     break
                 } else if ((String)evt.value == 'pistonExecuted') {
-                    settings?.pistonList?.each { id->
+                    ((List<String>)settings.pistonList)?.each { id->
                         Map rt = getPistonById(id)
                         if (rt && rt.id) {
                             sendEvt = true
@@ -1457,7 +1466,7 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
         if (server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
     }
     Map params = [
-        uri: (devMode() && (Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings?.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${server}/${path}".toString(),
+        uri: (devMode() && (Boolean)settings.sendViaNgrok && (String)settings.ngrokHttpUrl) ? "https://${settings.ngrokHttpUrl}.ngrok.io/${path}".toString() : "http://${server}/${path}".toString(),
         requestContentType: contentType,
         contentType: contentType,
         body: body,
@@ -1496,7 +1505,7 @@ def getModeByName(String name) {
     return location?.getModes()?.find { it?.name?.toString() == name }
 }
 
-@Field volatile static Map<String,Map> webCoREFLD = [:]
+@Field volatile static Map<String,Object> webCoREFLD = [:]
 
 private static String webCoRE_handle() { return 'webCoRE' }
 
@@ -1523,16 +1532,16 @@ private void webCoRE_poll(Boolean now = false) {
     }
 }
 
-public List webCoRE_list(String mode) {
-    return (List)webCoREFLD?.pistons?.sort { it?.name }?.collect { [(it?.id): it?.aname?.replaceAll('<[^>]*>', sBLANK)] }
+public static List webCoRE_list(String mode) {
+    return (List<Map>)webCoREFLD?.pistons?.sort { it?.name }?.collect { [(it?.id): it?.aname?.replaceAll('<[^>]*>', sBLANK)] }
 }
 
-Map getPistonById(String rId) {
-    return webCoREFLD?.pistons?.find { it?.id == rId }
+static Map getPistonById(String rId) {
+    return ((List<Map>)webCoREFLD?.pistons)?.find { it?.id == rId }
 }
 
-Map getPistonByName(String name) {
-    return webCoREFLD?.pistons?.find { it?.name == name }
+static Map getPistonByName(String name) {
+    return ((List<Map>)webCoREFLD?.pistons)?.find { it?.name == name }
 }
 
 void settingUpdate(String name, String value, String type=sNULL) {
@@ -1542,7 +1551,7 @@ void settingUpdate(String name, String value, String type=sNULL) {
 
 void settingRemove(String name) {
     // logTrace("settingRemove($name)...")
-    if (name && settings?.containsKey(name)) { app.removeSetting(name) }
+    if (name && settings.containsKey(name)) { app.removeSetting(name) }
 }
 
 static Boolean devMode() {
@@ -1589,7 +1598,7 @@ def pluginStatus() {
     def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if (body?.version) { updCodeVerMap('plugin', (String)body?.version) }
-    def resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
+    def resultJson = new JsonOutput().toJson([status: 'OK'])
     render contentType: sAPPJSON, data: resultJson
 }
 
@@ -1605,7 +1614,7 @@ def enableDirectUpdates() {
     updCodeVerMap('plugin', (String)params?.version ?: sNULL)
     activateDirectUpdates()
     updTsVal('lastDirectUpdsEnabled')
-    String resultJson = new groovy.json.JsonOutput().toJson([status: 'OK'])
+    String resultJson = new JsonOutput().toJson([status: 'OK'])
     render contentType: sAPPJSON, data: resultJson
 }
 
@@ -1624,7 +1633,7 @@ def appInfoSect() {
     Boolean isNote = false
     String tStr = spanSmBld('Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
     tStr += state?.pluginDetails?.version ? spanSmBld('Plugin:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
-    section (sectH3TS(app?.name, tStr, getAppImg('hb_tonesto7'), 'orange')) {
+    section (sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), 'orange')) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
         if ((Boolean)minUpdMap?.updRequired && ((List)minUpdMap.updItems).size() > 0) {
@@ -1655,29 +1664,29 @@ static String getPublicImg(String imgName) { return "https://raw.githubuserconte
 static String sectH3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold'>${i ? "<img src='${i}' width='48'> " : sBLANK} ${t?.replaceAll("\\n", '<br>')}</h3>${st ?: sBLANK}" }
 static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='48'> " : sBLANK}${t?.replaceAll("\\n", '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}".toString() }
 static String sectHead(String str, String img = sNULL) { return str ? "<h3 style='margin-top:0;margin-bottom:0;'>" + spanImgStr(img) + span(str, sCLR4D9, sNULL, true) + '</h3>' + "<hr style='background-color:${sCLRGRY};font-style:italic;height:1px;border:0;margin-top:0;margin-bottom:0;'>" : sBLANK }
-static String sTS(String t, String i = sNULL, Boolean bold=false) { return "<h3>${i ? "<img src='${i}' width='42'> " : sBLANK} ${bold ? '<b>' : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}</h3>" }
-static String s3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold;'>${i ? "<img src='${i}' width='42'> " : sBLANK} ${t?.replaceAll('\n', '<br>')}</h3>${st ? "${st}" : sBLANK}" }
-static String pTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='42'> " : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}" }
+//static String sTS(String t, String i = sNULL, Boolean bold=false) { return "<h3>${i ? "<img src='${i}' width='42'> " : sBLANK} ${bold ? '<b>' : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}</h3>" }
+//static String s3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold;'>${i ? "<img src='${i}' width='42'> " : sBLANK} ${t?.replaceAll('\n', '<br>')}</h3>${st ? "${st}" : sBLANK}" }
+//static String pTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='42'> " : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}" }
 
 static String inTS1(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return spanSmBldUnd(str, clr, img) }
-static String inTS(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return divSm(strUnder(str?.replaceAll('\n', sSPACE).replaceAll('<br>', sSPACE), und), clr, img) }
+//static String inTS(String str, String img = sNULL, String clr=sNULL, Boolean und=true) { return divSm(strUnder(str?.replaceAll('\n', sSPACE).replaceAll('<br>', sSPACE), und), clr, img) }
 
 // Root HTML Objects
 static String span(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<span ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? 'font-weight: bold;' : sBLANK}'" : sBLANK}>${str}</span>${br ? sLINEBR : sBLANK}" : sBLANK }
 static String div(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<div ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? 'font-weight: bold;' : sBLANK}'" : sBLANK}>${str}</div>${br ? sLINEBR : sBLANK}" : sBLANK }
 static String spanImgStr(String img=sNULL) { return img ? span("<img src='${(!img.startsWith('http://') && !img.startsWith('https://')) ? getAppImg(img) : img}' width='42'> ") : sBLANK }
-static String divImgStr(String str, String img=sNULL) { return ((str) ? div(img ? spanImg(img) + span(str) : str) : sBLANK) }
+//static String divImgStr(String str, String img=sNULL) { return ((str) ? div(img ? spanImg(img) + span(str) : str) : sBLANK) }
 static String strUnder(String str, Boolean showUnd=true) { return str ? (showUnd ? "<u>${str}</u>" : str) : sBLANK }
-static String getOkOrNotSymHTML(Boolean ok) { return ok ? span("(${okSymFLD})", sCLRGRN2) : span("(${notOkSymFLD})", sCLRRED2) }
+//static String getOkOrNotSymHTML(Boolean ok) { return ok ? span("(${okSymFLD})", sCLRGRN2) : span("(${notOkSymFLD})", sCLRRED2) }
 static String htmlLine(String color=sCLR4D9, Integer width = null) { return "<hr style='background-color:${color};height:1px;border:0;margin-top:0;margin-bottom:0;${width ? "width: ${width}px;" : sBLANK}'>" }
 static String lineBr(Boolean show=true) { return show ? sLINEBR : sBLANK }
 static String inputFooter(String str, String clr=sCLR4D9, Boolean noBr=false) { return str ? lineBr(!noBr) + divSmBld(str, clr) : sBLANK }
-static String inactFoot(String str) { return str ? inputFooter(str, sCLRGRY, true) : sBLANK }
-static String actFoot(String str) { return str ? inputFooter(str, sCLR4D9, false) : sBLANK }
-static String optPrefix() { return spanSm(' (Optional)', 'violet') }
+//static String inactFoot(String str) { return str ? inputFooter(str, sCLRGRY, true) : sBLANK }
+//static String actFoot(String str) { return str ? inputFooter(str, sCLR4D9, false) : sBLANK }
+//static String optPrefix() { return spanSm(' (Optional)', 'violet') }
 
 // Custom versions of the root objects above
-static String spanBld(String str, String clr=sNULL, String img=sNULL)      { return str ? spanImgStr(img) + span(str, clr, sNULL, true)            : sBLANK }
+//static String spanBld(String str, String clr=sNULL, String img=sNULL)      { return str ? spanImgStr(img) + span(str, clr, sNULL, true)            : sBLANK }
 static String spanBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sNULL, true, true)      : sBLANK }
 static String spanBr(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sNULL, false, true)     : sBLANK }
 static String spanSm(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sSMALL)                 : sBLANK }
@@ -1685,18 +1694,18 @@ static String spanSmBr(String str, String clr=sNULL, String img=sNULL)     { ret
 static String spanSmBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sSMALL, true)           : sBLANK }
 static String spanSmBldUnd(String str, String clr=sNULL, String img=sNULL) { return str ? spanImgStr(img) + span(strUnder(str), clr, sSMALL, true) : sBLANK }
 static String spanSmBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sSMALL, true, true)     : sBLANK }
-static String spanMd(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sMEDIUM)                : sBLANK }
-static String spanMdBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, false, true)   : sBLANK }
-static String spanMdBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true)          : sBLANK }
-static String spanMdBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true, true)    : sBLANK }
+//static String spanMd(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sMEDIUM)                : sBLANK }
+//static String spanMdBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, false, true)   : sBLANK }
+//static String spanMdBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true)          : sBLANK }
+//static String spanMdBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true, true)    : sBLANK }
 
-static String divBld(String str, String clr=sNULL, String img=sNULL)        { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, false)   : sBLANK }
-static String divBldBr(String str, String clr=sNULL, String img=sNULL)      { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, true)    : sBLANK }
-static String divBr(String str, String clr=sNULL, String img=sNULL)         { return str ? div(spanImgStr(img) + span(str), clr, sNULL, false, true)   : sBLANK }
+//static String divBld(String str, String clr=sNULL, String img=sNULL)        { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, false)   : sBLANK }
+//static String divBldBr(String str, String clr=sNULL, String img=sNULL)      { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, true)    : sBLANK }
+//static String divBr(String str, String clr=sNULL, String img=sNULL)         { return str ? div(spanImgStr(img) + span(str), clr, sNULL, false, true)   : sBLANK }
 static String divSm(String str, String clr=sNULL, String img=sNULL)         { return str ? div(spanImgStr(img) + span(str), clr, sSMALL)              : sBLANK }
-static String divSmBr(String str, String clr=sNULL, String img=sNULL)       { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, false, true) : sBLANK }
+//static String divSmBr(String str, String clr=sNULL, String img=sNULL)       { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, false, true) : sBLANK }
 static String divSmBld(String str, String clr=sNULL, String img=sNULL)      { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, true)        : sBLANK }
-static String divSmBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, true, true)  : sBLANK }
+//static String divSmBldBr(String str, String clr=sNULL, String img=sNULL)    { return str ? div(spanImgStr(img) + span(str), clr, sSMALL, true, true)  : sBLANK }
 
 def appFooter() {
     section() {
@@ -1840,7 +1849,7 @@ private getWebData(Map params, String desc, Boolean text=true) {
         httpGet(params) { resp ->
             if (resp?.status != 200) { logWarn("${resp?.status} $params") }
             if (resp?.data) {
-                if (text) { return resp?.data.text.toString() }
+                if (text) { return resp.data.text?.toString() }
                 return resp.data
             }
         }
@@ -1856,7 +1865,7 @@ private getWebData(Map params, String desc, Boolean text=true) {
 |       DATE | TIME HELPERS
 ******************************************/
 String formatDt(Date dt, Boolean tzChg=true) {
-    def tf = new java.text.SimpleDateFormat('E MMM dd HH:mm:ss z yyyy')
+    def tf = new SimpleDateFormat('E MMM dd HH:mm:ss z yyyy')
     if (tzChg && location.timeZone) { tf.setTimeZone(location?.timeZone) }
     return tf?.format(dt)
 }
@@ -2018,7 +2027,7 @@ private List getMemStoreItem(String key) {
 }
 
 // Memory Barrier
-@Field static java.util.concurrent.Semaphore theMBLockFLD = new java.util.concurrent.Semaphore(0)
+@Field static Semaphore theMBLockFLD = new Semaphore(0)
 
 static void mb(String meth=sNULL) {
     if ((Boolean)theMBLockFLD.tryAcquire()) {
@@ -2027,7 +2036,7 @@ static void mb(String meth=sNULL) {
 }
 
 @Field static final String sHMLF = 'theHistMapLockFLD'
-@Field static java.util.concurrent.Semaphore histMapLockFLD = new java.util.concurrent.Semaphore(1)
+@Field static Semaphore histMapLockFLD = new Semaphore(1)
 
 private Integer getSemaNum(String name) {
     if (name == sHMLF) return 0
@@ -2040,7 +2049,7 @@ private Integer getSemaNum(String name) {
 // log.info "sema $name # $sema"
 }
 
-java.util.concurrent.Semaphore getSema(Integer snum) {
+Semaphore getSema(Integer snum) {
     switch (snum) {
         case 0:
             return histMapLockFLD
