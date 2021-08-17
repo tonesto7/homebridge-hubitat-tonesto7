@@ -46,7 +46,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '2.5.11'
-//@Field static final String appModifiedFLD = '08-13-2021'
+//@Field static final String appModifiedFLD = '08-17-2021'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -324,7 +324,7 @@ def deviceSelectPage() {
         }
 
         section(sectHead('Create Devices for Modes in HomeKit?')) {
-            paragraph spanSmBldBr('What are these for?', sCLRGRY) + spanSm("Creats a virtual device for selected modes in HomeKit.<br> ${sBULLET} The switch will be ON when that mode is active.", sCLRGRY)
+            paragraph spanSmBldBr('What are these for?', sCLRGRY) + spanSm("Creates a virtual device for selected modes in HomeKit.<br> ${sBULLET} The switch will be ON when that mode is active.", sCLRGRY)
             List modes = ((List)location?.getModes())?.sort { it?.name }?.collect { [(it?.id):it?.name] }
             input 'modeList', sENUM, title: inTS1('Create Devices for these Modes', 'mode'), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: modes, submitOnChange: true
         }
@@ -671,14 +671,17 @@ private Map getDeviceDebugMap(dev) {
 
 private Integer getDeviceCnt(Boolean phyOnly=false) {
     List devices = []
-    List items = deviceSettingKeys().collect { (String) it.key }
-    items?.each { String item -> if (settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "device_${it.getId()}" } }
+    List items = deviceSettingKeys().collect { (String)it.key }
+    items?.each { String item -> if (settings[item]?.size() > 0) devices = devices + settings[item].collect { (String)"device_${it.getId()}" } }
     if (!phyOnly) {
         ['modeList', 'pistonList'].each { String item->
-            if (settings[item]?.size() > 0) devices = devices + settings[item].collect { (String) "${item.toString().replaceAll('List', sBLANK)}_${it}" }
+            if (settings[item]?.size() > 0) {
+                String aa = item.replaceAll('List', sBLANK)
+                devices = devices + settings[item].collect { "${aa}_${it}".toString() }
+            }
         }
     }
-    Integer dSize = devices?.unique()?.size()
+    Integer dSize = devices.unique()?.size()
     dSize = dSize != null ? dSize : 0
     if ((Boolean)settings.addSecurityDevice) { dSize = dSize + 1 }
     return dSize
@@ -754,8 +757,8 @@ void subscribeToEvts() {
         subscribe(location, 'hsmStatus', changeHandler)
         subscribe(location, 'hsmAlert', changeHandler)
     }
-    if (settings.modeList) {
-        logInfo("Subscribed to (${settings.modeList.size() ?: 0} Location Modes)")
+    if ((List)settings.modeList) {
+        logInfo("Subscribed to (${((List)settings.modeList).size() ?: 0} Location Modes)")
         subscribe(location, 'mode', changeHandler)
     }
     if ((Boolean)settings.enableWebCoRE) { webCoRE_init() }
@@ -824,7 +827,7 @@ private List renderDevices() {
                 try {
                     Map devObj = getDeviceData(item, dev)
                     devObj = devObj != null ? devObj : [:]
-                    if (devObj.size() > 0) { devMap[(String) devObj.deviceid] = devObj }
+                    if (devObj.size() > 0) { devMap[(String)devObj.deviceid] = devObj }
                 } catch (ex) {
                     logError("Setting key $item Device (${dev?.displayName}) | Render Exception: ${ex.message}", ex)
                 }
@@ -832,14 +835,14 @@ private List renderDevices() {
         }
     }
     if ((Boolean)settings.addSecurityDevice) { devList?.push(getSecurityDevice()) }
-    if (devMap.size() > 0) { devMap.sort { it.value.name }?.each { k, v-> devList.push(v) } }
+    if (devMap.size() > 0) { devMap.sort { (String)it.value.name }?.each { k, v-> devList.push(v) } }
     return devList
 }
 
 private Map getDeviceData(String type, sItem) {
     // log.debug "getDeviceData($type, $sItem)"
     String curType //= sNULL
-    String devId = sItem
+    String devId //= sItem.toString()
     Boolean isVirtual = false
     String firmware = sNULL
     String name = sNULL
@@ -851,6 +854,7 @@ private Map getDeviceData(String type, sItem) {
             isVirtual = true
             curType = 'Piston'
             optFlags['virtual_piston'] = 1
+            devId = sItem.toString()
             obj = getPistonById(sItem)
             if (obj) {
                 name = 'Piston - ' + obj?.name
@@ -863,6 +867,8 @@ private Map getDeviceData(String type, sItem) {
             optFlags['virtual_mode'] = 1
             obj = getModeById(sItem)
             if (obj) {
+// BUGFIX for modes deviceId may not be unique vs. device.id
+                devId = 'm_'+sItem.toString()
                 name = 'Mode - ' + (String)obj.name
                 attrVal = modeSwitchState((String)obj.name)
             }
@@ -883,11 +889,11 @@ private Map getDeviceData(String type, sItem) {
             deviceid: !isVirtual ? sItem?.id : devId,
             status: !isVirtual ? sItem?.status : 'Online',
             manufacturerName: (!isVirtual ? sItem?.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
-            modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : "${curType} Device",
-            serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : "${curType}${devId}",
+            modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : curType+" Device",
+            serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : curType+devId,
             firmwareVersion: firmware ?: '1.0.0',
             lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : now(),
-            capabilities: !isVirtual ? deviceCapabilityList(sItem) : [("${curType}".toString()) : 1],
+            capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
             commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
             deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
             attributes: !isVirtual ? deviceAttributeList(sItem) : [(sSW): attrVal]
@@ -1075,18 +1081,22 @@ private processCmd(devId, String cmd, value1, value2) {
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
-    }  else if (command == 'mode' &&  settings.modeList) {
+
+    }  else if (command == 'mode' &&  (List)settings.modeList) {
         if (shw) { logDebug("Virtual Mode Received: ${devId}") }
-        changeMode(devId, shw)
+        String mdevId = devId.replaceAll('m_', sBLANK)
+        changeMode(mdevId, shw)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: 'Mode Device', value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Mode Device | Command: [$command] | Process Time: (${pt}ms)", 200)
-    } else if (command == 'piston' && settings.pistonList) {
+
+    } else if (command == 'piston' && (List)settings.pistonList) {
         if (shw) { logDebug("Virtual Piston Received: ${devId}") }
         String aa = runPiston(devId, shw)
         Long pt = execDt ? (now() - execDt) : 0L
         logCmd([cmd: command, device: 'Piston Device', value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Piston | ${aa} | Command: [$command] | Process Time: (${pt}ms)", 200)
+
     } else {
         def device = findDevice(devId)
         String devN = device?.displayName
@@ -1243,9 +1253,9 @@ Map deviceAttributeList(device) {
     if (!device || !device.getId()) { return [:] }
     Map atts = device.supportedAttributes?.findAll { !((String) it.name in ignoreListFLD.attributes) }?.collectEntries { attribute->
         try {
-            [((String) attribute.name): device.currentValue((String) attribute.name)]
+            [((String)attribute.name): device.currentValue((String) attribute.name)]
         } catch (ignored) {
-            [((String) attribute.name): null]
+            [((String)attribute.name): null]
         }
 }
     if (isDeviceInInput('tstatHeatList', device.id)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange') }
