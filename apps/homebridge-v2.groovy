@@ -1386,7 +1386,10 @@ def changeHandler(evt) {
         case 'mode':
             ((List<String>)settings.modeList)?.each { id->
                 def md = getModeById(id)
-                if (md && md.id) { sendItems?.push([evtSource: 'MODE', evtDeviceName: "Mode - ${md.name}", evtDeviceId: md.id, evtAttr: sSW, evtValue: modeSwitchState((String)md.name), evtUnit: sBLANK, evtDate: dt]) }
+                if (md && md.id) {
+                    String devId = 'm_'+md.id.toString()
+                    sendItems?.push([evtSource: 'MODE', evtDeviceName: "Mode - ${md.name}", evtDeviceId: devId, evtAttr: sSW, evtValue: modeSwitchState((String)md.name), evtUnit: sBLANK, evtDate: dt])
+                }
             }
             break
         case 'webCoRE':
