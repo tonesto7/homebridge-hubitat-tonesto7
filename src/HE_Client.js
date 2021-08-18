@@ -74,6 +74,7 @@ module.exports = class ST_Client {
                     },
                     headers: {
                         "Content-Type": "application/json",
+                        isLocal: that.configItems.use_cloud ? "false" : "true",
                     },
                     timeout: 10000,
                 })
@@ -100,6 +101,7 @@ module.exports = class ST_Client {
                     "Content-Type": "application/json",
                     evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
                     evttype: "hkCommand",
+                    isLocal: this.configItems.use_cloud ? "false" : "true",
                 },
                 data: vals || null,
                 timeout: 5000,
@@ -140,6 +142,7 @@ module.exports = class ST_Client {
                             hasUpdate: res.hasUpdate,
                             newVersion: res.newVersion,
                             version: pluginVersion,
+                            isLocal: this.configItems.use_cloud ? "false" : "true",
                             accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null,
                         },
                         timeout: 10000,
@@ -172,6 +175,7 @@ module.exports = class ST_Client {
                 },
                 headers: {
                     "Content-Type": "application/json",
+                    isLocal: this.configItems.use_cloud ? "false" : "true",
                 },
                 data: {
                     ip: that.configItems.direct_ip,

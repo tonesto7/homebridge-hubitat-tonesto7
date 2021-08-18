@@ -1,3 +1,7 @@
+## _**v2.5.11**_
+
+- [NEW] Package updates for security.
+
 ## _**v2.5.9**_
 
 - [NEW] Added Config Parameter (configure_light_by_name) to stop homebridge plugin from assigning device as a light because device has light in the name.
