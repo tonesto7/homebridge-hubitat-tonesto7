@@ -111,7 +111,8 @@ module.exports = class HE_Accessories {
             .setCharacteristic(Characteristic.Manufacturer, accessory.context.deviceData.manufacturerName)
             .setCharacteristic(Characteristic.Model, accessory.context.deviceData.modelName ? `${this.myUtils.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
             .setCharacteristic(Characteristic.Name, accessory.context.deviceData.name)
-            .setCharacteristic(Characteristic.HardwareRevision, pluginVersion);
+            .setCharacteristic(Characteristic.HardwareRevision, pluginVersion)
+            .setCharacteristic(Characteristic.SerialNumber, "he_deviceid_" + accessory.context.deviceData.deviceid);
         accessory.servicesToKeep.push(Service.AccessoryInformation.UUID);
 
         if (!accessoryInformation.listeners("identify")) {
