@@ -107,7 +107,7 @@ class ServiceTest {
 
 // NOTE: These Tests are executed in order which is important
 const serviceTests = [
-    new ServiceTest("window_shade", (accessory) => (accessory.hasCapability("Window Shade") || accessory.hasCapability("WindowShade")) && !(accessory.hasCapability("Speaker") || accessory.hasCapability("Fan") || accessory.hasCapability("Fan Control") || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")), true),
+    new ServiceTest("window_shade", (accessory) => accessory.hasCapability("WindowShade") && !(accessory.hasCapability("Speaker") || accessory.hasCapability("Fan") || accessory.hasCapability("Fan Control")), true),
     new ServiceTest(
         "light",
         (accessory) =>

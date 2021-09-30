@@ -65,7 +65,7 @@
                 "default": true
             },
             "adaptive_lighting_offset": {
-                "title": "Adaptive Lighting (ColorTemp in Mired) Ofset",
+                "title": "Adaptive Lighting (ColorTemp in Mired) Offset",
                 "description": "For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.",
                 "type": "integer",
                 "minimum": -100,
