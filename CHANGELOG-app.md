@@ -1,3 +1,6 @@
+## _**v2.5.12**_
+- [NEW] Updated minimum server version to 2.5.12.
+
 ## _**v2.5.11**_
 - [FIX] Code Optimizations and Bug fixes (Thanks @nh.schotfam).
 - [FIX] Fixes for mode device issues for some users [This will remove old mode devices and create new ones under HomeKit] (Thanks @nh.schotfam).
