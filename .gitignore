@@ -100,3 +100,6 @@ persist/
 
 *.log.gz
 *-logaudit.json
+
+#IDEs
+.code-workspace
