@@ -1,6 +1,7 @@
 ## ***v2.5.14***
 
 - [FIX] Updated minimum plugin version to address issues with plugin package chalk errors.
+  
 ## ***v2.5.13***
 - [FIX] Changes to setColorTemperature() command to only set the color if the light is on. This is to address issues with adaptive lighting.
 - [NEW] Updated minimum plugin version to 2.5.13.

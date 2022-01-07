@@ -1,6 +1,7 @@
 ## ***v2.5.14***
 
 - [FIX] Lowered chalk package back to v4.x.
+  
 ## ***v2.5.13***
 
 - [NEW] Package updates for security.
