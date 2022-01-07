@@ -2,7 +2,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018, 2019, 2020, 2021 Anthony Santilli
+ *  Copyright 2018, 2019, 2020, 2021, 2022 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 //file:noinspection GroovySillyAssignment
@@ -1108,7 +1108,7 @@ private processCmd(devId, String cmd, value1, value2) {
             logError("Device ${devN} does not have the command $command")
             return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
         }
-        
+
         if (command == "setColorTemperature" && device.currentValue("switch") != "on"){
             return CommandReply(shw, sSUCC, 'Command was setColorTemperature but device is not on', 200)
         }
