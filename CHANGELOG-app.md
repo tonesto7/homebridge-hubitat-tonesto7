@@ -1,5 +1,9 @@
+## ***v2.5.13***
+- [FIX] Changes to setColorTemperature() command to only set the color if the light is on. This is to address issues with adaptive lighting.
+- [NEW] Updated minimum plugin version to 2.5.13.
+
 ## _**v2.5.12**_
-- [NEW] Updated minimum server version to 2.5.12.
+- [NEW] Updated minimum plugin version to 2.5.12.
 
 ## _**v2.5.11**_
 - [FIX] Code Optimizations and Bug fixes (Thanks @nh.schotfam).

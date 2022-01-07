@@ -1,3 +1,8 @@
+## ***v2.5.13***
+
+- [NEW] Package updates for security.
+
+
 ## _**v2.5.12**_
 
 - [FIX] WindowShades will now be detected on devices with speed attributes.

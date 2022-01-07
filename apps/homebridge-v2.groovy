@@ -45,13 +45,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.12'
-//@Field static final String appModifiedFLD = '09-30-2021'
+@Field static final String appVersionFLD  = '2.5.13'
+//@Field static final String appModifiedFLD = '01-07-2022'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 2512]
+@Field static final Map minVersionsFLD    = [plugin: 2513]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -1107,6 +1107,10 @@ private processCmd(devId, String cmd, value1, value2) {
         if (!device?.hasCommand(command)) {
             logError("Device ${devN} does not have the command $command")
             return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
+        }
+        
+        if (command == "setColorTemperature" && device.currentValue("switch") != "on"){
+            return CommandReply(shw, sSUCC, 'Command was setColorTemperature but device is not on', 200)
         }
 
         String cmdS = shw ? "Command Successful for Device | Name: ${devN} | Command: [${command}(".toString() : sBLANK
