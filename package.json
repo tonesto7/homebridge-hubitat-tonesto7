@@ -2,7 +2,7 @@
     "dependencies": {
         "axios": "^0.24.0",
         "body-parser": "^1.19.1",
-        "chalk": "^5.0.0",
+        "chalk": "^4.1.2",
         "compare-versions": "^4.1.2",
         "express": "^4.17.2",
         "hap-nodejs-community-types": "0.3.1",
@@ -61,6 +61,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.5.13",
+    "version": "2.5.14",
     "synk": true
 }
