@@ -45,13 +45,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.14'
-//@Field static final String appModifiedFLD = '01-07-2022'
+@Field static final String appVersionFLD  = '2.5.15'
+//@Field static final String appModifiedFLD = '10-08-2022'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 2513]
+@Field static final Map minVersionsFLD    = [plugin: 2515]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -1349,6 +1349,19 @@ void registerChangeHandler(devices, Boolean showlog=false) {
     }
 }
 
+String getAlarmIntrusionMode() {
+    String curMode = getSecurityStatus();
+    switch(curMode) {
+        case 'armedAway':
+            return 'intrusion-away';
+        case 'armedHome':
+            return 'intrusion-home';
+        case 'armedNight':
+            return 'intrusion-night'
+    }
+    return "disarmed"
+}
+
 def changeHandler(evt) {
     Long execDt = now()
     List<Map> sendItems = []
@@ -1372,9 +1385,9 @@ def changeHandler(evt) {
             break
         case 'hsmAlert':
             deviceid = "alarmSystemStatus_${location?.id}"
-            attr = 'alarmSystemStatus'
+            attr = 'alarmSystemStatus';
             if (value?.toString()?.startsWith('intrusion')) {
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: evt.value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getAlarmIntrusionMode(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else if (value?.toString() == 'cancel') {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else { sendEvt = false }

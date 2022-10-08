@@ -1,15 +1,15 @@
-## ***v2.5.15***
+## _**v2.5.15**_ (10-8-2022)
 
 - [NEW] Package updates for security.
+- [FIX] Made changes to support HSM Alarm Triggers in HomeKit.
 
-## ***v2.5.14***
+## _**v2.5.14**_
 
 - [FIX] Lowered chalk package back to v4.x.
   
-## ***v2.5.13***
+## _**v2.5.13**_
 
 - [NEW] Package updates for security.
-
 
 ## _**v2.5.12**_
 

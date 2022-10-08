@@ -116,7 +116,7 @@ module.exports = class HE_Accessories {
         accessory.servicesToKeep.push(Service.AccessoryInformation.UUID);
 
         if (!accessoryInformation.listeners("identify")) {
-            accessoryInformation.on("identify", function(paired, callback) {
+            accessoryInformation.on("identify", function (paired, callback) {
                 this.logInfo(accessory.displayName + " - identify");
                 callback();
             });
@@ -140,7 +140,7 @@ module.exports = class HE_Accessories {
     processDeviceAttributeUpdate(change) {
         return new Promise((resolve) => {
             // this.logInfo("change: ", change);
-            // console.log("change: ", change);
+            console.log("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
             let accessory = this.getAccessoryFromCache(change);
             // console.log(characteristics);
@@ -149,23 +149,20 @@ module.exports = class HE_Accessories {
                 characteristics.forEach((char) => {
                     accessory.context.deviceData.attributes[change.attribute] = change.value;
                     accessory.context.lastUpdate = new Date().toLocaleString();
-                    switch (change.attribute) {
-                        case "thermostatSetpoint":
-                            char.getValue();
-                            break;
-                        case "button":
-                            // this.logInfo("button change: " + change);
-                            var btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
-                            if (btnNum && accessory.buttonEvent !== undefined) {
-                                accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
-                            }
-                            break;
-                        default:
-                            var val = this.transforms.transformAttributeState(change.attribute, change.value, char.displayName);
-                            if (val !== undefined && val !== null) {
-                                char.updateValue(val);
-                            }
-                            break;
+                    if (change.attribute === "thermostatSetpoint") {
+                        //
+                        char.getValue();
+                    } else if (change.attribute === "button") {
+                        // this.logInfo("button change: " + change);
+                        const btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
+                        if (btnNum && accessory.buttonEvent !== undefined) {
+                            accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
+                        }
+                    } else {
+                        const val = this.transforms.transformAttributeState(change.attribute, change.value, char.displayName);
+                        if (val !== undefined && val !== null) {
+                            char.updateValue(val);
+                        }
                     }
                 });
                 resolve(this.addAccessoryToCache(accessory));
@@ -221,7 +218,7 @@ module.exports = class HE_Accessories {
                 }
             }
             acc.commandTimers[id] = _.debounce(
-                async() => {
+                async () => {
                     acc.commandTimersTS[id] = tsNow;
                     appEvts.emit("event:device_command", dev, cmd, vals);
                 },

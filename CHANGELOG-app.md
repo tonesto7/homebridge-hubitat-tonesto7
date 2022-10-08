@@ -1,8 +1,12 @@
-## ***v2.5.14***
+## _**v2.5.15** (10-8-2022)_
+
+- [FIX] Made changes to support HSM Alarm Triggers in HomeKit.
+
+## _**v2.5.14**_
 
 - [FIX] Updated minimum plugin version to address issues with plugin package chalk errors.
   
-## ***v2.5.13***
+## _**v2.5.13**_
 - [FIX] Changes to setColorTemperature() command to only set the color if the light is on. This is to address issues with adaptive lighting.
 - [NEW] Updated minimum plugin version to 2.5.13.
 

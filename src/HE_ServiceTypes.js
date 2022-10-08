@@ -111,8 +111,8 @@ const serviceTests = [
     new ServiceTest(
         "light",
         (accessory) =>
-        accessory.hasCapability("Switch Level") &&
-        (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || accessory.hasAttribute("saturation") || accessory.hasAttribute("hue") || accessory.hasAttribute("colorTemperature") || accessory.hasCapability("Color Control")),
+            accessory.hasCapability("Switch Level") &&
+            (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || accessory.hasAttribute("saturation") || accessory.hasAttribute("hue") || accessory.hasAttribute("colorTemperature") || accessory.hasCapability("Color Control")),
         true,
     ),
     // new ServiceTest("air_purifier", (accessory) => accessory.hasCapability("custom.airPurifierOperationMode")),
