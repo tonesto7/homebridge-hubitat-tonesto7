@@ -1,4 +1,4 @@
-## _**v2.5.16** (10-8-2022)_
+## _**v2.5.16**_ (10-8-2022)
 
 - [FIX] Made changes to support HSM Alarm Triggers in HomeKit.
 
