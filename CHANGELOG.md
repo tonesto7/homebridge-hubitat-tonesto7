@@ -1,4 +1,4 @@
-## _**v2.5.15**_ (10-8-2022)
+## _**v2.5.16**_ (10-8-2022)
 
 - [NEW] Package updates for security.
 - [FIX] Made changes to support HSM Alarm Triggers in HomeKit.
