@@ -525,7 +525,7 @@ module.exports = class Transforms {
     }
 
     convertAlarmTargetState(value) {
-        console.log("convertAlarmTargetState", value);
+        // console.log("convertAlarmTargetState", value);
         switch (value) {
             case "armedHome":
             case "intrusion-home":
