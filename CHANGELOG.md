@@ -1,3 +1,8 @@
+## _**v2.5.17**_ (10-8-2022)
+
+- [FIX] Disabled Debug Logging.
+
+
 ## _**v2.5.16**_ (10-8-2022)
 
 - [NEW] Package updates for security.

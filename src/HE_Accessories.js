@@ -140,7 +140,7 @@ module.exports = class HE_Accessories {
     processDeviceAttributeUpdate(change) {
         return new Promise((resolve) => {
             // this.logInfo("change: ", change);
-            console.log("change: ", change);
+            // console.log("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
             let accessory = this.getAccessoryFromCache(change);
             // console.log(characteristics);
