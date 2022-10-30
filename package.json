@@ -4,7 +4,7 @@
         "body-parser": "^1.20.1",
         "chalk": "^4.1.2",
         "compare-versions": "^4.1.4",
-        "express": "^4.18.1",
+        "express": "^4.18.2",
         "hap-nodejs-community-types": "0.3.1",
         "lodash": "^4.17.21",
         "os": "0.1.2",
