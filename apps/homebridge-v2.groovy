@@ -161,7 +161,7 @@ def mainPage() {
     return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
         appInfoSect()
         section(sectHead('Device Configuration:')) {
-            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || outletList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
+            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || securityKeypadsList || outletList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0) + (fan5SpdList?.size() ?: 0)
             String desc = sNULL
             Integer devCnt = getDeviceCnt()
@@ -176,6 +176,7 @@ def mainPage() {
                 desc += (fanList || fan3SpdList || fan4SpdList || fan5SpdList) ? spanSmBld("Fan Device${fansize > 1 ? 's' : sBLANK}") + spanSmBr(" (${fansize})") : sBLANK
                 desc += speakerList ? spanSmBld("Speaker${speakerList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${speakerList.size()})") : sBLANK
                 desc += shadesList ? spanSmBld("Shade${shadesList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${shadesList.size()})") : sBLANK
+                desc += securityKeypadsList ? spanSmBld("SecurityKeypad${securityKeypadsList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${securityKeypadsList.size()})") : sBLANK
                 desc += garageList ? spanSmBld("Garage Door${garageList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${garageList.size()})") : sBLANK
                 desc += tstatList ? spanSmBld("Thermostat${tstatList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${tstatList.size()})") : sBLANK
                 desc += tstatFanList ? spanSmBld("Thermostat${tstatFanList.size() > 1 ? 's' : sBLANK} w/Fan}") + spanSmBr(" (${tstatFanList.size()})") : sBLANK
@@ -297,6 +298,7 @@ def deviceSelectPage() {
             input 'garageList', 'capability.garageDoorControl', title: inTS1("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", 'garage_door'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'speakerList', sCAP_SW, title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", 'media_player'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'shadesList', 'capability.windowShade', title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'securityKeypadsList', 'capability.securityKeypad', title: inTS1("Security Keypads: (${securityKeypadsList ? securityKeypadsList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
         section(sectHead("Buttons:")) {
             input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -398,7 +400,7 @@ private void inputDupeValidation() {
         d: [
             'fanList': 'Fans', 'fan3SpdList': 'Fans (3-Speed)', 'fan4SpdList': 'Fans (4-Speed)',
             // 'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
-            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'outletList': 'Outlets', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
+            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'outletList': 'Outlets', 'shadesList': 'Window Shades', 'securityKeypadsList' : 'Security Keypads', 'speakerList': 'Speakers',
             'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)'
         ],
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
@@ -873,6 +875,14 @@ private Map getDeviceData(String type, sItem) {
                 attrVal = modeSwitchState((String)obj.name)
             }
             break
+        case 'securityKeypadsList':
+            curType = 'Security Keypad'
+            obj = sItem
+            // Define firmware variable and initialize it out of device handler attribute`
+            try {
+                if (sItem?.hasAttribute('firmware')) { firmware = sItem?.currentValue('firmware')?.toString() }
+            } catch (ignored) { firmware = sNULL }
+            break            
         default:
             curType = 'device'
             obj = sItem
@@ -883,21 +893,39 @@ private Map getDeviceData(String type, sItem) {
             break
     }
     if (curType && obj) {
-        return [
-            name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
-            basename: !isVirtual ? sItem?.name : name,
-            deviceid: !isVirtual ? sItem?.id : devId,
-            status: !isVirtual ? sItem?.status : 'Online',
-            manufacturerName: (!isVirtual ? sItem?.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
-            modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : curType+" Device",
-            serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : curType+devId,
-            firmwareVersion: firmware ?: '1.0.0',
-            lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : now(),
-            capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
-            commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
-            deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
-            attributes: !isVirtual ? deviceAttributeList(sItem) : [(sSW): attrVal]
-        ]
+        if (curType == 'Security Keypad') {
+            return [
+                name: sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                basename: sItem?.namee,
+                deviceid: "securityKeypad_${sItem?.id}",
+                status: sItem?.status,
+                manufacturerName: sItem?.manufacturerName ?: pluginNameFLD,
+                modelName: sItem?.modelName ?: sItem?.getTypeName(),
+                serialNumber: sItem?.getDeviceNetworkId(),
+                firmwareVersion: firmware ?: '1.0.0',
+                lastTime: sItem?.getLastActivity() ?: null,
+                capabilities: ['Alarm System Status': 1, 'Alarm': 1],
+                commands: [],
+                attributes: ['alarmSystemStatus': translateSecurityKeypadStatusForHomekit(sItem?.currentValue('securityKeypad')?.toString())]
+            ]            
+        }
+        else {
+            return [
+                name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                basename: !isVirtual ? sItem?.name : name,
+                deviceid: !isVirtual ? sItem?.id : devId,
+                status: !isVirtual ? sItem?.status : 'Online',
+                manufacturerName: (!isVirtual ? sItem?.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
+                modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : curType+" Device",
+                serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : curType+devId,
+                firmwareVersion: firmware ?: '1.0.0',
+                lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : now(),
+                capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
+                commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
+                deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
+                attributes: !isVirtual ? deviceAttributeList(sItem) : [(sSW): attrVal]
+            ]
+        }
     }
     return null
 }
@@ -1002,6 +1030,60 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: 'hsmSetArm', value: sMode)
 }
 
+String translateSecurityKeypadCommandForHubitat(String homeKitCommand) {
+    String keypadCommand
+    switch (homeKitCommand) {
+        case 'armAway':
+        case 'away':
+            keypadCommand = 'armAway'
+            break
+        case 'night':
+        case 'armNight':
+            keypadCommand = 'armNight'
+            break
+        case 'armHome':
+        case 'home':
+        case 'stay':
+            keypadCommand = 'armHome'
+            break
+        case 'disarm':
+        case 'off':
+        case 'cancel':
+            keypadCommand = 'disarm'
+            break    
+    }
+    return keypadCommand   
+}
+
+String translateSecurityKeypadStatusForHomekit(String hubitatStatus) {
+    String homekitCommand
+    switch (hubitatStatus) {
+        case 'armed away':
+            homekitCommand = 'armedAway'
+            break
+        case 'intrusion-away':   // accomodate custom drivers setting the securityKeypad attribute to custom values for intrusion
+            homekitCommand = 'intrusion-away'    
+            break
+        case 'armed night':
+            homekitCommand = 'armedNight'
+            break
+        case 'intrusion-night':   // accomodate custom drivers setting the securityKeypad attribute to custom values for intrusion
+            homekitCommand = 'intrusion-night'
+            break
+        case 'armed home':
+            homekitCommand = 'armedHome'
+            break
+        case 'intrusion-home':   // accomodate custom drivers setting the securityKeypad attribute to custom values for intrusion
+            homekitCommand = 'instrusion-home'
+            break
+        case 'disarmed':
+            homekitCommand = 'disarmed'
+            break        
+    }
+    log.debug("Translated hubitat status ${hubitatStatus} to homekit command ${homekitCommand}")
+    return homekitCommand         
+}
+
 String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
 String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
 String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
@@ -1075,6 +1157,11 @@ private processCmd(devId, String cmd, value1, value2) {
     if (shw) { logInfo("Plugin called Process Command | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
     if (!devId) { return }
     String command = cmd
+    
+    if (devId.contains("securityKeypad_") && (List)settings.securityKeypadsList) {
+        command = translateSecurityKeypadCommandForHubitat(command)
+        devId = devId.replaceFirst("securityKeypad_", "")
+    }
 
     if (devId == "alarmSystemStatus_${location?.id}" && (Boolean)settings.addSecurityDevice) {
         setAlarmSystemMode(command)
@@ -1082,7 +1169,7 @@ private processCmd(devId, String cmd, value1, value2) {
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
 
-    }  else if (command == 'mode' &&  (List)settings.modeList) {
+    } else if (command == 'mode' &&  (List)settings.modeList) {
         if (shw) { logDebug("Virtual Mode Received: ${devId}") }
         String mdevId = devId.replaceAll('m_', sBLANK)
         changeMode(mdevId, shw)
@@ -1203,6 +1290,7 @@ Map deviceCapabilityList(device) {
     if (isDeviceInInput('fanList', device.id)) { capItems['Fan'] = 1 }
     if (isDeviceInInput('speakerList', device.id)) { capItems['Speaker'] = 1 }
     if (isDeviceInInput('shadesList', device.id)) { capItems['WindowShade'] = 1 }
+    if (isDeviceInInput('securityKeypadsList', device.id)) { capItems['SecurityKeypad'] = 1 }
     if (isDeviceInInput('garageList', device.id)) { capItems['GarageDoorControl'] = 1 }
     if (isDeviceInInput('tstatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode') }
     if (isDeviceInInput('tstatFanList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
@@ -1227,7 +1315,7 @@ Map deviceCapabilityList(device) {
 
 @Field static final Map<String, String> capFilterFLD = [
     'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
-    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
+    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'SecurityKeypad' : 'SecurityKeypad', 'Switch': 'Switch', 'Water': 'WaterSensor',
     'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
 ]
 
@@ -1279,7 +1367,7 @@ def getAllData() {
 static Map deviceSettingKeys() {
     return [
         'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3Spd) Devices', 'fan4SpdList': 'Fans (4Spd) Devices', 'fan5SpdList': 'Fans (5Spd) Devices', 'deviceList': 'Other Devices',
-        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices',
+        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices','securityKeypadsList': 'Security Keypad Devices',
         'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)', 'outletList': 'Outlet Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices'
     ]
@@ -1291,7 +1379,7 @@ void registerDevices() {
         'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Block Adaptive Lighting)', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices', 'outletList': 'Outlet Devices',
-        'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'garageList': 'Garage Door Devices',
+        'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'securityKeypadsList': 'Security Keypad Devices','garageList': 'Garage Door Devices',
         'tstatList': 'Thermostat Devices', 'tstatFanList': 'Thermostat + Fan Devices', 'tstatHeatList': 'Thermostat (HeatOnly) Devices'
     ]?.each { String k, String v->
         logDebug("Subscribed to (${settings."${k}"?.size() ?: 0}) ${v}")
@@ -1319,7 +1407,7 @@ Boolean isDeviceInInput(String setKey, devId) {
 
 @Field static final Map<String, String> attMapFLD = [
     'acceleration': 'Acceleration', 'battery': 'Battery', 'contact': 'Contact', 'energy': 'Energy', 'humidity': 'Humidity', 'illuminance': 'Illuminance',
-    'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power', 'presence': 'Presence', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
+    'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power', 'presence': 'Presence', 'securityKeypad' : 'SecurityKeypad', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
     'temperature': 'Temp', 'valve': 'Valve', 'pushed': 'PushableButton', 'held': 'HoldableButton', 'doubleTapped': 'DoubleTapableButton'
 ]
 
@@ -1373,7 +1461,7 @@ def changeHandler(evt) {
     Date dt = (Date)evt.date
     Boolean sendEvt = true
     Boolean evtLog = (getTsVal(sEVT) == sTRUE)
-
+  
     // if(evt.name.startsWith('hsm')) {
     //     log.debug "${evt.name}: [evtSource: ${src}, evtDeviceName: ${deviceName}, evtDeviceId: ${deviceid}, evtAttr: ${attr}, evtValue: ${value}, evtUnit: ${evt?.unit ?: sBLANK}, evtDate: ${dt}]"
     // }
@@ -1396,6 +1484,12 @@ def changeHandler(evt) {
         case 'hsmSetArm':
             sendEvt = false
             break
+        case 'securityKeypad':
+            deviceid = "securityKeypad_${deviceid}"
+            attr = 'alarmSystemStatus'
+            value = translateSecurityKeypadStatusForHomekit(value)
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
+            break            
         case 'alarmSystemStatus':
             deviceid = "alarmSystemStatus_${location?.id}"
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
