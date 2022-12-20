@@ -1,23 +1,24 @@
 {
     "dependencies": {
-        "axios": "^0.21.4",
-        "body-parser": "^1.19.0",
+        "axios": "^1.2.1",
+        "body-parser": "^1.20.1",
         "chalk": "^4.1.2",
-        "compare-versions": "^3.6.0",
-        "express": "^4.17.1",
+        "compare-versions": "^4.1.4",
+        "express": "^4.18.2",
         "hap-nodejs-community-types": "0.3.1",
         "lodash": "^4.17.21",
         "os": "0.1.2",
         "portfinder-sync": "^0.0.2"
     },
     "devDependencies": {
-        "eslint": "^7.32.0",
-        "eslint-config-prettier": "^8.3.0",
-        "eslint-plugin-prettier": "^4.0.0",
-        "homebridge": "^1.3.4",
-        "lint-staged": "^11.1.2",
-        "prettier": "^2.4.1",
-        "snyk": "^1.728.0"
+        "@types/node": "^18.11.17",
+        "eslint": "^8.30.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "homebridge": "^2.0.0-beta.0",
+        "lint-staged": "^13.1.0",
+        "prettier": "^2.8.1",
+        "@snyk/protect": "^1.1073.0"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
@@ -49,8 +50,8 @@
         "prettier": "prettier --write src/**/*.js",
         "freeport": "npx kill-port 8000",
         "start": "homebridge -D -P . -U .",
-        "snyk-protect": "snyk protect",
-        "prepare": "npm run snyk-protect",
+        "snyk-protect": "snyk-protect",
+        "prepare": "yarn run snyk-protect",
         "hb_cleanup_win": "rmdir /Q /S accessories && rmdir /Q /S persist"
     },
     "main": "src/index.js",
@@ -61,6 +62,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.5.12",
+    "version": "2.6.0",
     "synk": true
 }

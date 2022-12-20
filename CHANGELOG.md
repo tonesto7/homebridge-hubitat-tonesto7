@@ -1,3 +1,26 @@
+## _**v2.6.0**_ (12-20-2022)
+
+- [NEW] Added new pluginTest endpoint so the HE app can test if communication with the plugin is working.
+- [FIX] Package updates for security.
+
+## _**v2.5.18**_ (10-8-2022)
+
+- [FIX] Disabled Debug Logging.
+
+
+## _**v2.5.16**_ (10-8-2022)
+
+- [NEW] Package updates for security.
+- [FIX] Made changes to support HSM Alarm Triggers in HomeKit.
+
+## _**v2.5.14**_
+
+- [FIX] Lowered chalk package back to v4.x.
+  
+## _**v2.5.13**_
+
+- [NEW] Package updates for security.
+
 ## _**v2.5.12**_
 
 - [FIX] WindowShades will now be detected on devices with speed attributes.

@@ -1,5 +1,22 @@
+## _**v2.6.0**_ (12-20-2022)
+- [NEW] UI now shows the plugin ip and port on the Generate Config Button.
+- [NEW] There is now a test plugin communication button on the plugin config page to that shows status, version, and the plugin config to test that Hubitat can reach the plugin.
+
+## _**v2.5.17**_ (10-8-2022)
+- [FIX] Disabled Debug Logging.
+
+## _**v2.5.16**_ (10-8-2022)
+- [FIX] Made changes to support HSM Alarm Triggers in HomeKit.
+
+## _**v2.5.14**_
+- [FIX] Updated minimum plugin version to address issues with plugin package chalk errors.
+  
+## _**v2.5.13**_
+- [FIX] Changes to setColorTemperature() command to only set the color if the light is on. This is to address issues with adaptive lighting.
+- [NEW] Updated minimum plugin version to 2.5.13.
+
 ## _**v2.5.12**_
-- [NEW] Updated minimum server version to 2.5.12.
+- [NEW] Updated minimum plugin version to 2.5.12.
 
 ## _**v2.5.11**_
 - [FIX] Code Optimizations and Bug fixes (Thanks @nh.schotfam).

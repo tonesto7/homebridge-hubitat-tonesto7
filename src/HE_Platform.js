@@ -39,7 +39,7 @@ module.exports = class HE_Platform {
         this.logInfo = this.logInfo.bind(this);
         this.logDebug = this.logDebug.bind(this);
 
-        this.logInfo(`Homebridge Version: ${api.version}`);
+        this.logInfo(`Homebridge Version: ${this.homebridge.version}`);
         this.logInfo(`Plugin Version: ${pluginVersion}`);
         this.polling_seconds = config.polling_seconds || 3600;
         this.excludedAttributes = this.config.excluded_attributes || [];
@@ -79,7 +79,7 @@ module.exports = class HE_Platform {
             access_token: this.config.access_token,
             use_cloud: this.config.use_cloud === true,
             app_platform: this.config.app_platform,
-            update_seconds: this.config.update_seconds || 30,
+            polling_seconds: this.config.polling_seconds || 3600,
             round_levels: this.config.round_levels !== false,
             direct_port: this.direct_port,
             direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
@@ -324,17 +324,17 @@ module.exports = class HE_Platform {
                             case "allAccData":
                                 res.send(JSON.stringify(accs));
                                 break;
-                                // case 'accServices':
-                                //     var o = accsKeys.forEach(s => s.services.forEach(s1 => s1.UUID));
-                                //     res.send(JSON.stringify(o));
-                                //     break;
-                                // case 'accCharacteristics':
-                                //     var o = accsKeys.forEach(s => s.services.forEach(s1 => s1.characteristics.forEach(c => c.displayName)));
-                                //     res.send(JSON.stringify(o));
-                                //     break;
-                                // case 'accContext':
-                                //     res.send(JSON.stringify(this.HEAccessories.getAllAccessoriesFromCache()));
-                                //     break;
+                            // case 'accServices':
+                            //     var o = accsKeys.forEach(s => s.services.forEach(s1 => s1.UUID));
+                            //     res.send(JSON.stringify(o));
+                            //     break;
+                            // case 'accCharacteristics':
+                            //     var o = accsKeys.forEach(s => s.services.forEach(s1 => s1.characteristics.forEach(c => c.displayName)));
+                            //     res.send(JSON.stringify(o));
+                            //     break;
+                            // case 'accContext':
+                            //     res.send(JSON.stringify(this.HEAccessories.getAllAccessoriesFromCache()));
+                            //     break;
                             default:
                                 res.send(`Error: Invalid Option Parameter Received | Option: ${req.query.option}`);
                                 break;
@@ -342,6 +342,27 @@ module.exports = class HE_Platform {
                     } else {
                         res.send("Error: Missing Valid Debug Query Parameter");
                     }
+                });
+
+                webApp.get("/pluginTest", (req, res) => {
+                    that.logInfo(`${platformName} Plugin Test Request Received...`);
+                    res.status(200).send(
+                        JSON.stringify(
+                            {
+                                status: "OK",
+                                homebridge_version: this.homebridge.version,
+                                plugin: {
+                                    name: pluginName,
+                                    platform_name: platformName,
+                                    platform_desc: platformDesc,
+                                    version: pluginVersion,
+                                    config: this.configItems,
+                                },
+                            },
+                            null,
+                            4,
+                        ),
+                    );
                 });
 
                 webApp.post("/restartService", (req, res) => {
@@ -427,7 +448,7 @@ module.exports = class HE_Platform {
                             };
                             that.HEAccessories.processDeviceAttributeUpdate(newChange).then((resp) => {
                                 if (that.logConfig.showChanges) {
-                                    that.logInfo(chalk `[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
+                                    that.logInfo(chalk`[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
                                 }
                                 res.send({
                                     evtSource: `Homebridge_${platformName}_${this.configItems.app_id}`,

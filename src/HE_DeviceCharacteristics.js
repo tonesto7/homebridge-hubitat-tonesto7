@@ -59,22 +59,15 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get) {
                 c.on("get", (callback) => {
-                    let val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
-                    if (opts.alarmTarget === true) {
-                        val = accClass.transforms.convertAlarmTargetState(this.context.deviceData.attributes[attr]);
-                        // console.log("alarmTarget[GET]: ", val);
-                    }
+                    const val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
                     callback(null, val);
                     accClass.log_get(attr, char, acc, val);
                 });
             }
             if (!c._events.set) {
-                c.on("set", async(value, callback) => {
-                    let cmdName = accClass.transforms.transformCommandName(opts.set_altAttr || attr, value);
-                    let cmdVal = accClass.transforms.transformCommandValue(opts.set_altAttr || attr, value);
-                    // if (opts.alarmTarget === true) {
-                    //     console.log("alarmTarget[SET]: ", cmdVal);
-                    // }
+                c.on("set", (value, callback) => {
+                    const cmdName = accClass.transforms.transformCommandName(opts.set_altAttr || attr, value);
+                    const cmdVal = accClass.transforms.transformCommandValue(opts.set_altAttr || attr, value);
                     if (opts.cmdHasVal === true || opts.cmdHasIntVal === true) {
                         acc.sendCommand(callback, acc, this.context.deviceData, cmdName, {
                             value1: opts.cmdHasIntVal === true ? parseInt(cmdVal) : cmdVal,
@@ -116,13 +109,13 @@ module.exports = class DeviceCharacteristics {
     air_purifier(_accessory, _service) {
         let actState = _accessory.context.deviceData.attributes.switch === "on" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
         let c = this.getOrAddService(_service).getCharacteristic(Characteristic.Active);
-        if (!c.events.get || !c.events.set) {
-            if (!c.events.get) {
+        if (!c._events.get || !c._events.set) {
+            if (!c._events.get) {
                 c.on("get", (callback) => {
                     callback(null, actState);
                 });
             }
-            if (!c.events.set) {
+            if (!c._events.set) {
                 c.on("set", (value, callback) => {
                     _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, value ? "on" : "off");
                 });
@@ -135,7 +128,7 @@ module.exports = class DeviceCharacteristics {
 
         c = this.getaddService(_service).getCharacteristic(Characteristic.CurrentAirPurifierState);
         let apState = actState === Characteristic.Active.INACTIVE ? Characteristic.CurrentAirPurifierState.INACTIVE : Characteristic.CurrentAirPurifierState.PURIFYING_AIR;
-        if (!c.events.get) {
+        if (!c._events.get) {
             c.on("get", (callback) => {
                 callback(null, apState);
             });
@@ -143,13 +136,13 @@ module.exports = class DeviceCharacteristics {
         c.updateValue(apState);
 
         c = this.getaddService(CommunityTypes.NewAirPurifierService).getCharacteristic(CommunityTypes.FanOscilationMode);
-        if (!c.events.get || !c.events.set) {
-            if (!c.events.get) {
+        if (!c._events.get || !c._events.set) {
+            if (!c._events.get) {
                 c.on("get", (callback) => {
                     callback(null, this.transforms.transformAttributeState("fanMode", _accessory.context.deviceData.attributes.fanMode));
                 });
             }
-            if (!c.events.set) {
+            if (!c._events.set) {
                 c.on("set", (value, callback) => {
                     _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, "setFanMode", {
                         value1: this.transforms.transformCommandValue("fanMode", value),
@@ -176,7 +169,7 @@ module.exports = class DeviceCharacteristics {
 
     alarm_system(_accessory, _service) {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.SecuritySystemCurrentState, "alarmSystemStatus");
-        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.SecuritySystemTargetState, "alarmSystemStatus", { alarmTarget: true });
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.SecuritySystemTargetState, "alarmSystemStatus");
         _accessory.context.deviceGroups.push("alarm_system");
         return _accessory;
     }
@@ -553,7 +546,7 @@ module.exports = class DeviceCharacteristics {
                 });
             }
             if (!targetHeatCoolStateChar._events.set) {
-                targetHeatCoolStateChar.on("set", async(value, callback) => {
+                targetHeatCoolStateChar.on("set", async (value, callback) => {
                     let state = this.transforms.transformCommandValue("thermostatMode", value);
                     _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, this.transforms.transformCommandName("thermostatMode", value), {
                         value1: state,

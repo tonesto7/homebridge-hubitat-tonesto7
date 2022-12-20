@@ -175,14 +175,13 @@ module.exports = class Transforms {
             case "speed":
                 // console.log("transformAttributeState(speed): ", this.fanSpeedToLevel(val));
                 return this.fanSpeedToLevel(val, opts);
-            case "level":
-                {
-                    let lvl = parseInt(val);
-                    if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
-                    if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
-                    // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
-                    return parseInt(lvl);
-                }
+            case "level": {
+                let lvl = parseInt(val);
+                if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
+                if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
+                // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
+                return parseInt(lvl);
+            }
             case "saturation":
             case "volume":
                 return parseInt(val) || 0;
@@ -232,8 +231,12 @@ module.exports = class Transforms {
                     return Characteristic.PositionState.STOPPED;
                 }
             case "alarmSystemStatus":
-                // console.log(`transformAttributeState | char: (${charName}) | attr: ${attr} | val: ${this.convertAlarmState(val)}`);
-                return this.convertAlarmState(val);
+                // console.log(`alarmSystemStatus | char: (${charName}) | Opts: ${JSON.stringify(opts)} | val: ${this.convertAlarmState(val)}`);
+                if (charName && charName === "Security System Target State") {
+                    return this.convertAlarmTargetState(val);
+                } else {
+                    return this.convertAlarmState(val);
+                }
             default:
                 return val;
         }
@@ -326,14 +329,13 @@ module.exports = class Transforms {
                 } else {
                     return "sleep";
                 }
-            case "level":
-                {
-                    let lvl = parseInt(val);
-                    if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
-                    if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
-                    // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
-                    return parseInt(lvl);
-                }
+            case "level": {
+                let lvl = parseInt(val);
+                if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
+                if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
+                // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
+                return parseInt(lvl);
+            }
             default:
                 return val;
         }
@@ -381,19 +383,18 @@ module.exports = class Transforms {
             case "heat":
             case "heating":
                 return devData.attributes.heatingSetpoint;
-            default:
-                {
-                    const cool = devData.attributes.coolingSetpoint;
-                    const heat = devData.attributes.heatingSetpoint;
-                    const cur = devData.attributes.temperature;
-                    const cDiff = Math.abs(cool - cur);
-                    const hDiff = Math.abs(heat - cur);
-                    const useCool = cDiff < hDiff;
-                    // console.log('(cool-cur):', cDiff);
-                    // console.log('(heat-cur):', hDiff);
-                    // console.log(`targerTemp(GET) | cool: ${cool} | heat: ${heat} | cur: ${cur} | useCool: ${useCool}`);
-                    return useCool ? cool : heat;
-                }
+            default: {
+                const cool = devData.attributes.coolingSetpoint;
+                const heat = devData.attributes.heatingSetpoint;
+                const cur = devData.attributes.temperature;
+                const cDiff = Math.abs(cool - cur);
+                const hDiff = Math.abs(heat - cur);
+                const useCool = cDiff < hDiff;
+                // console.log('(cool-cur):', cDiff);
+                // console.log('(heat-cur):', hDiff);
+                // console.log(`targerTemp(GET) | cool: ${cool} | heat: ${heat} | cur: ${cur} | useCool: ${useCool}`);
+                return useCool ? cool : heat;
+            }
         }
     }
 
@@ -423,22 +424,21 @@ module.exports = class Transforms {
                 cmdName = "setHeatingSetpoint";
                 attrName = "heatingSetpoint";
                 break;
-            default:
-                {
-                    // This should only refer to auto
-                    // Choose closest target as single target
-                    const cool = devData.attributes.coolingSetpoint;
-                    const heat = devData.attributes.heatingSetpoint;
-                    const cur = devData.attributes.temperature;
-                    const cDiff = Math.abs(cool - cur);
-                    const hDiff = Math.abs(heat - cur);
-                    const useCool = cDiff < hDiff;
-                    // console.log('(cool-cur):', cDiff);
-                    // console.log('(heat-cur):', hDiff);
-                    // console.log(`targerTemp(SET) | cool: ${cool} | heat: ${heat} | cur: ${cur} | useCool: ${useCool}`);
-                    cmdName = useCool ? "setCoolingSetpoint" : "setHeatingSetpoint";
-                    attrName = useCool ? "coolingSetpoint" : "heatingSetpoint";
-                }
+            default: {
+                // This should only refer to auto
+                // Choose closest target as single target
+                const cool = devData.attributes.coolingSetpoint;
+                const heat = devData.attributes.heatingSetpoint;
+                const cur = devData.attributes.temperature;
+                const cDiff = Math.abs(cool - cur);
+                const hDiff = Math.abs(heat - cur);
+                const useCool = cDiff < hDiff;
+                // console.log('(cool-cur):', cDiff);
+                // console.log('(heat-cur):', hDiff);
+                // console.log(`targerTemp(SET) | cool: ${cool} | heat: ${heat} | cur: ${cur} | useCool: ${useCool}`);
+                cmdName = useCool ? "setCoolingSetpoint" : "setHeatingSetpoint";
+                attrName = useCool ? "coolingSetpoint" : "heatingSetpoint";
+            }
         }
         return {
             cmdName: cmdName,
@@ -516,6 +516,7 @@ module.exports = class Transforms {
                 return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
             case "disarmed":
                 return Characteristic.SecuritySystemCurrentState.DISARMED;
+            case "intrusion":
             case "intrusion-home":
             case "intrusion-away":
             case "intrusion-night":
@@ -527,19 +528,16 @@ module.exports = class Transforms {
         // console.log("convertAlarmTargetState", value);
         switch (value) {
             case "armedHome":
+            case "intrusion-home":
                 return Characteristic.SecuritySystemCurrentState.STAY_ARM;
             case "armedNight":
+            case "intrusion-night":
                 return Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
             case "armedAway":
+            case "intrusion-away":
                 return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
             case "disarmed":
                 return Characteristic.SecuritySystemCurrentState.DISARMED;
-            case "intrusion-home":
-                return Characteristic.SecuritySystemCurrentState.STAY_ARM;
-            case "intrusion-away":
-                return Characteristic.SecuritySystemCurrentState.AWAY_ARM;
-            case "intrusion-night":
-                return Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
         }
     }
 
@@ -560,9 +558,9 @@ module.exports = class Transforms {
                 return "disarm";
             default:
                 return "disarm";
-                // case 4:
-                // case Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED:
-                //     return "alarm_active";
+            // case 4:
+            // case Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED:
+            //     return "alarm_active";
         }
     }
 };

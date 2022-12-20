@@ -2,7 +2,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018, 2019, 2020, 2021 Anthony Santilli
+ *  Copyright 2018, 2019, 2020, 2021, 2022, 2023 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 //file:noinspection GroovySillyAssignment
@@ -45,13 +45,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.5.12'
-//@Field static final String appModifiedFLD = '09-30-2021'
+@Field static final String appVersionFLD  = '2.6.0'
+//@Field static final String appModifiedFLD = '12-20-2022'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 2512]
+@Field static final Map minVersionsFLD    = [plugin: 2600]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -205,8 +205,9 @@ def mainPage() {
             input 'addSecurityDevice', sBOOL, title: inTS1("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
         }
 
-        section(sectHead('HomeBridge Plugin Config:')) {
-            href 'pluginConfigPage', style: 'embedded', required: false, title: inTS1('View Generated Config for HomeBridge', sINFO), description: inputFooter(sTTV, sCLRGRY, true)
+        section(sectHead('HomeBridge Plugin:')) {
+            String pluginStatus = getPluginStatusDesc()
+            href 'pluginConfigPage', style: 'embedded', required: false, title: inTS1('Generate Config for HomeBridge', sINFO), description: pluginStatus + inputFooter(sTTV, sCLRGRY, true)
         }
 
         section(sectHead('History Data and Device Debug:')) {
@@ -243,6 +244,7 @@ def pluginConfigPage() {
             input 'validate_token',         sBOOL, title: inTS1('Validate AppID & Token for All Communications?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'round_levels',           sBOOL, title: inTS1('Round Levels <5% to 0% and >95% to 100%?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'temp_unit',              sENUM, title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
+            // input 'polling_seconds',        number, title: inTS1('Plugin Polls Hubitat for Updates (in Seconds)?', sCMD), required: false, defaultValue: 3600, submitOnChange: true
         }
 
         section(sectHead('HomeKit Adaptive Lighting')) {
@@ -261,7 +263,12 @@ def pluginConfigPage() {
         // }
 
         section(sectHead('Generated HomeBridge Plugin Platform Config')) {
-            paragraph divSm("<textarea rows=21 class='mdl-textfield' readonly='true'>${renderConfig()}</textarea>")
+            paragraph divSm("<textarea rows=23 class='mdl-textfield' readonly='true'>${renderConfig()}</textarea>")
+        }
+
+        section(sectHead('Test Communication with Plugin')) {
+            String url = "http://${getServerAddress()}/pluginTest"
+            href url: url, style: 'external', title: inTS1('Test Plugin Communication?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
         }
     }
 }
@@ -839,6 +846,20 @@ private List renderDevices() {
     return devList
 }
 
+private Map performPluginTest() {
+    Map params = [
+        uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
+        headers: ['Content-Type':'text/html;charset=utf-8']
+    ]
+    try {
+        httpPost(params) { resp ->
+            //LogTrace("response data: ${resp.data}")
+        }
+    } catch (ex) {
+        logError("enableOauth something went wrong: ${ex}", ex)
+    }
+}
+
 private Map getDeviceData(String type, sItem) {
     // log.debug "getDeviceData($type, $sItem)"
     String curType //= sNULL
@@ -1015,6 +1036,7 @@ String renderConfig() {
         app_id: app?.getId(),
         app_platform: platformFLD,
         use_cloud: (Boolean)settings.use_cloud_endpoint == true,
+        polling_seconds: (Integer)settings.polling_seconds ?: 3600,
         access_token: (String)state.accessToken,
         temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
         validateTokenId: (Boolean)settings.validate_token == true,
@@ -1107,6 +1129,10 @@ private processCmd(devId, String cmd, value1, value2) {
         if (!device?.hasCommand(command)) {
             logError("Device ${devN} does not have the command $command")
             return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
+        }
+
+        if (command == "setColorTemperature" && device.currentValue("switch") != "on"){
+            return CommandReply(shw, sSUCC, 'Command was setColorTemperature but device is not on', 200)
         }
 
         String cmdS = shw ? "Command Successful for Device | Name: ${devN} | Command: [${command}(".toString() : sBLANK
@@ -1345,6 +1371,19 @@ void registerChangeHandler(devices, Boolean showlog=false) {
     }
 }
 
+String getAlarmIntrusionMode() {
+    String curMode = getSecurityStatus();
+    switch(curMode) {
+        case 'armedAway':
+            return 'intrusion-away';
+        case 'armedHome':
+            return 'intrusion-home';
+        case 'armedNight':
+            return 'intrusion-night'
+    }
+    return "disarmed"
+}
+
 def changeHandler(evt) {
     Long execDt = now()
     List<Map> sendItems = []
@@ -1368,9 +1407,9 @@ def changeHandler(evt) {
             break
         case 'hsmAlert':
             deviceid = "alarmSystemStatus_${location?.id}"
-            attr = 'alarmSystemStatus'
+            attr = 'alarmSystemStatus';
             if (value?.toString()?.startsWith('intrusion')) {
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: evt.value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getAlarmIntrusionMode(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else if (value?.toString() == 'cancel') {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else { sendEvt = false }
@@ -1513,6 +1552,17 @@ String getServerAddress() {
         updTsVal('lastActTs')
     }
     return sv
+}
+
+String getPluginStatusDesc() {
+    String out = sBLANK
+    Map pluginDetails = state.pluginDetails ?: [:]
+    if(pluginDetails && pluginDetails.keySet().size() > 0) {
+        out += pluginDetails?.directIP && pluginDetails?.directPort ? spanSmBld('Plugin Server:', sCLRGRY) + spanSmBr(" ${pluginDetails?.directIP}:${pluginDetails?.directPort}", sCLRGRY) : sBLANK
+        out += state?.pluginDetails?.version ? spanSmBld('Plugin Version:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
+        out += spanBr(" ")
+    }
+    return out
 }
 
 def getModeById(String mId) {
