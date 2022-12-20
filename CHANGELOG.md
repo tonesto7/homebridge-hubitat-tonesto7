@@ -1,3 +1,8 @@
+## _**v2.6.0**_ (12-20-2022)
+
+- [NEW] Added new pluginTest endpoint so the HE app can test if communication with the plugin is working.
+- [FIX] Package updates for security.
+
 ## _**v2.5.18**_ (10-8-2022)
 
 - [FIX] Disabled Debug Logging.

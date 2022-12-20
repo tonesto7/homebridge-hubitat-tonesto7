@@ -50,6 +50,15 @@
                 "default": 8000,
                 "required": false
             },
+            "polling_seconds": {
+                "title": "Polling Seconds}",
+                "description": "This is defines how often the plugin will poll the hub on it's own for updated devices and states (This is only used to just make sure everything is in sync state wise.  More than once every hour is not recommended)",
+                "type": "integer",
+                "maximum": 86400,
+                "minimum": 60,
+                "default": 3600,
+                "required": false
+            },
             "round_levels": {
                 "title": "Round Levels?",
                 "description": "Round levels <3% to 0% and >97% to 100%",
@@ -91,7 +100,8 @@
                 "title": "Define Temperature Unit",
                 "type": "string",
                 "default": "F",
-                "enum": [{
+                "enum": [
+                    {
                         "text": "Fahrenheit",
                         "value": "F"
                     },
