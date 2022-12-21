@@ -1,3 +1,6 @@
+## _**v2.6.1**_ (12-21-2022)
+- [FIX] Fix for plugin version not showing updated.
+- 
 ## _**v2.6.0**_ (12-20-2022)
 - [NEW] UI now shows the plugin ip and port on the Generate Config Button.
 - [NEW] There is now a test plugin communication button on the plugin config page to that shows status, version, and the plugin config to test that Hubitat can reach the plugin.
