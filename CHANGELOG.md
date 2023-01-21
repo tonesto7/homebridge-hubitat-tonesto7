@@ -1,4 +1,4 @@
-## _**v2.7.0**_ (01-21-2023)
+## _**v2.7.1**_ (01-21-2023)
 
 - [FIX] Package updates for security.
 
