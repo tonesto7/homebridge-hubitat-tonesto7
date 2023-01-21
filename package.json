@@ -11,14 +11,14 @@
         "portfinder-sync": "^0.0.2"
     },
     "devDependencies": {
+        "@snyk/protect": "^1.1088.0",
         "@types/node": "^18.11.18",
         "eslint": "^8.32.0",
         "eslint-config-prettier": "^8.6.0",
         "eslint-plugin-prettier": "^4.2.1",
         "homebridge": "^1.6.0",
         "lint-staged": "^13.1.0",
-        "prettier": "^2.8.3",
-        "@snyk/protect": "^1.1088.0"
+        "prettier": "^2.8.3"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
@@ -62,6 +62,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.6.0",
+    "version": "2.7.0",
     "synk": true
 }
