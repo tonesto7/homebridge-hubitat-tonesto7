@@ -62,6 +62,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.7.0",
+    "version": "2.7.1",
     "synk": true
 }
