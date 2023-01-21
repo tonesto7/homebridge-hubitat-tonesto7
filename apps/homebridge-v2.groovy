@@ -2,7 +2,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018, 2019, 2020, 2021, 2022, 2023 Anthony Santilli
+ *  Copyright 2018-2023 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 //file:noinspection GroovySillyAssignment
@@ -10,10 +10,8 @@
 //file:noinspection unused
 //file:noinspection GroovyPointlessBoolean
 
-
 import groovy.json.JsonOutput
 import groovy.transform.Field
-
 import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
 
@@ -45,8 +43,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.6.1'
-//@Field static final String appModifiedFLD = '12-21-2022'
+@Field static final String appVersionFLD  = '2.7.0'
+//@Field static final String appModifiedFLD = '01-21-2023'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -110,7 +108,8 @@ preferences {
     ],
     attributes: [
         'DeviceWatch-Enroll', 'DeviceWatch-Status', 'checkInterval', 'LchildVer', 'FchildVer', 'LchildCurr', 'FchildCurr', 'lightStatus', 'lastFanMode', 'lightLevel',
-        'coolingSetpointRange', 'heatingSetpointRange', 'thermostatSetpointRange', 'power', 'energy', 'colorMode', 'RGB', 'colorName',
+        'coolingSetpointRange', 'heatingSetpointRange', 'thermostatSetpointRange', 'power', 'energy', 'colorMode', 'RGB', 'colorName', 'hysteresis', 'armingIn', 'firmware0', 'firmware1',
+        'frequency', 'lastCodeName', 'lockCodes', 'supportedFanSpeeds', 'numberOfButtons', 'maxCodes'
     ],
     evt_attributes: [
         'DeviceWatch-DeviceStatus', 'DeviceWatch-Enroll', 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
@@ -121,9 +120,10 @@ preferences {
         'arrivingAtPlace', 'lastUpdatedDt', 'scheduleType', 'zoneStartDate', 'zoneElapsed', 'zoneDuration', 'watering', 'eventTime', 'eventSummary', 'endOffset', 'startOffset',
         'closeTime', 'endMsgTime', 'endMsg', 'openTime', 'startMsgTime', 'startMsg', 'calName', 'deleteInfo', 'eventTitle', 'floor', 'sleeping', 'ultravioletIndex', 'threeAxis',
         'LchildVer', 'FchildVer', 'LchildCurr', 'FchildCurr', 'lightStatus', 'lastFanMode', 'lightLevel', 'coolingSetpointRange', 'heatingSetpointRange', 'thermostatSetpointRange',
-        'colorName', 'locationForURL', 'location', 'offsetNotify', 'lastActivity', 'firmware', 'groups', 'lastEvent', 'colorMode', 'RGB', 'power', 'energy',
+        'colorName', 'locationForURL', 'location', 'offsetNotify', 'lastActivity', 'firmware', 'groups', 'lastEvent', 'colorMode', 'RGB', 'power', 'energy', 'hysteresis','armingIn', 
         'batteryType', 'deviceType', 'driverVersionInternal', 'outletSwitchable', 'outputVoltageNominal', 'deviceModel', 'driverVersion', 'status', 'deviceModel', 'deviceManufacturer',
         'deviceFirmware', 'outletDescription', 'driverName', 'batteryRuntimeSecs', 'outputFrequency', 'outputFrequencyNominal', 'driverVersionData', 'deviceNominalPower', 'load',
+        'firmware0', 'firmware1', 'frequency', 'lastCodeName', 'supportedFanSpeeds', 'numberOfButtons',
         // nest thermostat items
         'canCool', 'canHeat', 'etaBegin', 'hasAuto', 'hasFan', 'hasLeaf', 'heatingSetpointMax', 'heatingSetpointMin', 'lockedTempMax', 'lockedTempMine', 'nestPresence', 'nestThermostatMode', 'nestOperatingState', 'nestType', 'pauseUpdates', 'previousthermostatMode', 'sunlightCorrectionActive', 'sunlightCorrectionEnabled', 'supportedNestThermostatModes', 'tempLockOn', 'temperatureUnit', 'thermostatSetpointMax', 'thermostatSetpointMin', 'timeToTarget', 'coolingSetpointMin', 'coolingSetpointMax',
         // nest protect items
@@ -158,10 +158,11 @@ def startPage() {
 def mainPage() {
     Boolean isInst = (state.isInstalled == true)
     if ((Boolean)settings.enableWebCoRE && !webCoREFLD) { webCoRE_init() }
-    return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
+    // return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
+    return dynamicPage(name: 'mainPage', nextPage: sBLANK, install: true, uninstall: true) {
         appInfoSect()
         section(sectHead('Device Configuration:')) {
-            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || outletList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
+            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || securityKeypadsList || outletList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0) + (fan5SpdList?.size() ?: 0)
             String desc = sNULL
             Integer devCnt = getDeviceCnt()
@@ -176,6 +177,7 @@ def mainPage() {
                 desc += (fanList || fan3SpdList || fan4SpdList || fan5SpdList) ? spanSmBld("Fan Device${fansize > 1 ? 's' : sBLANK}") + spanSmBr(" (${fansize})") : sBLANK
                 desc += speakerList ? spanSmBld("Speaker${speakerList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${speakerList.size()})") : sBLANK
                 desc += shadesList ? spanSmBld("Shade${shadesList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${shadesList.size()})") : sBLANK
+                desc += securityKeypadsList ? spanSmBld("SecurityKeypad${securityKeypadsList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${securityKeypadsList.size()})") : sBLANK
                 desc += garageList ? spanSmBld("Garage Door${garageList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${garageList.size()})") : sBLANK
                 desc += tstatList ? spanSmBld("Thermostat${tstatList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${tstatList.size()})") : sBLANK
                 desc += tstatFanList ? spanSmBld("Thermostat${tstatFanList.size() > 1 ? 's' : sBLANK} w/Fan}") + spanSmBr(" (${tstatFanList.size()})") : sBLANK
@@ -230,6 +232,13 @@ def mainPage() {
             section(sectHead('Other Settings:')) {
                 input 'restartService', sBOOL, title: inTS1('Restart Homebridge plugin when you press Save?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             }
+        }
+        if(isInst) {
+            section(sectHead('Save Your Settings')) {
+                paragraph spanSmBldBr('NOTICE:', sCLRGRY) + spanSm('Once you press <b>Done</b> the Homebridge plugin will refresh your device changes after 15-20 seconds.')
+            }
+            appFooter()
+            
         }
         clearTestDeviceItems()
     }
@@ -304,6 +313,7 @@ def deviceSelectPage() {
             input 'garageList', 'capability.garageDoorControl', title: inTS1("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", 'garage_door'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'speakerList', sCAP_SW, title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", 'media_player'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'shadesList', 'capability.windowShade', title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'securityKeypadsList', 'capability.securityKeypad', title: inTS1("Security Keypads: (${securityKeypadsList ? securityKeypadsList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
         section(sectHead("Buttons:")) {
             input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -405,7 +415,7 @@ private void inputDupeValidation() {
         d: [
             'fanList': 'Fans', 'fan3SpdList': 'Fans (3-Speed)', 'fan4SpdList': 'Fans (4-Speed)',
             // 'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
-            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'outletList': 'Outlets', 'shadesList': 'Window Shades', 'speakerList': 'Speakers',
+            'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'outletList': 'Outlets', 'shadesList': 'Window Shades', 'securityKeypadsList' : 'Security Keypads', 'speakerList': 'Speakers',
             'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)'
         ],
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
@@ -526,30 +536,47 @@ def capFilterPage() {
                 input 'sensorAllowTemp', 'capability.sensor', title: inTS1('Allow Temps on these sensors', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             }
         }
-        section(sectHead('Remove Capabilities from Devices')) {
-            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs allow you to remove certain capabilities from a device preventing the creation of unwanted devices under HomeKit', sCLRGRY)
+        section(sectHead('Remove Capabilities from Sensor Devices')) {
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
             input 'removeAcceleration', 'capability.accelerationSensor', title: inTS1('Remove Acceleration from these Devices', 'acceleration'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeBattery', 'capability.battery', title: inTS1('Remove Battery from these Devices', 'battery'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeContact', 'capability.contactSensor', title: inTS1('Remove Contact from these Devices', 'contact'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove ColorControl from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeColorTemperature', 'capability.colorTemperature', title: inTS1('Remove ColorTemperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             // input "removeEnergy", "capability.energyMeter", title: inTS1("Remove Energy Meter from these Devices", "power"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeHumidity', 'capability.relativeHumidityMeasurement', title: inTS1('Remove Humidity from these Devices', 'humidity'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeIlluminance', 'capability.illuminanceMeasurement', title: inTS1('Remove Illuminance from these Devices', 'illuminance'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeLevel', 'capability.switchLevel', title: inTS1('Remove Level from these Devices', 'speed_knob'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeLock', 'capability.lock', title: inTS1('Remove Lock from these Devices', 'lock'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeMotion', 'capability.motionSensor', title: inTS1('Remove Motion from these Devices', 'motion'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             // input "removePower", "capability.powerMeter", title: inTS1("Remove Power Meter from these Devices", "power"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removePresence', 'capability.presenceSensor', title: inTS1('Remove Presence from these Devices', 'presence'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeSwitch', sCAP_SW, title: inTS1('Remove Switch from these Devices', sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeTamper', 'capability.tamperAlert', title: inTS1('Remove Tamper from these Devices', 'tamper'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeTemp', 'capability.temperatureMeasurement', title: inTS1('Remove Temperature from these Devices', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'removeValve', 'capability.valve', title: inTS1('Remove Valve from these Devices', 'valve'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeTemp', 'capability.temperatureMeasurement', title: inTS1('Remove Temperature from these Devices', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false            
             input 'removeWater', 'capability.waterSensor', title: inTS1('Remove Water from these Devices', 'water'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
+
+        section(sectHead('Remove Capabilities from Actuator Devices')) {
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
+            input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove ColorControl from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeColorTemperature', 'capability.colorTemperature', title: inTS1('Remove ColorTemperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeLevel', 'capability.switchLevel', title: inTS1('Remove Level from these Devices', 'speed_knob'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeLock', 'capability.lock', title: inTS1('Remove Lock from these Devices', 'lock'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeSwitch', sCAP_SW, title: inTS1('Remove Switch from these Devices', sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeValve', 'capability.valve', title: inTS1('Remove Valve from these Devices', 'valve'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
+
+        section(sectHead('Remove Capabilities from Thermostats')) {
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs allow you to remove certain capabilities from thermostats allowing you to customize your experience in HomeKit (Certain Items may break the Thermostat under HomeKit)', sCLRGRY)
+            input 'removeThermostat', 'capability.thermostat', title: inTS1('Remove Thermostat from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeThermostatFanMode', 'capability.thermostat', title: inTS1('Remove Thermostat Fan from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeThermostatCoolingSetpoint', 'capability.thermostat', title: inTS1('Remove Thermostat Cooling from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeThermostatHeatingSetpoint', 'capability.thermostat', title: inTS1('Remove Thermostat Heating from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeThermostatMode', 'capability.thermostat', title: inTS1('Remove Thermostat Modes from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
+
+        section(sectHead('Remove Capabilities from Buttons')) {
+            input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
+
         section(sectHead('Reset Selected Filters:'), hideable: true, hidden: true) {
             input 'resetCapFilters', sBOOL, title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             if (settings.resetCapFilters) { settingUpdate('resetCapFilters', sFALSE, sBOOL); resetCapFilters() }
@@ -894,6 +921,14 @@ private Map getDeviceData(String type, sItem) {
                 attrVal = modeSwitchState((String)obj.name)
             }
             break
+        case 'securityKeypadsList':
+            curType = 'Security Keypad'
+            obj = sItem
+            // Define firmware variable and initialize it out of device handler attribute`
+            try {
+                if (sItem?.hasAttribute('firmware')) { firmware = sItem?.currentValue('firmware')?.toString() }
+            } catch (ignored) { firmware = sNULL }
+            break            
         default:
             curType = 'device'
             obj = sItem
@@ -904,21 +939,39 @@ private Map getDeviceData(String type, sItem) {
             break
     }
     if (curType && obj) {
-        return [
-            name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
-            basename: !isVirtual ? sItem?.name : name,
-            deviceid: !isVirtual ? sItem?.id : devId,
-            status: !isVirtual ? sItem?.status : 'Online',
-            manufacturerName: (!isVirtual ? sItem?.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
-            modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : curType+" Device",
-            serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : curType+devId,
-            firmwareVersion: firmware ?: '1.0.0',
-            lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : now(),
-            capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
-            commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
-            deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
-            attributes: !isVirtual ? deviceAttributeList(sItem) : [(sSW): attrVal]
-        ]
+        if (curType == 'Security Keypad') {
+            return [
+                name: sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                basename: sItem?.name,
+                deviceid: "securityKeypad_${sItem?.id}",
+                status: sItem?.status,
+                manufacturerName: sItem?.manufacturerName ?: pluginNameFLD,
+                modelName: sItem?.modelName ?: sItem?.getTypeName(),
+                serialNumber: sItem?.getDeviceNetworkId(),
+                firmwareVersion: firmware ?: '1.0.0',
+                lastTime: sItem?.getLastActivity() ?: null,
+                capabilities: ['Alarm System Status': 1, 'Alarm': 1],
+                commands: [],
+                attributes: ['alarmSystemStatus': getSecurityKeypadMode(sItem?.currentValue('securityKeypad')?.toString())]
+            ]            
+        }
+        else {
+            return [
+                name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                basename: !isVirtual ? sItem?.name : name,
+                deviceid: !isVirtual ? sItem?.id : devId,
+                status: !isVirtual ? sItem?.status : 'Online',
+                manufacturerName: (!isVirtual ? sItem?.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
+                modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : curType+" Device",
+                serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : curType+devId,
+                firmwareVersion: firmware ?: '1.0.0',
+                lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : now(),
+                capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
+                commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
+                deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
+                attributes: !isVirtual ? deviceAttributeList(sItem) : [(sSW): attrVal]
+            ]
+        }
     }
     return null
 }
@@ -1023,6 +1076,62 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: 'hsmSetArm', value: sMode)
 }
 
+String setSecurityKeypadMode(String cmd) {
+    String kCmd = sNULL
+    switch (cmd) {
+        case 'armAway':
+        case 'away':
+            kCmd = 'armAway'
+            break
+        case 'night':
+        case 'armNight':
+            kCmd = 'armNight'
+            break
+        case 'armHome':
+        case 'home':
+        case 'stay':
+            kCmd = 'armHome'
+            break
+        case 'disarm':
+        case 'off':
+        case 'cancel':
+            kCmd = 'disarm'
+            break    
+    }
+    // log.debug "setSecurityKeypadMode | StatusIn: (${cmd}) | ModeOut: (${kCmd})"
+    return kCmd   
+}
+
+String getSecurityKeypadMode(String status) {
+    // log.debug "getSecurityKeypadMode: ${status}"
+    String hStatus = sNULL
+    switch (status) {
+        case 'armed away':
+            hStatus = 'armedAway'
+            break
+        case 'intrusion-away':   // accomodate custom drivers setting the securityKeypad attribute to custom values for intrusion
+            hStatus = 'intrusion-away'    
+            break
+        case 'armed night':
+            hStatus = 'armedNight'
+            break
+        case 'intrusion-night':   // accomodate custom drivers setting the securityKeypad attribute to custom values for intrusion
+            hStatus = 'intrusion-night'
+            break
+        case 'armed home':
+            hStatus = 'armedHome'
+            break
+        case 'intrusion-home':   // accomodate custom drivers setting the securityKeypad attribute to custom values for intrusion
+            hStatus = 'instrusion-home'
+            break
+        case 'disarmed':
+            hStatus = 'disarmed'
+            break        
+    }
+    // log.debug "getSecurityKeypadMode | StatusIn: (${status}) | ModeOut: (${hStatus})"
+    return hStatus         
+}
+
 String getAppEndpointUrl(subPath)   { return "${getApiServerUrl()}/${getHubUID()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
 String getLocalEndpointUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
 String getLocalUrl(subPath) { return "${getLocalApiServerUrl()}/apps/${app?.id}${subPath ? "/${subPath}" : sBLANK}?access_token=${(String)state.accessToken}".toString() }
@@ -1097,6 +1206,11 @@ private processCmd(devId, String cmd, value1, value2) {
     if (shw) { logInfo("Plugin called Process Command | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
     if (!devId) { return }
     String command = cmd
+    
+    if (devId.contains("securityKeypad_") && (List)settings.securityKeypadsList) {
+        command = setSecurityKeypadMode(command)
+        devId = devId.replaceFirst("securityKeypad_", "")
+    }
 
     if (devId == "alarmSystemStatus_${location?.id}" && (Boolean)settings.addSecurityDevice) {
         setAlarmSystemMode(command)
@@ -1104,7 +1218,7 @@ private processCmd(devId, String cmd, value1, value2) {
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
 
-    }  else if (command == 'mode' &&  (List)settings.modeList) {
+    } else if (command == 'mode' &&  (List)settings.modeList) {
         if (shw) { logDebug("Virtual Mode Received: ${devId}") }
         String mdevId = devId.replaceAll('m_', sBLANK)
         changeMode(mdevId, shw)
@@ -1225,6 +1339,7 @@ Map deviceCapabilityList(device) {
     if (isDeviceInInput('fanList', device.id)) { capItems['Fan'] = 1 }
     if (isDeviceInInput('speakerList', device.id)) { capItems['Speaker'] = 1 }
     if (isDeviceInInput('shadesList', device.id)) { capItems['WindowShade'] = 1 }
+    if (isDeviceInInput('securityKeypadsList', device.id)) { capItems['SecurityKeypad'] = 1 }
     if (isDeviceInInput('garageList', device.id)) { capItems['GarageDoorControl'] = 1 }
     if (isDeviceInInput('tstatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode') }
     if (isDeviceInInput('tstatFanList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
@@ -1249,7 +1364,8 @@ Map deviceCapabilityList(device) {
 
 @Field static final Map<String, String> capFilterFLD = [
     'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
-    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'Switch': 'Switch', 'Water': 'WaterSensor',
+    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'SecurityKeypad' : 'SecurityKeypad', 'Switch': 'Switch', 'Water': 'WaterSensor',
+    'Thermostat': 'Thermostat', 'ThermostatFanMode': 'ThermostatFanMode', 'ThermostatOperatingState': 'ThermostatOperatingState', 'ThermostatSetpoint': 'ThermostatSetpoint', 'ThermostatCoolingSetpoint': 'ThermostatCoolingSetpoint', 'ThermostatHeatingSetpoint': 'ThermostatHeatingSetpoint',
     'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
 ]
 
@@ -1272,6 +1388,10 @@ Map deviceCommandList(device) {
     if (isDeviceInInput('tstatHeatList', device.id)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
     if (isDeviceInInput('removeColorControl', device.id)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
     if (isDeviceInInput('removeColorTemperature', device.id)) { cmds.remove('setColorTemperature') }
+    if (isDeviceInInput('removeThermostatFanMode', device.id)) { cmds.remove('setThermostatFanMode'); cmds.remove("setSupportedThermostatFanModes"); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate'); }
+    if (isDeviceInInput('removeThermostatMode', device.id)) { cmds.remove('setThermostatMode'); cmds.remove("setSupportedThermostatModes"); cmds.remove('auto'); cmds.remove('cool'); cmds.remove('emergencyHeat'); cmds.remove('heat'); }
+    if (isDeviceInInput('removeThermostatCoolingSetpoint', device.id)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool'); }
+    if (isDeviceInInput('removeThermostatHeatingSetpoint', device.id)) { cmds.remove('setHeatingSetpoint'); cmds.remove('heat'); cmds.remove('emergencyHeat'); cmds.remove('auto') }
     return cmds
 }
 
@@ -1283,10 +1403,14 @@ Map deviceAttributeList(device) {
         } catch (ignored) {
             [((String)attribute.name): null]
         }
-}
+    }
     if (isDeviceInInput('tstatHeatList', device.id)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange') }
     if (isDeviceInInput('removeColorControl', device.id)) { atts.remove('RGB'); atts.remove('color'); atts.remove('hue'); atts.remove('saturation') }
     if (isDeviceInInput('removeColorTemperature', device.id)) { atts.remove('colorTemperature') }
+    if (isDeviceInInput('removeThermostatFanMode', device.id)) { atts.remove('thermostatFanMode'); atts.remove('supportedThermostatFanModes'); }
+    if (isDeviceInInput('removeThermostatMode', device.id)) { atts.remove('thermostatMode'); atts.remove('supportedThermostatModes'); }
+    if (isDeviceInInput('removeThermostatCoolingSetpoint', device.id)) { atts.remove('thermostatCoolingSetpoint'); atts.remove('coolingSetpoint') }
+    if (isDeviceInInput('removeThermostatHeatingSetpoint', device.id)) { atts.remove('thermostatHeatingSetpoint'); atts.remove('heatingSetpoint') }
     return atts
 }
 
@@ -1301,7 +1425,7 @@ def getAllData() {
 static Map deviceSettingKeys() {
     return [
         'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3Spd) Devices', 'fan4SpdList': 'Fans (4Spd) Devices', 'fan5SpdList': 'Fans (5Spd) Devices', 'deviceList': 'Other Devices',
-        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices',
+        'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices','securityKeypadsList': 'Security Keypad Devices',
         'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)', 'outletList': 'Outlet Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices'
     ]
@@ -1313,7 +1437,7 @@ void registerDevices() {
         'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Block Adaptive Lighting)', 'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3SPD) Devices', 'fan4SpdList': 'Fans (4SPD) Devices', 'fan5SpdList': 'Fans (5SPD) Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices', 'outletList': 'Outlet Devices',
-        'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'garageList': 'Garage Door Devices',
+        'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'securityKeypadsList': 'Security Keypad Devices','garageList': 'Garage Door Devices',
         'tstatList': 'Thermostat Devices', 'tstatFanList': 'Thermostat + Fan Devices', 'tstatHeatList': 'Thermostat (HeatOnly) Devices'
     ]?.each { String k, String v->
         logDebug("Subscribed to (${settings."${k}"?.size() ?: 0}) ${v}")
@@ -1341,7 +1465,7 @@ Boolean isDeviceInInput(String setKey, devId) {
 
 @Field static final Map<String, String> attMapFLD = [
     'acceleration': 'Acceleration', 'battery': 'Battery', 'contact': 'Contact', 'energy': 'Energy', 'humidity': 'Humidity', 'illuminance': 'Illuminance',
-    'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power', 'presence': 'Presence', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
+    'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power', 'presence': 'Presence', 'securityKeypad' : 'SecurityKeypad', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
     'temperature': 'Temp', 'valve': 'Valve', 'pushed': 'PushableButton', 'held': 'HoldableButton', 'doubleTapped': 'DoubleTapableButton'
 ]
 
@@ -1418,6 +1542,12 @@ def changeHandler(evt) {
         case 'hsmSetArm':
             sendEvt = false
             break
+        case 'securityKeypad':
+            deviceid = "securityKeypad_${deviceid}"
+            attr = 'alarmSystemStatus'
+            value = getSecurityKeypadMode(value)
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
+            break            
         case 'alarmSystemStatus':
             deviceid = "alarmSystemStatus_${location?.id}"
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
@@ -1777,7 +1907,7 @@ static String divSmBld(String str, String clr=sNULL, String img=sNULL)      { re
 
 def appFooter() {
     section() {
-        paragraph htmlLine('orange')
+        // paragraph htmlLine('orange')
         paragraph spanSm("<div style='text-align:center;'><b><u>Homebridge Hubitat</u></b><br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target='_blank'><img width='120' height='120' src='https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png'></a><br><br>Please consider donating if you find this integration useful.</div>", sCLRORG)
     }
 }

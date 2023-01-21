@@ -1,3 +1,9 @@
+## _**v2.7.0**_ (01-21-2023)
+- [NEW] Added thermostat filters to the filters page.  So you can remove the fan, heat, cool, modes.
+- [NEW] Added support for Security Keypads to be used as a security system. Thanks @lnjustin.
+- [UPDATE] Removed the confirmation page so you now have one less click to save your settings.
+- [UPDATE] Cleaned up device attributes subscriptions to reduce the number of subscriptions.
+
 ## _**v2.6.1**_ (12-21-2022)
 - [FIX] Fix for plugin version not showing updated.
 - 
