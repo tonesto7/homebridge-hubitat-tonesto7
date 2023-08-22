@@ -1,4 +1,4 @@
-## _**v2.8.2**_ (08-22-2023)
+## _**v2.8.3**_ (08-22-2023)
 
 - [FIX] Package updates for security.
 
