@@ -15,6 +15,8 @@ assignees: 'tonesto7'
    - Select your problem device from one of the inputs
    - Copy the data displayed and paste it below
 
+    __Replace_this_with_device_output__
+
 ## Issue Description
 
   - What issue are you experiencing?
