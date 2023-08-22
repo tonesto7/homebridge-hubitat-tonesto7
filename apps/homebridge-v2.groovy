@@ -33,6 +33,7 @@ preferences {
     page(name: 'deviceSelectPage')
     page(name: 'changeLogPage')
     page(name: 'capFilterPage')
+    page(name: "attrFilterPage")
     page(name: 'developmentPage')
     page(name: 'pluginConfigPage')
     page(name: 'donationPage')
@@ -43,8 +44,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.7.0'
-//@Field static final String appModifiedFLD = '01-21-2023'
+@Field static final String appVersionFLD  = '2.8.0'
+//@Field static final String appModifiedFLD = '08-22-2023'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -58,6 +59,7 @@ preferences {
 //@Field static final String okSymFLD       = '\u2713'
 //@Field static final String notOkSymFLD    = '\u2715'
 //@Field static final String sPAUSESymFLD   = '\u275A\u275A'
+@Field static final String sEXTNRL        = 'external'
 @Field static final String sLINEBR        = '<br>'
 @Field static final String sFALSE         = 'false'
 @Field static final String sTRUE          = 'true'
@@ -109,7 +111,9 @@ preferences {
     attributes: [
         'DeviceWatch-Enroll', 'DeviceWatch-Status', 'checkInterval', 'LchildVer', 'FchildVer', 'LchildCurr', 'FchildCurr', 'lightStatus', 'lastFanMode', 'lightLevel',
         'coolingSetpointRange', 'heatingSetpointRange', 'thermostatSetpointRange', 'power', 'energy', 'colorMode', 'RGB', 'colorName', 'hysteresis', 'armingIn', 'firmware0', 'firmware1',
-        'frequency', 'lastCodeName', 'lockCodes', 'supportedFanSpeeds', 'numberOfButtons', 'maxCodes'
+        'frequency', 'lastCodeName', 'lockCodes', 'supportedFanSpeeds', 'numberOfButtons', 'maxCodes',
+        // life360+
+        "avatarHtml", "html", "avatar", "savedPlaces", "address1prev", "address1", "email", "phone", "shareLocation", "wifiState", "status", "charge", "distance", "since", "isDriving", "inTransit", "lastUpdated", "accuracy", "latitude", "longitude", "memberName",
     ],
     evt_attributes: [
         'DeviceWatch-DeviceStatus', 'DeviceWatch-Enroll', 'checkInterval', 'devTypeVer', 'dayPowerAvg', 'apiStatus', 'yearCost', 'yearUsage','monthUsage', 'monthEst', 'weekCost', 'todayUsage',
@@ -127,15 +131,15 @@ preferences {
         // nest thermostat items
         'canCool', 'canHeat', 'etaBegin', 'hasAuto', 'hasFan', 'hasLeaf', 'heatingSetpointMax', 'heatingSetpointMin', 'lockedTempMax', 'lockedTempMine', 'nestPresence', 'nestThermostatMode', 'nestOperatingState', 'nestType', 'pauseUpdates', 'previousthermostatMode', 'sunlightCorrectionActive', 'sunlightCorrectionEnabled', 'supportedNestThermostatModes', 'tempLockOn', 'temperatureUnit', 'thermostatSetpointMax', 'thermostatSetpointMin', 'timeToTarget', 'coolingSetpointMin', 'coolingSetpointMax',
         // nest protect items
-        'alarmState', 'apiStatus', 'batteryState', 'isTesting', 'lastConnection', 'lastTested', 'nestSmoke', 'nestCarbonMonoxide', 'onlineStatus',
-        'powerSourceNest', 'softwareVer', 'uiColor',
+        'alarmState', 'apiStatus', 'batteryState', 'isTesting', 'lastConnection', 'lastTested', 'nestSmoke', 'nestCarbonMonoxide', 'onlineStatus', 'powerSourceNest', 'softwareVer', 'uiColor',
         // nest camera
         'audioInputEnabled', 'imageUrl', 'imageUrlHtml', 'isStreaming', 'lastEventEnd', 'lastEventStart', 'lastEventType', 'lastOnlineChange', 'motionPerson', 'publicShareEnabled', 'publicShareUrl', 'videoHistoryEnabled',
         // tankUtility
         'lastreading',
         // intesisHome
-        'iFanSpeed', 'ihvvane', 'ivvane', 'online', 'currentConfigCode', 'currentTempOffset', 'currentemitterPower', 'currentsurroundIR', 'swingMode',
-        'hubMeshDisabled'
+        'iFanSpeed', 'ihvvane', 'ivvane', 'online', 'currentConfigCode', 'currentTempOffset', 'currentemitterPower', 'currentsurroundIR', 'swingMode', 'hubMeshDisabled',
+        // life360+
+        "avatarHtml", "html", "avatar", "savedPlaces", "address1prev", "address1", "email", "phone", "shareLocation", "wifiState", "status", "charge", "distance", "since", "isDriving", "inTransit", "lastUpdated", "accuracy", "latitude", "longitude", "memberName",
     ],
     capabilities: [
         'HealthCheck', 'Indicator', 'WindowShadePreset', 'ChangeLevel', 'Outlet', 'HealthCheck', 'UltravioletIndex', 'ColorMode', 'VoltageMeasurement', 'PowerMeter', 'EnergyMeter', 'ThreeAxis',
@@ -162,7 +166,7 @@ def mainPage() {
     return dynamicPage(name: 'mainPage', nextPage: sBLANK, install: true, uninstall: true) {
         appInfoSect()
         section(sectHead('Device Configuration:')) {
-            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || securityKeypadsList || outletList || garageList || tstatList || tstatHeatList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
+            Boolean conf = (lightList || pushableButtonList || holdableButtonList || doubleTapableButtonList || fanList || fan3SpdList || fan4SpdList || speakerList || shadesList || securityKeypadsList || outletList || garageList || tstatList || tstatHeatList || tstatCoolList) || (sensorList || switchList || deviceList) || (modeList || pistonList)
             Integer fansize = (fanList?.size() ?: 0) + (fan3SpdList?.size() ?: 0) + (fan4SpdList?.size() ?: 0) + (fan5SpdList?.size() ?: 0)
             String desc = sNULL
             Integer devCnt = getDeviceCnt()
@@ -181,7 +185,8 @@ def mainPage() {
                 desc += garageList ? spanSmBld("Garage Door${garageList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${garageList.size()})") : sBLANK
                 desc += tstatList ? spanSmBld("Thermostat${tstatList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${tstatList.size()})") : sBLANK
                 desc += tstatFanList ? spanSmBld("Thermostat${tstatFanList.size() > 1 ? 's' : sBLANK} w/Fan}") + spanSmBr(" (${tstatFanList.size()})") : sBLANK
-                desc += tstatHeatList ? spanSmBld("Thermostat Heat${tstatHeatList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${tstatHeatList.size()})") : sBLANK
+                desc += tstatCoolList ? spanSmBld("Thermostat Cool Only${tstatCoolList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${tstatCoolList.size()})") : sBLANK
+                desc += tstatHeatList ? spanSmBld("Thermostat Heat Only${tstatHeatList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${tstatHeatList.size()})") : sBLANK
                 desc += sensorList ? spanSmBld("Sensor${sensorList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${sensorList.size()})") : sBLANK
                 desc += switchList ? spanSmBld("Switch${switchList.size() > 1 ? 'es' : sBLANK}") + spanSmBr(" (${switchList.size()})") : sBLANK
                 desc += deviceList ? spanSmBld("Other${deviceList.size() > 1 ? 's' : sBLANK}") + spanSmBr(" (${deviceList.size()})") : sBLANK
@@ -198,9 +203,11 @@ def mainPage() {
 
         inputDupeValidation()
 
-        section(sectHead('Capability Filtering:')) {
-            String filterDesc = getFilterDesc()
-            href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: filterDesc + (capFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+        section(sectHead('Attribute/Capability Filtering:')) {
+            String aFilterDesc = getCustAttrFilterDesc()
+            String cFilterDesc = getCapFilterDesc()
+            href 'attrFilterPage', title: inTS1('Filter out attributes from your devices', 'filter'), description: aFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+            href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: cFilterDesc + (capFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
         }
 
         section(sectHead('Location Options:')) {
@@ -212,9 +219,18 @@ def mainPage() {
             href 'pluginConfigPage', style: 'embedded', required: false, title: inTS1('Generate Config for HomeBridge', sINFO), description: pluginStatus + inputFooter(sTTV, sCLRGRY, true)
         }
 
-        section(sectHead('History Data and Device Debug:')) {
+        section(sectHead('History Data & Device Debug:')) {
             href 'historyPage', title: inTS1('View Command and Event History', 'backup'), description: inputFooter(sTTV, sCLRGRY, true)
             href 'deviceDebugPage', title: inTS1('View Device Debug Data', sDBG), description: inputFooter(sTTV, sCLRGRY, true)
+        }
+
+        section(sectHead("Feature Requests/Issue Reporting"), hideable: true, hidden: true) {
+            String issueUrl = "https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=bug&template=bug_report.md&title=%28BUG%29+&projects=homebridge-hubitat-tonesto7%2F6"
+            String featUrl = "https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=enhancement&template=feature_request.md&title=%5BFeature+Request%5D&projects=homebridge-hubitat-tonesto7%2F6"
+            String devUrl = "https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=device_support&template=device_support.md&title=%5BDevice+Support%5D&projects=homebridge-hubitat-tonesto7%2F6"
+            href url: featUrl, style: sEXTNRL, required: false, title: inTS1("New Feature Request", "info"), description: inputFooter("Tap to open browser", sCLRGRY, true)
+            href url: devUrl, style: sEXTNRL, required: false, title: inTS1("Device Support", "info"), description: inputFooter("Tap to open browser", sCLRGRY, true)
+            href url: issueUrl, style: sEXTNRL, required: false, title: inTS1("Report an Issue", "info"), description: inputFooter("Tap to open browser", sCLRGRY, true)
         }
 
         section(sectHead('App Preferences:')) {
@@ -258,7 +274,7 @@ def pluginConfigPage() {
 
         section(sectHead('HomeKit Adaptive Lighting')) {
             String url = 'https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.'
-            href url: url, style: 'external', title: inTS1('What is Adaptive Lighting?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
+            href url: url, style: sEXTNRL, title: inTS1('What is Adaptive Lighting?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
             input 'adaptive_lighting',  sBOOL, title: inTS1('Allow Supported Bulbs to Use HomeKit Adaptive Lighting?', sCMD), required: false, defaultValue: true, submitOnChange: true
             if ((Boolean)settings.adaptive_lighting) {
                 input 'adaptive_lighting_offset', 'number', title: inTS1('Adaptive Lighting - Offset ColorTemp Conversions by +/- Mireds?', sCMD), range: '-100..100', required: false, defaultValue: 0, submitOnChange: true
@@ -277,7 +293,7 @@ def pluginConfigPage() {
 
         section(sectHead('Test Communication with Plugin')) {
             String url = "http://${getServerAddress()}/pluginTest"
-            href url: url, style: 'external', title: inTS1('Test Plugin Communication?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
+            href url: url, style: sEXTNRL, title: inTS1('Test Plugin Communication?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
         }
     }
 }
@@ -297,7 +313,7 @@ static def deviceValidationErrors() {
         ]
     ]
 
-    // if(tstatHeatList || tstatList || tstatFanList) {}
+    // if(tstatHeatList || tstatCoolList || tstatList || tstatFanList) {}
     return reqs
 }
 
@@ -316,6 +332,11 @@ def deviceSelectPage() {
             input 'securityKeypadsList', 'capability.securityKeypad', title: inTS1("Security Keypads: (${securityKeypadsList ? securityKeypadsList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
         section(sectHead("Buttons:")) {
+            if(pushableButtonList || holdableButtonList || doubleTapableButtonList) {
+                paragraph spanSmBldBr("NOTICE:", sCLRRED) + 
+                    spanSmBr("Buttons are a weird device under HomeKit and don't allow any inbound action under Hubitat. They only allow you to execute actions/automations under HomeKit per button you've configured", sCLRRED) + 
+                    spanSmBr("Once the remote device is created under HomeKit it will remain in the unconfigured state so find it and configure each button number and pushed/held/tapped event in the Home app.", sCLRRED)
+            }
             input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "holdableButtonList", "capability.holdableButton", title: inTS1("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "doubleTapableButtonList", "capability.doubleTapableButton", title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -331,6 +352,7 @@ def deviceSelectPage() {
         section(sectHead('Thermostats:')) {
             input 'tstatList', 'capability.thermostat', title: inTS1("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatFanList', 'capability.thermostat', title: inTS1("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'tstatCoolList', 'capability.thermostat', title: inTS1("Cool Only Thermostats: (${tstatCoolList ? tstatCoolList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatHeatList', 'capability.thermostat', title: inTS1("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
@@ -390,13 +412,20 @@ private void resetCapFilters() {
             settingRemove(k)
         }
     }
+    settingRemove("customCapFilters")
 }
 
 private Boolean capFiltersSelected() {
+    Map cFilters = parseCustomFilterStr((String)settings.customCapFilters)
+    Map perDev = cFilters?.perDevice ?: [:]
+    List<String> global = cFilters?.global ?: []
+    if (perDev && perDev?.keySet()?.size() || global && global?.size()) {
+        return true
+    }
     return ( ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value }.collect { (String)it.key })?.size() > 0
 }
 
-private String getFilterDesc() {
+private String getCapFilterDesc() {
     String desc = ''
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (remKeys?.size()) {
@@ -406,6 +435,65 @@ private String getFilterDesc() {
             desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
         }
     }
+    if(desc.size() > 0) {
+        desc += spanSmBr("", sCLR4D9)
+    }
+    List<String> capItems = (String)settings.customCapFilters ? settings.customCapFilters.split(',').collect { (String) it.trim() } : []
+    if (capItems?.size()) {
+        capItems = capItems?.unique().sort()
+        desc += spanSmBr("Custom Capabilities: (${capItems.size()})", sCLR4D9)
+        capItems.each { String cap->
+            desc += spanSmBr(" ${sBULLET} ${cap}", sCLR4D9)
+        }
+    }
+    return desc
+}
+
+private List<String> getCustCapFilters() {
+    List<String> capItems = (String)settings.customCapFilters ? settings.customCapFilters.split(',').collect { (String) it.trim() } : []
+    return capItems?.size() ? capItems?.unique().sort() : []
+}
+
+private void resetAttrFilters() {
+    settingRemove('customAttrFilters')
+}
+
+private Boolean attrFiltersSelected() {
+    Map cFilters = parseCustomFilterStr((String)settings.customAttrFilters)
+    Map perDev = cFilters?.perDevice ?: [:]
+    List<String> global = cFilters?.global ?: []
+    if (perDev && perDev?.keySet()?.size() || global && global?.size()) {
+        return true
+    }
+    return false
+}
+
+private String getCustAttrFilterDesc() {
+    String desc = ''
+    Map cFilters = parseCustomFilterStr((String)settings.customAttrFilters)
+    // log.debug "getCustAttrFilterDesc | customFilters: ${cFilters}"
+    Map perDev = cFilters?.perDevice ?: [:]
+    List<String> global = cFilters?.global ?: []
+
+    if (perDev && perDev?.keySet()?.size()) {
+        desc += spanSmBr("Per-Device Attributes: (${perDev.keySet().size()})", sCLR4D9)
+        // perDev.each { String dev, Object attrsObj ->
+        //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
+        //     desc += spanSmBr("${dev}:", sCLR4D9)
+        //     attrs.each { String attr->
+        //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
+        //     }
+        // }
+    }
+
+    if (global && global?.size()) {
+        List<String> attrItems = global?.unique().sort()
+        desc += spanSmBr("Global Attributes: (${attrItems.size()})", sCLR4D9)
+        attrItems.each { String attr->
+            desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
+        }
+    }
+    
     return desc
 }
 
@@ -416,7 +504,7 @@ private void inputDupeValidation() {
             'fanList': 'Fans', 'fan3SpdList': 'Fans (3-Speed)', 'fan4SpdList': 'Fans (4-Speed)',
             // 'pushableButtonList': 'Pushable Buttons', 'holdableButtonList': 'Holdable Buttons', 'doubleTapableButtonList': 'Double Tap Buttons',
             'lightList': 'Lights', 'lightNoAlList': 'Lights (Block Adaptive Lighting)', 'outletList': 'Outlets', 'shadesList': 'Window Shades', 'securityKeypadsList' : 'Security Keypads', 'speakerList': 'Speakers',
-            'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)'
+            'garageList': 'Garage Doors', 'tstatList': 'Thermostat', 'tstatFanList': 'Themostat + Fan', 'tstatHeatList': 'Thermostat (Heat Only)', 'tstatCoolList': 'Thermostat (Cool Only)',
         ],
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
     ]
@@ -536,7 +624,8 @@ def capFilterPage() {
                 input 'sensorAllowTemp', 'capability.sensor', title: inTS1('Allow Temps on these sensors', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             }
         }
-        section(sectHead('Remove Capabilities from Sensor Devices')) {
+
+        section(sectHead('Remove Sensor Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
             input 'removeAcceleration', 'capability.accelerationSensor', title: inTS1('Remove Acceleration from these Devices', 'acceleration'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeBattery', 'capability.battery', title: inTS1('Remove Battery from these Devices', 'battery'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -552,7 +641,7 @@ def capFilterPage() {
             input 'removeWater', 'capability.waterSensor', title: inTS1('Remove Water from these Devices', 'water'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Remove Capabilities from Actuator Devices')) {
+        section(sectHead('Remove Actuator Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
             input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove ColorControl from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeColorTemperature', 'capability.colorTemperature', title: inTS1('Remove ColorTemperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -562,7 +651,7 @@ def capFilterPage() {
             input 'removeValve', 'capability.valve', title: inTS1('Remove Valve from these Devices', 'valve'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Remove Capabilities from Thermostats')) {
+        section(sectHead('Remove Thermostats Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs allow you to remove certain capabilities from thermostats allowing you to customize your experience in HomeKit (Certain Items may break the Thermostat under HomeKit)', sCLRGRY)
             input 'removeThermostat', 'capability.thermostat', title: inTS1('Remove Thermostat from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeThermostatFanMode', 'capability.thermostat', title: inTS1('Remove Thermostat Fan from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -571,15 +660,46 @@ def capFilterPage() {
             input 'removeThermostatMode', 'capability.thermostat', title: inTS1('Remove Thermostat Modes from these Devices', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Remove Capabilities from Buttons')) {
+        section(sectHead('Remove Buttons Capabilities')) {
             input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Reset Selected Filters:'), hideable: true, hidden: true) {
-            input 'resetCapFilters', sBOOL, title: inTS1('Clear All Selected Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
+        section(sectHead('Custom Capabilities')) {
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom capabilities per device and/or globally to prevent unwanted characteristics in devices under HomeKit', sCLRGRY) + 
+                spanSmBr("There are 2 ways to format the data:", sCLRGRY) + 
+                spanSmBr(" ${sBULLET} To filter out a specific device capabilities wrap the item in brackets like [device_id1:Battery,Temperature], [device_id2:Acceleration,Illuminance]", sCLRGRY) +
+                spanSmBr(" ${sBULLET} To filter out an capabilities from all devices don't use brackets", sCLRGRY) + 
+                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") + 
+                spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
+                spanSmBr("Here is an example of mixing per-device and global filters: [device_id1:Battery,Temperature], [device_id2:Acceleration,Illuminance], SwitchLevel", sCLRORG)
+            input "customCapFilters", "textarea", title: inTS1("Enter custom capabilities", "filter"), description: "Enter the filters using the format mentioned above...",  submitOnChange: true, required: false
+        }
+
+        section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
+            input 'resetCapFilters', sBOOL, title: inTS1('Clear All Capability Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             if (settings.resetCapFilters) { settingUpdate('resetCapFilters', sFALSE, sBOOL); resetCapFilters() }
+        }
+    }
+}
+
+def attrFilterPage() {
+    return dynamicPage(name: 'attrFilterPage', title: 'Attribute Filtering', install: false, uninstall: false) {
+        section(sectHead('Custom Attributes')) {
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom attributes per device or globally to prevent subsciption events and/or the addition of unwanted characteristics in devices under HomeKit', sCLRGRY) + 
+                spanSmBr("There are 2 ways to format the data:", sCLRGRY) + 
+                spanSmBr(" ${sBULLET} To filter out a specific device attributes wrap the item in brackets like [device_id1:speed,switch], [device_id2:temperature,motion]", sCLRGRY) +
+                spanSmBr(" ${sBULLET} To filter out an attribute from all devices don't use brackets", sCLRGRY) + 
+                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") + 
+                spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
+                spanSmBr("Here is an example of mixing per-device and global filters: [device_id1:speed,switch], [device_id2:temperature,motion], temperature", sCLRORG)
+            input "customAttrFilters", "textarea", title: inTS1("Enter custom attributes", "filter"), description: "Enter the filters using the format mentioned above...",  submitOnChange: true, required: false
+        }
+
+        section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
+            input 'resetAttrFilters', sBOOL, title: inTS1('Clear All Attibute Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
+            if (settings.resetAttrFilters) { settingUpdate('resetAttrFilters', sFALSE, sBOOL); resetAttrFilters() }
         }
     }
 }
@@ -595,7 +715,7 @@ def donationPage() {
             str += spanSm('Thanks again for using Homebridge Hubitat')
             paragraph divSm(str, sCLRRED)
             input 'sentDonation', sBOOL, title: inTS1('Already Donated?'), defaultValue: false, submitOnChange: true
-            href url: textDonateLink(), style: 'external', required: false, title: inTS1('Donations', 'donations'), description: inputFooter('Tap to open in browser', sCLRGRY, true)
+            href url: textDonateLink(), style: sEXTNRL, required: false, title: inTS1('Donations', 'donations'), description: inputFooter('Tap to open in browser', sCLRGRY, true)
         }
         updInstData('shownDonation', true)
     }
@@ -613,7 +733,7 @@ def confirmPage() {
 def deviceDebugPage() {
     return dynamicPage(name: 'deviceDebugPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('View All Device Data Sent to HomeBridge:')) {
-            href url: getAppEndpointUrl('alldevices'), style: 'external', required: false, title: inTS1('View Device Data Sent to Homebridge...', sINFO), description: sBLANK, disabled: true
+            href url: getAppEndpointUrl('alldevices'), style: sEXTNRL, required: false, title: inTS1('View Device Data Sent to Homebridge...', sINFO), description: sBLANK, disabled: true
         }
 
         if (devMode()) {
@@ -645,6 +765,8 @@ def deviceDebugPage() {
                 paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>", sCLRGRY)
             }
         }
+
+
     }
 }
 
@@ -689,12 +811,14 @@ private Map getDeviceDebugMap(dev) {
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
             aa = deviceCommandList(dev).sort { it?.key }
             r.commands_processed = aa ?: []
+            r.commands_filtered = filteredOutCommands(dev) ?: []
             aa = getDeviceFlags(dev)
             r.customflags = aa ?: [:]
             r.attributes = [:]
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
             aa = deviceAttributeList(dev).sort { it?.key }
             r.attributes_processed = aa ?: []
+            r.attributes_filtered = filteredOutAttrs(dev) ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLANK})" }
         } catch (ex) {
             logError("Error while generating device data: ${ex}", ex)
@@ -1322,7 +1446,7 @@ static Map findVirtPistonDevice(id) {
 
 Map deviceCapabilityList(device) {
     if (!device || !device.getId()) { return [:] }
-    Map<String,Integer> capItems = device.capabilities?.findAll { !((String)it.name in ignoreListFLD.capabilities) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
+    Map<String,Integer> capItems = device.capabilities?.findAll { !(ignoreCapability(device, (String)it.name, true)) }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
 
     if(isDeviceInInput("pushableButtonList", device.id)) { capItems["Button"] = 1; capItems["PushableButton"] = 1 }
     else { capItems.remove("PushableButton") }
@@ -1343,6 +1467,7 @@ Map deviceCapabilityList(device) {
     if (isDeviceInInput('garageList', device.id)) { capItems['GarageDoorControl'] = 1 }
     if (isDeviceInInput('tstatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode') }
     if (isDeviceInInput('tstatFanList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
+    if (isDeviceInInput('tstatCoolList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatHeatingSetpoint') }
     if (isDeviceInInput('tstatHeatList', device.id)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
 
     if (settings.noTemp && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
@@ -1370,22 +1495,38 @@ Map deviceCapabilityList(device) {
 ]
 
 private List filteredOutCaps(device) {
-    List capsFiltered = []
+    List filtered = []
     List<String> remKeys = settings.findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+    List custCaps = getCustCapFilters()
     if (!remKeys) remKeys = []
     remKeys.each { String k->
         String capName = k.replaceAll('remove', sBLANK)
         String theCap = (String)capFilterFLD[capName]
-        if (theCap && isDeviceInInput(k, device.id)) { capsFiltered.push(theCap) }
+        if (theCap && isDeviceInInput(k, device.id)) { filtered.push(theCap) }
     }
-    return capsFiltered
+    if (custCaps) {
+        filtered = filtered + device.capabilities?.findAll { ignoreCapability(device, (String)it.name) }?.collect { (String)it.name }
+    }
+    return filtered
+}
+
+private Boolean ignoreCapability(device, String cap, Boolean inclIgnoreFld=false) {
+    cap = cap.toLowerCase()
+    if (inclIgnoreFld && (cap in ignoreListFLD.capabilities.collect { it.toLowerCase() })) { return true }
+    Map customFilters = parseCustomFilterStr(settings.customCapFilters ?: sBLANK)
+    List<String> globalFilters = customFilters.global ?: []
+    Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
+    if (globalFilters.contains(cap)) { return true }
+    if (perDeviceFilters[device.id] && perDeviceFilters[device.id].collect { it.toLowerCase() }?.contains(cap)) { return true }
+    return false
 }
 
 Map deviceCommandList(device) {
     if (!device || !device.getId()) { return [:] }
-    Map cmds = device.supportedCommands?.findAll { !((String)it.name in ignoreListFLD.commands) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
+    Map cmds = device.supportedCommands?.findAll { !(ignoreCommand((String)it.name)) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
     if (isDeviceInInput('tstatList', device.id)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
-    if (isDeviceInInput('tstatHeatList', device.id)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
+    if (isDeviceInInput('tstatHeatList', device.id)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool')  }
+    if (isDeviceInInput('tstatCoolList', device.id)) { cmds.remove('setHeatingSetpoint'); cmds.remove('auto'); cmds.remove('heat'); cmds.remove('emergencyHeat') }
     if (isDeviceInInput('removeColorControl', device.id)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
     if (isDeviceInInput('removeColorTemperature', device.id)) { cmds.remove('setColorTemperature') }
     if (isDeviceInInput('removeThermostatFanMode', device.id)) { cmds.remove('setThermostatFanMode'); cmds.remove("setSupportedThermostatFanModes"); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate'); }
@@ -1395,9 +1536,62 @@ Map deviceCommandList(device) {
     return cmds
 }
 
+private Boolean ignoreCommand(String cmd) {
+    return cmd && (cmd in ignoreListFLD.command)
+}
+
+private List<String> filteredOutCommands(device) {
+    List<String> filtered = device.supportedCommands?.findAll { ignoreCommand((String)it.name) }?.collect { c->  (String)c.name } ?: []
+    return filtered
+}
+
+private Map parseCustomFilterStr(String text) {
+    def result = [
+        perDevice: [:], 
+        global: []
+    ]
+    
+    // Match sections either inside [ ] or standalone without brackets.
+    def matcher = text =~ /\[([^\]]+)\]|([^,\[]+)(?=\s*,|$)/
+    matcher.each {
+        def section = it[0].trim()
+        if (section.startsWith("[") && section.endsWith("]")) {
+            section = section[1..-2]  // Remove the brackets
+            def parts = section.split(":")
+            if (parts.size() == 2) {
+                def deviceId = parts[0].trim()
+                def attributes = parts[1].split(",\\s*")
+                result.perDevice[deviceId] = attributes
+            }
+        } else {
+            // If no brackets, it's a global attribute
+            result.global << section.trim()
+        }
+    }
+    // log.debug "parseCustomFilterStr: ${result}"
+    return result
+}
+
+private Boolean ignoreAttribute(device, String attr, Boolean inclIgnoreFld=true) {
+    attr = attr.toLowerCase()
+    if (inclIgnoreFld && (attr in ignoreListFLD.attributes.collect { it.toLowerCase() })) { return true }
+    Map customFilters = parseCustomFilterStr(settings.customAttrFilters ?: sBLANK)
+    List<String> globalFilters = customFilters.global ?: []
+    Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
+    if (globalFilters.contains(attr)) { return true }
+    if (perDeviceFilters[device.id] && perDeviceFilters[device.id].collect { it.toLowerCase() }?.contains(attr)) { return true }
+    return false
+}
+
+private List<String> filteredOutAttrs(device) {
+    List<String> filtered = []
+    filtered = device.supportedAttributes?.findAll { ignoreAttribute(device, (String)it.name) }?.collect { (String)it.name }
+    return filtered
+}
+
 Map deviceAttributeList(device) {
     if (!device || !device.getId()) { return [:] }
-    Map atts = device.supportedAttributes?.findAll { !((String) it.name in ignoreListFLD.attributes) }?.collectEntries { attribute->
+    Map atts = device.supportedAttributes?.findAll { !(ignoreAttribute(device, (String) it.name)) }?.collectEntries { attribute->
         try {
             [((String)attribute.name): device.currentValue((String) attribute.name)]
         } catch (ignored) {
@@ -1405,6 +1599,7 @@ Map deviceAttributeList(device) {
         }
     }
     if (isDeviceInInput('tstatHeatList', device.id)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange') }
+    if (isDeviceInInput('tstatCoolList', device.id)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange') }
     if (isDeviceInInput('removeColorControl', device.id)) { atts.remove('RGB'); atts.remove('color'); atts.remove('hue'); atts.remove('saturation') }
     if (isDeviceInInput('removeColorTemperature', device.id)) { atts.remove('colorTemperature') }
     if (isDeviceInInput('removeThermostatFanMode', device.id)) { atts.remove('thermostatFanMode'); atts.remove('supportedThermostatFanModes'); }
@@ -1426,7 +1621,7 @@ static Map deviceSettingKeys() {
     return [
         'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3Spd) Devices', 'fan4SpdList': 'Fans (4Spd) Devices', 'fan5SpdList': 'Fans (5Spd) Devices', 'deviceList': 'Other Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'switchList': 'Switch Devices', 'lightList': 'Light Devices', 'lightNoAlList': 'Light Devices (Blocked Adaptive Lighting)', 'shadesList': 'Window Shade Devices','securityKeypadsList': 'Security Keypad Devices',
-        'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)', 'outletList': 'Outlet Devices',
+        'garageList': 'Garage Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat Devices (Heat)', 'tstatCoolList': 'T-Stat Devices (Cool)', 'outletList': 'Outlet Devices',
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices'
     ]
 }
@@ -1438,7 +1633,7 @@ void registerDevices() {
         'pushableButtonList': 'Pushable Button Devices', 'doubleTapableButtonList': 'Double Tapable Button Devices', 'holdableButtonList': 'Holdable Button Devices',
         'sensorList': 'Sensor Devices', 'speakerList': 'Speaker Devices', 'deviceList': 'Other Devices', 'outletList': 'Outlet Devices',
         'switchList': 'Switch Devices', 'shadesList': 'Window Shade Devices', 'securityKeypadsList': 'Security Keypad Devices','garageList': 'Garage Door Devices',
-        'tstatList': 'Thermostat Devices', 'tstatFanList': 'Thermostat + Fan Devices', 'tstatHeatList': 'Thermostat (HeatOnly) Devices'
+        'tstatList': 'Thermostat Devices', 'tstatFanList': 'Thermostat + Fan Devices', 'tstatHeatList': 'Thermostat (HeatOnly) Devices', 'tstatCoolList': 'Thermostat (CoolOnly) Devices'
     ]?.each { String k, String v->
         logDebug("Subscribed to (${settings."${k}"?.size() ?: 0}) ${v}")
         registerChangeHandler(settings."${k}")
@@ -1472,9 +1667,9 @@ Boolean isDeviceInInput(String setKey, devId) {
 void registerChangeHandler(devices, Boolean showlog=false) {
     devices?.each { device ->
         List theAtts = device.supportedAttributes?.collect { it?.name as String }?.unique()
-        if (showlog) { log.debug "atts: ${theAtts}" }
+        if (showlog) { log.debug "atts: ${theAtts}"; }
         theAtts?.each { String att ->
-            if (!(ignoreListFLD.evt_attributes.contains(att))) {
+            if (!(ignoreListFLD.evt_attributes.contains(att)) && !(ignoreAttribute(device, att, false))) {
                 if (settings.noTemp && att == 'temperature' && (device.hasAttribute('contact') || device.hasAttribute('water'))) {
                     Boolean skipAtt = true
                     if (settings.sensorAllowTemp) {

@@ -1,9 +1,9 @@
 {
     "dependencies": {
         "axios": "^1.4.0",
-        "body-parser": "^1.20.1",
+        "body-parser": "^1.20.2",
         "chalk": "^4.1.2",
-        "compare-versions": "4.1.4",
+        "compare-versions": "6.1.0",
         "express": "^4.18.2",
         "hap-nodejs-community-types": "0.3.1",
         "lodash": "^4.17.21",
@@ -11,14 +11,14 @@
         "portfinder-sync": "^0.0.2"
     },
     "devDependencies": {
-        "@snyk/protect": "^1.1088.0",
-        "@types/node": "^18.11.18",
-        "eslint": "^8.32.0",
-        "eslint-config-prettier": "^8.6.0",
+        "@snyk/protect": "^1.1205.0",
+        "@types/node": "^20.5.2",
+        "eslint": "^8.47.0",
+        "eslint-config-prettier": "^8.10.0",
         "eslint-plugin-prettier": "^4.2.1",
-        "homebridge": "^1.6.0",
-        "lint-staged": "^13.1.0",
-        "prettier": "^2.8.3"
+        "homebridge": "^1.6.1",
+        "lint-staged": "^13.3.0",
+        "prettier": "^2.8.8"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
@@ -62,6 +62,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.7.1",
+    "version": "2.8.0",
     "synk": true
 }
