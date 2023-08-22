@@ -22,7 +22,6 @@
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
-        "homebridge": ">=1.2.0",
         "node": ">=0.12.0"
     },
     "lint-staged": {
