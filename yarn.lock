@@ -122,10 +122,10 @@
   resolved "https://registry.yarnpkg.com/@snyk/protect/-/protect-1.1205.0.tgz#f1dd4f825fb334e5100d7ff0caeb105fe3c454cb"
   integrity sha512-y0dpE+RKbaAcl/QnIcczoROfBs+HZwOSV4DAnLe+mlzUyfojMv4DXxkjdzIEsO+Q0llI8VnAM/cO77kGFaIt/A==
 
-"@types/node@^20.5.2":
-  version "20.5.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.5.2.tgz#02850ed821c8113fd6ed9ae5c744b7f7cd6d6f51"
-  integrity sha512-5j/lXt7unfPOUlrKC34HIaedONleyLtwkKggiD/0uuMfT8gg2EOpg0dz4lCD15Ga7muC+1WzJZAjIB9simWd6Q==
+"@types/node@^20.5.3":
+  version "20.5.3"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.5.3.tgz#fa52c147f405d56b2f1dd8780d840aa87ddff629"
+  integrity sha512-ITI7rbWczR8a/S6qjAW7DMqxqFMjjTo61qZVWJ1ubPvbIQsL5D/TvwjYEalM8Kthpe3hTzOGrF2TGbAu2uyqeA==
 
 accepts@~1.3.8:
   version "1.3.8"
