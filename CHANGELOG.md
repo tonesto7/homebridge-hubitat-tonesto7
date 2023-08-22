@@ -1,3 +1,11 @@
+## _**v2.8.0**_ (08-22-2023)
+
+- [FIX] Package updates for security.
+
+## _**v2.7.1**_ (01-21-2023)
+
+- [FIX] Package updates for security.
+
 ## _**v2.6.0**_ (12-20-2022)
 
 - [NEW] Added new pluginTest endpoint so the HE app can test if communication with the plugin is working.

@@ -1,3 +1,15 @@
+## _**v2.8.0**_ (08-22-2023)
+- [NEW] Added new custom attribute and capabilities filter text box.  This allows you to enter comma separated text to assist in filtering out capabilities outside the inputs. It supports a per-device and global format.  Here is an example of mixing per-device and global filters: [device_id1:speed,switch], [device_id2:temperature,motion], temperature
+- [NEW] Added Issues & Support section to allow users to submit issues directly from the app.
+- [NEW] Added Cool Only Thermostat input to allow users to select thermostats that only support cooling.
+- [UPDATE] Updated device debug output to include list of filtered out capabilitie, attributes and commands.  The included filters are a combo of user selected filters and those that are statically built into the app.
+
+## _**v2.7.0**_ (01-21-2023)
+- [NEW] Added thermostat filters to the filters page.  So you can remove the fan, heat, cool, modes.
+- [NEW] Added support for Security Keypads to be used as a security system. Thanks @lnjustin.
+- [UPDATE] Removed the confirmation page so you now have one less click to save your settings.
+- [UPDATE] Cleaned up device attributes subscriptions to reduce the number of subscriptions.
+
 ## _**v2.6.1**_ (12-21-2022)
 - [FIX] Fix for plugin version not showing updated.
 - 
