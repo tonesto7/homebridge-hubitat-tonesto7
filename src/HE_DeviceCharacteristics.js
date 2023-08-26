@@ -31,8 +31,12 @@ module.exports = class DeviceCharacteristics {
                 if (attr === "status" && char === Characteristic.StatusActive) {
                     callback(null, accClass.transforms.transformStatus(this.context.deviceData.status));
                 } else {
-                    callback(null, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                    const val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
+                    if (val === undefined || val === null) {
+                        accClass.logError(`Error getting value for Characteristic [${c.displayName}] Using Attribute (${attr}) for ${acc.displayName} (${acc.context.deviceData.name})`);
+                    }
                     accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                    callback(null, val);
                 }
             });
             if (opts.props && Object.keys(opts.props).length) c.setProps(opts.props);
@@ -43,8 +47,12 @@ module.exports = class DeviceCharacteristics {
             if (attr === "status" && char === Characteristic.StatusActive) {
                 c.updateValue(accClass.transforms.transformStatus(this.context.deviceData.status));
             } else {
-                c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                const val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
+                if (val === undefined || val === null) {
+                    accClass.logError(`Error getting value for Characteristic [${c.displayName}] Using Attribute (${attr}) for ${acc.displayName} (${acc.context.deviceData.name})`);
+                }
                 accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+                c.updateValue(val);
             }
         }
         if (!c._events.change) {
@@ -60,8 +68,11 @@ module.exports = class DeviceCharacteristics {
             if (!c._events.get) {
                 c.on("get", (callback) => {
                     const val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
-                    callback(null, val);
+                    if (val === undefined || val === null) {
+                        accClass.logError(`Error getting value for Characteristic [${c.displayName}] Using Attribute (${attr}) for ${acc.displayName} (${acc.context.deviceData.name})`);
+                    }
                     accClass.log_get(attr, char, acc, val);
+                    callback(null, val);
                 });
             }
             if (!c._events.set) {
@@ -82,10 +93,15 @@ module.exports = class DeviceCharacteristics {
                 c.getValue();
             }
             c.getValue();
+            accClass.log_set(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
             accClass.storeCharacteristicItem(attr, this.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+            const val = accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts);
+            if (val === undefined || val === null) {
+                accClass.logError(`Error getting value for Characteristic [${c.displayName}] Using Attribute (${attr}) for ${acc.displayName} (${acc.context.deviceData.name})`);
+            }
             accClass.log_get(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
+            c.updateValue(val);
         }
         if (!c._events.change) {
             c.on("change", (chg) => {
