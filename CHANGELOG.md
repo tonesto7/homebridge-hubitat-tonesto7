@@ -1,4 +1,8 @@
-## _**v2.8.2**_ (08-22-2023)
+## _**v2.9.0**_ (08-26-2023)
+
+- [FIX] Tweaked the detection logic slightly to help with devices that show that they have invalid values for some characteristics.
+
+## _**v2.8.3**_ (08-22-2023)
 
 - [FIX] Package updates for security.
 

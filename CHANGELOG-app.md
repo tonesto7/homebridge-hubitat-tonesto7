@@ -1,3 +1,8 @@
+## _**v2.9.0**_ (08-26-2023)
+- [UPDATE] Modified the device debug page to show and additional view which is more Human readable.
+- [UPDATE] Modified the way that attributes, capabilities, and commands are assigned natively.  I've basically detemined exactly what attributes, commands and capabilities are required by the plugin and ignore all others.
+- [UPDATE] Tons of optimizations performance improvements (Thanks @nh.schottfam).
+
 ## _**v2.8.0**_ (08-22-2023)
 - [NEW] Added new custom attribute and capabilities filter text box.  This allows you to enter comma separated text to assist in filtering out capabilities outside the inputs. It supports a per-device and global format.  Here is an example of mixing per-device and global filters: [device_id1:speed,switch], [device_id2:temperature,motion], temperature
 - [NEW] Added Issues & Support section to allow users to submit issues directly from the app.
@@ -12,7 +17,7 @@
 
 ## _**v2.6.1**_ (12-21-2022)
 - [FIX] Fix for plugin version not showing updated.
-- 
+
 ## _**v2.6.0**_ (12-20-2022)
 - [NEW] UI now shows the plugin ip and port on the Generate Config Button.
 - [NEW] There is now a test plugin communication button on the plugin config page to that shows status, version, and the plugin config to test that Hubitat can reach the plugin.
