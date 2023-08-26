@@ -49,13 +49,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.8.0'
-//@Field static final String appModifiedFLD = '08-22-2023'
+@Field static final String appVersionFLD  = '2.9.0'
+//@Field static final String appModifiedFLD = '08-24-2023'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 283]
+@Field static final Map minVersionsFLD    = [plugin: 290]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -83,15 +83,15 @@ preferences {
 @Field static final String sAPPJSON       = 'application/json'
 @Field static final String sSUCC          = 'Success'
 @Field static final String sATK           = 'accessToken'
-//@Field static final String sMEDIUM        = 'medium'
+@Field static final String sMEDIUM        = 'medium'
 @Field static final String sSMALL         = 'small'
 @Field static final String sCLR4D9        = '#2784D9'
 @Field static final String sCLR9B1        = '#0299B1'
 @Field static final String sCLRRED        = 'red'
 //@Field static final String sCLRRED2       = '#cc2d3b'
 @Field static final String sCLRGRY        = 'gray'
-//@Field static final String sCLRGRN        = 'green'
-//@Field static final String sCLRGRN2       = '#43d843'
+@Field static final String sCLRGRN        = 'green'
+@Field static final String sCLRGRN2       = '#43d843'
 @Field static final String sCLRORG        = 'orange'
 @Field static final String sTTM           = 'Tap to modify...'
 @Field static final String sTTC           = 'Tap to configure...'
@@ -122,7 +122,9 @@ preferences {
         "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "Configuration", "ContactSensor", "Door", "DoorControl", 
         "DoubleTapableButton", "EnergyMeter", "Fan", "FanControl", "FanLight", "GarageDoorControl", "HoldableButton", "IlluminanceMeasurement", "Light", 
         "LightBulb", "Lock", "LockCodes", "Mode", "MotionSensor", "Outlet", "Piston", "Polling", "PowerMeter", "PowerSource", "PresenceSensor", "PushableButton", 
-        "Refresh", "RelativeHumidityMeasurement", "ReleasableButton", "Routine", "Sensor", "SmokeDetector", "Speaker", "Switch", "SwitchLevel", "TamperAlert", 
+        "Refresh", "RelativeHumidityMeasurement", 
+        // "ReleasableButton", 
+        "Routine", "Sensor", "SmokeDetector", "Speaker", "Switch", "SwitchLevel", "TamperAlert", 
         "TemperatureMeasurement", "Thermostat", "ThermostatCoolingSetpoint", "ThermostatFanMode", "ThermostatHeatingSetpoint", "ThermostatMode", 
         "ThermostatOperatingState", "ThermostatSetpoint", "Valve", "WaterSensor", "Window", "WindowShade",
     ],
@@ -161,13 +163,14 @@ def startPage() {
 
 @Field static List<String> ListVars
 
-static void FILL_ListVars(){
+static void FILL_ListVars() {
     if(!ListVars){
         List<String> items
         items = deviceSettingKeys().collect { (String)it.key }
         items = items + virtSettingKeys().collect { (String)it.key }
         ListVars = items
-    }}
+    }
+}
 
 def mainPage() {
     // Fill up the ListVars array
@@ -765,44 +768,99 @@ def deviceDebugPage() {
 
         section(sectHead('View Individual Device Data:')) {
             paragraph spanSmBldBr('NOTICE:', sCLRGRY) + spanSm("Do you have a device that's not working under homekit like you want?<br> ${sBULLET} Select a device from one of the inputs below and it will show you all data about the device.", sCLRGRY)
-            if (!debug_switch && !debug_other && !debug_garage && !debug_tstat) {
-                input 'debug_sensor', 'capability.sensor', title:  inTS1('Sensors:', 'sensors'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
+            input 'debug_device', 'capability.*', title: inTS1('All Devices:', 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
+        }
+        if (debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat || debug_device) {
+            section(sectHead('Device Data:'), hideable: false, hidden: false) {
+                String desc; desc = viewDeviceDebugPretty()
+                if (desc) {
+                    // paragraph spanSmBld('Device Data:', sCLR4D9)
+                    paragraph divSm(desc, sCLRGRY)
+                } else {
+                    paragraph spanSmBld('No Device Data Received', sCLRRED)
+                }
             }
-            if (!debug_sensor && !debug_other && !debug_garage && !debug_tstat) {
-                input 'debug_switch', 'capability.actuator', title: inTS1('Switches:', sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
-            }
-            if (!debug_switch && !debug_sensor && !debug_garage && !debug_tstat) {
-                input 'debug_other', 'capability.*', title: inTS1('Others Devices:', 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
-            }
-            if (!debug_sensor && !debug_other && !debug_switch && !debug_tstat) {
-                input 'debug_garage', 'capability.garageDoorControl', title: inTS1('Garage Doors:', 'garage_door'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
-            }
-            if (!debug_sensor && !debug_other && !debug_switch && !debug_garage) {
-                input 'debug_tstat', 'capability.thermostat', title: inTS1('Thermostats:', 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
-            }
-            if (debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat) {
-                paragraph spanSmBld('Device Data:', sCLR4D9)
-                paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebug()}</textarea>", sCLRGRY)
+            section(sectHead('Device Data (JSON):'), hideable: false, hidden: false) {
+                // paragraph spanSmBld('Device Data:', sCLR4D9)
+                paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebugAsJson()}</textarea>", sCLRGRY)
             }
         }
     }
 }
 
 void clearTestDeviceItems() {
-    settingRemove('debug_sensor')
-    settingRemove('debug_switch')
-    settingRemove('debug_other')
-    settingRemove('debug_garage')
-    settingRemove('debug_tstat')
+    settingRemove('debug_device')
 }
 
-def viewDeviceDebug() {
+private String viewDeviceDebugPretty() {
+    def sDev; sDev = null
+    if (debug_device) { sDev = debug_device }
+    Map devData = getDeviceDebugMap(sDev)
+    String desc = sNULL
+    if(devData) {
+        desc = spanMdBldBr(strUnder('MetaData:'), sCLR4D9)
+        desc += spanSmBld('DisplayName:')      + spanSmBr(" ${devData?.name}", sCLRGRY)
+        desc += spanSmBld('BaseName:')         + spanSmBr(" ${devData?.basename}", sCLRGRY)
+        desc += spanSmBld('DeviceID:')         + spanSmBr(" ${devData?.deviceid}", sCLRGRY)
+        desc += spanSmBld('Status:')           + spanSmBr(" ${devData?.status}", sCLRGRY)
+        desc += spanSmBld('Manufacturer:')     + spanSmBr(" ${devData?.manufacturer}", sCLRGRY)
+        desc += spanSmBld('Model:')            + spanSmBr(" ${devData?.model}", sCLRGRY)
+        desc += spanSmBld('DeviceNetworkId:')  + spanSmBr(" ${devData?.deviceNetworkId}", sCLRGRY)
+        desc += spanSmBld('LastActivity:')     + spanSmBr(" ${devData?.lastActivity}", sCLRGRY)
+
+        // List device attributes
+        desc += lineBr() +  spanMdBldBr(strUnder('Attributes:'), sCLR4D9)
+        if(devData.attributes.size()) {
+            devData.attributes.keySet().sort().each { att ->
+                Boolean ck = (devData.attributes_filtered.contains(att))
+                def val = devData.attributes[att]
+                String clr = (ck ? sCLRGRY : sCLRGRN)
+                String status = (ck ? 'Filtered' : 'Allowed')
+                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(att + ": ${val.toString()}" + " (${status})", clr) : spanSmBldBr(att + ": ${val.toString()}" + " (${status})", clr)) 
+            }
+        } else { desc += spanSmBldBr('No Attributes Found', sCLRRED) }
+
+        // List device capabilities
+        desc += lineBr() +  spanMdBldBr(strUnder('Capabilities:'), sCLR4D9)
+        if(devData.capabilities.size()) {
+            devData.capabilities.sort().each { cap ->
+                Boolean ck = (devData.capabilities_filtered.contains(cap))
+                String clr = (ck ? sCLRGRY : sCLRGRN)
+                String status = (ck ? 'Filtered' : 'Allowed')
+                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cap + " (${status})", clr) : spanSmBldBr(cap + " (${status})", clr)) 
+            }
+        } else { desc += spanSmBldBr('No Capabilities Found', sCLRRED) }
+
+        // List device commands
+        desc += lineBr() +  spanMdBldBr(strUnder('Commands:'), sCLR4D9)
+        if(devData.commands.size()) {
+            devData.commands.sort().each { cmd ->
+                Boolean ck = (devData.commands_filtered.contains(cmd))
+                String clr = (ck ? sCLRGRY : sCLRGRN)
+                String status = (ck ? 'Filtered' : 'Allowed')
+                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cmd + " (${status})", clr) : spanSmBldBr(cmd + " (${status})", clr)) 
+            }
+        } else { desc += spanSmBldBr('No Commands Found', sCLRRED) }
+
+        // List event history
+        desc += lineBr() +  spanMdBldBr(strUnder('Event History:'), sCLR4D9)
+        if(devData.eventHistory.size()) {
+            devData.eventHistory.sort().each { evt ->                
+                desc += spanSmBr(" ${sBULLET} ${evt}", sCLRGRY)
+            }
+        } else { desc += spanSmBldBr('No Events Found', sCLRRED) }
+    }
+    return desc
+}
+
+private String viewDeviceDebugAsJson() {
     def sDev; sDev = null
     if (debug_other)  { sDev = debug_other  }
     if (debug_sensor) { sDev = debug_sensor }
     if (debug_switch) { sDev = debug_switch }
     if (debug_garage) { sDev = debug_garage }
     if (debug_tstat)  { sDev = debug_tstat  }
+    if (debug_device) { sDev = debug_device }
     String json = new JsonOutput().toJson(getDeviceDebugMap(sDev))
     String jsonStr = new JsonOutput().prettyPrint(json)
     return jsonStr
@@ -1630,11 +1688,11 @@ Map<String,Object> deviceAttributeList(device) {
     Map<String,Object> atts = ((List)device.getSupportedAttributes())?.findAll { (String)it.name in allowedListFLD.attributes }?.collectEntries { attribute->
         String attr=(String)attribute.name
         try {
-            if(attr == "speed") {
-                [(attr): getFanSpeedInteger(device.currentValue(attr))]
-            } else {
-                [(attr): device.currentValue(attr)]
-            }
+            // if(attr == "speed") {
+            //     [(attr): getFanSpeedInteger(device.currentValue(attr))]
+            // } else {
+            [(attr): device.currentValue(attr)]
+            // }
         } catch (ignored) {
             [(attr): null]
         }
@@ -1843,19 +1901,19 @@ def changeHandler(evt) {
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: "button", evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
             break
 
-        case 'speed': 
-            if (isDeviceInInput('fanList', deviceid) || isDeviceInInput('fan3SpdList', deviceid) || isDeviceInInput('fan4SpdList', deviceid) || isDeviceInInput('fan5SpdList', deviceid)) {
-                // Convert the speed to a number for Homebridge based on it's speed 3,4,5 speed type
-                Integer fanSpd = 1
-                if (isDeviceInInput('fan3SpdList', deviceid)) fanSpd = 3
-                if (isDeviceInInput('fan4SpdList', deviceid)) fanSpd = 4
-                if (isDeviceInInput('fan5SpdList', deviceid)) fanSpd = 5
-                Integer newSpdVal = getFanSpeedInteger(value, fanSpd)
+        // case 'speed': 
+        //     if (isDeviceInInput('fanList', deviceid) || isDeviceInInput('fan3SpdList', deviceid) || isDeviceInInput('fan4SpdList', deviceid) || isDeviceInInput('fan5SpdList', deviceid)) {
+        //         // Convert the speed to a number for Homebridge based on it's speed 3,4,5 speed type
+        //         Integer fanSpd = 1
+        //         if (isDeviceInInput('fan3SpdList', deviceid)) fanSpd = 3
+        //         if (isDeviceInInput('fan4SpdList', deviceid)) fanSpd = 4
+        //         if (isDeviceInInput('fan5SpdList', deviceid)) fanSpd = 5
+        //         Integer newSpdVal = getFanSpeedInteger(value, fanSpd)
 
-                log.debug "Fan Speed: ${value} | New Speed: ${newSpdVal}"
-                sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: newSpdVal, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
-            }
-            break
+        //         log.debug "Fan Speed: ${value} | New Speed: ${newSpdVal}"
+        //         sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: newSpdVal, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
+        //     }
+        //     break
         default:
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
             break
@@ -2162,9 +2220,11 @@ static String div(String str, String clr=sNULL, String sz=sNULL, Boolean bld=fal
 static String spanImgStr(String img=sNULL) { return img ? span("<img src='${(!img.startsWith('http://') && !img.startsWith('https://')) ? getAppImg(img) : img}' width='42'> ") : sBLANK }
 //static String divImgStr(String str, String img=sNULL) { return ((str) ? div(img ? spanImg(img) + span(str) : str) : sBLANK) }
 static String strUnder(String str, Boolean showUnd=true) { return str ? (showUnd ? "<u>${str}</u>" : str) : sBLANK }
+static String strStrkTh(String str) { return str ? "<s>${str}</s>"  : sBLANK }
 //static String getOkOrNotSymHTML(Boolean ok) { return ok ? span("(${okSymFLD})", sCLRGRN2) : span("(${notOkSymFLD})", sCLRRED2) }
 static String htmlLine(String color=sCLR4D9, Integer width = null) { return "<hr style='background-color:${color};height:1px;border:0;margin-top:0;margin-bottom:0;${width ? "width: ${width}px;" : sBLANK}'>" }
 static String lineBr(Boolean show=true) { return show ? sLINEBR : sBLANK }
+
 static String inputFooter(String str, String clr=sCLR4D9, Boolean noBr=false) { return str ? lineBr(!noBr) + divSmBld(str, clr) : sBLANK }
 //static String inactFoot(String str) { return str ? inputFooter(str, sCLRGRY, true) : sBLANK }
 //static String actFoot(String str) { return str ? inputFooter(str, sCLR4D9, false) : sBLANK }
@@ -2179,10 +2239,14 @@ static String spanSmBr(String str, String clr=sNULL, String img=sNULL)     { ret
 static String spanSmBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sSMALL, true)           : sBLANK }
 static String spanSmBldUnd(String str, String clr=sNULL, String img=sNULL) { return str ? spanImgStr(img) + span(strUnder(str), clr, sSMALL, true) : sBLANK }
 static String spanSmBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sSMALL, true, true)     : sBLANK }
-//static String spanMd(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sMEDIUM)                : sBLANK }
-//static String spanMdBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, false, true)   : sBLANK }
-//static String spanMdBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true)          : sBLANK }
-//static String spanMdBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true, true)    : sBLANK }
+static String spanStrkTh(String str, String clr=sNULL)                     { return str ? span(strStrkTh(str), clr, sNULL, false, false) : sBLANK }
+static String spanStrkThBr(String str, String clr=sNULL)                   { return str ? span(strStrkTh(str), clr, sNULL, false, true) : sBLANK }
+static String spanStrkThBld(String str, String clr=sNULL)                  { return str ? span(strStrkTh(str), clr, sNULL, true, false) : sBLANK }
+static String spanStrkThBldBr(String str, String clr=sNULL)                { return str ? span(strStrkTh(str), clr, sNULL, true, true) : sBLANK }
+static String spanMd(String str, String clr=sNULL, String img=sNULL)       { return str ? spanImgStr(img) + span(str, clr, sMEDIUM)                : sBLANK }
+static String spanMdBr(String str, String clr=sNULL, String img=sNULL)     { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, false, true)   : sBLANK }
+static String spanMdBld(String str, String clr=sNULL, String img=sNULL)    { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true)          : sBLANK }
+static String spanMdBldBr(String str, String clr=sNULL, String img=sNULL)  { return str ? spanImgStr(img) + span(str, clr, sMEDIUM, true, true)    : sBLANK }
 
 //static String divBld(String str, String clr=sNULL, String img=sNULL)        { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, false)   : sBLANK }
 //static String divBldBr(String str, String clr=sNULL, String img=sNULL)      { return str ? div(spanImgStr(img) + span(str), clr, sNULL, true, true)    : sBLANK }

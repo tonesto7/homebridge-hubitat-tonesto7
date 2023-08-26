@@ -67,6 +67,11 @@
   resolved "https://registry.yarnpkg.com/@homebridge/long/-/long-5.2.1.tgz#1c7568775b78e1a0fd75a7b3fa7a995f0388ab37"
   integrity sha512-i5Df8R63XNPCn+Nj1OgAoRdw9e+jHUQb3CNUbvJneI2iu3j4+OtzQj+5PA1Ce+747NR1SPqZSvyvD483dOT3AA==
 
+"@homebridge/plugin-ui-utils@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@homebridge/plugin-ui-utils/-/plugin-ui-utils-0.1.1.tgz#7ac31262aaea6247bbbae5d28f0e7e01d2f356d0"
+  integrity sha512-enSnsvF0C8j992z8FINBhIQCtoj0Cxa5CGWS022EE06BMdFXDHYnix8jPtWOiMa/rFomU4+UFE3y8AYW8GrIMQ==
+
 "@homebridge/put@~0.0.8":
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/@homebridge/put/-/put-0.0.8.tgz#4b8b99f2c4d58bc762718863699df2c5bc0b4b8a"

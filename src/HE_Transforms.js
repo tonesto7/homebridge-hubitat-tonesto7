@@ -54,261 +54,190 @@ module.exports = class Transforms {
     }
 
     transformAttributeState(attr, val, charName, opts) {
-        let result;
-
         switch (attr) {
             case "switch":
-                result = val === "on";
-                break;
+                return val === "on";
             case "door":
                 switch (val) {
                     case "open":
-                        result = Characteristic.TargetDoorState.OPEN;
-                        break;
+                        return Characteristic.TargetDoorState.OPEN;
                     case "opening":
-                        result = charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.OPENING;
-                        break;
+                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.OPENING;
                     case "closed":
-                        result = Characteristic.TargetDoorState.CLOSED;
-                        break;
+                        return Characteristic.TargetDoorState.CLOSED;
                     case "closing":
-                        result = charName && charName === "Target Door State" ? Characteristic.TargetDoorState.CLOSED : Characteristic.TargetDoorState.CLOSING;
-                        break;
+                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.CLOSED : Characteristic.TargetDoorState.CLOSING;
                     default:
-                        result = charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.STOPPED;
-                        break;
+                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.STOPPED;
                 }
-                break;
             case "fanMode":
                 switch (val) {
                     case "low":
-                        result = CommunityTypes.FanOscilationMode.LOW;
-                        break;
+                        return CommunityTypes.FanOscilationMode.LOW;
                     case "medium":
-                        result = CommunityTypes.FanOscilationMode.MEDIUM;
-                        break;
+                        return CommunityTypes.FanOscilationMode.MEDIUM;
                     case "high":
-                        result = CommunityTypes.FanOscilationMode.HIGH;
-                        break;
+                        return CommunityTypes.FanOscilationMode.HIGH;
                     default:
-                        result = CommunityTypes.FanOscilationMode.SLEEP;
-                        break;
+                        return CommunityTypes.FanOscilationMode.SLEEP;
                 }
-                break;
-
             case "lock":
                 switch (val) {
                     case "locked":
-                        result = Characteristic.LockCurrentState.SECURED;
-                        break;
+                        return Characteristic.LockCurrentState.SECURED;
                     case "unlocked":
-                        result = Characteristic.LockCurrentState.UNSECURED;
-                        break;
+                        return Characteristic.LockCurrentState.UNSECURED;
                     default:
-                        result = Characteristic.LockCurrentState.UNKNOWN;
-                        break;
+                        return Characteristic.LockCurrentState.UNKNOWN;
                 }
-                break;
-
             case "button":
                 switch (val) {
                     case "pushed":
-                        result = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
-                        break;
+                        return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
                     case "held":
-                        result = Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                        break;
+                        return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
                     case "doubleTapped":
-                        result = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
-                        break;
+                        return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
                     default:
-                        result = null;
-                        break;
+                        return null;
                 }
-                break;
             case "pushed":
-                result = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
-                break;
+                return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
             case "held":
-                result = Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                break;
+                return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
             case "doubleTapped":
-                result = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
-                break;
-
+                return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
             case "fanState":
-                result = val === "off" || val === "auto" ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR;
-                break;
+                return val === "off" || val === "auto" ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR;
             case "fanTargetState":
-                result = val === "auto" ? Characteristic.TargetFanState.AUTO : Characteristic.TargetFanState.MANUAL;
-                break;
+                return val === "auto" ? Characteristic.TargetFanState.AUTO : Characteristic.TargetFanState.MANUAL;
             case "valve":
-                result = val === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
-                break;
+                return val === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
             case "outlet":
-                result = val === "on";
-                break;
+                return val === "on";
             case "mute":
-                result = val === "muted";
-                break;
+                return val === "muted";
             case "smoke":
-                result = val === "clear" ? Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : Characteristic.SmokeDetected.SMOKE_DETECTED;
-                break;
+                return val === "clear" ? Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : Characteristic.SmokeDetected.SMOKE_DETECTED;
             case "carbonMonoxide":
-                result = val === "clear" ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-                break;
+                return val === "clear" ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
             case "carbonDioxideMeasurement":
                 switch (charName) {
                     case "Carbon Dioxide Detected":
-                        result = val < 2000 ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-                        break;
+                        return val < 2000 ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
                     default:
-                        result = parseInt(val);
-                        break;
+                        return parseInt(val);
                 }
-                break;
             case "tamper":
-                result = val === "detected" ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED;
-                break;
+                return val === "detected" ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED;
             case "acceleration":
             case "motion":
-                result = val === "active";
-                break;
+                return val === "active";
             case "water":
-                result = val === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
-                break;
+                return val === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
             case "contact":
-                result = val === "closed" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-
-                break;
+                return val === "closed" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
             case "presence":
-                result = val === "present";
-                break;
+                return val === "present";
             case "battery":
                 if (charName === "Status Low Battery") {
-                    result = val < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+                    return val < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
                 } else {
-                    result = Math.round(val);
+                    return Math.round(val);
                 }
-                break;
             case "powerSource":
                 // this.logInfo(`powerSource: ${val}`);
                 switch (val) {
                     case "mains":
                     case "dc":
                     case "USB Cable":
-                        result = 1;
-                        break;
+                        return 1;
+
                     case "battery":
-                        result = 0;
-                        break;
+                        return 0;
+
                     default:
-                        result = 2;
-                        break;
+                        return 2;
                 }
-                break;
             case "hue":
-                result = Math.round(val * 3.6) < 1 || val === undefined ? 1 : Math.round(val * 3.6);
-                break;
+                return Math.round(val * 3.6) < 1 || val === undefined ? 1 : Math.round(val * 3.6);
             case "colorTemperature":
-                result = parseInt(this.kelvinToMired(val));
-                break;
+                return parseInt(this.kelvinToMired(val));
             case "temperature":
-                result = parseFloat(this.tempConversion(val));
-                break;
+                return parseFloat(this.tempConversion(val));
             case "heatingSetpoint":
             case "coolingSetpoint":
             case "thermostatSetpoint":
-                result = this.thermostatTempConversion(val);
-                // case "speed":
-                // console.log("transformAttributeState(speed): ", this.fanSpeedToLevel(val));
-                // result =  this.fanSpeedToLevel(val, opts);
-                break;
+                return this.thermostatTempConversion(val);
             case "speed":
+                // console.log("transformAttributeState(speed): ", this.fanSpeedToLevel(val));
+                return this.fanSpeedToLevel(val, opts);
+            // case "speed":
             case "level": {
                 let lvl = parseInt(val);
                 if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
                 if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
                 // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
-                result = parseInt(lvl);
-                break;
+                return parseInt(lvl);
             }
-
             case "saturation":
             case "volume":
-                result = parseInt(val) || 0;
-                break;
+                return parseInt(val) || 0;
             case "illuminance":
                 if (isNaN(val)) {
-                    result = undefined;
+                    return undefined;
                 }
-                result = Math.round(Math.ceil(parseFloat(val)), 0);
-                break;
+                return Math.round(Math.ceil(parseFloat(val)), 0);
             case "energy":
             case "humidity":
             case "power":
-                result = Math.round(val);
-                break;
+                return Math.round(val);
             case "thermostatOperatingState":
                 switch (val) {
                     case "pending cool":
                     case "cooling":
-                        result = Characteristic.CurrentHeatingCoolingState.COOL;
-                        break;
+                        return Characteristic.CurrentHeatingCoolingState.COOL;
                     case "pending heat":
                     case "heating":
-                        result = Characteristic.CurrentHeatingCoolingState.HEAT;
-                        break;
+                        return Characteristic.CurrentHeatingCoolingState.HEAT;
                     default:
-                        // The above list should be inclusive, but we need to result =  something if they change stuff.
+                        // The above list should be inclusive, but we need to return  something if they change stuff.
                         // TODO: Double check if Hubitat can send "auto" as operatingstate. I don't think it can.
-                        result = Characteristic.CurrentHeatingCoolingState.OFF;
-                        break;
+                        return Characteristic.CurrentHeatingCoolingState.OFF;
                 }
-                break;
             case "thermostatMode":
                 switch (val) {
                     case "cool":
-                        result = Characteristic.TargetHeatingCoolingState.COOL;
-                        break;
+                        return Characteristic.TargetHeatingCoolingState.COOL;
                     case "emergency heat":
                     case "heat":
-                        result = Characteristic.TargetHeatingCoolingState.HEAT;
-                        break;
+                        return Characteristic.TargetHeatingCoolingState.HEAT;
                     case "auto":
-                        result = Characteristic.TargetHeatingCoolingState.AUTO;
-                        break;
+                        return Characteristic.TargetHeatingCoolingState.AUTO;
                     default:
-                        result = Characteristic.TargetHeatingCoolingState.OFF;
-                        break;
+                        return Characteristic.TargetHeatingCoolingState.OFF;
                 }
-                break;
             case "thermostatFanMode":
-                result = val !== "auto" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
-                break;
+                return val !== "auto" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
             case "windowShade":
                 if (val === "opening") {
-                    result = Characteristic.PositionState.INCREASING;
+                    return Characteristic.PositionState.INCREASING;
                 } else if (val === "closing") {
-                    result = Characteristic.PositionState.DECREASING;
+                    return Characteristic.PositionState.DECREASING;
                 } else {
-                    result = Characteristic.PositionState.STOPPED;
+                    return Characteristic.PositionState.STOPPED;
                 }
-                break;
             case "alarmSystemStatus":
                 // console.log(`alarmSystemStatus | char: (${charName}) | Opts: ${JSON.stringify(opts)} | val: ${this.convertAlarmState(val)}`);
                 if (charName && charName === "Security System Target State") {
-                    result = this.convertAlarmTargetState(val);
+                    return this.convertAlarmTargetState(val);
                 } else {
-                    result = this.convertAlarmState(val);
+                    return this.convertAlarmState(val);
                 }
-                break;
+
             default:
-                result = val;
-                break;
+                return val;
         }
-        console.log(`transformAttributeState | attr: ${attr} | val: ${val} | result: ${result}`);
-        return result;
     }
 
     transformCommandName(attr, val) {
@@ -554,8 +483,7 @@ module.exports = class Transforms {
         // if (opts && Object.keys(opts).length && opts.spdSteps) {
         //     spds = opts.spdSteps;
         // }
-        console.log(`fanSpeedToLevel(${speedVal}) | steps: ${spds}`);
-
+        // console.log(`fanSpeedToLevel(${speedVal}) | steps: ${spds}`);
         switch (speedVal) {
             case "off":
                 return 0;

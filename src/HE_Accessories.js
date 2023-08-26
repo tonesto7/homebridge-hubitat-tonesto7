@@ -147,10 +147,11 @@ module.exports = class HE_Accessories {
             if (!characteristics || !accessory) resolve(false);
             if (characteristics instanceof Array) {
                 characteristics.forEach((char) => {
+                    const currentVal = accessory.context.deviceData.attributes[change.attribute];
                     accessory.context.deviceData.attributes[change.attribute] = change.value;
                     accessory.context.lastUpdate = new Date().toLocaleString();
                     if (change.attribute === "thermostatSetpoint") {
-                        //
+                        // don't remember why i'm doing this...
                         char.getValue();
                     } else if (change.attribute === "button") {
                         // this.logInfo("button change: " + change);
@@ -160,7 +161,12 @@ module.exports = class HE_Accessories {
                         }
                     } else {
                         const val = this.transforms.transformAttributeState(change.attribute, change.value, char.displayName);
-                        if (val !== undefined && val !== null) {
+                        if (val === null || val === undefined) {
+                            console.log("change:", change);
+                            console.log("char: ", char.props);
+                            this.logWarn(`[${accessory.context.deviceData.name}] Attribute (${change.attribute}) | OldValue: ${currentVal} | NewValueIn: [${change.value}] | NewValueOut: [${val}] | Characteristic: (${char.displayName}`);
+                        }
+                        if (val) {
                             char.updateValue(val);
                         }
                     }
