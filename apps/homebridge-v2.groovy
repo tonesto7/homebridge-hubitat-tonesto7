@@ -19,6 +19,7 @@ import groovy.transform.CompileStatic
 
 import java.text.SimpleDateFormat
 import java.util.concurrent.Semaphore
+import java.util.zip.GZIPOutputStream
 
 definition(
     name: 'Homebridge v2',
@@ -50,7 +51,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '2.9.0'
-//@Field static final String appModifiedFLD = '08-24-2023'
+//@Field static final String appModifiedFLD = '08-29-2023'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -110,7 +111,7 @@ preferences {
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 
-@Field static final Map<String,Map> allowedListFLD = [
+@Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
         "acceleration", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
         "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "illuminance", 
@@ -259,7 +260,7 @@ def pluginConfigPage() {
             String url = 'https://www.howtogeek.com/712520/how-to-use-adaptive-lighting-with-apple-homekit-lights/#:~:text=The%20Adaptive%20Lighting%20feature%20was,home%20lights%20throughout%20the%20day.'
             href url: url, style: sEXTNRL, title: inTS1('What is Adaptive Lighting?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
             input 'adaptive_lighting',  sBOOL, title: inTS1('Allow Supported Bulbs to Use HomeKit Adaptive Lighting?', sCMD), required: false, defaultValue: true, submitOnChange: true
-            if ((Boolean)settings.adaptive_lighting) {
+            if (getBoolSetting('adaptive_lighting')) {
                 input 'adaptive_lighting_offset', 'number', title: inTS1('Adaptive Lighting - Offset ColorTemp Conversions by +/- Mireds?', sCMD), range: '-100..100', required: false, defaultValue: 0, submitOnChange: true
             }
         }
@@ -281,7 +282,7 @@ def pluginConfigPage() {
     }
 }
 
-static def deviceValidationErrors() {
+static Map deviceValidationErrors() {
     /*
         NOTE: Define what we require to determine the thermostat is a thermostat so we can support devices like Flair which are custom heat-only thermostats.
     */
@@ -347,7 +348,7 @@ def deviceSelectPage() {
 
         section(sectHead('Create Devices for Modes in HomeKit?')) {
             paragraph spanSmBldBr('What are these for?', sCLRGRY) + spanSm("Creates a virtual device for selected modes in HomeKit.<br> ${sBULLET} The switch will be ON when that mode is active.", sCLRGRY)
-            List modes = ((List)location?.getModes())?.sort { it?.name }?.collect { [(it?.id):it?.name] }
+            List modes = ((List)location.getModes())?.sort { (String)it?.name }?.collect { [("${it?.id}".toString()): (String)it?.name] }
             input 'modeList', sENUM, title: inTS1('Create Devices for these Modes', 'mode'), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: modes, submitOnChange: true
         }
 
@@ -401,8 +402,8 @@ private String getSelectedDeviceDescs() {
     Integer devCnt = getDeviceCnt()
     if (conf) {
         //static Map<String,String> fanSettingKeys() {
-        Integer fansize = 0
-        List<String> items = fanSettingKeys().collect { (String)it.key }
+        Integer fansize; fansize = 0
+        List<String> items; items = fanSettingKeys().collect { (String)it.key }
         items.each { String item ->
             fansize += getListSetting(item).size()
         }
@@ -439,7 +440,7 @@ private void resetCapFilters() {
 }
 
 private Boolean capFiltersSelected() {
-    Map cFilters = parseCustomFilterStr((String)settings.customCapFilters ?: sBLANK)
+    Map cFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
     Map perDev = cFilters?.perDevice ?: [:]
     List<String> global = cFilters?.global ?: []
     if (perDev && perDev?.keySet()?.size() || global && global?.size()) {
@@ -462,7 +463,8 @@ private String getCapFilterDesc() {
         desc += spanSmBr("", sCLR4D9)
     }
     List<String> capItems
-    capItems = (String)settings.customCapFilters ? ((String)settings.customCapFilters).split(',').collect { String it ->  it.trim() } : []
+    String s = getStrSetting('customCapFilters')
+    capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
     if (capItems?.size()) {
         capItems = capItems.unique().sort()
         desc += spanSmBr("Custom Capabilities: (${capItems.size()})", sCLR4D9)
@@ -474,7 +476,9 @@ private String getCapFilterDesc() {
 }
 
 private List<String> getCustCapFilters() {
-    List<String> capItems = (String)settings.customCapFilters ? ((String)settings.customCapFilters).split(',').collect { String it -> it.trim() } : []
+    List<String> capItems
+    String s = getStrSetting('customCapFilters')
+    capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
     return capItems?.size() ? capItems.unique().sort() : []
 }
 
@@ -483,10 +487,10 @@ private void resetAttrFilters() {
 }
 
 private Boolean attrFiltersSelected() {
-    Map cFilters = parseCustomFilterStr((String)settings.customAttrFilters ?: sBLANK)
+    Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
     Map perDev = cFilters?.perDevice ?: [:]
     List<String> global = cFilters?.global ?: []
-    if (perDev && perDev?.keySet()?.size() || global && global?.size()) {
+    if (perDev && perDev.keySet()?.size() || global && global.size()) {
         return true
     }
     return false
@@ -494,7 +498,7 @@ private Boolean attrFiltersSelected() {
 
 private String getCustAttrFilterDesc() {
     String desc; desc = sBLANK
-    Map cFilters = parseCustomFilterStr((String)settings.customAttrFilters ?: sBLANK)
+    Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
     // log.debug "getCustAttrFilterDesc | customFilters: ${cFilters}"
     Map perDev = cFilters?.perDevice ?: [:]
     List<String> global = cFilters?.global ?: []
@@ -702,7 +706,7 @@ def capFilterPage() {
 
         section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
             input 'resetCapFilters', sBOOL, title: inTS1('Clear All Capability Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
-            if (settings.resetCapFilters) { settingUpdate('resetCapFilters', sFALSE, sBOOL); resetCapFilters() }
+            if (getBoolSetting('resetCapFilters')) { settingUpdate('resetCapFilters', sFALSE, sBOOL); resetCapFilters() }
         }
     }
 }
@@ -722,7 +726,7 @@ def attrFilterPage() {
 
         section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
             input 'resetAttrFilters', sBOOL, title: inTS1('Clear All Attibute Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
-            if (settings.resetAttrFilters) { settingUpdate('resetAttrFilters', sFALSE, sBOOL); resetAttrFilters() }
+            if (getBoolSetting('resetAttrFilters')) { settingUpdate('resetAttrFilters', sFALSE, sBOOL); resetAttrFilters() }
         }
     }
 }
@@ -761,7 +765,7 @@ def deviceDebugPage() {
 
         if (devMode()) {
             section(sectHead('TimeStamp Debug Data:')) {
-                Map tsMap = tsDtMapFLD[(String)app.getId().toString()] ?: [:]
+                Map tsMap = tsDtMapFLD[gtAppId()] ?: [:]
                 paragraph "${tsMap}"
             }
         }
@@ -795,25 +799,26 @@ void clearTestDeviceItems() {
 private String viewDeviceDebugPretty() {
     def sDev; sDev = null
     if (debug_device) { sDev = debug_device }
-    Map devData = getDeviceDebugMap(sDev)
-    String desc = sNULL
+    Map<String,Object> devData = getDeviceDebugMap(sDev)
+    String desc; desc = sNULL
     if(devData) {
         desc = spanMdBldBr(strUnder('MetaData:'), sCLR4D9)
-        desc += spanSmBld('DisplayName:')      + spanSmBr(" ${devData?.name}", sCLRGRY)
-        desc += spanSmBld('BaseName:')         + spanSmBr(" ${devData?.basename}", sCLRGRY)
-        desc += spanSmBld('DeviceID:')         + spanSmBr(" ${devData?.deviceid}", sCLRGRY)
-        desc += spanSmBld('Status:')           + spanSmBr(" ${devData?.status}", sCLRGRY)
-        desc += spanSmBld('Manufacturer:')     + spanSmBr(" ${devData?.manufacturer}", sCLRGRY)
-        desc += spanSmBld('Model:')            + spanSmBr(" ${devData?.model}", sCLRGRY)
-        desc += spanSmBld('DeviceNetworkId:')  + spanSmBr(" ${devData?.deviceNetworkId}", sCLRGRY)
-        desc += spanSmBld('LastActivity:')     + spanSmBr(" ${devData?.lastActivity}", sCLRGRY)
+        desc += spanSmBld('DisplayName:')      + spanSmBr(" ${devData.name}", sCLRGRY)
+        desc += spanSmBld('BaseName:')         + spanSmBr(" ${devData.basename}", sCLRGRY)
+        desc += spanSmBld('DeviceID:')         + spanSmBr(" ${devData.deviceid}", sCLRGRY)
+        desc += spanSmBld('Status:')           + spanSmBr(" ${devData.status}", sCLRGRY)
+        desc += spanSmBld('Manufacturer:')     + spanSmBr(" ${devData.manufacturer}", sCLRGRY)
+        desc += spanSmBld('Model:')            + spanSmBr(" ${devData.model}", sCLRGRY)
+        desc += spanSmBld('DeviceNetworkId:')  + spanSmBr(" ${devData.deviceNetworkId}", sCLRGRY)
+        desc += spanSmBld('LastActivity:')     + spanSmBr(" ${devData.lastActivity}", sCLRGRY)
 
         // List device attributes
         desc += lineBr() +  spanMdBldBr(strUnder('Attributes:'), sCLR4D9)
-        if(devData.attributes.size()) {
-            devData.attributes.keySet().sort().each { att ->
-                Boolean ck = (devData.attributes_filtered.contains(att))
-                def val = devData.attributes[att]
+        Map<String,Object> tmp = (Map<String,Object>)devData.attributes
+        if(tmp.size()) {
+            tmp.keySet().sort().each { String att ->
+                Boolean ck = ((List<String>)devData.attributes_filtered).contains(att)
+                def val = tmp[att]
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
                 desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(att + ": ${val.toString()}" + " (${status})", clr) : spanSmBldBr(att + ": ${val.toString()}" + " (${status})", clr)) 
@@ -822,9 +827,13 @@ private String viewDeviceDebugPretty() {
 
         // List device capabilities
         desc += lineBr() +  spanMdBldBr(strUnder('Capabilities:'), sCLR4D9)
-        if(devData.capabilities.size()) {
-            devData.capabilities.sort().each { cap ->
-                Boolean ck = (devData.capabilities_filtered.contains(cap))
+
+        List<String> tmp1
+
+        tmp1 = (List<String>)devData.capabilities
+        if(tmp1?.size()) {
+            tmp1.sort().each { String cap ->
+                Boolean ck = ((List<String>)devData.capabilities_filtered).contains(cap)
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
                 desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cap + " (${status})", clr) : spanSmBldBr(cap + " (${status})", clr)) 
@@ -833,9 +842,10 @@ private String viewDeviceDebugPretty() {
 
         // List device commands
         desc += lineBr() +  spanMdBldBr(strUnder('Commands:'), sCLR4D9)
-        if(devData.commands.size()) {
-            devData.commands.sort().each { cmd ->
-                Boolean ck = (devData.commands_filtered.contains(cmd))
+        tmp1 = (List<String>)devData.commands
+        if(tmp1?.size()) {
+            tmp1.sort().each { String cmd ->
+                Boolean ck = ((List<String>)devData.commands_filtered).contains(cmd)
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
                 desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cmd + " (${status})", clr) : spanSmBldBr(cmd + " (${status})", clr)) 
@@ -844,9 +854,10 @@ private String viewDeviceDebugPretty() {
 
         // List event history
         desc += lineBr() +  spanMdBldBr(strUnder('Event History:'), sCLR4D9)
-        if(devData.eventHistory.size()) {
-            devData.eventHistory.sort().each { evt ->                
-                desc += spanSmBr(" ${sBULLET} ${evt}", sCLRGRY)
+        tmp1 = (List<String>)devData.eventHistory
+        if(tmp1?.size()) {
+            tmp1.each { String evt ->
+                desc += spanSmBr(" ${sBULLET} " + evt, sCLRGRY)
             }
         } else { desc += spanSmBldBr('No Events Found', sCLRRED) }
     }
@@ -874,7 +885,7 @@ private Map getDeviceDebugMap(dev) {
             r = [:]
             r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK)
             r.basename = dev.getName()
-            r.deviceid = dev.getId()
+            r.deviceid = gtDevId(dev)
             r.status = dev.getStatus()
             r.manufacturer = dev.manufacturerName ?: 'Unknown'
             r.model = dev?.modelName ?: dev?.getTypeName()
@@ -905,16 +916,16 @@ private Map getDeviceDebugMap(dev) {
 }
 
 private Integer getDeviceCnt(Boolean phyOnly=false) {
-    List devices; devices= []
+    List devices; devices = []
     List items = deviceSettingKeys().collect { (String)it.key }
     items?.each { String item ->
-        List si= (List)settings[item]
+        List si = getListSetting(item)
         if (si && si.size() > 0)
-            devices = devices + si.collect { (String)"device_${(String)it.getId()}" }
+            devices = devices + si.collect { (String)"device_${gtDevId(it)}" }
     }
     if (!phyOnly) {
         virtSettingKeys().collect { (String)it.key }.each { String item->
-            List si= (List)settings[item]
+            List si = getListSetting(item)
             if (si && si.size() > 0) {
                 String aa = item.replaceAll('List', sBLANK)
                 devices = devices + si.collect { "${aa}_${it}".toString() }
@@ -949,8 +960,8 @@ def initialize() {
     if (getAccessToken()) {
         subscribeToEvts()
         runEvery5Minutes('healthCheck')
-        if (settings.showEventLogs && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN) }
-        if (settings.showDebugLogs && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN) }
+        if (getBoolSetting('showEventLogs') && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN) }
+        if (getBoolSetting('showDebugLogs') && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN) }
     } else { logError('initialize error: Unable to get or generate app access token') }
 }
 
@@ -997,13 +1008,14 @@ void subscribeToEvts() {
         subscribe(location, 'hsmStatus', changeHandler)
         subscribe(location, 'hsmAlert', changeHandler)
     }
-    if ((List)settings.modeList) {
-        logInfo("Subscribed to (${((List)settings.modeList).size() ?: 0} Location Modes)")
+    if (getListSetting('modeList')) {
+        logInfo("Subscribed to (${getListSetting('modeList').size() ?: 0} Location Modes)")
         subscribe(location, 'mode', changeHandler)
     }
     if (getBoolSetting('enableWebCoRE')) { webCoRE_init() }
 }
 
+@CompileStatic
 private void healthCheck(Boolean ui=false) {
     checkVersionData()
     if (checkIfCodeUpdated(ui)) {
@@ -1018,9 +1030,9 @@ private void healthCheck(Boolean ui=false) {
     // log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if (!ui && lastUpd > 14400) { remTsVal(sSVR) }
 
-    if (evtLogSec > 60*60*2 && getBoolSetting('showEventLogs')) { logWarn("Turning OFF Event Logs | It's been (${getLastTsValSecs(sEVTLOGEN, 0)} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', sFALSE, sBOOL) }
+    if (evtLogSec > 7200 && getBoolSetting('showEventLogs')) { logWarn("Turning OFF Event Logs | It's been (${evtLogSec} sec)"); remTsVal(sEVTLOGEN); settingUpdate('showEventLogs', sFALSE, sBOOL) }
     else if (evtLogSec == 0 && getBoolSetting('showEventLogs')) { updTsVal(sEVTLOGEN) }
-    if (dbgLogSec > 60*60*2 && getBoolSetting('showDebugLogs')) { logWarn("Turning OFF Debug Logs | It's been (${getLastTsValSecs(sDBGLOGEN, 0)} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', sFALSE, sBOOL) }
+    if (dbgLogSec > 7200 && getBoolSetting('showDebugLogs')) { logWarn("Turning OFF Debug Logs | It's been (${dbgLogSec} sec)"); remTsVal(sDBGLOGEN); settingUpdate('showDebugLogs', sFALSE, sBOOL) }
     else if (dbgLogSec == 0 && getBoolSetting('showDebugLogs')) { updTsVal(sDBGLOGEN) }
 }
 
@@ -1092,6 +1104,7 @@ private Map performPluginTest(){
         }
     } catch (ex) {
         logError("enableOauth something went wrong: ${ex}", ex)
+        null
     }
 }
 
@@ -1121,7 +1134,7 @@ private Map<String,Object> getDeviceData(String type, sItem) {
             isVirtual = true
             curType = 'Mode'
             optFlags['virtual_mode'] = 1
-            obj = getModeById(sItem.toString())
+            obj = fndMode(sItem.toString())
             if (obj) {
 // BUGFIX for modes deviceId may not be unique vs. device.id
                 devId = 'm_'+sItem.toString()
@@ -1134,39 +1147,45 @@ private Map<String,Object> getDeviceData(String type, sItem) {
         default:
             obj = sItem
             // Define firmware variable and initialize it out of device handler attribute`
-            try {
-                if (sItem?.hasAttribute('firmware')) { firmware = sItem?.currentValue('firmware')?.toString() }
-            } catch (ignored) { firmware = sNULL }
+            if (sItem) {
+                try {
+                    if (sItem.hasAttribute('firmware')) {
+                        firmware = sItem.currentValue('firmware')?.toString()
+                    }
+                } catch (ignored) {
+                    firmware = sNULL
+                }
+            }
             break
     }
-    if (curType && obj) {
+    if (curType && obj && sItem) {
         if (curType == 'Security Keypad') {
             return [
-                name: sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
-                basename: sItem?.name,
-                deviceid: "securityKeypad_${sItem?.id}",
-                status: sItem?.status,
-                manufacturerName: sItem?.manufacturerName ?: pluginNameFLD,
-                modelName: sItem?.modelName ?: sItem?.getTypeName(),
-                serialNumber: sItem?.getDeviceNetworkId(),
+                name: sItem.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                basename: sItem.name,
+                deviceid: "securityKeypad_${sItem.id}",
+                status: sItem.status,
+                manufacturerName: sItem.manufacturerName ?: pluginNameFLD,
+                modelName: sItem.modelName ?: sItem.getTypeName(),
+                serialNumber: sItem.getDeviceNetworkId(),
                 firmwareVersion: firmware ?: '1.0.0',
                 lastTime: sItem?.getLastActivity() ?: null,
                 capabilities: ['Alarm System Status': 1, 'Alarm': 1],
                 commands: [],
-                attributes: ['alarmSystemStatus': getSecurityKeypadMode(((String)sItem?.currentValue('securityKeypad')?.toString()))]
+                attributes: ['alarmSystemStatus': getSecurityKeypadMode((String)sItem.currentValue('securityKeypad')?.toString())]
             ]
         }
         else {
             return [
-                name: !isVirtual ? sItem?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
-                basename: !isVirtual ? sItem?.name : name,
-                deviceid: !isVirtual ? sItem?.id : devId,
-                status: !isVirtual ? sItem?.status : 'Online',
-                manufacturerName: (!isVirtual ? sItem?.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
-                modelName: !isVirtual ? (sItem?.modelName ?: sItem?.getTypeName()) : curType+" Device",
-                serialNumber: !isVirtual ? sItem?.getDeviceNetworkId() : curType+devId,
+                name: !isVirtual ? sItem.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                basename: !isVirtual ? sItem.name : name,
+                deviceid: !isVirtual ? sItem.id : devId,
+                status: !isVirtual ? sItem.status : 'Online',
+                manufacturerName: (!isVirtual ? sItem.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
+                modelName: !isVirtual ? (sItem.modelName ?: sItem.getTypeName()) : curType+" Device",
+                serialNumber: !isVirtual ? sItem.getDeviceNetworkId() : curType+devId,
                 firmwareVersion: firmware ?: '1.0.0',
-                lastTime: !isVirtual ? (sItem?.getLastActivity() ?: null) : wnow(),
+                lastTime: !isVirtual ? (sItem.getLastActivity() ?: null) : wnow(),
                 capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
                 commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
                 deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
@@ -1178,7 +1197,7 @@ private Map<String,Object> getDeviceData(String type, sItem) {
 }
 
 String modeSwitchState(String mode) {
-    return ((String)location?.getMode() == mode) ? 'on' : 'off'
+    return ((String)location.getMode() == mode) ? 'on' : 'off'
 }
 
 def getSecurityDevice() {
@@ -1198,11 +1217,12 @@ def getSecurityDevice() {
     ]
 }
 
+@CompileStatic
 Map getDeviceFlags(device) {
     Map<String, Integer> opts = [:]
     [fan3SpdList: "fan_3_spd", fan4SpdList: "fan_4_spd", fan5SpdList: "fan_5_spd",
      lightNoAlList: "light_no_al"].each { String k, String v ->
-        if (isDeviceInInput(k, (String)device.getId())) {
+        if (isDeviceInInput(k, gtDevId(device))) {
             opts[v] = 1
         }
     }
@@ -1216,7 +1236,7 @@ def findDevice(String dev_id) {
         List setL = getListSetting(key)
         allDevs = allDevs + (setL ?: [])
     }
-    def aa = allDevs.find { (String)it.getId() == dev_id }
+    def aa = allDevs.find { gtDevId(it) == dev_id }
     return aa ?: null
 }
 
@@ -1278,7 +1298,7 @@ void setAlarmSystemMode(String mode) {
     sendLocationEvent(name: 'hsmSetArm', value: sMode)
 }
 
-static String setSecurityKeypadMode(String cmd) {
+static String mapSecurityKeypadMode(String cmd) {
     String kCmd; kCmd = sNULL
     switch (cmd) {
         case 'armAway':
@@ -1300,7 +1320,7 @@ static String setSecurityKeypadMode(String cmd) {
             kCmd = 'disarm'
             break
     }
-    // log.debug "setSecurityKeypadMode | StatusIn: (${cmd}) | ModeOut: (${kCmd})"
+    // log.debug "mapSecurityKeypadMode | StatusIn: (${cmd}) | ModeOut: (${kCmd})"
     return kCmd
 }
 
@@ -1344,12 +1364,12 @@ String renderConfig() {
         name: pluginNameFLD,
         app_url_local: "${getLocalApiServerUrl()}/".toString(),
         app_url_cloud: "${getApiServerUrl()}/${getHubUID()}/apps/".toString(),
-        app_id: app?.getId(),
+        app_id: gtAppId(),
         app_platform: platformFLD,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
         polling_seconds: (Integer)settings.polling_seconds ?: 3600,
         access_token: (String)state.accessToken,
-        temperature_unit: (String)settings.temp_unit ?: (String)location.temperatureScale,
+        temperature_unit: getStrSetting('temp_unit') ?: (String)location.temperatureScale,
         validateTokenId: getBoolSetting('validate_token'),
         adaptive_lighting: getBoolDefSetting('adaptive_lighting',true),
         consider_fan_by_name: getBoolDefSetting('consider_fan_by_name',true),
@@ -1372,7 +1392,7 @@ Map renderLocation() {
         longitude: location?.longitude,
         mode: location?.mode,
         name: location?.name,
-        temperature_scale: (String)settings.temp_unit ?: (String)location.temperatureScale,
+        temperature_scale: getStrSetting('temp_unit') ?: (String)location.temperatureScale,
         zip_code: location?.zipCode,
         hubIP: ((List)location?.hubs)[0]?.localIP,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
@@ -1383,7 +1403,7 @@ Map renderLocation() {
 def CommandReply(Boolean shw, String statusOut, String messageOut, Integer code) {
     String replyJson = new JsonOutput().toJson([status: statusOut, message: messageOut])
     if (shw) { logInfo(messageOut) }
-    render contentType: sAPPJSON, data: replyJson, code: code
+    wrender contentType: sAPPJSON, data: replyJson, code: code
 }
 
 static Map getHttpHeaders(String headers) {
@@ -1410,8 +1430,8 @@ private processCmd(String idevId, String cmd, value1, value2) {
     if (!devId) { return }
     String command; command = cmd
 
-    if (devId.contains("securityKeypad_") && (List)settings.securityKeypadsList) {
-        command = setSecurityKeypadMode(command)
+    if (devId.contains("securityKeypad_") && getListSetting('securityKeypadsList')) {
+        command = mapSecurityKeypadMode(command)
         devId = devId.replaceFirst("securityKeypad_", "")
     }
 
@@ -1421,7 +1441,7 @@ private processCmd(String idevId, String cmd, value1, value2) {
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
 
-    } else if (command == 'mode' &&  (List)settings.modeList) {
+    } else if (command == 'mode' &&  getListSetting('modeList')) {
         if (shw) { logDebug("Virtual Mode Received: ${devId}") }
         String mdevId = devId.replaceAll('m_', sBLANK)
         changeMode(mdevId, shw)
@@ -1429,7 +1449,7 @@ private processCmd(String idevId, String cmd, value1, value2) {
         logCmd([cmd: command, device: 'Mode Device', value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Mode Device | Command: [$command] | Process Time: (${pt}ms)", 200)
 
-    } else if (command == 'piston' && (List)settings.pistonList) {
+    } else if (command == 'piston' && getListSetting('pistonList')) {
         if (shw) { logDebug("Virtual Piston Received: ${devId}") }
         String aa = runPiston(devId, shw)
         Long pt = execDt ? (wnow() - execDt) : 0L
@@ -1478,10 +1498,10 @@ private processCmd(String idevId, String cmd, value1, value2) {
 
 private void changeMode(String modeId, Boolean shw) {
     if (modeId) {
-        def mode = findVirtModeDevice(modeId)
+        Map<String,String> mode = fndMode(modeId)
         if (mode) {
-            if (shw) { logInfo("Setting the Location Mode to (${mode})...") }
-            setLocationMode(mode as String)
+            if (shw) { logInfo("Setting the Location Mode to (${mode.name})...") }
+            setLocationMode(mode.name)
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
@@ -1517,12 +1537,7 @@ def deviceAttribute() {
         res=[currentValue: device?.currentValue(attribute)]
     }
     String resultJson = new JsonOutput().toJson(res)
-    render contentType: sAPPJSON, data: resultJson, code: code
-}
-
-def findVirtModeDevice(String id) {
-    def aa = getModeById(id)
-    return aa ?: null
+    wrender contentType: sAPPJSON, data: resultJson, code: code
 }
 
 static Map findVirtPistonDevice(id) {
@@ -1531,7 +1546,7 @@ static Map findVirtPistonDevice(id) {
 }
 
 Map<String,Integer> deviceCapabilityList(device) {
-    String devid= (String)device?.getId()
+    String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
     Map<String,Integer> capItems = ((List)device.getCapabilities())?.findAll { (String)it.name in allowedListFLD.capabilities }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
 
@@ -1560,13 +1575,13 @@ Map<String,Integer> deviceCapabilityList(device) {
 
     if (getBoolSetting('noTemp') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
         Boolean remTemp; remTemp = true
-        if ((List)settings.sensorAllowTemp && isDeviceInInput('sensorAllowTemp', devid)) { remTemp = false }
+        if (getListSetting('sensorAllowTemp') && isDeviceInInput('sensorAllowTemp', devid)) { remTemp = false }
         if (remTemp) { capItems.remove('TemperatureMeasurement') }
     }
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
     List<String> remKeys
-    remKeys = ((Map)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+    remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (!remKeys) remKeys = []
     Boolean sdl = getBoolSetting('showDebugLogs')
     remKeys.each { String k->
@@ -1580,15 +1595,15 @@ Map<String,Integer> deviceCapabilityList(device) {
     return capItems?.sort { (String)it.key }
 }
 
-private List filteredOutCaps(device) {
-    List capsFiltered; capsFiltered = []
+private List<String> filteredOutCaps(device) {
+    List<String> capsFiltered; capsFiltered = []
     List<String> remKeys
-    remKeys = ((Map)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+    remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (!remKeys) remKeys = []
     remKeys.each { String k->
         String capName = k.replaceAll('remove', sBLANK)
-        String theCap = (String)capFilterFLD[capName]
-        if (theCap && isDeviceInInput(k, (String)device.getId())) { capsFiltered.push(theCap) }
+        String theCap = capFilterFLD[capName]
+        if (theCap && isDeviceInInput(k, gtDevId(device))) { capsFiltered.push(theCap) }
     }
     List custCaps = getCustCapFilters()
     if(custCaps) {
@@ -1601,17 +1616,17 @@ private Boolean ignoreCapability(device, String icap, Boolean inclIgnoreFld=fals
     String cap; cap = icap.toLowerCase()
     // if (inclIgnoreFld && (cap in blockedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
     if (inclIgnoreFld && !(cap in allowedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
-    Map customFilters = parseCustomFilterStr((String)settings.customCapFilters ?: sBLANK)
+    Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
     List<String> globalFilters = customFilters.global ?: []
     Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
     if (globalFilters.contains(cap)) { return true }
-    String devid= (String)device?.getId()
+    String devid = gtDevId(device)
     if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(cap)) ) { return true }
     return false
 }
 
 Map<String,Integer> deviceCommandList(device) {
-    String devid= (String)device?.getId()
+    String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
     Map<String,Integer> cmds = device.supportedCommands?.findAll { !ignoreCommand((String)it.name) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
     if (isDeviceInInput('tstatList', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
@@ -1667,11 +1682,11 @@ private Map parseCustomFilterStr(String text) {
 private Boolean ignoreAttribute(device, String iattr, Boolean inclIgnoreFld=true) {
     String attr; attr = iattr.toLowerCase()
     if (inclIgnoreFld && !(attr in allowedListFLD.attributes.collect { it.toLowerCase() })) { return true }
-    Map customFilters = parseCustomFilterStr((String)settings.customAttrFilters ?: sBLANK)
+    Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
     List<String> globalFilters = customFilters.global ?: []
     Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
     if (globalFilters.contains(attr)) { return true }
-    String devid= (String)device?.getId()
+    String devid = gtDevId(device)
     if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(attr)) ) { return true }
     return false
 }
@@ -1683,9 +1698,9 @@ private List<String> filteredOutAttrs(device) {
 }
 
 Map<String,Object> deviceAttributeList(device) {
-    String devid= (String)device?.getId()
+    String devid= gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Object> atts = ((List)device.getSupportedAttributes())?.findAll { (String)it.name in allowedListFLD.attributes }?.collectEntries { attribute->
+    Map<String,Object> atts = ((List)device.getSupportedAttributes())?.findAll { (String)it.name in allowedListFLD.attributes }?.collectEntries { attribute ->
         String attr=(String)attribute.name
         try {
             // if(attr == "speed") {
@@ -1713,7 +1728,7 @@ def getAllData() {
     //    state.subscriptionRenewed = wnow()
     String deviceJson = new JsonOutput().toJson([location: renderLocation(), deviceList: renderDevices()])
     updTsVal('lastDeviceDataQueryDt')
-    render contentType: sAPPJSON, data: deviceJson
+    wrender contentType: sAPPJSON, data: deviceJson
 }
 
 
@@ -1743,7 +1758,7 @@ void registerDevices() {
     Boolean shw 
     deviceSettingKeys().each { String k, String v->
         shw = false //(k=='shadesList')
-        List l = (List)settings[k]
+        List l = getListSetting(k)
         logDebug("Subscribed to (${l?.size() ?: 0}) ${v}")
         registerChangeHandler(l, shw)
     }
@@ -1760,10 +1775,11 @@ void registerDevices() {
     runIn(8, 'sendDeviceRefreshCmd')
 }
 
+@CompileStatic
 Boolean isDeviceInInput(String setKey, String devId) {
     List l = getListSetting(setKey)
     if (l) {
-        return (l.find { (String)it?.getId() == devId })
+        return (l.find { gtDevId(it) == devId })
     }
     return false
 }
@@ -1772,14 +1788,14 @@ Boolean isDeviceInInput(String setKey, String devId) {
 
 void registerChangeHandler(List devices, Boolean showlog=false) {
     devices?.each { device ->
-        String devid = (String)device.getId()
+        String devid = gtDevId(device)
         List<String> theAtts = ((List)device.getSupportedAttributes())?.collect { (String)it.name }?.unique()
         if (showlog) { log.debug "atts: ${theAtts}" }
         theAtts?.each { String att ->
             if (allowedListFLD.attributes.contains(att)) {
                 if (getBoolSetting('noTemp') && att == 'temperature' && (device.hasAttribute('contact') || device.hasAttribute('water'))) {
                     Boolean skipAtt; skipAtt = true
-                    if ((List)settings.sensorAllowTemp) {
+                    if (getListSetting('sensorAllowTemp')) {
                         skipAtt = isDeviceInInput('sensorAllowTemp', devid)
                     }
                     if (skipAtt) { return }
@@ -1857,11 +1873,11 @@ def changeHandler(evt) {
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             break
         case 'mode':
-            ((List<String>)settings.modeList)?.each { id->
-                def md = getModeById(id)
+            ((List<String>)getListSetting('modeList'))?.each { id ->
+                Map<String,String> md = fndMode(id)
                 if (md && md.id) {
-                    String devId = 'm_'+md.id.toString()
-                    sendItems?.push([evtSource: 'MODE', evtDeviceName: "Mode - ${md.name}", evtDeviceId: devId, evtAttr: sSW, evtValue: modeSwitchState((String)md.name), evtUnit: sBLANK, evtDate: dt])
+                    String devId = 'm_'+md.id
+                    sendItems.push([evtSource: 'MODE', evtDeviceName: "Mode - ${md.name}", evtDeviceId: devId, evtAttr: sSW, evtValue: modeSwitchState(md.name), evtUnit: sBLANK, evtDate: dt])
                 }
             }
             break
@@ -1869,11 +1885,11 @@ def changeHandler(evt) {
             if (getBoolSetting('enableWebCoRE')) {
                 sendEvt = false
                 if ((String)evt.value == 'pistonList') {
-                    List p; p = (List)webCoREFLD?.pistons ?: []
+                    List<Map> p; p = (List<Map>)webCoREFLD?.pistons ?: []
                     Map d = evt.jsonData ?: [:]
                     if (d.id && d.pistons && (d.pistons instanceof List)) {
                         p.removeAll { it.iid == d.id }
-                        p += d.pistons.collect { [iid:d.id] + it }.sort { it.name }
+                        p += ((List<Map>)d.pistons).collect { [iid:d.id] + it }.sort { (String)it.name }
                         def a = webCoREFLD?.cbk
                         webCoREFLD = [cbk: a, updated: wnow(), pistons: p]
                         updTsVal(sLASTWU)
@@ -1882,7 +1898,7 @@ def changeHandler(evt) {
                     if (evtLog) { logDebug("got webCoRE piston list event $webCoREFLD") }
                     break
                 } else if ((String)evt.value == 'pistonExecuted') {
-                    ((List<String>)settings.pistonList)?.each { id->
+                    ((List<String>)getListSetting('pistonList'))?.each { String id ->
                         Map rt = getPistonById(id)
                         if (rt && rt.id) {
                             sendEvt = true
@@ -1945,10 +1961,10 @@ def changeHandler(evt) {
                         unitStr = ' Lux'
                         break
                     default:
-                        unitStr = "${send?.evtUnit}"
+                        unitStr = "${send.evtUnit}"
                         break
                 }
-                logInfo("Sending ${send?.evtSource ?: sBLANK} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : sBLANK} to Homebridge at (${server})")
+                logInfo("Sending ${send.evtSource ?: sBLANK} Event (${send.evtDeviceName} | ${((String)send.evtAttr).toUpperCase()}: ${send.evtValue}${unitStr}) ${send.evtData ? "Data: ${send.evtData}" : sBLANK} to Homebridge at (${server})")
             }
             sendHttpPost(sUPD, [
                 change_name     : send.evtDeviceName,
@@ -1957,7 +1973,7 @@ def changeHandler(evt) {
                 change_value    : send.evtValue,
                 change_data     : send.evtData,
                 change_date     : send.evtDate,
-                app_id          : app?.getId(),
+                app_id          : gtAppId(),
                 access_token    : getTsVal(sATK)
             ], sEVTUPD, evtLog)
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: wnow() - execDt])
@@ -1965,7 +1981,7 @@ def changeHandler(evt) {
     }
 }
 
-private Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
+private static Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
     Map<String, Integer> speedMappings = [
         "low": 0,
         "medium-low": 25,
@@ -1976,20 +1992,21 @@ private Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
         "off": 0,
         "auto": 50  // You can adjust this based on your needs
     ]
-    
-    Integer speedPercentage = speedMappings[speedValue] ?: 0
+
+    Integer speedPercentage
+    speedPercentage = speedMappings[speed] ?: 0
     // Adjust percentage based on the number of speeds
     //  -1 because index is 0-based
-    speedPercentage = (speedPercentage / 100.0) * (numberOfSpeeds - 1)
+    speedPercentage = Math.round( ((speedPercentage / 100.0) * (numberOfSpeeds - 1)) * 100).toInteger()
     
-    return (speedPercentage * 100).toInteger()
+    return speedPercentage
 
 }
 
 void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, String contentType = sAPPJSON) {
     String server = getServerAddress()
-    Boolean sendVia=getBoolSetting('sendViaNgrok')
-    String url= sendVia ? (String)settings.ngrokHttpUrl : sBLANK
+    Boolean sendVia = getBoolSetting('sendViaNgrok')
+    String url = sendVia ? getStrSetting('ngrokHttpUrl') : sBLANK
     if (!devMode() || !(sendVia && url)) {
         if (server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
     }
@@ -2012,15 +2029,16 @@ void asyncHttpCmdResp(response, Map data) {
     }
 }
 
+@CompileStatic
 String getServerAddress() {
     String sv; sv = getTsVal(sSVR)
     if (sv == sNULL) {
-        Map pluginDetails = state.pluginDetails ?: [:]
+        Map pluginDetails = (Map)gtState('pluginDetails') ?: [:]
         sv = "${pluginDetails.directIP}:${pluginDetails.directPort}".toString()
         updTsVal(sSVR, sv)
         updTsVal(sDBG, getBoolSetting('showDebugLogs').toString())
         updTsVal(sEVT, getBoolSetting('showEventLogs').toString())
-        updTsVal(sATK, (String)state.accessToken)
+        updTsVal(sATK, (String)gtState('accessToken'))
         updTsVal('lastActTs')
     }
     return sv
@@ -2037,12 +2055,9 @@ String getPluginStatusDesc() {
     return out
 }
 
-def getModeById(String mId) {
-    return ((List)location?.getModes())?.find { it?.id?.toString() == mId }
-}
-
-def getModeByName(String name) {
-    return ((List)location?.getModes())?.find { (String)it?.name == name }
+private Map<String,String> fndMode(String m){
+    def mode= ((List)location.getModes())?.find{ it-> ((Long)it.getId()).toString()==m || (String)it.getName()==m }
+    return mode ? [ id: ((Long)mode.getId()).toString(), name: (String)mode.getName()] :null
 }
 
 @Field volatile static Map<String,Object> webCoREFLD = [:]
@@ -2053,7 +2068,8 @@ static String webCore_icon() { return 'https://raw.githubusercontent.com/ady624/
 
 private webCoRE_init(pistonExecutedCbk=null) {
     if (getBoolSetting('enableWebCoRE')) {
-        if (settings.pistonList) { logInfo("Subscribed to (${settings.pistonList.size()} WebCoRE Pistons)") }
+        List tmp = getListSetting('pistonList')
+        if (tmp) { logInfo("Subscribed to (${tmp.size()} WebCoRE Pistons)") }
         subscribe(location, webCoRE_handle(), changeHandler)
         if (!webCoREFLD) {
             webCoREFLD = [:] + [cbk:true] // pistonExecutedCbk]
@@ -2101,7 +2117,7 @@ static Boolean devMode() {
 void activateDirectUpdates(Boolean isLocal=false) {
     logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('initial', [
-        app_id: app.getId(),
+        app_id: gtAppId(),
         access_token: (String)state.accessToken
     ], 'activateDirectUpdates', getBoolSetting('showDebugLogs'))
 }
@@ -2109,7 +2125,7 @@ void activateDirectUpdates(Boolean isLocal=false) {
 void attemptServiceRestart(Boolean isLocal=false) {
     logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('restart', [
-        app_id: app.getId(),
+        app_id: gtAppId(),
         access_token: (String)state.accessToken
     ], 'attemptServiceRestart', getBoolSetting('showDebugLogs'))
 }
@@ -2117,7 +2133,7 @@ void attemptServiceRestart(Boolean isLocal=false) {
 void sendDeviceRefreshCmd(Boolean isLocal=false) {
     logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('refreshDevices', [
-        app_id: app.getId(),
+        app_id: gtAppId(),
         access_token: (String)state.accessToken
     ], 'sendDeviceRefreshCmd', getBoolSetting('showDebugLogs'))
 }
@@ -2125,7 +2141,7 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
 void updateServicePrefs(Boolean isLocal=false) {
     logTrace("updateServicePrefs: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('updateprefs', [
-        app_id: app.getId(),
+        app_id: gtAppId(),
         access_token: (String)state.accessToken,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
         validateTokenId: getBoolSetting('validate_token'),
@@ -2139,7 +2155,7 @@ def pluginStatus() {
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
     if (body?.version) { updCodeVerMap('plugin', (String)body?.version) }
     String resultJson = new JsonOutput().toJson([status: 'OK'])
-    render contentType: sAPPJSON, data: resultJson
+    wrender contentType: sAPPJSON, data: resultJson
 }
 
 def enableDirectUpdates() {
@@ -2155,7 +2171,7 @@ def enableDirectUpdates() {
     activateDirectUpdates()
     updTsVal('lastDirectUpdsEnabled')
     String resultJson = new JsonOutput().toJson([status: 'OK'])
-    render contentType: sAPPJSON, data: resultJson
+    wrender contentType: sAPPJSON, data: resultJson
 }
 
 mappings {
@@ -2327,14 +2343,16 @@ private List codeUpdateItems(Boolean shrt=false) {
 
 @Field volatile static Map<String,Map> tsDtMapFLD = [:]
 
+@CompileStatic
 Integer getLastTsValSecs(String val, Integer nullVal=1000000) {
-    String appId = app.getId().toString()
+    String appId = gtAppId()
     Map tsMap = tsDtMapFLD[appId] ?: [:]
     return (val && tsMap && tsMap[val]) ? GetTimeDiffSeconds((String)tsMap[val]).toInteger() : nullVal
 }
 
+@CompileStatic
 private void updTsVal(String key, String dt=sNULL) {
-    String appId = app.getId().toString()
+    String appId = gtAppId()
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) { data[key] = dt ?: getDtNow() }
     tsDtMapFLD[appId] = data
@@ -2342,7 +2360,7 @@ private void updTsVal(String key, String dt=sNULL) {
 }
 
 private void remTsVal(key) {
-    String appId = app.getId().toString()
+    String appId = gtAppId()
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) {
         if( key instanceof List) {
@@ -2357,8 +2375,9 @@ private void remTsVal(key) {
     }
 }
 
+@CompileStatic
 private String getTsVal(String val) {
-    String appId = app.getId().toString()
+    String appId = gtAppId()
     Map tsMap = tsDtMapFLD[appId]
     if (val && tsMap && tsMap[val]) { return (String)tsMap[val] }
     return sNULL
@@ -2384,14 +2403,16 @@ private getInstData(String key) {
     return null
 }
 
+@CompileStatic
 private void checkVersionData(Boolean now = false) { //This reads a JSON file from GitHub with version numbers
     Integer lastUpd = getLastTsValSecs('lastAppDataUpdDt')
-    if (now || !state.appData || (lastUpd > (3600 * 6))) {
+    if (now || !gtState('appData') || (lastUpd > (3600 * 6))) {
         if (now && (lastUpd < 300)) { return }
         getConfigData()
     }
 }
 
+@CompileStatic
 void getConfigData() {
     Map params = [
         uri: 'https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/appData.json',
@@ -2400,7 +2421,7 @@ void getConfigData() {
     ]
     Map data = (Map)getWebData(params, 'appData', false)
     if (data) {
-        state.appData = data
+        assignSt('appData',data)
         updTsVal('lastAppDataUpdDt')
         logDebug("Successfully Retrieved (v${data.appDataVer}) of AppData Content from GitHub Repo...")
     }
@@ -2426,17 +2447,20 @@ private getWebData(Map params, String desc, Boolean text=true) {
 /******************************************
 |       DATE | TIME HELPERS
 ******************************************/
+@CompileStatic
 static String formatDt(Date dt, Boolean tzChg=false) {
     SimpleDateFormat tf = new SimpleDateFormat('E MMM dd HH:mm:ss z yyyy')
     if (tzChg && getDefTz()) { tf.setTimeZone(getDefTz()) }
     return tf.format(dt)
 }
 
+@CompileStatic
 static String getDtNow() {
     Date now = new Date()
     return formatDt(now)
 }
 
+@CompileStatic
 Long GetTimeDiffSeconds(String lastDate, String sender=sNULL) {
     if (lastDate) {
         if (!lastDate.contains('dtNow')) {
@@ -2492,15 +2516,17 @@ private changeLogPage() {
     }
 }
 
+@Field volatile static Map<String,Map<String,List<Map>>> historyMapFLD = [:]
+
 private void addToHistory(String logKey, Map data, Integer max=10) {
-    String appId = app.getId().toString()
+    String appId = gtAppId()
     Boolean ssOk = true
     /* groovylint-disable-next-line UnusedVariable */
-    Boolean aa = getTheLock(sHMLF, "addToHistory(${logKey})")
+    getTheLock(sHMLF, "addToHistory(${logKey})")
     // log.trace "lock wait: ${aa}"
 
-    Map<String,List> memStore = historyMapFLD[appId] ?: [:]
-    List eData; eData = (List)memStore[logKey] ?: []
+    Map<String,List<Map>> memStore = historyMapFLD[appId] ?: [:]
+    List<Map> eData; eData = (List<Map>)memStore[logKey] ?: []
     if (eData.find { it?.data == data }) {
         releaseTheLock(sHMLF)
         return
@@ -2528,13 +2554,13 @@ private void logError(String msg, ex=null) {
 }
 
 private void logPrefix(String lvl, String msg, String color = sNULL) {
-    String pad = sBLANK
+    String pad; pad = sBLANK
     if (lvl in ['warn', sINFO]) { pad = sSPACE }
     log."$lvl" pad + span("Homebridge (v${appVersionFLD}) | ", sCLRGRY) + span(msg, color)
 }
 
 private List<Map> getCmdHistory() {
-    Boolean aa = getTheLock(sHMLF, 'getCmdHistory')
+    getTheLock(sHMLF, 'getCmdHistory')
     // log.trace "lock wait: ${aa}"
 
     List<Map> his; his = getMemStoreItem('cmdHistory')
@@ -2546,7 +2572,7 @@ private List<Map> getCmdHistory() {
 }
 
 private List<Map> getEvtHistory() {
-    Boolean aa = getTheLock(sHMLF, 'getEvtHistory')
+    getTheLock(sHMLF, 'getEvtHistory')
     // log.trace "lock wait: ${aa}"
 
     List<Map> his; his = getMemStoreItem('evtHistory')
@@ -2558,11 +2584,11 @@ private List<Map> getEvtHistory() {
 }
 
 private void clearHistory() {
-    String appId = app.getId().toString()
-    Boolean aa = getTheLock(sHMLF, 'clearHistory')
+    String appId = gtAppId()
+    getTheLock(sHMLF, 'clearHistory')
     // log.trace "lock wait: ${aa}"
 
-    historyMapFLD[appId] = [:]
+    historyMapFLD.put(appId, [:] as Map<String,List<Map>>)
     historyMapFLD = historyMapFLD
 
     releaseTheLock(sHMLF)
@@ -2571,11 +2597,9 @@ private void clearHistory() {
 private void logEvt(Map evtData) { addToHistory('evtHistory', evtData, 25) }
 private void logCmd(Map cmdData) { addToHistory('cmdHistory', cmdData, 25) }
 
-@Field volatile static Map<String,Map> historyMapFLD = [:]
-
 // FIELD VARIABLE FUNCTIONS
 private void updMemStoreItem(String key, List val) {
-    String appId = app.getId().toString()
+    String appId = gtAppId()
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
@@ -2584,8 +2608,8 @@ private void updMemStoreItem(String key, List val) {
 }
 
 private List getMemStoreItem(String key) {
-    String appId = app.getId().toString()
-    Map<String, List> memStore = historyMapFLD[appId] ?: [:]
+    String appId = gtAppId()
+    Map<String, List<Map>> memStore = historyMapFLD[appId] ?: [:]
     return (List)memStore[key] ?: null
 }
 
@@ -2601,22 +2625,24 @@ static void mb(String meth=sNULL) {
 @Field static final String sHMLF = 'theHistMapLockFLD'
 @Field static Semaphore histMapLockFLD = new Semaphore(1)
 
-private Integer getSemaNum(String name) {
+@CompileStatic
+static Integer getSemaNum(String name) {
     if (name == sHMLF) return 0
-    log.warn 'unrecognized lock name...'
+    //log.warn 'unrecognized lock name...'
     return 0
-// Integer stripes=22
-// if(name.isNumber()) return name.toInteger()%stripes
-// Integer hash=smear(name.hashCode())
-// return Math.abs(hash)%stripes
-// log.info "sema $name # $sema"
+    // Integer stripes=22
+    // if(name.isNumber()) return name.toInteger()%stripes
+    // Integer hash=smear(name.hashCode())
+    // return Math.abs(hash)%stripes
+    // log.info "sema $name # $sema"
 }
 
-Semaphore getSema(Integer snum) {
+@CompileStatic
+static Semaphore getSema(Integer snum) {
     switch (snum) {
         case 0:
             return histMapLockFLD
-        default: log.error "bad hash result $snum"
+        default: // log.error "bad hash result $snum"
             return null
     }
 }
@@ -2624,7 +2650,13 @@ Semaphore getSema(Integer snum) {
 @Field volatile static Map<String,Long> lockTimesFLD = [:]
 @Field volatile static Map<String,String> lockHolderFLD = [:]
 
-Boolean getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
+@CompileStatic
+void getTheLock(String qname,String meth=sNULL,Boolean longWait=false) {
+    Boolean a = getTheLockW(qname,meth,longWait)
+}
+
+@CompileStatic
+Boolean getTheLockW(String qname, String meth=sNULL, Boolean longWait=false) {
     Long waitT = longWait ? 1000L : 60L
     Boolean wait; wait = false
     Integer semaNum = getSemaNum(qname)
@@ -2638,39 +2670,54 @@ Boolean getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
             lockTimesFLD[semaSNum] = timeL
             lockTimesFLD = lockTimesFLD
         }
-        if (devMode()) { log.warn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}" }
-        pauseExecution(waitT)
+        if (devMode()) { logWarn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}" }
+        wpauseExecution(waitT)
         wait = true
         if ((wnow() - timeL) > 30000L) {
             releaseTheLock(qname)
-            if (devMode()) { log.warn "overriding lock $meth" }
+            if (devMode()) { logWarn "overriding lock $meth" }
         }
     }
     lockTimesFLD[semaSNum] = wnow()
     lockTimesFLD = lockTimesFLD
-    lockHolderFLD[semaSNum] = "${app.getId()} ${meth}".toString()
+    lockHolderFLD[semaSNum] = "${gtAppId()} ${meth}".toString()
     lockHolderFLD = lockHolderFLD
     return wait
 }
 
-void releaseTheLock(String qname) {
+@CompileStatic
+static void releaseTheLock(String qname) {
     Integer semaNum = getSemaNum(qname)
     String semaSNum = semaNum.toString()
     Semaphore sema = getSema(semaNum)
-    lockTimesFLD[semaSNum] = null
+    lockTimesFLD[semaSNum] = (Long)null
     lockTimesFLD = lockTimesFLD
     lockHolderFLD[semaSNum] = sNULL
     lockHolderFLD = lockHolderFLD
     sema.release()
 }
 
+String gtDevId(dev){ return (String)dev.getId() }
+
+String gtAppId(){ return ((Long)app.getId()).toString() }
+
 private Long wnow(){ return (Long)now() }
 private static TimeZone getDefTz() { return TimeZone.getDefault() }
+
+private void wpauseExecution(Long t) { pauseExecution(t) }
 
 @CompileStatic
 private static Boolean bIs(Map m,String v) { (Boolean)m.get(v) }
 
+/** m.string  */
+@CompileStatic
+private static String sMs(Map m,String v) { (String)m[v] }
+
+private void assignSt(String name,v) { ((Map)state).put(name,v) }
+private gtState(String name) { return state.get(name) }
+
 private getSetting(String name) { return settings.get(name) }
+private String getStrSetting(String name) { return (String)settings.get(name) }
 private Boolean getBoolSetting(String name) { return (Boolean)settings.get(name) == true }
 private Boolean getBoolDefSetting(String name,Boolean defVal=true){
     if(settings.get(name) == null) {
@@ -2700,4 +2747,41 @@ static String getObjType(obj) {
         //      if(eric()) log.error "object: ${describeObject(obj)}"
         return 'unknown'
     }
+}
+
+@Field static final String sAE = 'Accept-encoding'
+@Field static final String sCE = 'Content-Encoding'
+@Field static final String sGZIP = 'gzip'
+@Field static final String sDATA = 'data'
+@Field static final String sUTF8 = 'UTF-8'
+
+private Map wrender(Map options=[:]){
+    //debug "wrender: options:: ${options} "
+    //debug "request: ${request} "
+    Map h=(Map)request?.headers
+    if(h && sMs(h,sAE)?.contains(sGZIP)){
+//              debug "will accept gzip"
+        String s=sMs(options,sDATA)
+        Integer sz=s?.length()
+        if(sz>256){
+            try{
+                String a= string2gzip(s)
+                Integer nsz=a.size()
+                if(devMode())logDebug "options.data is $sz after compression $nsz  saving ${Math.round((1.0D-(nsz/sz))*1000.0D)/10.0D}%"
+//                              options[sDATA]=a
+//                              options[sCE]=sGZIP
+            }catch(ignored){}
+        }
+    }
+    render(options)
+}
+
+static String string2gzip(String s) {
+    ByteArrayOutputStream baos= new ByteArrayOutputStream()
+    GZIPOutputStream zipStream= new GZIPOutputStream(baos)
+    zipStream.write(s.getBytes(sUTF8))
+    zipStream.close()
+    byte[] result= baos.toByteArray()
+    baos.close()
+    return result.encodeBase64()
 }
