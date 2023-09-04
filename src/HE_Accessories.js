@@ -143,7 +143,7 @@ module.exports = class HE_Accessories {
             // console.log("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
             let accessory = this.getAccessoryFromCache(change);
-            console.log(characteristics);
+            // console.log(characteristics);
             if (!characteristics || !accessory) resolve(false);
             if (characteristics instanceof Array) {
                 characteristics.forEach((char) => {
