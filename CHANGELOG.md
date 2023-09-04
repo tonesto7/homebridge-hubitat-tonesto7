@@ -1,3 +1,7 @@
+## _**v2.9.1**_ (09-04-2023)
+
+- [FIX] Tweaks for better windowShade support.
+
 ## _**v2.9.0**_ (08-26-2023)
 
 - [FIX] Tweaked the detection logic slightly to help with devices that show that they have invalid values for some characteristics.

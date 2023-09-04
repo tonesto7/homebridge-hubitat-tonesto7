@@ -789,7 +789,7 @@ module.exports = class DeviceCharacteristics {
     }
 
     window_shade(_accessory, _service) {
-        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, _accessory.hasCommand("setLevel") ? "level" : "position", {
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentPosition, _accessory.hasCommand("setPosition") ? "position" : "level", {
             props: {
                 steps: 10,
             },
@@ -798,7 +798,7 @@ module.exports = class DeviceCharacteristics {
         if (!c._events.get || !c._events.set) {
             if (!c._events.get) {
                 c.on("get", (callback) => {
-                    callback(null, parseInt(_accessory.hasCommand("setLevel") ? _accessory.context.deviceData.attributes.level : _accessory.context.deviceData.attributes.position));
+                    callback(null, parseInt(_accessory.hasCommand("setPosition") ? _accessory.context.deviceData.attributes.position : _accessory.context.deviceData.attributes.level));
                 });
             }
             if (!c._events.set) {
@@ -809,15 +809,15 @@ module.exports = class DeviceCharacteristics {
                         let v = value;
                         if (value <= 2) v = 0;
                         if (value >= 98) v = 100;
-                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, _accessory.hasCommand("setLevel") ? "setLevel" : "setPosition", {
+                        _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, _accessory.hasCommand("setPosition") ? "setPosition" : "setLevel", {
                             value1: v,
                         });
                     }
                 });
             }
-            this.accessories.storeCharacteristicItem(_accessory.hasCommand("setLevel") ? "level" : "position", _accessory.context.deviceData.deviceid, c);
+            this.accessories.storeCharacteristicItem(_accessory.hasCommand("setPosition") ? "position" : "level", _accessory.context.deviceData.deviceid, c);
         } else {
-            c.updateValue(this.transforms.transformAttributeState(_accessory.hasCommand("setLevel") ? "level" : "position", _accessory.hasCommand("setLevel") ? _accessory.context.deviceData.attributes.level : _accessory.context.deviceData.attributes.position));
+            c.updateValue(this.transforms.transformAttributeState(_accessory.hasCommand("setPosition") ? "position" : "level", _accessory.hasCommand("setPosition") ? _accessory.context.deviceData.attributes.position : _accessory.context.deviceData.attributes.level));
         }
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.PositionState, "windowShade");
         _accessory.getOrAddService(_service).getCharacteristic(Characteristic.ObstructionDetected).updateValue(false);
