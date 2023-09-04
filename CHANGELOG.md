@@ -1,4 +1,4 @@
-## _**v2.9.1**_ (09-04-2023)
+## _**v2.9.2**_ (09-04-2023)
 
 - [FIX] Tweaks for better windowShade support.
 
