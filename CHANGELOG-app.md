@@ -1,3 +1,8 @@
+## _**v2.9.1**_ (09-04-2023)
+- [FIX] The last release broke humidity and blinds position attributes.
+- [FIX] Fixed capability filtering not blocking unused capabilities.
+- [UPDATE] More optimizations and performance improvements (Thanks @nh.schottfam).
+
 ## _**v2.9.0**_ (08-26-2023)
 - [UPDATE] Modified the device debug page to show and additional view which is more Human readable.
 - [UPDATE] Modified the way that attributes, capabilities, and commands are assigned natively.  I've basically detemined exactly what attributes, commands and capabilities are required by the plugin and ignore all others.

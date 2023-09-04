@@ -50,13 +50,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.9.0'
-//@Field static final String appModifiedFLD = '08-29-2023'
+@Field static final String appVersionFLD  = '2.9.1'
+//@Field static final String appModifiedFLD = '09-04-2023'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 290]
+@Field static final Map minVersionsFLD    = [plugin: 291]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -114,8 +114,8 @@ preferences {
 @Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
         "acceleration", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
-        "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "illuminance", 
-        "level", "level", "lock", "motion", "mute", "outlet", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
+        "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "humidity", "illuminance", 
+        "level", "level", "lock", "motion", "mute", "outlet", "position", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
         "tamper", "temperature", "thermostatFanMode", "thermostatMode", "thermostatOperatingState", "thermostatSetPoint", "valve", "volume", "water", "windowShade",
     ],
     capabilities: [
@@ -127,7 +127,7 @@ preferences {
         // "ReleasableButton", 
         "Routine", "Sensor", "SmokeDetector", "Speaker", "Switch", "SwitchLevel", "TamperAlert", 
         "TemperatureMeasurement", "Thermostat", "ThermostatCoolingSetpoint", "ThermostatFanMode", "ThermostatHeatingSetpoint", "ThermostatMode", 
-        "ThermostatOperatingState", "ThermostatSetpoint", "Valve", "WaterSensor", "Window", "WindowShade",
+        "ThermostatOperatingState", "ThermostatSetpoint", "Valve", "WaterSensor", "Window", "WindowShade"
     ],
     commands: [
         "armAway", "armHome", "disarm", "auto","heat","cool", "channelDown", "channelUp", "nextTrack", "previousTrack", "emergencyHeat", "fanAuto", 
@@ -696,11 +696,11 @@ def capFilterPage() {
         section(sectHead('Custom Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom capabilities per device and/or globally to prevent unwanted characteristics in devices under HomeKit', sCLRGRY) + 
                 spanSmBr("There are 2 ways to format the data:", sCLRGRY) + 
-                spanSmBr(" ${sBULLET} To filter out a specific device capabilities wrap the item in brackets like [device_id1:Battery,Temperature], [device_id2:Acceleration,Illuminance]", sCLRGRY) +
+                spanSmBr(" ${sBULLET} To filter out a specific device capabilities wrap the item in brackets like [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement]", sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out an capabilities from all devices don't use brackets", sCLRGRY) + 
                 spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") + 
                 spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
-                spanSmBr("Here is an example of mixing per-device and global filters: [device_id1:Battery,Temperature], [device_id2:Acceleration,Illuminance], SwitchLevel", sCLRORG)
+                spanSmBr("Here is an example of mixing per-device and global filters: [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement], SwitchLevel", sCLRORG)
             input "customCapFilters", "textarea", title: inTS1("Enter custom capabilities", "filter"), description: "Enter the filters using the format mentioned above...",  submitOnChange: true, required: false
         }
 
@@ -774,7 +774,7 @@ def deviceDebugPage() {
             paragraph spanSmBldBr('NOTICE:', sCLRGRY) + spanSm("Do you have a device that's not working under homekit like you want?<br> ${sBULLET} Select a device from one of the inputs below and it will show you all data about the device.", sCLRGRY)
             input 'debug_device', 'capability.*', title: inTS1('All Devices:', 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
         }
-        if (debug_other || debug_sensor || debug_switch || debug_garage || debug_tstat || debug_device) {
+        if (debug_device) {
             section(sectHead('Device Data:'), hideable: false, hidden: false) {
                 String desc; desc = viewDeviceDebugPretty()
                 if (desc) {
@@ -866,11 +866,6 @@ private String viewDeviceDebugPretty() {
 
 private String viewDeviceDebugAsJson() {
     def sDev; sDev = null
-    if (debug_other)  { sDev = debug_other  }
-    if (debug_sensor) { sDev = debug_sensor }
-    if (debug_switch) { sDev = debug_switch }
-    if (debug_garage) { sDev = debug_garage }
-    if (debug_tstat)  { sDev = debug_tstat  }
     if (debug_device) { sDev = debug_device }
     String json = new JsonOutput().toJson(getDeviceDebugMap(sDev))
     String jsonStr = new JsonOutput().prettyPrint(json)
@@ -1605,16 +1600,13 @@ private List<String> filteredOutCaps(device) {
         String theCap = capFilterFLD[capName]
         if (theCap && isDeviceInInput(k, gtDevId(device))) { capsFiltered.push(theCap) }
     }
-    List custCaps = getCustCapFilters()
-    if(custCaps) {
-        capsFiltered = capsFiltered + device.capabilities?.findAll { ignoreCapability(device, (String)it.name) }?.collect { (String)it.name }
-    }
+    // List custCaps = getCustCapFilters()
+    capsFiltered = capsFiltered + device.capabilities?.findAll { ignoreCapability(device, (String)it.name, true) }?.collect { (String)it.name }
     return capsFiltered
 }
 
 private Boolean ignoreCapability(device, String icap, Boolean inclIgnoreFld=false) {
     String cap; cap = icap.toLowerCase()
-    // if (inclIgnoreFld && (cap in blockedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
     if (inclIgnoreFld && !(cap in allowedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
     Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
     List<String> globalFilters = customFilters.global ?: []
@@ -1642,7 +1634,6 @@ Map<String,Integer> deviceCommandList(device) {
 }
 
 private static Boolean ignoreCommand(String cmd) {
-    // return cmd && (cmd in blockedListFLD.commands)
     return cmd && !(cmd in allowedListFLD.commands)
 }
 
