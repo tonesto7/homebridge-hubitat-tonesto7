@@ -120,14 +120,14 @@ preferences {
     ],
     capabilities: [
         "AccelerationSensor", "Actuator", "AirQuality", "Alarm", "AlarmSystemStatus", "Audio Mute", "Audio Volume", "Battery", "Bulb", "Button",
-        "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "Configuration", "ContactSensor", "Door", "DoorControl", 
+        "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "ContactSensor", "DoorControl", 
         "DoubleTapableButton", "EnergyMeter", "Fan", "FanControl", "FanLight", "GarageDoorControl", "HoldableButton", "IlluminanceMeasurement", "Light", 
-        "LightBulb", "Lock", "LockCodes", "Mode", "MotionSensor", "Outlet", "Piston", "Polling", "PowerMeter", "PowerSource", "PresenceSensor", "PushableButton", 
-        "Refresh", "RelativeHumidityMeasurement", 
+        "LightBulb", "Lock", "LockCodes", "Mode", "MotionSensor", "Outlet", "Piston", "PowerMeter", "PowerSource", "PresenceSensor", "PushableButton", 
+        "RelativeHumidityMeasurement", 
         // "ReleasableButton", 
         "Routine", "Sensor", "SmokeDetector", "Speaker", "Switch", "SwitchLevel", "TamperAlert", 
         "TemperatureMeasurement", "Thermostat", "ThermostatCoolingSetpoint", "ThermostatFanMode", "ThermostatHeatingSetpoint", "ThermostatMode", 
-        "ThermostatOperatingState", "ThermostatSetpoint", "Valve", "WaterSensor", "Window", "WindowShade"
+        "ThermostatOperatingState", "ThermostatSetpoint", "Valve", "WaterSensor", "WindowBlind", "WindowShade"
     ],
     commands: [
         "armAway", "armHome", "disarm", "auto","heat","cool", "channelDown", "channelUp", "nextTrack", "previousTrack", "emergencyHeat", "fanAuto", 
