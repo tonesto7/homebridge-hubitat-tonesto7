@@ -62,13 +62,13 @@ module.exports = class Transforms {
                     case "open":
                         return Characteristic.TargetDoorState.OPEN;
                     case "opening":
-                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.OPENING;
+                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.CurrentDoorState.OPENING;
                     case "closed":
                         return Characteristic.TargetDoorState.CLOSED;
                     case "closing":
-                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.CLOSED : Characteristic.TargetDoorState.CLOSING;
+                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.CLOSED : Characteristic.CurrentDoorState.CLOSING;
                     default:
-                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.STOPPED;
+                        return charName && charName === "Target Door State" ? Characteristic.TargetDoorState.OPEN : Characteristic.CurrentDoorState.STOPPED;
                 }
             case "fanMode":
                 switch (val) {
