@@ -116,12 +116,12 @@ preferences {
         "acceleration", "airQualityIndex", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
         "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "humidity", "illuminance", 
         "level", "level", "lock", "motion", "mute", "outlet", "pm25", "position", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
-        "tamper", "temperature", "thermostatFanMode", "thermostatMode", "thermostatOperatingState", "thermostatSetPoint", "valve", "volume", "water", "windowShade",
+        "tamper", "temperature", "thermostatFanMode", "thermostatMode", "thermostatOperatingState", "thermostatSetPoint", "valve", "volume", "water", "waterLevel", "windowShade",
     ],
     capabilities: [
         "AccelerationSensor", "Actuator", "AirQuality", "Alarm", "AlarmSystemStatus", "Audio Mute", "Audio Volume", "Battery", "Bulb", "Button",
-        "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "ContactSensor", "DoorControl", 
-        "DoubleTapableButton", "EnergyMeter", "Fan", "FanControl", "FanLight", "GarageDoorControl", "HoldableButton", "IlluminanceMeasurement", "Light", 
+        "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "ContactSensor", "Door", "DoorControl", 
+        "DoubleTapableButton", "EnergyMeter", "Fan", "FanControl", "FanLight", "GarageDoorControl", "HoldableButton", "HumidityControl", "Humidifier", "Dehumidifier", "IlluminanceMeasurement", "Light", 
         "LightBulb", "Lock", "LockCodes", "Mode", "MotionSensor", "Outlet", "Piston", "PowerMeter", "PowerSource", "PresenceSensor", "PushableButton", 
         "RelativeHumidityMeasurement", 
         // "ReleasableButton", 
@@ -133,7 +133,7 @@ preferences {
         "armAway", "armHome", "disarm", "auto","heat","cool", "channelDown", "channelUp", "nextTrack", "previousTrack", "emergencyHeat", "fanAuto", 
         "fanCirculate", "fanOn", "flip", "mute", "on", "off", "open", "close", "pause", "push", "hold", "doubleTap", "setColorTemperature", "setHue", 
         "setSaturation", "setCoolingSetpoint", "setFanSpeed", "setHeatingSetpoint", "setLevel", "setPosition", "setSchedule", "setSpeed", 
-        "setThermostatFanMode", "setThermostatMode","setThermostatSetpoint","setTiltLevel", "setVolume", "start", "stop", "unmute", "volumeDown", "volumeUp"
+        "setThermostatFanMode", "setThermostatMode","setThermostatSetpoint", "setTargetHumidity", "setTiltLevel", "setVolume", "start", "stop", "unmute", "volumeDown", "volumeUp"
     ],
 ]
 
@@ -339,6 +339,11 @@ def deviceSelectPage() {
             input 'tstatCoolList', 'capability.thermostat', title: inTS1("Cool Only Thermostats: (${tstatCoolList ? tstatCoolList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatHeatList', 'capability.thermostat', title: inTS1("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
+
+        // section(sectHead('Humidity Control:')) {
+        //     input 'humidifierList', 'capability.relativeHumidityMeasurement', title: inTS1("Humidifier: (${humidifierList ? humidifierList.size() : 0} Selected)", 'humidity'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        //     input 'dehumidifierList', 'capability.relativeHumidityMeasurement', title: inTS1("Dehumidifier: (${dehumidifierList ? dehumidifierList.size() : 0} Selected)", 'humidity'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        // }
 
         section(sectHead('All Other Devices:')) {
             input 'sensorList', 'capability.sensor', title: inTS1("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", 'sensors'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -1566,6 +1571,8 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (isDeviceInInput('tstatFanList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
     if (isDeviceInInput('tstatCoolList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatHeatingSetpoint') }
     if (isDeviceInInput('tstatHeatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
+    // if (isDeviceInInput('humidifierList', devId)) { capItems['HumidityControl'] = 1; capItems['Humidifier'] = 1 }
+    // if (isDeviceInInput('dehumidifierList', devId)) { capItems['HumidityControl'] = 1; capItems['Dehumidifier'] = 1 }
     //switchList, deviceList
 
     if (getBoolSetting('noTemp') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
@@ -1732,6 +1739,7 @@ static Map<String,String> deviceSettingKeys() {
         'speakerList': 'Speaker Devices', 'shadesList': 'Window Shade Devices', 'securityKeypadsList': 'Security Keypad Devices',
         'garageList': 'Garage Door Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat (HeatOnly) Devices', 'tstatCoolList': 'T-Stat (CoolOnly) Devices',
         'sensorList': 'Sensor Devices', 'switchList': 'Switch Devices', 'deviceList': 'Other Devices',
+        // 'humidifierList': "Humidifiers", 'dehumidifierList': "Dehumidifiers", 
     ]
 }
 

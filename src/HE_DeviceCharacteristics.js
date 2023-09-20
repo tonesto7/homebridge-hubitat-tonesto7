@@ -336,6 +336,24 @@ module.exports = class DeviceCharacteristics {
         return _accessory;
     }
 
+    humidifier(_accessory, _service) {
+        if (_accessory.hasCapability("Humidifier") && _accessory.hasCapability("Dehumidifier")) {
+            _accessory.getOrAddService(_service).setCharacteristic(Characteristic.TargetHumidifierDehumidifierState, Characteristic.TargetHumidifierDehumidifierState.HUMIDIFIER_OR_DEHUMIDIFIER);
+        } else if (_accessory.hasCapability("Humidifier")) {
+            _accessory.getOrAddService(_service).setCharacteristic(Characteristic.TargetHumidifierDehumidifierState, Characteristic.TargetHumidifierDehumidifierState.HUMIDIFIER);
+            _accessory.getOrAddService(_service).setCharacteristic(Characteristic.CurrentHumidifierDehumidifierState, Characteristic.CurrentHumidifierDehumidifierState.HUMIDIFYING);
+        } else if (_accessory.hasCapability("Dehumidifier")) {
+            _accessory.getOrAddService(_service).setCharacteristic(Characteristic.TargetHumidifierDehumidifierState, Characteristic.TargetHumidifierDehumidifierState.DEHUMIDIFIER);
+            _accessory.getOrAddService(_service).setCharacteristic(Characteristic.CurrentHumidifierDehumidifierState, Characteristic.CurrentHumidifierDehumidifierState.DEHUMIDIFYING);
+        }
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentRelativeHumidity, "humidity");
+        _accessory.manageGetSetCharacteristic(_service, _accessory, Characteristic.Active, "switch");
+
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.WaterLevel, "waterLevel");
+        _accessory.context.deviceGroups.push("humidifier");
+        return _accessory;
+    }
+
     humidity_sensor(_accessory, _service) {
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.CurrentRelativeHumidity, "humidity");
         _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");

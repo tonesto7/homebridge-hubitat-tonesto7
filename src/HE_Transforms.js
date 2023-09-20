@@ -75,7 +75,11 @@ module.exports = class Transforms {
             case "airQualityIndex":
                 return this.aqiToPm25(val);
             case "switch":
-                return val === "on";
+                if (charName === "Active") {
+                    return val === "on" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
+                } else {
+                    return val === "on";
+                }
             case "door":
                 switch (val) {
                     case "open":
