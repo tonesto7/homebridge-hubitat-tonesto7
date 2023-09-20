@@ -10,7 +10,7 @@ var Service = require("../Service").Service;
  * Characteristic "Accessory Flags"
  */
 
-Characteristic.AccessoryFlags = function() {
+Characteristic.AccessoryFlags = function () {
     Characteristic.call(this, "Accessory Flags", "000000A6-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT32,
@@ -27,7 +27,7 @@ Characteristic.AccessoryFlags.UUID = "000000A6-0000-1000-8000-0026BB765291";
  * Characteristic "Active"
  */
 
-Characteristic.Active = function() {
+Characteristic.Active = function () {
     Characteristic.call(this, "Active", "000000B0-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -51,7 +51,7 @@ Characteristic.Active.ACTIVE = 1;
  * Characteristic "Administrator Only Access"
  */
 
-Characteristic.AdministratorOnlyAccess = function() {
+Characteristic.AdministratorOnlyAccess = function () {
     Characteristic.call(this, "Administrator Only Access", "00000001-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -68,7 +68,7 @@ Characteristic.AdministratorOnlyAccess.UUID = "00000001-0000-1000-8000-0026BB765
  * Characteristic "Air Particulate Density"
  */
 
-Characteristic.AirParticulateDensity = function() {
+Characteristic.AirParticulateDensity = function () {
     Characteristic.call(this, "Air Particulate Density", "00000064-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -88,7 +88,7 @@ Characteristic.AirParticulateDensity.UUID = "00000064-0000-1000-8000-0026BB76529
  * Characteristic "Air Particulate Size"
  */
 
-Characteristic.AirParticulateSize = function() {
+Characteristic.AirParticulateSize = function () {
     Characteristic.call(this, "Air Particulate Size", "00000065-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -112,7 +112,7 @@ Characteristic.AirParticulateSize._10_M = 1;
  * Characteristic "Air Quality"
  */
 
-Characteristic.AirQuality = function() {
+Characteristic.AirQuality = function () {
     Characteristic.call(this, "Air Quality", "00000095-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -140,7 +140,7 @@ Characteristic.AirQuality.POOR = 5;
  * Characteristic "Audio Feedback"
  */
 
-Characteristic.AudioFeedback = function() {
+Characteristic.AudioFeedback = function () {
     Characteristic.call(this, "Audio Feedback", "00000005-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -157,7 +157,7 @@ Characteristic.AudioFeedback.UUID = "00000005-0000-1000-8000-0026BB765291";
  * Characteristic "Battery Level"
  */
 
-Characteristic.BatteryLevel = function() {
+Characteristic.BatteryLevel = function () {
     Characteristic.call(this, "Battery Level", "00000068-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -178,7 +178,7 @@ Characteristic.BatteryLevel.UUID = "00000068-0000-1000-8000-0026BB765291";
  * Characteristic "Brightness"
  */
 
-Characteristic.Brightness = function() {
+Characteristic.Brightness = function () {
     Characteristic.call(this, "Brightness", "00000008-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -199,7 +199,7 @@ Characteristic.Brightness.UUID = "00000008-0000-1000-8000-0026BB765291";
  * Characteristic "Carbon Dioxide Detected"
  */
 
-Characteristic.CarbonDioxideDetected = function() {
+Characteristic.CarbonDioxideDetected = function () {
     Characteristic.call(this, "Carbon Dioxide Detected", "00000092-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -223,7 +223,7 @@ Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL = 1;
  * Characteristic "Carbon Dioxide Level"
  */
 
-Characteristic.CarbonDioxideLevel = function() {
+Characteristic.CarbonDioxideLevel = function () {
     Characteristic.call(this, "Carbon Dioxide Level", "00000093-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -242,7 +242,7 @@ Characteristic.CarbonDioxideLevel.UUID = "00000093-0000-1000-8000-0026BB765291";
  * Characteristic "Carbon Dioxide Peak Level"
  */
 
-Characteristic.CarbonDioxidePeakLevel = function() {
+Characteristic.CarbonDioxidePeakLevel = function () {
     Characteristic.call(this, "Carbon Dioxide Peak Level", "00000094-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -261,7 +261,7 @@ Characteristic.CarbonDioxidePeakLevel.UUID = "00000094-0000-1000-8000-0026BB7652
  * Characteristic "Carbon Monoxide Detected"
  */
 
-Characteristic.CarbonMonoxideDetected = function() {
+Characteristic.CarbonMonoxideDetected = function () {
     Characteristic.call(this, "Carbon Monoxide Detected", "00000069-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -285,7 +285,7 @@ Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL = 1;
  * Characteristic "Carbon Monoxide Level"
  */
 
-Characteristic.CarbonMonoxideLevel = function() {
+Characteristic.CarbonMonoxideLevel = function () {
     Characteristic.call(this, "Carbon Monoxide Level", "00000090-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -304,7 +304,7 @@ Characteristic.CarbonMonoxideLevel.UUID = "00000090-0000-1000-8000-0026BB765291"
  * Characteristic "Carbon Monoxide Peak Level"
  */
 
-Characteristic.CarbonMonoxidePeakLevel = function() {
+Characteristic.CarbonMonoxidePeakLevel = function () {
     Characteristic.call(this, "Carbon Monoxide Peak Level", "00000091-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -323,7 +323,7 @@ Characteristic.CarbonMonoxidePeakLevel.UUID = "00000091-0000-1000-8000-0026BB765
  * Characteristic "Charging State"
  */
 
-Characteristic.ChargingState = function() {
+Characteristic.ChargingState = function () {
     Characteristic.call(this, "Charging State", "0000008F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -348,7 +348,7 @@ Characteristic.ChargingState.NOT_CHARGEABLE = 2;
  * Characteristic "Color Temperature"
  */
 
-Characteristic.ColorTemperature = function() {
+Characteristic.ColorTemperature = function () {
     Characteristic.call(this, "Color Temperature", "000000CE-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT32,
@@ -368,7 +368,7 @@ Characteristic.ColorTemperature.UUID = "000000CE-0000-1000-8000-0026BB765291";
  * Characteristic "Contact Sensor State"
  */
 
-Characteristic.ContactSensorState = function() {
+Characteristic.ContactSensorState = function () {
     Characteristic.call(this, "Contact Sensor State", "0000006A-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -392,7 +392,7 @@ Characteristic.ContactSensorState.CONTACT_NOT_DETECTED = 1;
  * Characteristic "Cooling Threshold Temperature"
  */
 
-Characteristic.CoolingThresholdTemperature = function() {
+Characteristic.CoolingThresholdTemperature = function () {
     Characteristic.call(this, "Cooling Threshold Temperature", "0000000D-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -413,7 +413,7 @@ Characteristic.CoolingThresholdTemperature.UUID = "0000000D-0000-1000-8000-0026B
  * Characteristic "Current Air Purifier State"
  */
 
-Characteristic.CurrentAirPurifierState = function() {
+Characteristic.CurrentAirPurifierState = function () {
     Characteristic.call(this, "Current Air Purifier State", "000000A9-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -438,7 +438,7 @@ Characteristic.CurrentAirPurifierState.PURIFYING_AIR = 2;
  * Characteristic "Current Ambient Light Level"
  */
 
-Characteristic.CurrentAmbientLightLevel = function() {
+Characteristic.CurrentAmbientLightLevel = function () {
     Characteristic.call(this, "Current Ambient Light Level", "0000006B-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -458,7 +458,7 @@ Characteristic.CurrentAmbientLightLevel.UUID = "0000006B-0000-1000-8000-0026BB76
  * Characteristic "Current Door State"
  */
 
-Characteristic.CurrentDoorState = function() {
+Characteristic.CurrentDoorState = function () {
     Characteristic.call(this, "Current Door State", "0000000E-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -485,7 +485,7 @@ Characteristic.CurrentDoorState.STOPPED = 4;
  * Characteristic "Current Fan State"
  */
 
-Characteristic.CurrentFanState = function() {
+Characteristic.CurrentFanState = function () {
     Characteristic.call(this, "Current Fan State", "000000AF-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -510,7 +510,7 @@ Characteristic.CurrentFanState.BLOWING_AIR = 2;
  * Characteristic "Current Heater Cooler State"
  */
 
-Characteristic.CurrentHeaterCoolerState = function() {
+Characteristic.CurrentHeaterCoolerState = function () {
     Characteristic.call(this, "Current Heater Cooler State", "000000B1-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -536,7 +536,7 @@ Characteristic.CurrentHeaterCoolerState.COOLING = 3;
  * Characteristic "Current Heating Cooling State"
  */
 
-Characteristic.CurrentHeatingCoolingState = function() {
+Characteristic.CurrentHeatingCoolingState = function () {
     Characteristic.call(this, "Current Heating Cooling State", "0000000F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -561,7 +561,7 @@ Characteristic.CurrentHeatingCoolingState.COOL = 2;
  * Characteristic "Current Horizontal Tilt Angle"
  */
 
-Characteristic.CurrentHorizontalTiltAngle = function() {
+Characteristic.CurrentHorizontalTiltAngle = function () {
     Characteristic.call(this, "Current Horizontal Tilt Angle", "0000006C-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -582,7 +582,7 @@ Characteristic.CurrentHorizontalTiltAngle.UUID = "0000006C-0000-1000-8000-0026BB
  * Characteristic "Current Humidifier Dehumidifier State"
  */
 
-Characteristic.CurrentHumidifierDehumidifierState = function() {
+Characteristic.CurrentHumidifierDehumidifierState = function () {
     Characteristic.call(this, "Current Humidifier Dehumidifier State", "000000B3-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -608,7 +608,7 @@ Characteristic.CurrentHumidifierDehumidifierState.DEHUMIDIFYING = 3;
  * Characteristic "Current Position"
  */
 
-Characteristic.CurrentPosition = function() {
+Characteristic.CurrentPosition = function () {
     Characteristic.call(this, "Current Position", "0000006D-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -629,7 +629,7 @@ Characteristic.CurrentPosition.UUID = "0000006D-0000-1000-8000-0026BB765291";
  * Characteristic "Current Relative Humidity"
  */
 
-Characteristic.CurrentRelativeHumidity = function() {
+Characteristic.CurrentRelativeHumidity = function () {
     Characteristic.call(this, "Current Relative Humidity", "00000010-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -650,7 +650,7 @@ Characteristic.CurrentRelativeHumidity.UUID = "00000010-0000-1000-8000-0026BB765
  * Characteristic "Current Slat State"
  */
 
-Characteristic.CurrentSlatState = function() {
+Characteristic.CurrentSlatState = function () {
     Characteristic.call(this, "Current Slat State", "000000AA-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -675,7 +675,7 @@ Characteristic.CurrentSlatState.SWINGING = 2;
  * Characteristic "Current Temperature"
  */
 
-Characteristic.CurrentTemperature = function() {
+Characteristic.CurrentTemperature = function () {
     Characteristic.call(this, "Current Temperature", "00000011-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -696,7 +696,7 @@ Characteristic.CurrentTemperature.UUID = "00000011-0000-1000-8000-0026BB765291";
  * Characteristic "Current Tilt Angle"
  */
 
-Characteristic.CurrentTiltAngle = function() {
+Characteristic.CurrentTiltAngle = function () {
     Characteristic.call(this, "Current Tilt Angle", "000000C1-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -717,7 +717,7 @@ Characteristic.CurrentTiltAngle.UUID = "000000C1-0000-1000-8000-0026BB765291";
  * Characteristic "Current Vertical Tilt Angle"
  */
 
-Characteristic.CurrentVerticalTiltAngle = function() {
+Characteristic.CurrentVerticalTiltAngle = function () {
     Characteristic.call(this, "Current Vertical Tilt Angle", "0000006E-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -738,7 +738,7 @@ Characteristic.CurrentVerticalTiltAngle.UUID = "0000006E-0000-1000-8000-0026BB76
  * Characteristic "Digital Zoom"
  */
 
-Characteristic.DigitalZoom = function() {
+Characteristic.DigitalZoom = function () {
     Characteristic.call(this, "Digital Zoom", "0000011D-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -755,7 +755,7 @@ Characteristic.DigitalZoom.UUID = "0000011D-0000-1000-8000-0026BB765291";
  * Characteristic "Filter Change Indication"
  */
 
-Characteristic.FilterChangeIndication = function() {
+Characteristic.FilterChangeIndication = function () {
     Characteristic.call(this, "Filter Change Indication", "000000AC-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -779,7 +779,7 @@ Characteristic.FilterChangeIndication.CHANGE_FILTER = 1;
  * Characteristic "Filter Life Level"
  */
 
-Characteristic.FilterLifeLevel = function() {
+Characteristic.FilterLifeLevel = function () {
     Characteristic.call(this, "Filter Life Level", "000000AB-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -798,7 +798,7 @@ Characteristic.FilterLifeLevel.UUID = "000000AB-0000-1000-8000-0026BB765291";
  * Characteristic "Firmware Revision"
  */
 
-Characteristic.FirmwareRevision = function() {
+Characteristic.FirmwareRevision = function () {
     Characteristic.call(this, "Firmware Revision", "00000052-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -815,7 +815,7 @@ Characteristic.FirmwareRevision.UUID = "00000052-0000-1000-8000-0026BB765291";
  * Characteristic "Hardware Revision"
  */
 
-Characteristic.HardwareRevision = function() {
+Characteristic.HardwareRevision = function () {
     Characteristic.call(this, "Hardware Revision", "00000053-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -832,7 +832,7 @@ Characteristic.HardwareRevision.UUID = "00000053-0000-1000-8000-0026BB765291";
  * Characteristic "Heating Threshold Temperature"
  */
 
-Characteristic.HeatingThresholdTemperature = function() {
+Characteristic.HeatingThresholdTemperature = function () {
     Characteristic.call(this, "Heating Threshold Temperature", "00000012-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -853,7 +853,7 @@ Characteristic.HeatingThresholdTemperature.UUID = "00000012-0000-1000-8000-0026B
  * Characteristic "Hold Position"
  */
 
-Characteristic.HoldPosition = function() {
+Characteristic.HoldPosition = function () {
     Characteristic.call(this, "Hold Position", "0000006F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -870,7 +870,7 @@ Characteristic.HoldPosition.UUID = "0000006F-0000-1000-8000-0026BB765291";
  * Characteristic "Hue"
  */
 
-Characteristic.Hue = function() {
+Characteristic.Hue = function () {
     Characteristic.call(this, "Hue", "00000013-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -891,7 +891,7 @@ Characteristic.Hue.UUID = "00000013-0000-1000-8000-0026BB765291";
  * Characteristic "Identify"
  */
 
-Characteristic.Identify = function() {
+Characteristic.Identify = function () {
     Characteristic.call(this, "Identify", "00000014-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -908,7 +908,7 @@ Characteristic.Identify.UUID = "00000014-0000-1000-8000-0026BB765291";
  * Characteristic "Image Mirroring"
  */
 
-Characteristic.ImageMirroring = function() {
+Characteristic.ImageMirroring = function () {
     Characteristic.call(this, "Image Mirroring", "0000011F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -925,7 +925,7 @@ Characteristic.ImageMirroring.UUID = "0000011F-0000-1000-8000-0026BB765291";
  * Characteristic "Image Rotation"
  */
 
-Characteristic.ImageRotation = function() {
+Characteristic.ImageRotation = function () {
     Characteristic.call(this, "Image Rotation", "0000011E-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -946,7 +946,7 @@ Characteristic.ImageRotation.UUID = "0000011E-0000-1000-8000-0026BB765291";
  * Characteristic "In Use"
  */
 
-Characteristic.InUse = function() {
+Characteristic.InUse = function () {
     Characteristic.call(this, "In Use", "000000D2-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -970,7 +970,7 @@ Characteristic.InUse.IN_USE = 1;
  * Characteristic "Is Configured"
  */
 
-Characteristic.IsConfigured = function() {
+Characteristic.IsConfigured = function () {
     Characteristic.call(this, "Is Configured", "000000D6-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -994,7 +994,7 @@ Characteristic.IsConfigured.CONFIGURED = 1;
  * Characteristic "Leak Detected"
  */
 
-Characteristic.LeakDetected = function() {
+Characteristic.LeakDetected = function () {
     Characteristic.call(this, "Leak Detected", "00000070-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1018,7 +1018,7 @@ Characteristic.LeakDetected.LEAK_DETECTED = 1;
  * Characteristic "Lock Control Point"
  */
 
-Characteristic.LockControlPoint = function() {
+Characteristic.LockControlPoint = function () {
     Characteristic.call(this, "Lock Control Point", "00000019-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1035,7 +1035,7 @@ Characteristic.LockControlPoint.UUID = "00000019-0000-1000-8000-0026BB765291";
  * Characteristic "Lock Current State"
  */
 
-Characteristic.LockCurrentState = function() {
+Characteristic.LockCurrentState = function () {
     Characteristic.call(this, "Lock Current State", "0000001D-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1061,7 +1061,7 @@ Characteristic.LockCurrentState.UNKNOWN = 3;
  * Characteristic "Lock Last Known Action"
  */
 
-Characteristic.LockLastKnownAction = function() {
+Characteristic.LockLastKnownAction = function () {
     Characteristic.call(this, "Lock Last Known Action", "0000001C-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1092,7 +1092,7 @@ Characteristic.LockLastKnownAction.SECURED_BY_AUTO_SECURE_TIMEOUT = 8;
  * Characteristic "Lock Management Auto Security Timeout"
  */
 
-Characteristic.LockManagementAutoSecurityTimeout = function() {
+Characteristic.LockManagementAutoSecurityTimeout = function () {
     Characteristic.call(this, "Lock Management Auto Security Timeout", "0000001A-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT32,
@@ -1110,7 +1110,7 @@ Characteristic.LockManagementAutoSecurityTimeout.UUID = "0000001A-0000-1000-8000
  * Characteristic "Lock Physical Controls"
  */
 
-Characteristic.LockPhysicalControls = function() {
+Characteristic.LockPhysicalControls = function () {
     Characteristic.call(this, "Lock Physical Controls", "000000A7-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1134,7 +1134,7 @@ Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED = 1;
  * Characteristic "Lock Target State"
  */
 
-Characteristic.LockTargetState = function() {
+Characteristic.LockTargetState = function () {
     Characteristic.call(this, "Lock Target State", "0000001E-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1158,7 +1158,7 @@ Characteristic.LockTargetState.SECURED = 1;
  * Characteristic "Logs"
  */
 
-Characteristic.Logs = function() {
+Characteristic.Logs = function () {
     Characteristic.call(this, "Logs", "0000001F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1175,7 +1175,7 @@ Characteristic.Logs.UUID = "0000001F-0000-1000-8000-0026BB765291";
  * Characteristic "Manufacturer"
  */
 
-Characteristic.Manufacturer = function() {
+Characteristic.Manufacturer = function () {
     Characteristic.call(this, "Manufacturer", "00000020-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -1192,7 +1192,7 @@ Characteristic.Manufacturer.UUID = "00000020-0000-1000-8000-0026BB765291";
  * Characteristic "Model"
  */
 
-Characteristic.Model = function() {
+Characteristic.Model = function () {
     Characteristic.call(this, "Model", "00000021-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -1209,7 +1209,7 @@ Characteristic.Model.UUID = "00000021-0000-1000-8000-0026BB765291";
  * Characteristic "Motion Detected"
  */
 
-Characteristic.MotionDetected = function() {
+Characteristic.MotionDetected = function () {
     Characteristic.call(this, "Motion Detected", "00000022-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1226,7 +1226,7 @@ Characteristic.MotionDetected.UUID = "00000022-0000-1000-8000-0026BB765291";
  * Characteristic "Mute"
  */
 
-Characteristic.Mute = function() {
+Characteristic.Mute = function () {
     Characteristic.call(this, "Mute", "0000011A-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1243,7 +1243,7 @@ Characteristic.Mute.UUID = "0000011A-0000-1000-8000-0026BB765291";
  * Characteristic "Name"
  */
 
-Characteristic.Name = function() {
+Characteristic.Name = function () {
     Characteristic.call(this, "Name", "00000023-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -1260,7 +1260,7 @@ Characteristic.Name.UUID = "00000023-0000-1000-8000-0026BB765291";
  * Characteristic "Night Vision"
  */
 
-Characteristic.NightVision = function() {
+Characteristic.NightVision = function () {
     Characteristic.call(this, "Night Vision", "0000011B-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1277,7 +1277,7 @@ Characteristic.NightVision.UUID = "0000011B-0000-1000-8000-0026BB765291";
  * Characteristic "Nitrogen Dioxide Density"
  */
 
-Characteristic.NitrogenDioxideDensity = function() {
+Characteristic.NitrogenDioxideDensity = function () {
     Characteristic.call(this, "Nitrogen Dioxide Density", "000000C4-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1297,7 +1297,7 @@ Characteristic.NitrogenDioxideDensity.UUID = "000000C4-0000-1000-8000-0026BB7652
  * Characteristic "Obstruction Detected"
  */
 
-Characteristic.ObstructionDetected = function() {
+Characteristic.ObstructionDetected = function () {
     Characteristic.call(this, "Obstruction Detected", "00000024-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1314,7 +1314,7 @@ Characteristic.ObstructionDetected.UUID = "00000024-0000-1000-8000-0026BB765291"
  * Characteristic "Occupancy Detected"
  */
 
-Characteristic.OccupancyDetected = function() {
+Characteristic.OccupancyDetected = function () {
     Characteristic.call(this, "Occupancy Detected", "00000071-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1338,7 +1338,7 @@ Characteristic.OccupancyDetected.OCCUPANCY_DETECTED = 1;
  * Characteristic "On"
  */
 
-Characteristic.On = function() {
+Characteristic.On = function () {
     Characteristic.call(this, "On", "00000025-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1355,7 +1355,7 @@ Characteristic.On.UUID = "00000025-0000-1000-8000-0026BB765291";
  * Characteristic "Optical Zoom"
  */
 
-Characteristic.OpticalZoom = function() {
+Characteristic.OpticalZoom = function () {
     Characteristic.call(this, "Optical Zoom", "0000011C-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1372,7 +1372,7 @@ Characteristic.OpticalZoom.UUID = "0000011C-0000-1000-8000-0026BB765291";
  * Characteristic "Outlet In Use"
  */
 
-Characteristic.OutletInUse = function() {
+Characteristic.OutletInUse = function () {
     Characteristic.call(this, "Outlet In Use", "00000026-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1389,7 +1389,7 @@ Characteristic.OutletInUse.UUID = "00000026-0000-1000-8000-0026BB765291";
  * Characteristic "Ozone Density"
  */
 
-Characteristic.OzoneDensity = function() {
+Characteristic.OzoneDensity = function () {
     Characteristic.call(this, "Ozone Density", "000000C3-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1409,7 +1409,7 @@ Characteristic.OzoneDensity.UUID = "000000C3-0000-1000-8000-0026BB765291";
  * Characteristic "Pair Setup"
  */
 
-Characteristic.PairSetup = function() {
+Characteristic.PairSetup = function () {
     Characteristic.call(this, "Pair Setup", "0000004C-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1426,7 +1426,7 @@ Characteristic.PairSetup.UUID = "0000004C-0000-1000-8000-0026BB765291";
  * Characteristic "Pair Verify"
  */
 
-Characteristic.PairVerify = function() {
+Characteristic.PairVerify = function () {
     Characteristic.call(this, "Pair Verify", "0000004E-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1443,7 +1443,7 @@ Characteristic.PairVerify.UUID = "0000004E-0000-1000-8000-0026BB765291";
  * Characteristic "Pairing Features"
  */
 
-Characteristic.PairingFeatures = function() {
+Characteristic.PairingFeatures = function () {
     Characteristic.call(this, "Pairing Features", "0000004F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1460,7 +1460,7 @@ Characteristic.PairingFeatures.UUID = "0000004F-0000-1000-8000-0026BB765291";
  * Characteristic "Pairing Pairings"
  */
 
-Characteristic.PairingPairings = function() {
+Characteristic.PairingPairings = function () {
     Characteristic.call(this, "Pairing Pairings", "00000050-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1477,7 +1477,7 @@ Characteristic.PairingPairings.UUID = "00000050-0000-1000-8000-0026BB765291";
  * Characteristic "PM10 Density"
  */
 
-Characteristic.PM10Density = function() {
+Characteristic.PM10Density = function () {
     Characteristic.call(this, "PM10 Density", "000000C7-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1497,7 +1497,7 @@ Characteristic.PM10Density.UUID = "000000C7-0000-1000-8000-0026BB765291";
  * Characteristic "PM2.5 Density"
  */
 
-Characteristic.PM2_5Density = function() {
+Characteristic.PM2_5Density = function () {
     Characteristic.call(this, "PM2.5 Density", "000000C6-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1517,7 +1517,7 @@ Characteristic.PM2_5Density.UUID = "000000C6-0000-1000-8000-0026BB765291";
  * Characteristic "Position State"
  */
 
-Characteristic.PositionState = function() {
+Characteristic.PositionState = function () {
     Characteristic.call(this, "Position State", "00000072-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1542,7 +1542,7 @@ Characteristic.PositionState.STOPPED = 2;
  * Characteristic "Program Mode"
  */
 
-Characteristic.ProgramMode = function() {
+Characteristic.ProgramMode = function () {
     Characteristic.call(this, "Program Mode", "000000D1-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1567,7 +1567,7 @@ Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_ = 2;
  * Characteristic "Programmable Switch Event"
  */
 
-Characteristic.ProgrammableSwitchEvent = function() {
+Characteristic.ProgrammableSwitchEvent = function () {
     Characteristic.call(this, "Programmable Switch Event", "00000073-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1593,7 +1593,7 @@ Characteristic.ProgrammableSwitchEvent.LONG_PRESS = 2;
  * Characteristic "Relative Humidity Dehumidifier Threshold"
  */
 
-Characteristic.RelativeHumidityDehumidifierThreshold = function() {
+Characteristic.RelativeHumidityDehumidifierThreshold = function () {
     Characteristic.call(this, "Relative Humidity Dehumidifier Threshold", "000000C9-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1613,7 +1613,7 @@ Characteristic.RelativeHumidityDehumidifierThreshold.UUID = "000000C9-0000-1000-
  * Characteristic "Relative Humidity Humidifier Threshold"
  */
 
-Characteristic.RelativeHumidityHumidifierThreshold = function() {
+Characteristic.RelativeHumidityHumidifierThreshold = function () {
     Characteristic.call(this, "Relative Humidity Humidifier Threshold", "000000CA-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1634,7 +1634,7 @@ Characteristic.RelativeHumidityHumidifierThreshold.UUID = "000000CA-0000-1000-80
  * Characteristic "Remaining Duration"
  */
 
-Characteristic.RemainingDuration = function() {
+Characteristic.RemainingDuration = function () {
     Characteristic.call(this, "Remaining Duration", "000000D4-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT32,
@@ -1654,7 +1654,7 @@ Characteristic.RemainingDuration.UUID = "000000D4-0000-1000-8000-0026BB765291";
  * Characteristic "Reset Filter Indication"
  */
 
-Characteristic.ResetFilterIndication = function() {
+Characteristic.ResetFilterIndication = function () {
     Characteristic.call(this, "Reset Filter Indication", "000000AD-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1674,7 +1674,7 @@ Characteristic.ResetFilterIndication.UUID = "000000AD-0000-1000-8000-0026BB76529
  * Characteristic "Rotation Direction"
  */
 
-Characteristic.RotationDirection = function() {
+Characteristic.RotationDirection = function () {
     Characteristic.call(this, "Rotation Direction", "00000028-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -1698,7 +1698,7 @@ Characteristic.RotationDirection.COUNTER_CLOCKWISE = 1;
  * Characteristic "Rotation Speed"
  */
 
-Characteristic.RotationSpeed = function() {
+Characteristic.RotationSpeed = function () {
     Characteristic.call(this, "Rotation Speed", "00000029-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1719,7 +1719,7 @@ Characteristic.RotationSpeed.UUID = "00000029-0000-1000-8000-0026BB765291";
  * Characteristic "Saturation"
  */
 
-Characteristic.Saturation = function() {
+Characteristic.Saturation = function () {
     Characteristic.call(this, "Saturation", "0000002F-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -1740,7 +1740,7 @@ Characteristic.Saturation.UUID = "0000002F-0000-1000-8000-0026BB765291";
  * Characteristic "Security System Alarm Type"
  */
 
-Characteristic.SecuritySystemAlarmType = function() {
+Characteristic.SecuritySystemAlarmType = function () {
     Characteristic.call(this, "Security System Alarm Type", "0000008E-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1760,7 +1760,7 @@ Characteristic.SecuritySystemAlarmType.UUID = "0000008E-0000-1000-8000-0026BB765
  * Characteristic "Security System Current State"
  */
 
-Characteristic.SecuritySystemCurrentState = function() {
+Characteristic.SecuritySystemCurrentState = function () {
     Characteristic.call(this, "Security System Current State", "00000066-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1787,7 +1787,7 @@ Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED = 4;
  * Characteristic "Security System Target State"
  */
 
-Characteristic.SecuritySystemTargetState = function() {
+Characteristic.SecuritySystemTargetState = function () {
     Characteristic.call(this, "Security System Target State", "00000067-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1813,7 +1813,7 @@ Characteristic.SecuritySystemTargetState.DISARM = 3;
  * Characteristic "Selected RTP Stream Configuration"
  */
 
-Characteristic.SelectedRTPStreamConfiguration = function() {
+Characteristic.SelectedRTPStreamConfiguration = function () {
     Characteristic.call(this, "Selected RTP Stream Configuration", "00000117-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1830,7 +1830,7 @@ Characteristic.SelectedRTPStreamConfiguration.UUID = "00000117-0000-1000-8000-00
  * Characteristic "Serial Number"
  */
 
-Characteristic.SerialNumber = function() {
+Characteristic.SerialNumber = function () {
     Characteristic.call(this, "Serial Number", "00000030-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -1847,7 +1847,7 @@ Characteristic.SerialNumber.UUID = "00000030-0000-1000-8000-0026BB765291";
  * Characteristic "Service Label Index"
  */
 
-Characteristic.ServiceLabelIndex = function() {
+Characteristic.ServiceLabelIndex = function () {
     Characteristic.call(this, "Service Label Index", "000000CB-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1867,7 +1867,7 @@ Characteristic.ServiceLabelIndex.UUID = "000000CB-0000-1000-8000-0026BB765291";
  * Characteristic "Service Label Namespace"
  */
 
-Characteristic.ServiceLabelNamespace = function() {
+Characteristic.ServiceLabelNamespace = function () {
     Characteristic.call(this, "Service Label Namespace", "000000CD-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1891,7 +1891,7 @@ Characteristic.ServiceLabelNamespace.ARABIC_NUMERALS = 1;
  * Characteristic "Set Duration"
  */
 
-Characteristic.SetDuration = function() {
+Characteristic.SetDuration = function () {
     Characteristic.call(this, "Set Duration", "000000D3-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT32,
@@ -1911,7 +1911,7 @@ Characteristic.SetDuration.UUID = "000000D3-0000-1000-8000-0026BB765291";
  * Characteristic "Setup Endpoints"
  */
 
-Characteristic.SetupEndpoints = function() {
+Characteristic.SetupEndpoints = function () {
     Characteristic.call(this, "Setup Endpoints", "00000118-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -1928,7 +1928,7 @@ Characteristic.SetupEndpoints.UUID = "00000118-0000-1000-8000-0026BB765291";
  * Characteristic "Slat Type"
  */
 
-Characteristic.SlatType = function() {
+Characteristic.SlatType = function () {
     Characteristic.call(this, "Slat Type", "000000C0-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1952,7 +1952,7 @@ Characteristic.SlatType.VERTICAL = 1;
  * Characteristic "Smoke Detected"
  */
 
-Characteristic.SmokeDetected = function() {
+Characteristic.SmokeDetected = function () {
     Characteristic.call(this, "Smoke Detected", "00000076-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -1976,7 +1976,7 @@ Characteristic.SmokeDetected.SMOKE_DETECTED = 1;
  * Characteristic "Status Active"
  */
 
-Characteristic.StatusActive = function() {
+Characteristic.StatusActive = function () {
     Characteristic.call(this, "Status Active", "00000075-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.BOOL,
@@ -1993,7 +1993,7 @@ Characteristic.StatusActive.UUID = "00000075-0000-1000-8000-0026BB765291";
  * Characteristic "Status Fault"
  */
 
-Characteristic.StatusFault = function() {
+Characteristic.StatusFault = function () {
     Characteristic.call(this, "Status Fault", "00000077-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2017,7 +2017,7 @@ Characteristic.StatusFault.GENERAL_FAULT = 1;
  * Characteristic "Status Jammed"
  */
 
-Characteristic.StatusJammed = function() {
+Characteristic.StatusJammed = function () {
     Characteristic.call(this, "Status Jammed", "00000078-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2041,7 +2041,7 @@ Characteristic.StatusJammed.JAMMED = 1;
  * Characteristic "Status Low Battery"
  */
 
-Characteristic.StatusLowBattery = function() {
+Characteristic.StatusLowBattery = function () {
     Characteristic.call(this, "Status Low Battery", "00000079-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2065,7 +2065,7 @@ Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW = 1;
  * Characteristic "Status Tampered"
  */
 
-Characteristic.StatusTampered = function() {
+Characteristic.StatusTampered = function () {
     Characteristic.call(this, "Status Tampered", "0000007A-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2089,7 +2089,7 @@ Characteristic.StatusTampered.TAMPERED = 1;
  * Characteristic "Streaming Status"
  */
 
-Characteristic.StreamingStatus = function() {
+Characteristic.StreamingStatus = function () {
     Characteristic.call(this, "Streaming Status", "00000120-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -2106,7 +2106,7 @@ Characteristic.StreamingStatus.UUID = "00000120-0000-1000-8000-0026BB765291";
  * Characteristic "Sulphur Dioxide Density"
  */
 
-Characteristic.SulphurDioxideDensity = function() {
+Characteristic.SulphurDioxideDensity = function () {
     Characteristic.call(this, "Sulphur Dioxide Density", "000000C5-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -2126,7 +2126,7 @@ Characteristic.SulphurDioxideDensity.UUID = "000000C5-0000-1000-8000-0026BB76529
  * Characteristic "Supported Audio Stream Configuration"
  */
 
-Characteristic.SupportedAudioStreamConfiguration = function() {
+Characteristic.SupportedAudioStreamConfiguration = function () {
     Characteristic.call(this, "Supported Audio Stream Configuration", "00000115-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -2143,7 +2143,7 @@ Characteristic.SupportedAudioStreamConfiguration.UUID = "00000115-0000-1000-8000
  * Characteristic "Supported RTP Configuration"
  */
 
-Characteristic.SupportedRTPConfiguration = function() {
+Characteristic.SupportedRTPConfiguration = function () {
     Characteristic.call(this, "Supported RTP Configuration", "00000116-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -2160,7 +2160,7 @@ Characteristic.SupportedRTPConfiguration.UUID = "00000116-0000-1000-8000-0026BB7
  * Characteristic "Supported Video Stream Configuration"
  */
 
-Characteristic.SupportedVideoStreamConfiguration = function() {
+Characteristic.SupportedVideoStreamConfiguration = function () {
     Characteristic.call(this, "Supported Video Stream Configuration", "00000114-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.TLV8,
@@ -2177,7 +2177,7 @@ Characteristic.SupportedVideoStreamConfiguration.UUID = "00000114-0000-1000-8000
  * Characteristic "Swing Mode"
  */
 
-Characteristic.SwingMode = function() {
+Characteristic.SwingMode = function () {
     Characteristic.call(this, "Swing Mode", "000000B6-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2201,7 +2201,7 @@ Characteristic.SwingMode.SWING_ENABLED = 1;
  * Characteristic "Target Air Purifier State"
  */
 
-Characteristic.TargetAirPurifierState = function() {
+Characteristic.TargetAirPurifierState = function () {
     Characteristic.call(this, "Target Air Purifier State", "000000A8-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2225,7 +2225,7 @@ Characteristic.TargetAirPurifierState.AUTO = 1;
  * Characteristic "Target Air Quality"
  */
 
-Characteristic.TargetAirQuality = function() {
+Characteristic.TargetAirQuality = function () {
     Characteristic.call(this, "Target Air Quality", "000000AE-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2250,7 +2250,7 @@ Characteristic.TargetAirQuality.FAIR = 2;
  * Characteristic "Target Door State"
  */
 
-Characteristic.TargetDoorState = function() {
+Characteristic.TargetDoorState = function () {
     Characteristic.call(this, "Target Door State", "00000032-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2274,7 +2274,7 @@ Characteristic.TargetDoorState.CLOSED = 1;
  * Characteristic "Target Fan State"
  */
 
-Characteristic.TargetFanState = function() {
+Characteristic.TargetFanState = function () {
     Characteristic.call(this, "Target Fan State", "000000BF-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2298,7 +2298,7 @@ Characteristic.TargetFanState.AUTO = 1;
  * Characteristic "Target Heater Cooler State"
  */
 
-Characteristic.TargetHeaterCoolerState = function() {
+Characteristic.TargetHeaterCoolerState = function () {
     Characteristic.call(this, "Target Heater Cooler State", "000000B2-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2323,7 +2323,7 @@ Characteristic.TargetHeaterCoolerState.COOL = 2;
  * Characteristic "Target Heating Cooling State"
  */
 
-Characteristic.TargetHeatingCoolingState = function() {
+Characteristic.TargetHeatingCoolingState = function () {
     Characteristic.call(this, "Target Heating Cooling State", "00000033-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2349,7 +2349,7 @@ Characteristic.TargetHeatingCoolingState.AUTO = 3;
  * Characteristic "Target Horizontal Tilt Angle"
  */
 
-Characteristic.TargetHorizontalTiltAngle = function() {
+Characteristic.TargetHorizontalTiltAngle = function () {
     Characteristic.call(this, "Target Horizontal Tilt Angle", "0000007B-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -2370,7 +2370,7 @@ Characteristic.TargetHorizontalTiltAngle.UUID = "0000007B-0000-1000-8000-0026BB7
  * Characteristic "Target Humidifier Dehumidifier State"
  */
 
-Characteristic.TargetHumidifierDehumidifierState = function() {
+Characteristic.TargetHumidifierDehumidifierState = function () {
     Characteristic.call(this, "Target Humidifier Dehumidifier State", "000000B4-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2395,7 +2395,7 @@ Characteristic.TargetHumidifierDehumidifierState.DEHUMIDIFIER = 2;
  * Characteristic "Target Position"
  */
 
-Characteristic.TargetPosition = function() {
+Characteristic.TargetPosition = function () {
     Characteristic.call(this, "Target Position", "0000007C-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2416,7 +2416,7 @@ Characteristic.TargetPosition.UUID = "0000007C-0000-1000-8000-0026BB765291";
  * Characteristic "Target Relative Humidity"
  */
 
-Characteristic.TargetRelativeHumidity = function() {
+Characteristic.TargetRelativeHumidity = function () {
     Characteristic.call(this, "Target Relative Humidity", "00000034-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -2437,7 +2437,7 @@ Characteristic.TargetRelativeHumidity.UUID = "00000034-0000-1000-8000-0026BB7652
  * Characteristic "Target Slat State"
  */
 
-Characteristic.TargetSlatState = function() {
+Characteristic.TargetSlatState = function () {
     Characteristic.call(this, "Target Slat State", "000000BE-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2461,7 +2461,7 @@ Characteristic.TargetSlatState.AUTO = 1;
  * Characteristic "Target Temperature"
  */
 
-Characteristic.TargetTemperature = function() {
+Characteristic.TargetTemperature = function () {
     Characteristic.call(this, "Target Temperature", "00000035-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -2482,7 +2482,7 @@ Characteristic.TargetTemperature.UUID = "00000035-0000-1000-8000-0026BB765291";
  * Characteristic "Target Tilt Angle"
  */
 
-Characteristic.TargetTiltAngle = function() {
+Characteristic.TargetTiltAngle = function () {
     Characteristic.call(this, "Target Tilt Angle", "000000C2-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -2503,7 +2503,7 @@ Characteristic.TargetTiltAngle.UUID = "000000C2-0000-1000-8000-0026BB765291";
  * Characteristic "Target Vertical Tilt Angle"
  */
 
-Characteristic.TargetVerticalTiltAngle = function() {
+Characteristic.TargetVerticalTiltAngle = function () {
     Characteristic.call(this, "Target Vertical Tilt Angle", "0000007D-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.INT,
@@ -2524,7 +2524,7 @@ Characteristic.TargetVerticalTiltAngle.UUID = "0000007D-0000-1000-8000-0026BB765
  * Characteristic "Temperature Display Units"
  */
 
-Characteristic.TemperatureDisplayUnits = function() {
+Characteristic.TemperatureDisplayUnits = function () {
     Characteristic.call(this, "Temperature Display Units", "00000036-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2548,7 +2548,7 @@ Characteristic.TemperatureDisplayUnits.FAHRENHEIT = 1;
  * Characteristic "Valve Type"
  */
 
-Characteristic.ValveType = function() {
+Characteristic.ValveType = function () {
     Characteristic.call(this, "Valve Type", "000000D5-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2574,7 +2574,7 @@ Characteristic.ValveType.WATER_FAUCET = 3;
  * Characteristic "Version"
  */
 
-Characteristic.Version = function() {
+Characteristic.Version = function () {
     Characteristic.call(this, "Version", "00000037-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.STRING,
@@ -2591,7 +2591,7 @@ Characteristic.Version.UUID = "00000037-0000-1000-8000-0026BB765291";
  * Characteristic "VOC Density"
  */
 
-Characteristic.VOCDensity = function() {
+Characteristic.VOCDensity = function () {
     Characteristic.call(this, "VOC Density", "000000C8-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -2611,7 +2611,7 @@ Characteristic.VOCDensity.UUID = "000000C8-0000-1000-8000-0026BB765291";
  * Characteristic "Volume"
  */
 
-Characteristic.Volume = function() {
+Characteristic.Volume = function () {
     Characteristic.call(this, "Volume", "00000119-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.UINT8,
@@ -2632,7 +2632,7 @@ Characteristic.Volume.UUID = "00000119-0000-1000-8000-0026BB765291";
  * Characteristic "Water Level"
  */
 
-Characteristic.WaterLevel = function() {
+Characteristic.WaterLevel = function () {
     Characteristic.call(this, "Water Level", "000000B5-0000-1000-8000-0026BB765291");
     this.setProps({
         format: Characteristic.Formats.FLOAT,
@@ -2651,7 +2651,7 @@ Characteristic.WaterLevel.UUID = "000000B5-0000-1000-8000-0026BB765291";
  * Service "Accessory Information"
  */
 
-Service.AccessoryInformation = function(displayName, subtype) {
+Service.AccessoryInformation = function (displayName, subtype) {
     Service.call(this, displayName, "0000003E-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2675,7 +2675,7 @@ Service.AccessoryInformation.UUID = "0000003E-0000-1000-8000-0026BB765291";
  * Service "Air Purifier"
  */
 
-Service.AirPurifier = function(displayName, subtype) {
+Service.AirPurifier = function (displayName, subtype) {
     Service.call(this, displayName, "000000BB-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2698,7 +2698,7 @@ Service.AirPurifier.UUID = "000000BB-0000-1000-8000-0026BB765291";
  * Service "Air Quality Sensor"
  */
 
-Service.AirQualitySensor = function(displayName, subtype) {
+Service.AirQualitySensor = function (displayName, subtype) {
     Service.call(this, displayName, "0000008D-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2728,7 +2728,7 @@ Service.AirQualitySensor.UUID = "0000008D-0000-1000-8000-0026BB765291";
  * Service "Battery Service"
  */
 
-Service.BatteryService = function(displayName, subtype) {
+Service.BatteryService = function (displayName, subtype) {
     Service.call(this, displayName, "00000096-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2748,7 +2748,7 @@ Service.BatteryService.UUID = "00000096-0000-1000-8000-0026BB765291";
  * Service "Camera RTP Stream Management"
  */
 
-Service.CameraRTPStreamManagement = function(displayName, subtype) {
+Service.CameraRTPStreamManagement = function (displayName, subtype) {
     Service.call(this, displayName, "00000110-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2771,7 +2771,7 @@ Service.CameraRTPStreamManagement.UUID = "00000110-0000-1000-8000-0026BB765291";
  * Service "Carbon Dioxide Sensor"
  */
 
-Service.CarbonDioxideSensor = function(displayName, subtype) {
+Service.CarbonDioxideSensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000097-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2795,7 +2795,7 @@ Service.CarbonDioxideSensor.UUID = "00000097-0000-1000-8000-0026BB765291";
  * Service "Carbon Monoxide Sensor"
  */
 
-Service.CarbonMonoxideSensor = function(displayName, subtype) {
+Service.CarbonMonoxideSensor = function (displayName, subtype) {
     Service.call(this, displayName, "0000007F-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2819,7 +2819,7 @@ Service.CarbonMonoxideSensor.UUID = "0000007F-0000-1000-8000-0026BB765291";
  * Service "Contact Sensor"
  */
 
-Service.ContactSensor = function(displayName, subtype) {
+Service.ContactSensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000080-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2841,7 +2841,7 @@ Service.ContactSensor.UUID = "00000080-0000-1000-8000-0026BB765291";
  * Service "Door"
  */
 
-Service.Door = function(displayName, subtype) {
+Service.Door = function (displayName, subtype) {
     Service.call(this, displayName, "00000081-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2863,7 +2863,7 @@ Service.Door.UUID = "00000081-0000-1000-8000-0026BB765291";
  * Service "Doorbell"
  */
 
-Service.Doorbell = function(displayName, subtype) {
+Service.Doorbell = function (displayName, subtype) {
     Service.call(this, displayName, "00000121-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2883,7 +2883,7 @@ Service.Doorbell.UUID = "00000121-0000-1000-8000-0026BB765291";
  * Service "Fan"
  */
 
-Service.Fan = function(displayName, subtype) {
+Service.Fan = function (displayName, subtype) {
     Service.call(this, displayName, "00000040-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2903,7 +2903,7 @@ Service.Fan.UUID = "00000040-0000-1000-8000-0026BB765291";
  * Service "Fan v2"
  */
 
-Service.Fanv2 = function(displayName, subtype) {
+Service.Fanv2 = function (displayName, subtype) {
     Service.call(this, displayName, "000000B7-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2927,7 +2927,7 @@ Service.Fanv2.UUID = "000000B7-0000-1000-8000-0026BB765291";
  * Service "Filter Maintenance"
  */
 
-Service.FilterMaintenance = function(displayName, subtype) {
+Service.FilterMaintenance = function (displayName, subtype) {
     Service.call(this, displayName, "000000BA-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2947,7 +2947,7 @@ Service.FilterMaintenance.UUID = "000000BA-0000-1000-8000-0026BB765291";
  * Service "Faucet"
  */
 
-Service.Faucet = function(displayName, subtype) {
+Service.Faucet = function (displayName, subtype) {
     Service.call(this, displayName, "000000D7-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2966,7 +2966,7 @@ Service.Faucet.UUID = "000000D7-0000-1000-8000-0026BB765291";
  * Service "Garage Door Opener"
  */
 
-Service.GarageDoorOpener = function(displayName, subtype) {
+Service.GarageDoorOpener = function (displayName, subtype) {
     Service.call(this, displayName, "00000041-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -2988,7 +2988,7 @@ Service.GarageDoorOpener.UUID = "00000041-0000-1000-8000-0026BB765291";
  * Service "Heater Cooler"
  */
 
-Service.HeaterCooler = function(displayName, subtype) {
+Service.HeaterCooler = function (displayName, subtype) {
     Service.call(this, displayName, "000000BC-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3015,7 +3015,7 @@ Service.HeaterCooler.UUID = "000000BC-0000-1000-8000-0026BB765291";
  * Service "Humidifier Dehumidifier"
  */
 
-Service.HumidifierDehumidifier = function(displayName, subtype) {
+Service.HumidifierDehumidifier = function (displayName, subtype) {
     Service.call(this, displayName, "000000BD-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3042,7 +3042,7 @@ Service.HumidifierDehumidifier.UUID = "000000BD-0000-1000-8000-0026BB765291";
  * Service "Humidity Sensor"
  */
 
-Service.HumiditySensor = function(displayName, subtype) {
+Service.HumiditySensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000082-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3064,7 +3064,7 @@ Service.HumiditySensor.UUID = "00000082-0000-1000-8000-0026BB765291";
  * Service "Irrigation System"
  */
 
-Service.IrrigationSystem = function(displayName, subtype) {
+Service.IrrigationSystem = function (displayName, subtype) {
     Service.call(this, displayName, "000000CF-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3086,7 +3086,7 @@ Service.IrrigationSystem.UUID = "000000CF-0000-1000-8000-0026BB765291";
  * Service "Leak Sensor"
  */
 
-Service.LeakSensor = function(displayName, subtype) {
+Service.LeakSensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000083-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3108,7 +3108,7 @@ Service.LeakSensor.UUID = "00000083-0000-1000-8000-0026BB765291";
  * Service "Light Sensor"
  */
 
-Service.LightSensor = function(displayName, subtype) {
+Service.LightSensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000084-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3130,7 +3130,7 @@ Service.LightSensor.UUID = "00000084-0000-1000-8000-0026BB765291";
  * Service "Lightbulb"
  */
 
-Service.Lightbulb = function(displayName, subtype) {
+Service.Lightbulb = function (displayName, subtype) {
     Service.call(this, displayName, "00000043-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3152,7 +3152,7 @@ Service.Lightbulb.UUID = "00000043-0000-1000-8000-0026BB765291";
  * Service "Lock Management"
  */
 
-Service.LockManagement = function(displayName, subtype) {
+Service.LockManagement = function (displayName, subtype) {
     Service.call(this, displayName, "00000044-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3178,7 +3178,7 @@ Service.LockManagement.UUID = "00000044-0000-1000-8000-0026BB765291";
  * Service "Lock Mechanism"
  */
 
-Service.LockMechanism = function(displayName, subtype) {
+Service.LockMechanism = function (displayName, subtype) {
     Service.call(this, displayName, "00000045-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3197,7 +3197,7 @@ Service.LockMechanism.UUID = "00000045-0000-1000-8000-0026BB765291";
  * Service "Microphone"
  */
 
-Service.Microphone = function(displayName, subtype) {
+Service.Microphone = function (displayName, subtype) {
     Service.call(this, displayName, "00000112-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3216,7 +3216,7 @@ Service.Microphone.UUID = "00000112-0000-1000-8000-0026BB765291";
  * Service "Motion Sensor"
  */
 
-Service.MotionSensor = function(displayName, subtype) {
+Service.MotionSensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000085-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3238,7 +3238,7 @@ Service.MotionSensor.UUID = "00000085-0000-1000-8000-0026BB765291";
  * Service "Occupancy Sensor"
  */
 
-Service.OccupancySensor = function(displayName, subtype) {
+Service.OccupancySensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000086-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3260,7 +3260,7 @@ Service.OccupancySensor.UUID = "00000086-0000-1000-8000-0026BB765291";
  * Service "Outlet"
  */
 
-Service.Outlet = function(displayName, subtype) {
+Service.Outlet = function (displayName, subtype) {
     Service.call(this, displayName, "00000047-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3279,7 +3279,7 @@ Service.Outlet.UUID = "00000047-0000-1000-8000-0026BB765291";
  * Service "Security System"
  */
 
-Service.SecuritySystem = function(displayName, subtype) {
+Service.SecuritySystem = function (displayName, subtype) {
     Service.call(this, displayName, "0000007E-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3301,7 +3301,7 @@ Service.SecuritySystem.UUID = "0000007E-0000-1000-8000-0026BB765291";
  * Service "Service Label"
  */
 
-Service.ServiceLabel = function(displayName, subtype) {
+Service.ServiceLabel = function (displayName, subtype) {
     Service.call(this, displayName, "000000CC-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3319,7 +3319,7 @@ Service.ServiceLabel.UUID = "000000CC-0000-1000-8000-0026BB765291";
  * Service "Slat"
  */
 
-Service.Slat = function(displayName, subtype) {
+Service.Slat = function (displayName, subtype) {
     Service.call(this, displayName, "000000B9-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3341,7 +3341,7 @@ Service.Slat.UUID = "000000B9-0000-1000-8000-0026BB765291";
  * Service "Smoke Sensor"
  */
 
-Service.SmokeSensor = function(displayName, subtype) {
+Service.SmokeSensor = function (displayName, subtype) {
     Service.call(this, displayName, "00000087-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3363,7 +3363,7 @@ Service.SmokeSensor.UUID = "00000087-0000-1000-8000-0026BB765291";
  * Service "Speaker"
  */
 
-Service.Speaker = function(displayName, subtype) {
+Service.Speaker = function (displayName, subtype) {
     Service.call(this, displayName, "00000113-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3382,7 +3382,7 @@ Service.Speaker.UUID = "00000113-0000-1000-8000-0026BB765291";
  * Service "Stateless Programmable Switch"
  */
 
-Service.StatelessProgrammableSwitch = function(displayName, subtype) {
+Service.StatelessProgrammableSwitch = function (displayName, subtype) {
     Service.call(this, displayName, "00000089-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3401,7 +3401,7 @@ Service.StatelessProgrammableSwitch.UUID = "00000089-0000-1000-8000-0026BB765291
  * Service "Switch"
  */
 
-Service.Switch = function(displayName, subtype) {
+Service.Switch = function (displayName, subtype) {
     Service.call(this, displayName, "00000049-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3419,7 +3419,7 @@ Service.Switch.UUID = "00000049-0000-1000-8000-0026BB765291";
  * Service "Temperature Sensor"
  */
 
-Service.TemperatureSensor = function(displayName, subtype) {
+Service.TemperatureSensor = function (displayName, subtype) {
     Service.call(this, displayName, "0000008A-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3441,7 +3441,7 @@ Service.TemperatureSensor.UUID = "0000008A-0000-1000-8000-0026BB765291";
  * Service "Thermostat"
  */
 
-Service.Thermostat = function(displayName, subtype) {
+Service.Thermostat = function (displayName, subtype) {
     Service.call(this, displayName, "0000004A-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3467,7 +3467,7 @@ Service.Thermostat.UUID = "0000004A-0000-1000-8000-0026BB765291";
  * Service "Valve"
  */
 
-Service.Valve = function(displayName, subtype) {
+Service.Valve = function (displayName, subtype) {
     Service.call(this, displayName, "000000D0-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3492,7 +3492,7 @@ Service.Valve.UUID = "000000D0-0000-1000-8000-0026BB765291";
  * Service "Window"
  */
 
-Service.Window = function(displayName, subtype) {
+Service.Window = function (displayName, subtype) {
     Service.call(this, displayName, "0000008B-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics
@@ -3514,7 +3514,7 @@ Service.Window.UUID = "0000008B-0000-1000-8000-0026BB765291";
  * Service "Window Covering"
  */
 
-Service.WindowCovering = function(displayName, subtype) {
+Service.WindowCovering = function (displayName, subtype) {
     Service.call(this, displayName, "0000008C-0000-1000-8000-0026BB765291", subtype);
 
     // Required Characteristics

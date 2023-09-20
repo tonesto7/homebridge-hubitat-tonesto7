@@ -1,3 +1,6 @@
+## _**v2.9.2**_ (09-20-2023)
+- [NEW] Added support for Air Quality Sensor devices.
+
 ## _**v2.9.1**_ (09-04-2023)
 - [FIX] The last release broke humidity and blinds position attributes.
 - [FIX] Fixed capability filtering not blocking unused capabilities.
