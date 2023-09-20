@@ -165,8 +165,7 @@ module.exports = class HE_Accessories {
                             console.log("change:", change);
                             console.log("char: ", char.props);
                             this.logWarn(`[${accessory.context.deviceData.name}] Attribute (${change.attribute}) | OldValue: ${currentVal} | NewValueIn: [${change.value}] | NewValueOut: [${val}] | Characteristic: (${char.displayName}`);
-                        }
-                        if (val) {
+                        } else {
                             char.updateValue(val);
                         }
                     }

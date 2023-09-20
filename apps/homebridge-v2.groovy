@@ -50,8 +50,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.9.1'
-//@Field static final String appModifiedFLD = '09-04-2023'
+@Field static final String appVersionFLD  = '2.9.2'
+//@Field static final String appModifiedFLD = '09-20-2023'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -113,13 +113,13 @@ preferences {
 
 @Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
-        "acceleration", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
+        "acceleration", "airQualityIndex", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
         "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "humidity", "illuminance", 
-        "level", "level", "lock", "motion", "mute", "outlet", "position", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
+        "level", "level", "lock", "motion", "mute", "outlet", "pm25", "position", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
         "tamper", "temperature", "thermostatFanMode", "thermostatMode", "thermostatOperatingState", "thermostatSetPoint", "valve", "volume", "water", "windowShade",
     ],
     capabilities: [
-        "AccelerationSensor", "Actuator", "Alarm", "AlarmSystemStatus", "Audio Mute", "Audio Volume", "Battery", "Bulb", "Button",
+        "AccelerationSensor", "Actuator", "AirQuality", "Alarm", "AlarmSystemStatus", "Audio Mute", "Audio Volume", "Battery", "Bulb", "Button",
         "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "Configuration", "ContactSensor", "Door", "DoorControl", 
         "DoubleTapableButton", "EnergyMeter", "Fan", "FanControl", "FanLight", "GarageDoorControl", "HoldableButton", "IlluminanceMeasurement", "Light", 
         "LightBulb", "Lock", "LockCodes", "Mode", "MotionSensor", "Outlet", "Piston", "Polling", "PowerMeter", "PowerSource", "PresenceSensor", "PushableButton", 

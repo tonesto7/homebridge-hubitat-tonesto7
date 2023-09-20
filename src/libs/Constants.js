@@ -8,6 +8,7 @@ module.exports = {
         // "Acceleration Sensor",
         "AccelerationSensor",
         "Actuator",
+        "AirQuality",
         "Alarm System Status",
         "Alarm",
         "AlarmSystemStatus",

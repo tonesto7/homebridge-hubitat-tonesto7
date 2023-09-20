@@ -53,8 +53,27 @@ module.exports = class Transforms {
         return validValues;
     }
 
+    aqiToPm25(aqi) {
+        // this.log("Transforming %s.", aqi.toString())
+        if (aqi === undefined || aqi > 500 || aqi < 0) {
+            return 0; // Error or unknown response
+        } else if (aqi <= 50) {
+            return 1; // Return EXCELLENT
+        } else if (aqi <= 100) {
+            return 2; // Return GOOD
+        } else if (aqi <= 150) {
+            return 3; // Return FAIR
+        } else if (aqi <= 200) {
+            return 4; // Return INFERIOR
+        } else if (aqi > 200) {
+            return 5; // Return POOR (Homekit only goes to cat 5, so combined the last two AQI cats of Very Unhealty and Hazardous.
+        }
+    }
+
     transformAttributeState(attr, val, charName, opts) {
         switch (attr) {
+            case "airQualityIndex":
+                return this.aqiToPm25(val);
             case "switch":
                 return val === "on";
             case "door":

@@ -172,14 +172,19 @@ module.exports = class DeviceCharacteristics {
     }
 
     air_quality(_accessory, _service) {
-        let c = _accessory.getOrAddService(_service).getCharacteristic(Characteristic.AirQuality);
-        if (!c._events.get) {
-            c.on("get", (callback) => {
-                callback(null, Characteristic.AirQuality);
-            });
+        _accessory.getOrAddService(_service).setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT);
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusActive, "status");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.AirQuality, "airQualityIndex");
+        _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusLowBattery, "battery");
+        if (_accessory.hasAttribute("pm25")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.PM2_5Density, "pm25");
         }
-        this.accessories.storeCharacteristicItem("airQuality", _accessory.context.deviceData.deviceid, c);
-        _accessory.context.deviceGroups.push("airQuality");
+        if (_accessory.hasCapability("Tamper Alert")) {
+            _accessory.manageGetCharacteristic(_service, _accessory, Characteristic.StatusTampered, "tamper");
+        } else {
+            _accessory.getOrAddService(_service).removeCharacteristic(Characteristic.StatusTampered);
+        }
+        _accessory.context.deviceGroups.push("air_quality");
         return _accessory;
     }
 

@@ -141,6 +141,7 @@ const serviceTests = [
     new ServiceTest("contact_sensor", (accessory) => accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl")),
     new ServiceTest("air_quality", (accessory) => accessory.hasCapability("airQuality")),
     new ServiceTest("battery", (accessory) => accessory.hasCapability("Battery")),
+    new ServiceTest("air_quality", (accessory) => accessory.hasCapability("AirQuality")),
     // new ServiceTest("energy_meter", accessory => (accessory.hasCapability('Energy Meter') && !accessory.hasCapability('Switch')), true),
     // new ServiceTest("power_meter", accessory => (accessory.hasCapability('Power Meter') && !accessory.hasCapability('Switch')), true),
     new ServiceTest("thermostat", (accessory) => accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState")),
