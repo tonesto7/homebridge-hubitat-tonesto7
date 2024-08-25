@@ -115,7 +115,7 @@ preferences {
     attributes: [
         "acceleration", "airQualityIndex", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
         "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "humidity", "illuminance", 
-        "level", "level", "lock", "motion", "mute", "outlet", "pm25", "position", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
+        "level", "level", "lock", "motion", "mute", "outlet", "pm25", "position", "power", "powerSource", "presence", "pushed", "saturation", "securityKeypad", "smoke", "speed", "switch", 
         "tamper", "temperature", "thermostatFanMode", "thermostatMode", "thermostatOperatingState", "thermostatSetPoint", "valve", "volume", "water", "waterLevel", "windowShade",
     ],
     capabilities: [
