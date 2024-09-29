@@ -1,3 +1,5 @@
+// HE_Transforms.js
+
 var Characteristic;
 var CommunityTypes;
 
@@ -17,6 +19,27 @@ module.exports = class Transforms {
         CommunityTypes = platform.CommunityTypes;
         this.log = platform.log;
         this.configItems = platform.configItems;
+
+        this.CHARACTERISTIC_RANGES = {
+            battery: { min: 0, max: 100 },
+            level: { min: 0, max: 100 },
+            volume: { min: 0, max: 100 },
+            colorTemperature: { min: 140, max: 500 },
+            temperature: { min: 0, max: 100 },
+            heatingSetpoint: { min: 10, max: 38 },
+            coolingSetpoint: { min: 10, max: 38 },
+            thermostatSetpoint: { min: 10, max: 38 },
+            humidity: { min: 0, max: 100 },
+            carbonDioxideMeasurement: { min: 0, max: 100000 },
+            airQualityIndex: { min: 0, max: 5 },
+            speed: { min: 0, max: 100 },
+            hue: { min: 0, max: 360 },
+            saturation: { min: 0, max: 100 },
+        };
+    }
+
+    clampValue(value, min, max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     transformStatus(val) {
@@ -71,9 +94,14 @@ module.exports = class Transforms {
     }
 
     transformAttributeState(attr, val, charName, opts) {
+        const clampNumericValue = (value, attribute) => {
+            const range = this.CHARACTERISTIC_RANGES[attribute];
+            return range ? this.clampValue(parseFloat(value), range.min, range.max) : value;
+        };
+
         switch (attr) {
             case "airQualityIndex":
-                return this.aqiToPm25(val);
+                return clampNumericValue(this.aqiToPm25(val), attr);
             case "switch":
                 return val === "on";
             case "door":
@@ -145,7 +173,7 @@ module.exports = class Transforms {
                     case "Carbon Dioxide Detected":
                         return val < 2000 ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
                     default:
-                        return parseInt(val);
+                        return clampNumericValue(val, attr);
                 }
             case "tamper":
                 return val === "detected" ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED;
@@ -162,7 +190,7 @@ module.exports = class Transforms {
                 if (charName === "Status Low Battery") {
                     return val < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
                 } else {
-                    return Math.round(val);
+                    return clampNumericValue(val, attr);
                 }
             case "powerSource":
                 // this.logInfo(`powerSource: ${val}`);
@@ -179,36 +207,36 @@ module.exports = class Transforms {
                         return 2;
                 }
             case "hue":
-                return Math.round(val * 3.6) < 1 || val === undefined ? 1 : Math.round(val * 3.6);
+                return clampNumericValue(Math.round(val * 3.6), attr);
             case "colorTemperature":
-                return parseInt(this.kelvinToMired(val));
+                return clampNumericValue(parseInt(this.kelvinToMired(val)), attr);
             case "temperature":
-                return parseFloat(this.tempConversion(val));
+                return clampNumericValue(parseFloat(this.tempConversion(val)), attr);
             case "heatingSetpoint":
             case "coolingSetpoint":
             case "thermostatSetpoint":
-                return this.thermostatTempConversion(val);
+                return clampNumericValue(this.thermostatTempConversion(val), attr);
             case "speed":
-                // console.log("transformAttributeState(speed): ", this.fanSpeedToLevel(val));
-                return this.fanSpeedToLevel(val, opts);
+                return clampNumericValue(this.fanSpeedToLevel(val, opts), attr);
             // case "speed":
             case "level": {
                 let lvl = parseInt(val);
                 if (this.configItems.round_levels === true && lvl < 5) lvl = 0;
                 if (this.configItems.round_levels === true && lvl > 95) lvl = 100;
                 // console.log(`lvl | ${lvl}${this.configItems.round_levels === true ? " Rounded" : ""}`);
-                return parseInt(lvl);
+                return clampNumericValue(parseInt(lvl) || 0, attr);
             }
-            case "saturation":
             case "volume":
-                return parseInt(val) || 0;
+            case "saturation":
+                return clampNumericValue(parseInt(val) || 0, attr);
             case "illuminance":
                 if (isNaN(val)) {
                     return undefined;
                 }
                 return Math.round(Math.ceil(parseFloat(val)), 0);
-            case "energy":
             case "humidity":
+                return clampNumericValue(Math.round(val), attr);
+            case "energy":
             case "power":
                 return Math.round(val);
             case "thermostatOperatingState":

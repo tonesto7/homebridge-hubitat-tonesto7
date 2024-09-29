@@ -1,3 +1,5 @@
+// HE_Accessories.js
+
 const knownCapabilities = require("./libs/Constants").knownCapabilities,
     pluginVersion = require("./libs/Constants").pluginVersion,
     _ = require("lodash"),
@@ -38,17 +40,25 @@ module.exports = class HE_Accessories {
         this._attributeLookup = {};
     }
 
+    sanitizeName(name) {
+        // Remove all characters except alphanumerics, spaces, and apostrophes
+        return name.replace(/[^a-zA-Z0-9 ']/g, "").trim();
+    }
+
     initializeAccessory(accessory, fromCache = false) {
         if (!fromCache) {
+            const sanitizeName = this.sanitizeName(accessory.context.deviceData.name);
+            // console.log("sanitizeName: ", sanitizeName);
             accessory.deviceid = accessory.context.deviceData.deviceid;
-            accessory.name = accessory.context.deviceData.name;
+            accessory.name = sanitizeName;
             accessory.context.deviceData.excludedCapabilities.forEach((cap) => {
                 if (cap !== undefined) {
                     this.logDebug(`Removing capability: ${cap} from Device: ${accessory.context.deviceData.name}`);
                     delete accessory.context.deviceData.capabilities[cap];
                 }
             });
-            accessory.context.name = accessory.context.deviceData.name;
+            accessory.context.name = sanitizeName;
+            accessory.context.deviceData.name = sanitizeName;
             accessory.context.deviceid = accessory.context.deviceData.deviceid;
         } else {
             this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.context.deviceid}`);
@@ -105,6 +115,7 @@ module.exports = class HE_Accessories {
         accessory.reachable = true;
         accessory.context.lastUpdate = new Date();
 
+        // console.log("accessory name: ", accessory.name);
         let accessoryInformation = accessory
             .getOrAddService(Service.AccessoryInformation)
             .setCharacteristic(Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
@@ -152,7 +163,7 @@ module.exports = class HE_Accessories {
                     accessory.context.lastUpdate = new Date().toLocaleString();
                     if (change.attribute === "thermostatSetpoint") {
                         // don't remember why i'm doing this...
-                        char.getValue();
+                        char.value;
                     } else if (change.attribute === "button") {
                         // this.logInfo("button change: " + change);
                         const btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;

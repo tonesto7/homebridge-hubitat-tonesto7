@@ -1,3 +1,5 @@
+// HE_Platform.js
+
 const { pluginName, platformName, platformDesc, pluginVersion } = require("./libs/Constants"),
     events = require("events"),
     myUtils = require("./libs/MyUtils"),

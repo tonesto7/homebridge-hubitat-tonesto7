@@ -1,3 +1,5 @@
+// HE_ServiceTypes.js
+
 // const debounce = require('debounce-promise');
 var Service,
     configure_fan_by_name = true,
@@ -26,7 +28,7 @@ module.exports = class ServiceTypes {
             air_purifier: this.CommunityTypes.NewAirPurifierService,
             air_quality: Service.AirQualitySensor,
             alarm_system: Service.SecuritySystem,
-            battery: Service.BatteryService,
+            battery: Service.Battery,
             button: Service.StatelessProgrammableSwitch,
             carbon_dioxide: Service.CarbonDioxideSensor,
             carbon_monoxide: Service.CarbonMonoxideSensor,

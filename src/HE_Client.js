@@ -1,3 +1,5 @@
+// HE_Client.js
+
 const { platformName, platformDesc, pluginVersion } = require("./libs/Constants"),
     axios = require("axios").default;
 
@@ -24,13 +26,13 @@ module.exports = class ST_Client {
     }
 
     registerEvtListeners() {
-        this.appEvts.on("event:device_command", async(devData, cmd, vals) => {
+        this.appEvts.on("event:device_command", async (devData, cmd, vals) => {
             await this.sendDeviceCommand(devData, cmd, vals);
         });
-        this.appEvts.on("event:plugin_upd_status", async() => {
+        this.appEvts.on("event:plugin_upd_status", async () => {
             await this.sendUpdateStatus();
         });
-        this.appEvts.on("event:plugin_start_direct", async() => {
+        this.appEvts.on("event:plugin_start_direct", async () => {
             await this.sendStartDirect();
         });
     }
@@ -67,17 +69,17 @@ module.exports = class ST_Client {
         let that = this;
         return new Promise((resolve) => {
             axios({
-                    method: "get",
-                    url: `${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/devices`,
-                    params: {
-                        access_token: that.configItems.access_token,
-                    },
-                    headers: {
-                        "Content-Type": "application/json",
-                        isLocal: that.configItems.use_cloud ? "false" : "true",
-                    },
-                    timeout: 10000,
-                })
+                method: "get",
+                url: `${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/devices`,
+                params: {
+                    access_token: that.configItems.access_token,
+                },
+                headers: {
+                    "Content-Type": "application/json",
+                    isLocal: that.configItems.use_cloud ? "false" : "true",
+                },
+                timeout: 10000,
+            })
                 .then((response) => {
                     resolve(response.data);
                 })
@@ -130,23 +132,23 @@ module.exports = class ST_Client {
             this.platform.myUtils.checkVersion().then((res) => {
                 this.logNotice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
                 axios({
-                        method: "post",
-                        url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,
-                        params: {
-                            access_token: this.configItems.access_token,
-                        },
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        data: {
-                            hasUpdate: res.hasUpdate,
-                            newVersion: res.newVersion,
-                            version: pluginVersion,
-                            isLocal: this.configItems.use_cloud ? "false" : "true",
-                            accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null,
-                        },
-                        timeout: 10000,
-                    })
+                    method: "post",
+                    url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,
+                    params: {
+                        access_token: this.configItems.access_token,
+                    },
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    data: {
+                        hasUpdate: res.hasUpdate,
+                        newVersion: res.newVersion,
+                        version: pluginVersion,
+                        isLocal: this.configItems.use_cloud ? "false" : "true",
+                        accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null,
+                    },
+                    timeout: 10000,
+                })
                     .then((response) => {
                         // console.log(response.data);
                         if (response.data) {

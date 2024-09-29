@@ -1,3 +1,5 @@
+// HE_DeviceCharacteristics.js
+
 var Characteristic, CommunityTypes, accClass;
 
 module.exports = class DeviceCharacteristics {
@@ -41,7 +43,7 @@ module.exports = class DeviceCharacteristics {
             });
             if (opts.props && Object.keys(opts.props).length) c.setProps(opts.props);
             if (opts.evtOnly && opts.evtOnly === true) c.eventOnlyCharacteristic = opts.evtOnly;
-            c.getValue();
+            c.value;
             accClass.storeCharacteristicItem(attr, this.context.deviceData.deviceid, c);
         } else {
             if (attr === "status" && char === Characteristic.StatusActive) {
@@ -90,9 +92,9 @@ module.exports = class DeviceCharacteristics {
                 });
                 if (opts.props && Object.keys(opts.props).length) c.setProps(opts.props);
                 if (opts.evtOnly && opts.evtOnly === true) c.eventOnlyCharacteristic = opts.evtOnly;
-                c.getValue();
+                c.value;
             }
-            c.getValue();
+            c.value;
             accClass.log_set(attr, char, acc, accClass.transforms.transformAttributeState(opts.get_altAttr || attr, this.context.deviceData.attributes[opts.get_altValAttr || attr], c.displayName, opts));
             accClass.storeCharacteristicItem(attr, this.context.deviceData.deviceid, c);
         } else {
@@ -136,7 +138,7 @@ module.exports = class DeviceCharacteristics {
                     _accessory.sendCommand(callback, _accessory, _accessory.context.deviceData, value ? "on" : "off");
                 });
             }
-            c.getValue();
+            c.value;
             accClass.storeCharacteristicItem("switch", _accessory.context.deviceData.deviceid, c);
         } else {
             c.updateValue(actState);

@@ -1,3 +1,5 @@
+// index.js
+
 const { pluginName, platformName } = require("./libs/Constants"),
     hePlatform = require("./HE_Platform");
 
