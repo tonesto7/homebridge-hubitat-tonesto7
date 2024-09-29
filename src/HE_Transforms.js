@@ -33,7 +33,7 @@ module.exports = class Transforms {
             carbonDioxideMeasurement: { min: 0, max: 100000 },
             airQualityIndex: { min: 0, max: 5 },
             speed: { min: 0, max: 100 },
-            hue: { min: 0, max: 360 },
+            hue: { min: 1, max: 360 },
             saturation: { min: 0, max: 100 },
         };
     }
@@ -207,7 +207,8 @@ module.exports = class Transforms {
                         return 2;
                 }
             case "hue":
-                return clampNumericValue(Math.round(val * 3.6), attr);
+                // Ensure the value is at least 1 before applying the conversion
+                return clampNumericValue(Math.max(1, Math.round(val * 3.6)), attr);
             case "colorTemperature":
                 return clampNumericValue(parseInt(this.kelvinToMired(val)), attr);
             case "temperature":
