@@ -60,7 +60,10 @@
     "license": "ISC",
     "name": "homebridge-hubitat-tonesto7",
     "preferGlobal": true,
-    "repository": "github:https://github.com/tonesto7/homebridge-hubitat-tonesto7",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/https://github.com/tonesto7/homebridge-hubitat-tonesto7.git"
+    },
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
