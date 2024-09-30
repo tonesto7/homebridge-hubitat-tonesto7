@@ -1,3 +1,8 @@
+## _**v2.10.0**_ (09-30-2024)
+- [NEW] Updated the device name values sent to HomeKit to support Homebridge 2.0.0
+- [FIX] Fixed issues with some sensors not updating there status.
+- [FIX] Updates for Adaptive Lighting support.
+
 ## _**v2.9.2**_ (09-20-2023)
 - [NEW] Added support for Air Quality Sensor devices.
 

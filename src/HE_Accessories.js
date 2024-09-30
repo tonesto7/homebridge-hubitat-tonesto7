@@ -391,25 +391,6 @@ module.exports = class HE_Accessories {
         return id;
     }
 
-    // getAccessoryFromCache(device) {
-    //     const key = this.getAccessoryId(device);
-    //     return this._accessories[key];
-    // }
-
-    // addAccessoryToCache(accessory) {
-    //     const key = this.getAccessoryId(accessory);
-    //     this._accessories[key] = accessory;
-    //     // let's update the
-    //     return true;
-    // }
-
-    // removeAccessoryFromCache(accessory) {
-    //     const key = this.getAccessoryId(accessory);
-    //     const _accessory = this._accessories[key];
-    //     delete this._accessories[key];
-    //     return _accessory;
-    // }
-
     forEach(fn) {
         return _.forEach(this.mainPlatform.getAllAccessoriesFromCache(), fn);
     }
@@ -431,6 +412,10 @@ module.exports = class HE_Accessories {
 
     comparator(accessory1, accessory2) {
         return this.getAccessoryId(accessory1) === this.getAccessoryId(accessory2);
+    }
+
+    getAllAccessories() {
+        return Object.values(this.mainPlatform.getAllAccessoriesFromCache());
     }
 
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {

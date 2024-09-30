@@ -50,8 +50,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.9.2'
-//@Field static final String appModifiedFLD = '09-20-2023'
+@Field static final String appVersionFLD  = '2.10.0'
+//@Field static final String appModifiedFLD = '09-30-2024'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -1103,6 +1103,18 @@ private Map performPluginTest(){
     }
 }
 
+private String sanitizeName(String name) {
+    // Remove all characters except alphanumerics, spaces, and apostrophes
+    String sanitized = name
+        .replaceAll(/[^a-zA-Z0-9 ']/, '')
+        .trim()
+        .replaceAll(/^[^a-zA-Z0-9]+/, '') // Remove leading non-alphanumeric characters
+        .replaceAll(/[^a-zA-Z0-9]+$/, '') // Remove trailing non-alphanumeric characters
+        .replaceAll(/\s{2,}/, ' ') // Replace multiple spaces with a single space
+    sanitized = sanitized.length() == 0 ? 'Unnamed Device' : sanitized
+    return sanitized
+}
+
 private Map<String,Object> getDeviceData(String type, sItem) {
     // log.debug "getDeviceData($type, $sItem)"
     String curType; curType= 'device'
@@ -1156,7 +1168,7 @@ private Map<String,Object> getDeviceData(String type, sItem) {
     if (curType && obj && sItem) {
         if (curType == 'Security Keypad') {
             return [
-                name: sItem.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                name: sanitizeName(sItem.displayName?.toString()),
                 basename: sItem.name,
                 deviceid: "securityKeypad_${sItem.id}",
                 status: sItem.status,
@@ -1172,7 +1184,7 @@ private Map<String,Object> getDeviceData(String type, sItem) {
         }
         else {
             return [
-                name: !isVirtual ? sItem.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK) : name?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK),
+                name: !isVirtual ? sanitizeName(sItem.displayName?.toString()) : sanitizeName(name),
                 basename: !isVirtual ? sItem.name : name,
                 deviceid: !isVirtual ? sItem.id : devId,
                 status: !isVirtual ? sItem.status : 'Online',

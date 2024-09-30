@@ -1,3 +1,7 @@
+## _**v2.10.0**_ (09-30-2024)
+
+- [FIX] Updated the device name values sent to HomeKit to support Homebridge 2.0.0
+
 ## _**v2.9.4**_ (09-20-2023)
 
 - [FIX] Fixed issues with some sensors not updating there status.

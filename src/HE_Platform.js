@@ -75,7 +75,7 @@ module.exports = class HE_Platform {
         // If the name becomes empty after sanitization, use a default name
         sanitized = sanitized.length === 0 ? "Unnamed Device" : sanitized;
 
-        if (name !== sanitized) this.logWarn(`Sanitized Name: (${name}) => (${sanitized})`);
+        // if (name !== sanitized) this.logWarn(`Sanitized Name: (${name}) => (${sanitized})`);
         return sanitized;
     }
 
@@ -211,13 +211,29 @@ module.exports = class HE_Platform {
                             }
                         }
                         if (resp && resp.deviceList && resp.deviceList instanceof Array) {
-                            // that.logDebug("Received All Device Data");
                             const toCreate = this.HEAccessories.diffAdd(resp.deviceList);
                             const toUpdate = this.HEAccessories.intersection(resp.deviceList);
                             const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
+
+                            // Get all cached devices
+                            const cachedDevices = this.getAllAccessoriesFromCache();
+
+                            // Create a set of device IDs from the Hubitat API response
+                            const hubitatDeviceIds = new Set(resp.deviceList.map((device) => device.deviceid));
+
+                            // Find cached devices not in Hubitat device data
+                            const missingDevices = Object.values(cachedDevices).filter((cachedDevice) => !hubitatDeviceIds.has(cachedDevice.context.deviceData.deviceid));
+
+                            // Log missing devices
+                            if (missingDevices.length > 0) {
+                                that.logWarn(`Cached devices not found in Hubitat device data: ${missingDevices.map((device) => device.context.deviceData.name).join(", ")}`);
+                            }
+
                             that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
-                            that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
+                            that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`);
                             that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
+
+                            // this.cleanUpStaleAccessories(resp.deviceList);
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
                             toUpdate.forEach((device) => this.updateDevice(device));
@@ -248,28 +264,41 @@ module.exports = class HE_Platform {
         let accessory;
         const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
-        this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
+        this.logDebug(`Initializing New Device (${device.displayName} | ${device.deviceid})`);
         accessory = this.getNewAccessory(device, new_uuid);
         this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
+        // console.log("Accessory: ", accessory);
         this.addAccessoryToCache(accessory);
-        this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
+        this.logInfo(`Added Device: (${accessory.displayName} | ${accessory.deviceid})`);
     }
 
     updateDevice(device) {
         let cachedAccessory = this.getAccessoryFromCache(device);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         cachedAccessory.context.deviceData = device;
-        this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
+        this.logDebug(`Loading Existing Device | Name: (${device.displayName}) | ID: (${device.deviceid})`);
         cachedAccessory = this.HEAccessories.initializeAccessory(cachedAccessory);
         this.sanitizeAndUpdateAccessoryName(cachedAccessory);
         this.addAccessoryToCache(cachedAccessory);
-        this.homebridge.updatePlatformAccessories([cachedAccessory]);
+    }
+
+    cleanUpStaleAccessories(devices) {
+        const cachedAccessories = this.HEAccessories.getAllAccessories(); // This is now an array
+        const activeDeviceIds = new Set(devices.map((device) => device.deviceid));
+
+        cachedAccessories.forEach((accessory) => {
+            const accDeviceId = this.HEAccessories.getAccessoryId(accessory);
+            if (!activeDeviceIds.has(accDeviceId)) {
+                this.logWarn(`Stale Accessory Detected: ${accessory.displayName} (${accDeviceId}) | Removing...`);
+                // this.removeAccessory(accessory);
+            }
+        });
     }
 
     removeAccessory(accessory) {
         if (this.removeAccessoryFromCache(accessory)) {
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-            this.logInfo(`Removed: ${accessory.context.name} (${accessory.context.deviceid})`);
+            this.logInfo(`Removed: ${accessory.displayName} (${accessory.deviceid})`);
         }
     }
 
@@ -331,25 +360,37 @@ module.exports = class HE_Platform {
         const sanitizedName = this.sanitizeName(originalName);
 
         if (sanitizedName !== originalName) {
-            // this.logInfo(`Sanitizing accessory name from "${originalName}" to "${sanitizedName}" for device ID: ${accessory.context.deviceData.deviceid}`);
+            // this.logInfo(`Updating accessory name from "${originalName}" to "${sanitizedName}" for device ID: ${accessory.deviceid}`);
+
+            // Update the name properties
+            accessory.name = sanitizedName;
+            accessory.context.name = sanitizedName;
+
+            // Important: Update displayName like this
+            accessory._associatedHAPAccessory.displayName = sanitizedName;
+
+            // Update the AccessoryInformation service
+            const accessoryInformation = accessory.getService(this.Service.AccessoryInformation);
+            if (accessoryInformation) {
+                // accessoryInformation.setCharacteristic(this.Characteristic.Name, sanitizedName);
+                accessoryInformation.getCharacteristic(this.Characteristic.Name).updateValue(sanitizedName);
+
+                // verify that the displayName was updated
+                const displayName = accessoryInformation.getCharacteristic(this.Characteristic.Name).value;
+                if (displayName !== sanitizedName) {
+                    this.logWarn(`Failed to update displayName for device ID: ${accessory.deviceid}`);
+                } else {
+                    this.logInfo(`AccessoryInformation service updated successfully for device ID: ${accessory.deviceid} | Old Name: ${originalName} | Display Name: ${displayName}`);
+                    this.homebridge.updatePlatformAccessories([accessory]);
+                }
+            } else {
+                this.logWarn(`AccessoryInformation service not found for device ID: ${accessory.deviceid}`);
+            }
+
+            // this.logDebug(`Accessory name updated successfully to "${sanitizedName}"`);
+        } else {
+            // this.logDebug(`No name update needed for accessory "${originalName}"`);
         }
-
-        // Update all name-related fields
-        accessory.context.deviceData.name = sanitizedName;
-        accessory.context.deviceData.basename = sanitizedName;
-        accessory.context.name = sanitizedName;
-        accessory.name = sanitizedName;
-        accessory.displayName = sanitizedName;
-
-        // Update the AccessoryInformation service
-        const accessoryInfo = accessory.getOrAddService(this.Service.AccessoryInformation);
-        if (accessoryInfo) {
-            accessoryInfo.setCharacteristic(this.Characteristic.Name, sanitizedName);
-        }
-
-        // Update the accessory in Homebridge
-        this.homebridge.updatePlatformAccessories([accessory]);
-        // this.logDebug(`Accessory name updated successfully to "${sanitizedName}"`);
     }
 
     WebServerInit() {
