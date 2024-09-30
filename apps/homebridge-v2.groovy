@@ -2,7 +2,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018-2023 Anthony Santilli
+ *  Copyright 2018-2024 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 
