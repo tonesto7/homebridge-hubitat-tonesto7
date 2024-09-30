@@ -407,7 +407,7 @@ module.exports = class DeviceCharacteristics {
         }
         let canUseAL = this.configItems.adaptive_lighting !== false && _accessory.isAdaptiveLightingSupported && !_accessory.hasDeviceFlag("light_no_al") && _accessory.hasAttribute("level") && _accessory.hasAttribute("colorTemperature");
         if (canUseAL && !_accessory.adaptiveLightingController) {
-            _accessory.addAdaptiveLightingController(_accessory.getOrAddService(_service));
+            _accessory.addAdaptiveLightingController(_accessory, _service);
         } else if (!canUseAL && _accessory.adaptiveLightingController) {
             _accessory.removeAdaptiveLightingController();
         }

@@ -18,6 +18,7 @@
         "eslint": "^9.11.1",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.2.1",
+        "hap-nodejs": "^1.1.0",
         "homebridge": "^1.8.4",
         "lint-staged": "^15.2.10",
         "prettier": "^3.3.3"
@@ -25,7 +26,7 @@
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
         "homebridge": "^1.6.0 || ^2.0.0-beta.22",
-        "node": "^18.20.4 || ^20.15.1"
+        "node": "^18.20.4 || <23.0.0"
     },
     "lint-staged": {
         "*.js": [

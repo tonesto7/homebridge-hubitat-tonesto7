@@ -35,35 +35,30 @@ module.exports = class HE_Accessories {
         this.transforms = new Transforms(this, Characteristic);
         this.serviceTypes = new ServiceTypes(this, Service);
         this.device_types = new DeviceTypes(this, Service, Characteristic);
-        this._accessories = {};
+        // this._accessories = {};
         this._buttonMap = {};
         this._attributeLookup = {};
     }
 
-    sanitizeName(name) {
-        // Remove all characters except alphanumerics, spaces, and apostrophes
-        return name.replace(/[^a-zA-Z0-9 ']/g, "").trim();
+    getAccessoryName(accessory) {
+        return accessory.context.deviceData.name;
     }
 
     initializeAccessory(accessory, fromCache = false) {
         if (!fromCache) {
-            const sanitizeName = this.sanitizeName(accessory.context.deviceData.name);
-            // console.log("sanitizeName: ", sanitizeName);
             accessory.deviceid = accessory.context.deviceData.deviceid;
-            accessory.name = sanitizeName;
+
+            // Remove excluded capabilities as before
             accessory.context.deviceData.excludedCapabilities.forEach((cap) => {
                 if (cap !== undefined) {
                     this.logDebug(`Removing capability: ${cap} from Device: ${accessory.context.deviceData.name}`);
                     delete accessory.context.deviceData.capabilities[cap];
                 }
             });
-            accessory.context.name = sanitizeName;
-            accessory.context.deviceData.name = sanitizeName;
-            accessory.context.deviceid = accessory.context.deviceData.deviceid;
         } else {
-            this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.context.deviceid}`);
             accessory.deviceid = accessory.context.deviceid;
-            accessory.name = accessory.context.name;
+            // Ensure the name is derived from context.name
+            this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.deviceid}`);
         }
         try {
             accessory.commandTimers = {};
@@ -89,7 +84,7 @@ module.exports = class HE_Accessories {
             accessory.setServiceLabelIndex = this.setServiceLabelIndex.bind(accessory);
             accessory.sendCommand = this.sendCommand.bind(accessory);
             accessory.platformConfigItems = this.configItems;
-            // console.log("accessory:", accessory);
+
             // Adaptive Lighting Controller Functions
             accessory.isAdaptiveLightingSupported = (this.homebridge.version >= 2.7 && this.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.homebridge.hap.AdaptiveLightingController; // support check on Hoobs
             accessory.addAdaptiveLightingController = this.addAdaptiveLightingController.bind(accessory);
@@ -107,15 +102,20 @@ module.exports = class HE_Accessories {
     }
 
     configureCharacteristics(accessory) {
+        // Log unknown capabilities as before
         for (let index in accessory.context.deviceData.capabilities) {
-            if (knownCapabilities.indexOf(index) === -1 && this.mainPlatform.unknownCapabilities.indexOf(index) === -1) this.mainPlatform.unknownCapabilities.push(index);
+            if (knownCapabilities.indexOf(index) === -1 && this.mainPlatform.unknownCapabilities.indexOf(index) === -1) {
+                this.mainPlatform.unknownCapabilities.push(index);
+            }
         }
+
+        // Reset device groups and services to keep
         accessory.context.deviceGroups = [];
         accessory.servicesToKeep = [];
         accessory.reachable = true;
         accessory.context.lastUpdate = new Date();
 
-        // console.log("accessory name: ", accessory.name);
+        // Set Accessory Information characteristics as before
         let accessoryInformation = accessory
             .getOrAddService(Service.AccessoryInformation)
             .setCharacteristic(Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
@@ -133,6 +133,7 @@ module.exports = class HE_Accessories {
             });
         }
 
+        // Handle service types as before
         let svcTypes = this.serviceTypes.getServiceTypes(accessory);
         if (svcTypes) {
             svcTypes.forEach((svc) => {
@@ -145,6 +146,7 @@ module.exports = class HE_Accessories {
         } else {
             throw "Unable to determine the service type of " + accessory.deviceid;
         }
+
         return this.removeUnusedServices(accessory);
     }
 
@@ -153,7 +155,7 @@ module.exports = class HE_Accessories {
             // this.logInfo("change: ", change);
             // console.log("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
-            let accessory = this.getAccessoryFromCache(change);
+            let accessory = this.mainPlatform.getAccessoryFromCache(change);
             // console.log(characteristics);
             if (!characteristics || !accessory) resolve(false);
             if (characteristics instanceof Array) {
@@ -181,7 +183,7 @@ module.exports = class HE_Accessories {
                         }
                     }
                 });
-                resolve(this.addAccessoryToCache(accessory));
+                resolve(this.mainPlatform.addAccessoryToCache(accessory));
             } else {
                 resolve(false);
             }
@@ -377,61 +379,53 @@ module.exports = class HE_Accessories {
         delete this._attributeLookup[attr][devid];
     }
 
-    getDeviceAttributeValueFromCache(device, attr) {
-        const key = this.getAccessoryId(device);
-        let result = this._accessories[key] ? this._accessories[key].context.deviceData.attributes[attr] : undefined;
-        this.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
-        return result;
-    }
+    // getDeviceAttributeValueFromCache(device, attr) {
+    //     const key = this.getAccessoryId(device);
+    //     let result = this._accessories[key] ? this._accessories[key].context.deviceData.attributes[attr] : undefined;
+    //     this.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
+    //     return result;
+    // }
 
     getAccessoryId(accessory) {
         const id = accessory.deviceid || accessory.context.deviceid || undefined;
         return id;
     }
 
-    getAccessoryFromCache(device) {
-        const key = this.getAccessoryId(device);
-        return this._accessories[key];
-    }
+    // getAccessoryFromCache(device) {
+    //     const key = this.getAccessoryId(device);
+    //     return this._accessories[key];
+    // }
 
-    getAllAccessoriesFromCache() {
-        return this._accessories;
-    }
+    // addAccessoryToCache(accessory) {
+    //     const key = this.getAccessoryId(accessory);
+    //     this._accessories[key] = accessory;
+    //     // let's update the
+    //     return true;
+    // }
 
-    clearAccessoryCache() {
-        this.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
-        this._accessories = {};
-    }
-
-    addAccessoryToCache(accessory) {
-        const key = this.getAccessoryId(accessory);
-        this._accessories[key] = accessory;
-        return true;
-    }
-
-    removeAccessoryFromCache(accessory) {
-        const key = this.getAccessoryId(accessory);
-        const _accessory = this._accessories[key];
-        delete this._accessories[key];
-        return _accessory;
-    }
+    // removeAccessoryFromCache(accessory) {
+    //     const key = this.getAccessoryId(accessory);
+    //     const _accessory = this._accessories[key];
+    //     delete this._accessories[key];
+    //     return _accessory;
+    // }
 
     forEach(fn) {
-        return _.forEach(this._accessories, fn);
+        return _.forEach(this.mainPlatform.getAllAccessoriesFromCache(), fn);
     }
 
     intersection(devices) {
-        const accessories = _.values(this._accessories);
+        const accessories = _.values(this.mainPlatform.getAllAccessoriesFromCache());
         return _.intersectionWith(devices, accessories, this.comparator);
     }
 
     diffAdd(devices) {
-        const accessories = _.values(this._accessories);
+        const accessories = _.values(this.mainPlatform.getAllAccessoriesFromCache());
         return _.differenceWith(devices, accessories, this.comparator);
     }
 
     diffRemove(devices) {
-        const accessories = _.values(this._accessories);
+        const accessories = _.values(this.mainPlatform.getAllAccessoriesFromCache());
         return _.differenceWith(accessories, devices, this.comparator);
     }
 
@@ -445,18 +439,20 @@ module.exports = class HE_Accessories {
     }
 
     // Adaptive Lighting Functions
-    addAdaptiveLightingController(_service) {
-        // let that = this;
+    addAdaptiveLightingController(_accessory, _service) {
+        const svc = _accessory.getOrAddService(_service);
         const offset = this.getPlatformConfig.adaptive_lighting_offset || 0;
-        const controlMode = this.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC;
-        if (_service) {
-            this.adaptiveLightingController = new this.homebridgeApi.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
-            // this.adaptiveLightingController.on("update", (evt) => {
-            //     this.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
-            // });
-            // this.adaptiveLightingController.on("disable", (evt) => {
-            //     this.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
-            // });
+        const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+        if (svc) {
+            this.adaptiveLightingController = new this.homebridge.hap.AdaptiveLightingController(svc, { controllerMode: controlMode, customTemperatureAdjustment: offset });
+            this.adaptiveLightingController.on("update", (evt) => {
+                this.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
+            });
+            this.adaptiveLightingController.on("disable", (evt) => {
+                this.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
+            });
+
+            // Configure the Adaptive Lighting Controller with the accessory and HAP service
             this.configureController(this.adaptiveLightingController);
             this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
         } else {

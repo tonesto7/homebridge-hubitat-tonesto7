@@ -22,12 +22,16 @@ module.exports = class HE_Platform {
         this.homebridge = api;
         this.Service = api.hap.Service;
         this.Characteristic = api.hap.Characteristic;
+        this.Categories = api.hap.Categories;
         PlatformAccessory = api.platformAccessory;
         this.uuid = api.hap.uuid;
         if (config === undefined || config === null || config.app_url_local === undefined || config.app_url_local === null || config.app_url_cloud === undefined || config.app_url_cloud === null || config.app_id === undefined || config.app_id === null) {
             log(`${platformName} Plugin is not Configured | Skipping...`);
             return;
         }
+
+        this._platformAccessories = {};
+
         this.ok2Run = true;
         this.direct_port = this.findDirectPort();
         this.logConfig = this.getLogConfig();
@@ -59,6 +63,24 @@ module.exports = class HE_Platform {
         this.appEvts.emit("event:plugin_upd_status");
     }
 
+    sanitizeName(name) {
+        // Remove all characters except alphanumerics, spaces, and apostrophes
+        let sanitized = name
+            .replace(/[^a-zA-Z0-9 ']/g, "")
+            .trim()
+            .replace(/^[^a-zA-Z0-9]+/, "") // Remove leading non-alphanumeric characters
+            .replace(/[^a-zA-Z0-9]+$/, "") // Remove trailing non-alphanumeric characters
+            .replace(/\s{2,}/g, " "); // Replace multiple spaces with a single space
+
+        // If the name becomes empty after sanitization, use a default name
+        sanitized = sanitized.length === 0 ? "Unnamed Device" : sanitized;
+
+        if (name !== sanitized) this.logWarn(`Sanitized Name: (${name}) => (${sanitized})`);
+        return sanitized;
+    }
+
+    // cachedAccessories.0EF1B88FF999
+    // cachedAccessories.0E2B91319869.
     getLogConfig() {
         let config = this.config;
         return {
@@ -203,7 +225,7 @@ module.exports = class HE_Platform {
                         }
                         that.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
                         that.logNotice(`Unknown Capabilities: ${JSON.stringify(that.unknownCapabilities)}`);
-                        that.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.HEAccessories.getAllAccessoriesFromCache()).length})`);
+                        that.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.getAllAccessoriesFromCache()).length})`);
                         if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
                         resolve(true);
                     });
@@ -218,6 +240,7 @@ module.exports = class HE_Platform {
         let accessory = new PlatformAccessory(device.name, UUID);
         accessory.context.deviceData = device;
         this.HEAccessories.initializeAccessory(accessory);
+        this.sanitizeAndUpdateAccessoryName(accessory);
         return accessory;
     }
 
@@ -228,21 +251,23 @@ module.exports = class HE_Platform {
         this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
         accessory = this.getNewAccessory(device, new_uuid);
         this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
-        this.HEAccessories.addAccessoryToCache(accessory);
+        this.addAccessoryToCache(accessory);
         this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
     }
 
     updateDevice(device) {
-        let cachedAccessory = this.HEAccessories.getAccessoryFromCache(device);
+        let cachedAccessory = this.getAccessoryFromCache(device);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         cachedAccessory.context.deviceData = device;
         this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
         cachedAccessory = this.HEAccessories.initializeAccessory(cachedAccessory);
-        this.HEAccessories.addAccessoryToCache(cachedAccessory);
+        this.sanitizeAndUpdateAccessoryName(cachedAccessory);
+        this.addAccessoryToCache(cachedAccessory);
+        this.homebridge.updatePlatformAccessories([cachedAccessory]);
     }
 
     removeAccessory(accessory) {
-        if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
+        if (this.removeAccessoryFromCache(accessory)) {
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
             this.logInfo(`Removed: ${accessory.context.name} (${accessory.context.deviceid})`);
         }
@@ -252,7 +277,8 @@ module.exports = class HE_Platform {
         if (!this.ok2Run) return;
         this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
         let cachedAccessory = this.HEAccessories.initializeAccessory(accessory, true);
-        this.HEAccessories.addAccessoryToCache(cachedAccessory);
+        this.sanitizeAndUpdateAccessoryName(cachedAccessory);
+        this.addAccessoryToCache(cachedAccessory);
     }
 
     processIncrementalUpdate(data, that) {
@@ -271,6 +297,59 @@ module.exports = class HE_Platform {
         if (app_id && access_token && this.getConfigItems().app_id && this.getConfigItems().access_token && access_token === this.getConfigItems().access_token && parseInt(app_id) === parseInt(this.getConfigItems().app_id)) return true;
         this.logError(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
         return false;
+    }
+
+    getAccessoryFromCache(accessory) {
+        const id = accessory.deviceid || accessory.context.deviceid || undefined;
+        return this._platformAccessories[id];
+    }
+
+    getAllAccessoriesFromCache() {
+        return this._platformAccessories;
+    }
+
+    clearAccessoryCache() {
+        this.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
+        this._platformAccessories = {};
+    }
+
+    addAccessoryToCache(accessory) {
+        const id = accessory.deviceid || accessory.context.deviceid || undefined;
+        this._platformAccessories[id] = accessory;
+        return true;
+    }
+
+    removeAccessoryFromCache(accessory) {
+        const id = accessory.deviceid || accessory.context.deviceid || undefined;
+        const _accessory = this._platformAccessories[id];
+        delete this._platformAccessories[id];
+        return _accessory;
+    }
+
+    sanitizeAndUpdateAccessoryName(accessory) {
+        const originalName = accessory.context.deviceData.name;
+        const sanitizedName = this.sanitizeName(originalName);
+
+        if (sanitizedName !== originalName) {
+            // this.logInfo(`Sanitizing accessory name from "${originalName}" to "${sanitizedName}" for device ID: ${accessory.context.deviceData.deviceid}`);
+        }
+
+        // Update all name-related fields
+        accessory.context.deviceData.name = sanitizedName;
+        accessory.context.deviceData.basename = sanitizedName;
+        accessory.context.name = sanitizedName;
+        accessory.name = sanitizedName;
+        accessory.displayName = sanitizedName;
+
+        // Update the AccessoryInformation service
+        const accessoryInfo = accessory.getOrAddService(this.Service.AccessoryInformation);
+        if (accessoryInfo) {
+            accessoryInfo.setCharacteristic(this.Characteristic.Name, sanitizedName);
+        }
+
+        // Update the accessory in Homebridge
+        this.homebridge.updatePlatformAccessories([accessory]);
+        // this.logDebug(`Accessory name updated successfully to "${sanitizedName}"`);
     }
 
     WebServerInit() {
@@ -319,7 +398,7 @@ module.exports = class HE_Platform {
                 webApp.get("/debugOpts", (req, res) => {
                     that.logInfo(`${platformName} Debug Option Request(${req.query.option})...`);
                     if (req.query && req.query.option) {
-                        let accs = this.HEAccessories.getAllAccessoriesFromCache();
+                        let accs = this.getAllAccessoriesFromCache();
                         // let accsKeys = Object.keys(accs);
                         // console.log(accsKeys);
                         switch (req.query.option) {
@@ -335,7 +414,7 @@ module.exports = class HE_Platform {
                             //     res.send(JSON.stringify(o));
                             //     break;
                             // case 'accContext':
-                            //     res.send(JSON.stringify(this.HEAccessories.getAllAccessoriesFromCache()));
+                            //     res.send(JSON.stringify(this.getAllAccessoriesFromCache()));
                             //     break;
                             default:
                                 res.send(`Error: Invalid Option Parameter Received | Option: ${req.query.option}`);

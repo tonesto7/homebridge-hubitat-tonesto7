@@ -208,6 +208,8 @@ module.exports = class Transforms {
                 }
             case "hue":
                 // Ensure the value is at least 1 before applying the conversion
+                // return clampNumericValue(Math.max(1, Math.round(val * 3.6)), attr);
+                // this.logInfo(`Hue value | Before: ${val} | After: ${clampNumericValue(Math.max(1, Math.round(val * 3.6)), attr)}`);
                 return clampNumericValue(Math.max(1, Math.round(val * 3.6)), attr);
             case "colorTemperature":
                 return clampNumericValue(parseInt(this.kelvinToMired(val)), attr);
