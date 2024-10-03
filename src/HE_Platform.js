@@ -97,18 +97,17 @@ module.exports = class HE_Platform {
         if (sanitizedName !== originalName) {
             // Update the name properties
             accessory.name = sanitizedName;
-            accessory.context.name = sanitizedName;
+            // accessory.context.name = sanitizedName;
 
             // Important: Update displayName like this
-            accessory._associatedHAPAccessory.displayName = sanitizedName;
+            // accessory._associatedHAPAccessory.displayName = sanitizedName;
 
             // Update the AccessoryInformation service
             const accessoryInformation = accessory.getService(this.Service.AccessoryInformation);
             if (accessoryInformation) {
-                // accessoryInformation.setCharacteristic(this.Characteristic.Name, sanitizedName);
                 accessoryInformation.getCharacteristic(this.Characteristic.Name).updateValue(sanitizedName);
 
-                // verify that the displayName was updated
+                // Verify that the displayName was updated
                 const displayName = accessoryInformation.getCharacteristic(this.Characteristic.Name).value;
                 if (displayName !== sanitizedName) {
                     this.logWarn(`Failed to update displayName for device ID: ${accessory.deviceid}`);
@@ -313,7 +312,7 @@ module.exports = class HE_Platform {
     removeAccessory(accessory) {
         if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-            this.logInfo(`Removed: ${accessory.context.name} (${accessory.context.deviceid})`);
+            this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
         }
     }
 

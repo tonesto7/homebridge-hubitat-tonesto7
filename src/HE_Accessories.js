@@ -6,7 +6,7 @@ const knownCapabilities = require("./libs/Constants").knownCapabilities,
     ServiceTypes = require("./HE_ServiceTypes"),
     Transforms = require("./HE_Transforms"),
     DeviceTypes = require("./HE_DeviceCharacteristics");
-var Service, Characteristic, appEvts;
+var Service, Characteristic, Catagories, appEvts;
 
 module.exports = class HE_Accessories {
     constructor(platform) {
@@ -29,33 +29,30 @@ module.exports = class HE_Accessories {
         this._ = _;
         Service = platform.Service;
         Characteristic = platform.Characteristic;
+        Catagories = platform.Catagories;
         this.CommunityTypes = require("./libs/CommunityTypes")(Service, Characteristic);
         this.client = platform.client;
         this.comparator = this.comparator.bind(this);
         this.transforms = new Transforms(this, Characteristic);
         this.serviceTypes = new ServiceTypes(this, Service);
         this.device_types = new DeviceTypes(this, Service, Characteristic);
-        this._accessories = {};
+        this._platformAccessories = {};
         this._buttonMap = {};
         this._attributeLookup = {};
     }
 
     initializeAccessory(accessory, fromCache = false) {
+        accessory.deviceid = accessory.context.deviceData.deviceid;
+        accessory.name = accessory.context.deviceData.name;
         if (!fromCache) {
-            accessory.deviceid = accessory.context.deviceData.deviceid;
-            accessory.name = accessory.context.deviceData.name;
             accessory.context.deviceData.excludedCapabilities.forEach((cap) => {
                 if (cap !== undefined) {
-                    this.logDebug(`Removing capability: ${cap} from Device: ${accessory.context.deviceData.name}`);
+                    this.logDebug(`Removing capability: ${cap} from Device: ${accessory.name}`);
                     delete accessory.context.deviceData.capabilities[cap];
                 }
             });
-            accessory.context.name = accessory.context.deviceData.name;
-            accessory.context.deviceid = accessory.context.deviceData.deviceid;
         } else {
-            this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.context.deviceid}`);
-            accessory.deviceid = accessory.context.deviceid;
-            accessory.name = accessory.context.name;
+            this.logDebug(`Initializing Cached Device ${accessory.name} | ${accessory.deviceid}`);
         }
         try {
             accessory.commandTimers = {};
@@ -112,7 +109,8 @@ module.exports = class HE_Accessories {
             .setCharacteristic(Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
             .setCharacteristic(Characteristic.Manufacturer, accessory.context.deviceData.manufacturerName)
             .setCharacteristic(Characteristic.Model, accessory.context.deviceData.modelName ? `${this.myUtils.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
-            .setCharacteristic(Characteristic.Name, accessory.context.deviceData.name)
+            .setCharacteristic(Characteristic.Name, accessory.name)
+
             .setCharacteristic(Characteristic.HardwareRevision, pluginVersion)
             .setCharacteristic(Characteristic.SerialNumber, "he_deviceid_" + accessory.context.deviceData.deviceid);
         accessory.servicesToKeep.push(Service.AccessoryInformation.UUID);
@@ -370,59 +368,59 @@ module.exports = class HE_Accessories {
 
     getDeviceAttributeValueFromCache(device, attr) {
         const key = this.getAccessoryId(device);
-        let result = this._accessories[key] ? this._accessories[key].context.deviceData.attributes[attr] : undefined;
+        let result = this._platformAccessories[key] ? this._platformAccessories[key].context.deviceData.attributes[attr] : undefined;
         this.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
         return result;
     }
 
     getAccessoryId(accessory) {
-        const id = accessory.deviceid || accessory.context.deviceid || undefined;
+        const id = accessory.deviceid || accessory.context.deviceData.deviceid || undefined;
         return id;
     }
 
     getAccessoryFromCache(device) {
         const key = this.getAccessoryId(device);
-        return this._accessories[key];
+        return this._platformAccessories[key];
     }
 
     getAllAccessoriesFromCache() {
-        return this._accessories;
+        return this._platformAccessories;
     }
 
     clearAccessoryCache() {
         this.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
-        this._accessories = {};
+        this._platformAccessories = {};
     }
 
     addAccessoryToCache(accessory) {
         const key = this.getAccessoryId(accessory);
-        this._accessories[key] = accessory;
+        this._platformAccessories[key] = accessory;
         return true;
     }
 
     removeAccessoryFromCache(accessory) {
         const key = this.getAccessoryId(accessory);
-        const _accessory = this._accessories[key];
-        delete this._accessories[key];
+        const _accessory = this._platformAccessories[key];
+        delete this._platformAccessories[key];
         return _accessory;
     }
 
     forEach(fn) {
-        return _.forEach(this._accessories, fn);
+        return _.forEach(this._platformAccessories, fn);
     }
 
     intersection(devices) {
-        const accessories = _.values(this._accessories);
+        const accessories = _.values(this._platformAccessories);
         return _.intersectionWith(devices, accessories, this.comparator);
     }
 
     diffAdd(devices) {
-        const accessories = _.values(this._accessories);
+        const accessories = _.values(this._platformAccessories);
         return _.differenceWith(devices, accessories, this.comparator);
     }
 
     diffRemove(devices) {
-        const accessories = _.values(this._accessories);
+        const accessories = _.values(this._platformAccessories);
         return _.differenceWith(accessories, devices, this.comparator);
     }
 
