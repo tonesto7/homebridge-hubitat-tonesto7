@@ -35,30 +35,27 @@ module.exports = class HE_Accessories {
         this.transforms = new Transforms(this, Characteristic);
         this.serviceTypes = new ServiceTypes(this, Service);
         this.device_types = new DeviceTypes(this, Service, Characteristic);
-        // this._accessories = {};
+        this._accessories = {};
         this._buttonMap = {};
         this._attributeLookup = {};
-    }
-
-    getAccessoryName(accessory) {
-        return accessory.context.deviceData.name;
     }
 
     initializeAccessory(accessory, fromCache = false) {
         if (!fromCache) {
             accessory.deviceid = accessory.context.deviceData.deviceid;
-
-            // Remove excluded capabilities as before
+            accessory.name = accessory.context.deviceData.name;
             accessory.context.deviceData.excludedCapabilities.forEach((cap) => {
                 if (cap !== undefined) {
                     this.logDebug(`Removing capability: ${cap} from Device: ${accessory.context.deviceData.name}`);
                     delete accessory.context.deviceData.capabilities[cap];
                 }
             });
+            accessory.context.name = accessory.context.deviceData.name;
+            accessory.context.deviceid = accessory.context.deviceData.deviceid;
         } else {
+            this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.context.deviceid}`);
             accessory.deviceid = accessory.context.deviceid;
-            // Ensure the name is derived from context.name
-            this.logDebug(`Initializing Cached Device ${accessory.context.name} | ${accessory.deviceid}`);
+            accessory.name = accessory.context.name;
         }
         try {
             accessory.commandTimers = {};
@@ -84,7 +81,7 @@ module.exports = class HE_Accessories {
             accessory.setServiceLabelIndex = this.setServiceLabelIndex.bind(accessory);
             accessory.sendCommand = this.sendCommand.bind(accessory);
             accessory.platformConfigItems = this.configItems;
-
+            // console.log("accessory:", accessory);
             // Adaptive Lighting Controller Functions
             accessory.isAdaptiveLightingSupported = (this.homebridge.version >= 2.7 && this.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.homebridge.hap.AdaptiveLightingController; // support check on Hoobs
             accessory.addAdaptiveLightingController = this.addAdaptiveLightingController.bind(accessory);
@@ -102,20 +99,14 @@ module.exports = class HE_Accessories {
     }
 
     configureCharacteristics(accessory) {
-        // Log unknown capabilities as before
         for (let index in accessory.context.deviceData.capabilities) {
-            if (knownCapabilities.indexOf(index) === -1 && this.mainPlatform.unknownCapabilities.indexOf(index) === -1) {
-                this.mainPlatform.unknownCapabilities.push(index);
-            }
+            if (knownCapabilities.indexOf(index) === -1 && this.mainPlatform.unknownCapabilities.indexOf(index) === -1) this.mainPlatform.unknownCapabilities.push(index);
         }
-
-        // Reset device groups and services to keep
         accessory.context.deviceGroups = [];
         accessory.servicesToKeep = [];
         accessory.reachable = true;
         accessory.context.lastUpdate = new Date();
 
-        // Set Accessory Information characteristics as before
         let accessoryInformation = accessory
             .getOrAddService(Service.AccessoryInformation)
             .setCharacteristic(Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
@@ -133,7 +124,6 @@ module.exports = class HE_Accessories {
             });
         }
 
-        // Handle service types as before
         let svcTypes = this.serviceTypes.getServiceTypes(accessory);
         if (svcTypes) {
             svcTypes.forEach((svc) => {
@@ -146,7 +136,6 @@ module.exports = class HE_Accessories {
         } else {
             throw "Unable to determine the service type of " + accessory.deviceid;
         }
-
         return this.removeUnusedServices(accessory);
     }
 
@@ -155,7 +144,7 @@ module.exports = class HE_Accessories {
             // this.logInfo("change: ", change);
             // console.log("change: ", change);
             let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
-            let accessory = this.mainPlatform.getAccessoryFromCache(change);
+            let accessory = this.getAccessoryFromCache(change);
             // console.log(characteristics);
             if (!characteristics || !accessory) resolve(false);
             if (characteristics instanceof Array) {
@@ -165,7 +154,7 @@ module.exports = class HE_Accessories {
                     accessory.context.lastUpdate = new Date().toLocaleString();
                     if (change.attribute === "thermostatSetpoint") {
                         // don't remember why i'm doing this...
-                        char.value;
+                        char.getValue();
                     } else if (change.attribute === "button") {
                         // this.logInfo("button change: " + change);
                         const btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
@@ -183,7 +172,7 @@ module.exports = class HE_Accessories {
                         }
                     }
                 });
-                resolve(this.mainPlatform.addAccessoryToCache(accessory));
+                resolve(this.addAccessoryToCache(accessory));
             } else {
                 resolve(false);
             }
@@ -379,43 +368,66 @@ module.exports = class HE_Accessories {
         delete this._attributeLookup[attr][devid];
     }
 
-    // getDeviceAttributeValueFromCache(device, attr) {
-    //     const key = this.getAccessoryId(device);
-    //     let result = this._accessories[key] ? this._accessories[key].context.deviceData.attributes[attr] : undefined;
-    //     this.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
-    //     return result;
-    // }
+    getDeviceAttributeValueFromCache(device, attr) {
+        const key = this.getAccessoryId(device);
+        let result = this._accessories[key] ? this._accessories[key].context.deviceData.attributes[attr] : undefined;
+        this.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
+        return result;
+    }
 
     getAccessoryId(accessory) {
         const id = accessory.deviceid || accessory.context.deviceid || undefined;
         return id;
     }
 
+    getAccessoryFromCache(device) {
+        const key = this.getAccessoryId(device);
+        return this._accessories[key];
+    }
+
+    getAllAccessoriesFromCache() {
+        return this._accessories;
+    }
+
+    clearAccessoryCache() {
+        this.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
+        this._accessories = {};
+    }
+
+    addAccessoryToCache(accessory) {
+        const key = this.getAccessoryId(accessory);
+        this._accessories[key] = accessory;
+        return true;
+    }
+
+    removeAccessoryFromCache(accessory) {
+        const key = this.getAccessoryId(accessory);
+        const _accessory = this._accessories[key];
+        delete this._accessories[key];
+        return _accessory;
+    }
+
     forEach(fn) {
-        return _.forEach(this.mainPlatform.getAllAccessoriesFromCache(), fn);
+        return _.forEach(this._accessories, fn);
     }
 
     intersection(devices) {
-        const accessories = _.values(this.mainPlatform.getAllAccessoriesFromCache());
+        const accessories = _.values(this._accessories);
         return _.intersectionWith(devices, accessories, this.comparator);
     }
 
     diffAdd(devices) {
-        const accessories = _.values(this.mainPlatform.getAllAccessoriesFromCache());
+        const accessories = _.values(this._accessories);
         return _.differenceWith(devices, accessories, this.comparator);
     }
 
     diffRemove(devices) {
-        const accessories = _.values(this.mainPlatform.getAllAccessoriesFromCache());
+        const accessories = _.values(this._accessories);
         return _.differenceWith(accessories, devices, this.comparator);
     }
 
     comparator(accessory1, accessory2) {
         return this.getAccessoryId(accessory1) === this.getAccessoryId(accessory2);
-    }
-
-    getAllAccessories() {
-        return Object.values(this.mainPlatform.getAllAccessoriesFromCache());
     }
 
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {

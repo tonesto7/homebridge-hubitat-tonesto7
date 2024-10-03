@@ -145,7 +145,7 @@ module.exports = class ST_Client {
                         newVersion: res.newVersion,
                         version: pluginVersion,
                         isLocal: this.configItems.use_cloud ? "false" : "true",
-                        accCount: Object.keys(this.platform.getAllAccessoriesFromCache()).length || null,
+                        accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null,
                     },
                     timeout: 10000,
                 })
