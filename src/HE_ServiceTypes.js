@@ -1,64 +1,53 @@
 // HE_ServiceTypes.js
 
 // const debounce = require('debounce-promise');
-var Service,
-    configure_fan_by_name = true,
-    configure_light_by_name = false;
 
 module.exports = class ServiceTypes {
-    constructor(accessories, srvc) {
-        this.platform = accessories;
-        this.log = accessories.log;
-        this.logInfo = accessories.logInfo;
-        this.logAlert = accessories.logAlert;
-        this.logGreen = accessories.logGreen;
-        this.logNotice = accessories.logNotice;
-        this.logDebug = accessories.logDebug;
-        this.logError = accessories.logError;
-        this.logWarn = accessories.logWarn;
-        this.logConfig = accessories.logConfig;
-        this.accessories = accessories;
-        this.client = accessories.client;
-        this.myUtils = accessories.myUtils;
-        this.CommunityTypes = accessories.CommunityTypes;
-        Service = srvc;
-        this.homebridge = accessories.homebridge;
+    constructor(devices, srvc) {
+        this.devices = devices;
+        this.mainPlatform = devices.mainPlatform;
+        this.log = this.mainPlatform.log;
+        this.client = devices.client;
+        this.myUtils = devices.myUtils;
+        this.CommunityTypes = devices.CommunityTypes;
+        this.Service = devices.Service;
+        this.homebridge = devices.homebridge;
         this.serviceMap = {
-            acceleration_sensor: Service.MotionSensor,
+            acceleration_sensor: this.Service.MotionSensor,
             air_purifier: this.CommunityTypes.NewAirPurifierService,
-            air_quality: Service.AirQualitySensor,
-            alarm_system: Service.SecuritySystem,
-            battery: Service.Battery,
-            button: Service.StatelessProgrammableSwitch,
-            carbon_dioxide: Service.CarbonDioxideSensor,
-            carbon_monoxide: Service.CarbonMonoxideSensor,
-            contact_sensor: Service.ContactSensor,
-            // energy_meter: Service.Switch,
-            fan: Service.Fanv2,
-            garage_door: Service.GarageDoorOpener,
-            humidity_sensor: Service.HumiditySensor,
-            illuminance_sensor: Service.LightSensor,
-            light: Service.Lightbulb,
-            lock: Service.LockMechanism,
-            motion_sensor: Service.MotionSensor,
-            // power_meter: Service.Switch,
-            presence_sensor: Service.OccupancySensor,
-            outlet: Service.Outlet,
-            smoke_detector: Service.SmokeSensor,
-            speaker: Service.Speaker,
-            switch_device: Service.Switch,
-            temperature_sensor: Service.TemperatureSensor,
-            thermostat: Service.Thermostat,
-            thermostat_fan: Service.Fanv2,
-            valve: Service.Valve,
-            virtual_mode: Service.Switch,
-            virtual_piston: Service.Switch,
-            virtual_routine: Service.Switch,
-            water_sensor: Service.LeakSensor,
-            window_shade: Service.WindowCovering,
+            air_quality: this.Service.AirQualitySensor,
+            alarm_system: this.Service.SecuritySystem,
+            battery: this.Service.Battery,
+            button: this.Service.StatelessProgrammableSwitch,
+            carbon_dioxide: this.Service.CarbonDioxideSensor,
+            carbon_monoxide: this.Service.CarbonMonoxideSensor,
+            contact_sensor: this.Service.ContactSensor,
+            // energy_meter: this.Service.Switch,
+            fan: this.Service.Fanv2,
+            garage_door: this.Service.GarageDoorOpener,
+            humidity_sensor: this.Service.HumiditySensor,
+            illuminance_sensor: this.Service.LightSensor,
+            light: this.Service.Lightbulb,
+            lock: this.Service.LockMechanism,
+            motion_sensor: this.Service.MotionSensor,
+            // power_meter: this.Service.Switch,
+            presence_sensor: this.Service.OccupancySensor,
+            outlet: this.Service.Outlet,
+            smoke_detector: this.Service.SmokeSensor,
+            speaker: this.Service.Speaker,
+            switch_device: this.Service.Switch,
+            temperature_sensor: this.Service.TemperatureSensor,
+            thermostat: this.Service.Thermostat,
+            thermostat_fan: this.Service.Fanv2,
+            valve: this.Service.Valve,
+            virtual_mode: this.Service.Switch,
+            virtual_piston: this.Service.Switch,
+            virtual_routine: this.Service.Switch,
+            water_sensor: this.Service.LeakSensor,
+            window_shade: this.Service.WindowCovering,
         };
-        configure_fan_by_name = this.platform.mainPlatform.getConfigItems().consider_fan_by_name !== false;
-        configure_light_by_name = this.platform.mainPlatform.getConfigItems().consider_light_by_name === true;
+        this.configure_fan_by_name = this.mainPlatform.getConfigItems().consider_fan_by_name !== false;
+        this.configure_light_by_name = this.mainPlatform.getConfigItems().consider_light_by_name === true;
     }
 
     getServiceTypes(accessory) {
@@ -71,7 +60,7 @@ module.exports = class ServiceTypes {
                 const blockSvc = svcTest.onlyOnNoGrps === true && servicesFound.length > 0;
                 if (blockSvc) {
                     servicesBlocked.push(svcTest.Name);
-                    this.logDebug(`(${accessory.name}) | Service BLOCKED | name: ${svcTest.Name} | Cnt: ${servicesFound.length} | svcs: ${JSON.stringify(servicesFound)}`);
+                    this.mainPlatform.logDebug(`(${accessory.name}) | Service BLOCKED | name: ${svcTest.Name} | Cnt: ${servicesFound.length} | svcs: ${JSON.stringify(servicesFound)}`);
                 }
                 if (!blockSvc && this.serviceMap[svcTest.Name]) {
                     servicesFound.push({
@@ -82,7 +71,7 @@ module.exports = class ServiceTypes {
             }
         }
         if (servicesBlocked.length) {
-            this.logDebug(`(${accessory.name}) | Services BLOCKED | ${servicesBlocked}`);
+            this.mainPlatform.logDebug(`(${accessory.name}) | Services BLOCKED | ${servicesBlocked}`);
         }
         return servicesFound;
     }
@@ -122,14 +111,14 @@ const serviceTests = [
     new ServiceTest("lock", (accessory) => accessory.hasCapability("Lock")),
     new ServiceTest("valve", (accessory) => accessory.hasCapability("Valve")),
     new ServiceTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
-    new ServiceTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (configure_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
+    new ServiceTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (this.configure_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
     new ServiceTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
     new ServiceTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
     new ServiceTest("virtual_routine", (accessory) => accessory.hasCapability("Routine")),
     new ServiceTest("button", (accessory) => accessory.hasCapability("Button") || accessory.hasCapability("DoubleTapableButton") || accessory.hasCapability("HoldableButton") || accessory.hasCapability("PushableButton") || accessory.hasCapability("ReleasableButton")),
-    new ServiceTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (configure_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))), true),
+    new ServiceTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (this.configure_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))), true),
     new ServiceTest("outlet", (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"), true),
-    new ServiceTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || (configure_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")) || accessory.hasCapability("Button")), true),
+    new ServiceTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || (this.configure_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")) || accessory.hasCapability("Button")), true),
     new ServiceTest("smoke_detector", (accessory) => accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke")),
     new ServiceTest("carbon_monoxide", (accessory) => accessory.hasCapability("CarbonMonoxideDetector") && accessory.hasAttribute("carbonMonoxide")),
     new ServiceTest("carbon_dioxide", (accessory) => accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxideMeasurement")),
@@ -141,9 +130,8 @@ const serviceTests = [
     new ServiceTest("temperature_sensor", (accessory) => accessory.hasCapability("TemperatureMeasurement") && !(accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState"))),
     new ServiceTest("illuminance_sensor", (accessory) => accessory.hasCapability("IlluminanceMeasurement")),
     new ServiceTest("contact_sensor", (accessory) => accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl")),
-    new ServiceTest("air_quality", (accessory) => accessory.hasCapability("airQuality")),
+    new ServiceTest("air_quality", (accessory) => accessory.hasCapability("airQuality") || accessory.hasCapability("AirQuality")),
     new ServiceTest("battery", (accessory) => accessory.hasCapability("Battery")),
-    new ServiceTest("air_quality", (accessory) => accessory.hasCapability("AirQuality")),
     // new ServiceTest("energy_meter", accessory => (accessory.hasCapability('Energy Meter') && !accessory.hasCapability('Switch')), true),
     // new ServiceTest("power_meter", accessory => (accessory.hasCapability('Power Meter') && !accessory.hasCapability('Switch')), true),
     new ServiceTest("thermostat", (accessory) => accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState")),

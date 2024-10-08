@@ -4,7 +4,7 @@ const knownCapabilities = require("./libs/Constants").knownCapabilities,
     pluginVersion = require("./libs/Constants").pluginVersion,
     _ = require("lodash"),
     ServiceTypes = require("./HE_ServiceTypes"),
-    Transforms = require("./HE_Transforms"),
+    Transforms = require("./HE_Transforms").default,
     DeviceTypes = require("./HE_DeviceCharacteristics");
 var Service, Characteristic, Catagories, appEvts;
 
