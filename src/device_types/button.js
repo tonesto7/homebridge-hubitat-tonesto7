@@ -1,17 +1,43 @@
 // device_types/button.js
 
-function getSupportedBtnValues(accessory) {
-    const supportedValues = [];
-    if (accessory.hasCapability("PushableButton")) {
-        supportedValues.push("pushed");
+function getSupportedBtnValues(accessory, Characteristic) {
+    let validValues = [];
+    if (accessory && accessory.getCapabilities().length) {
+        if (accessory.hasCapability("PushableButton")) {
+            validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS); // SINGLE_PRESS
+        }
+        if (accessory.hasCapability("DoubleTapableButton")) {
+            validValues.push(Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS); // DOUBLE_PRESS
+        }
+        if (accessory.hasCapability("HoldableButton")) {
+            validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS); // LONG_PRESS
+        }
+        if (validValues.length < 1) {
+            validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+            validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
+        }
+    } else {
+        validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
+        validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
     }
-    if (accessory.hasCapability("DoubleTapableButton")) {
-        supportedValues.push("doubleTapped");
+    return validValues;
+}
+
+function getButtonState(btnVal, accessory, Characteristic) {
+    switch (btnVal) {
+        case "pushed":
+            accessory.log.debug(`${accessory.name} | Button State: pushed`);
+            return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
+        case "doubleTapped":
+            accessory.log.debug(`${accessory.name} | Button State: doubleTapped`);
+            return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
+        case "held":
+            accessory.log.debug(`${accessory.name} | Button State: held`);
+            return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
+        default:
+            accessory.log.warn(`${accessory.name} | Unknown button value: ${btnVal}`);
+            return -1;
     }
-    if (accessory.hasCapability("HoldableButton")) {
-        supportedValues.push("held");
-    }
-    return supportedValues && supportedValues.length ? supportedValues : [0, 2];
 }
 
 module.exports = {
@@ -21,41 +47,29 @@ module.exports = {
 
     initializeAccessory: (accessory, deviceClass) => {
         const { Service, Characteristic } = deviceClass.platform;
-        const btnCnt = deviceClass.clamp(accessory.context.deviceData.attributes.numberOfButtons || 1, 1, 10); // Assuming max 10 buttons
+        const btnCnt = deviceClass.clamp(accessory.context.deviceData.attributes.numberOfButtons || 1, 1, 10);
 
         accessory.log.debug(`${accessory.name} | Initializing button accessory with ${btnCnt} buttons`);
 
-        for (let bNum = 1; bNum <= btnCnt; bNum++) {
-            const serviceName = `${accessory.context.deviceData.deviceid} Button ${bNum}`;
+        for (let btnNum = 1; btnNum <= btnCnt; btnNum++) {
+            const serviceName = `${accessory.context.deviceData.deviceid} Button ${btnNum}`;
             accessory.log.debug(`${accessory.name} | Initializing button service: ${serviceName}`);
 
-            const service = accessory.getButtonSvcByName(Service.StatelessProgrammableSwitch, serviceName, bNum);
+            const service = accessory.getButtonSvcByName(Service.StatelessProgrammableSwitch, serviceName, btnNum);
+            const validValues = getSupportedBtnValues(accessory, Characteristic);
+            accessory.log.debug(`${accessory.name} | Button ${btnNum} valid values: ${validValues.join(", ")}`);
 
-            if (!service) {
-                accessory.log.error(`${accessory.name} | Failed to create or get service for button ${bNum}`);
-                continue;
-            }
-
-            // Define valid switch events based on capabilities
-            const validValues = getSupportedBtnValues(accessory);
-            accessory.log.debug(`${accessory.name} | Button ${bNum} valid values: ${validValues.join(", ")}`);
-
-            // Configure ProgrammableSwitchEvent characteristic
-            const characteristic = service.getCharacteristic(Characteristic.ProgrammableSwitchEvent) || service.addCharacteristic(Characteristic.ProgrammableSwitchEvent);
-            characteristic.eventOnlyCharacteristic = false;
-            accessory._buttonMap[serviceName] = service;
-            characteristic.setProps({ validValues: validValues }).onGet(() => {
-                // this.value = -1;
-                accessory.log.debug(`${accessory.name} | Get event for button ${bNum}`);
-                return null; // Event-only characteristic
+            const char = service.getCharacteristic(Characteristic.ProgrammableSwitchEvent) || service.addCharacteristic(Characteristic.ProgrammableSwitchEvent);
+            char.setProps({ validValues: validValues });
+            char.eventOnlyCharacteristic = false;
+            char.onGet(() => {
+                return getButtonState(accessory.context.deviceData.attributes.button, accessory, Characteristic);
             });
 
-            // Set Service Label Index for identification
-            service.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(bNum);
+            service.getCharacteristic(Characteristic.ServiceLabelIndex).setValue(btnNum);
+            accessory.log.debug(`${accessory.name} | Button ${btnNum} service initialized`);
 
-            // Map service for event handling
-
-            accessory.log.debug(`${accessory.name} | Button ${bNum} service initialized`);
+            accessory._buttonMap[serviceName] = service;
         }
 
         accessory.context.deviceGroups.push("button");
@@ -63,32 +77,15 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic } = deviceClass.platform;
-
+        const { Characteristic, Service } = deviceClass.platform;
         if (change.attribute === "button") {
-            const [btnNum, btnVal] = change.value.split(":");
-            const service = deviceClass._buttonMap[`${accessory.context.deviceData.deviceid}_Button_${btnNum}`];
-
+            const btnVal = change.value;
+            const btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
+            const serviceName = `${accessory.context.deviceData.deviceid} Button ${btnNum}`;
+            const service = accessory.getButtonSvcByName(Service.StatelessProgrammableSwitch, serviceName, btnNum);
             if (service) {
-                let btnOut;
-                switch (btnVal) {
-                    case "pushed":
-                        btnOut = Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
-                        accessory.log.info(`${accessory.name} | Button Single Press ${btnNum} event: ${btnVal}`);
-                        break;
-                    case "doubleTapped":
-                        btnOut = Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
-                        accessory.log.info(`${accessory.name} | Button Double Press ${btnNum} event: ${btnVal}`);
-                        break;
-                    case "held":
-                        btnOut = Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                        accessory.log.info(`${accessory.name} | Button Long Press ${btnNum} event: ${btnVal}`);
-                        break;
-                    default:
-                        accessory.log.warn(`${accessory.name} | Unknown button value: ${btnVal}`);
-                }
-
-                if (btnOut !== undefined) {
+                const btnOut = getButtonState(btnVal, accessory, Characteristic);
+                if (btnOut) {
                     accessory.log.info(`${accessory.name} | Updating Button ${btnNum} event to: ${btnOut}`);
                     service.getCharacteristic(Characteristic.ProgrammableSwitchEvent).updateValue(btnOut);
                 }
@@ -97,10 +94,7 @@ module.exports = {
             }
         } else if (change.attribute === "numberOfButtons") {
             accessory.log.info(`${accessory.name} | Number of buttons changed to: ${change.value}`);
-            // Re-initialize the accessory with the new number of buttons
             module.exports.initializeAccessory(accessory, deviceClass);
-        } else {
-            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
         }
     },
 };
