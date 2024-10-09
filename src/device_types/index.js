@@ -570,6 +570,8 @@ class DeviceTypes {
                 acc.removeService(s);
                 this.platform.logInfo(`Removing Unused Service: ${s.UUID}`);
             });
+        } else {
+            this.platform.logDebug(`No unused services to remove for ${acc.name}`);
         }
         return acc;
     }

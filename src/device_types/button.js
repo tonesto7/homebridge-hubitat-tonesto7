@@ -70,6 +70,8 @@ module.exports = {
             accessory.log.debug(`${accessory.name} | Button ${btnNum} service initialized`);
 
             accessory._buttonMap[serviceName] = service;
+
+            accessory.serviceUUIDsToKeep.push(service.UUID);
         }
 
         accessory.context.deviceGroups.push("button");
@@ -94,7 +96,7 @@ module.exports = {
             }
         } else if (change.attribute === "numberOfButtons") {
             accessory.log.info(`${accessory.name} | Number of buttons changed to: ${change.value}`);
-            module.exports.initializeAccessory(accessory, deviceClass);
+            initializeAccessory(accessory, deviceClass);
         }
     },
 };

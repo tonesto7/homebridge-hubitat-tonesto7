@@ -305,11 +305,16 @@ module.exports = class HE_Platform {
     }
 
     removeAccessory(accessory) {
-        if (accessory.context.deviceGroups.includes("button")) {
-            this.deviceTypes.deviceTypes.button.removeServices(accessory);
-        }
-
         if (this.deviceTypes.removeAccessoryFromCache(accessory)) {
+            // Remove all services except AccessoryInformation
+            accessory.services.forEach((service) => {
+                if (service.UUID !== this.deviceTypes.Service.AccessoryInformation.UUID) {
+                    accessory.removeService(service);
+                    this.logInfo(`Removed Service: ${service.UUID} (${service.displayName}) from ${accessory.name}`);
+                }
+            });
+
+            // Unregister the accessory
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
             this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
         }
