@@ -18,6 +18,7 @@ class DeviceTypes {
             return;
         }
         // this.platform.logDebug("appEvts successfully initialized in DeviceTypes");
+
         this.configItems = platform.getConfigItems();
         this.homebridge = platform.homebridge;
         this.myUtils = platform.myUtils;
@@ -28,22 +29,28 @@ class DeviceTypes {
         this.Categories = platform.Categories;
         this.CommunityTypes = CommunityTypes(this.Service, this.Characteristic);
         this.client = platform.client;
-        // this.comparator = this.comparator.bind(this);
+
+        // Bind comparator for use in lodash functions
+        this.comparator = this.comparator.bind(this);
 
         // Accessory Cache
         this.services = [];
         this._platformAccessories = {};
         this._buttonMap = {};
 
+        // Load device type modules and initialize mappings
         this.deviceTypes = {};
         this.loadDeviceTypesFiles();
         this.deviceTypeMap = this.getDeviceTypeMap();
         this.initializeDeviceTypeTests();
     }
 
-    // Dynamically load all device type modules
+    /**
+     * Dynamically load all device type modules from the device_types directory.
+     */
     loadDeviceTypesFiles() {
         const deviceTypeFiles = fs.readdirSync(__dirname).filter((file) => file !== "index.js" && file.endsWith(".js"));
+
         deviceTypeFiles.forEach((file) => {
             const deviceType = require(path.join(__dirname, file));
             const name = path.basename(file, ".js");
@@ -51,7 +58,10 @@ class DeviceTypes {
         });
     }
 
-    // Device Type Mapping using a Map for better performance
+    /**
+     * Map device types to their corresponding Homebridge services.
+     * @returns {Object} - Mapping of device type names to Homebridge service classes.
+     */
     getDeviceTypeMap() {
         return {
             acceleration_sensor: this.Service.MotionSensor,
@@ -87,7 +97,9 @@ class DeviceTypes {
         };
     }
 
-    // Initialize device type tests in a separate configuration
+    /**
+     * Initialize device type tests used to determine the type of each accessory.
+     */
     initializeDeviceTypeTests() {
         this.deviceTypeTests = [
             new DeviceTypeTest("window_shade", (accessory) => accessory.hasCapability("WindowShade") && !["Speaker", "Fan", "Fan Control"].some((cap) => accessory.hasCapability(cap)), true),
@@ -128,17 +140,21 @@ class DeviceTypes {
         ];
     }
 
-    // Determine device types for a given accessory
+    /**
+     * Determine device types for a given accessory based on predefined tests.
+     * @param {PlatformAccessory} accessory - The accessory to evaluate.
+     * @returns {Array} - List of matched device types.
+     */
     getDeviceTypes(accessory) {
-        let devicesFound = [];
-        let devicesBlocked = [];
-        for (let i = 0; i < this.deviceTypeTests.length; i++) {
-            const devTest = this.deviceTypeTests[i];
+        const devicesFound = [];
+        const devicesBlocked = [];
+
+        for (const devTest of this.deviceTypeTests) {
             if (devTest.ImplementsDevice(accessory)) {
                 const blockDevice = devTest.onlyOnNoGrps && devicesFound.length > 0;
                 if (blockDevice) {
                     devicesBlocked.push(devTest.Name);
-                    this.platform.logDebug(`(${accessory.name}) | Device Type BLOCKED | name: ${devTest.Name} | Count: ${devicesFound.length} | devices: ${devicesFound.map((d) => d.name)}`);
+                    this.platform.logDebug(`(${accessory.name}) | Device Type BLOCKED | Name: ${devTest.Name} | Count: ${devicesFound.length} | Devices: ${devicesFound.map((d) => d.name)}`);
                 }
                 if (!blockDevice) {
                     devicesFound.push({
@@ -156,7 +172,12 @@ class DeviceTypes {
         return devicesFound;
     }
 
-    // Initialize accessory
+    /**
+     * Initialize and configure an accessory.
+     * @param {PlatformAccessory} accessory - The accessory to initialize.
+     * @param {boolean} [fromCache=false] - Indicates if the accessory is being loaded from cache.
+     * @returns {PlatformAccessory} - The initialized accessory.
+     */
     initializeAccessory(accessory, fromCache = false) {
         try {
             const { deviceData } = accessory.context;
@@ -207,12 +228,21 @@ class DeviceTypes {
         }
     }
 
-    // Configure characteristics and services for the accessory
+    /**
+     * Configure characteristics and services for the accessory.
+     * @param {PlatformAccessory} accessory - The accessory to configure.
+     * @returns {PlatformAccessory} - The configured accessory.
+     */
     configureCharacteristics(accessory) {
         const { deviceData } = accessory.context;
-        for (let index in deviceData.capabilities) {
-            if (knownCapabilities.indexOf(index) === -1 && this.platform.unknownCapabilities.indexOf(index) === -1) this.platform.unknownCapabilities.push(index);
-        }
+
+        // Track unknown capabilities
+        Object.keys(deviceData.capabilities).forEach((cap) => {
+            if (!knownCapabilities.includes(cap) && !this.platform.unknownCapabilities.includes(cap)) {
+                this.platform.unknownCapabilities.push(cap);
+            }
+        });
+
         accessory.context.deviceGroups = [];
         accessory.serviceUUIDsToKeep = [];
         accessory.reachable = true;
@@ -264,7 +294,10 @@ class DeviceTypes {
         return this.removeUnusedServices(accessory);
     }
 
-    // New method to handle availability
+    /**
+     * Handle device availability by marking it as 'Not Responding' or available.
+     * @param {PlatformAccessory} accessory - The accessory to handle.
+     */
     handleAvailability(accessory) {
         const { isUnavailable } = accessory.context.deviceData;
         if (isUnavailable) {
@@ -274,27 +307,39 @@ class DeviceTypes {
         }
     }
 
-    // Set accessory as unavailable by updating a primary characteristic with an error
+    /**
+     * Mark the accessory as unavailable by setting an error on the Name characteristic.
+     * @param {PlatformAccessory} accessory - The accessory to mark as unavailable.
+     */
     setAccessoryUnavailable(accessory) {
-        const primaryService = accessory.getService(this.Service.AccessoryInformation) || accessory.getService(this.Service.Switch); // Choose a primary service
-        if (primaryService) {
-            // Choose a primary characteristic to set the error, e.g., Name
-            primaryService.updateCharacteristic(this.Characteristic.Name, new Error("Device Unavailable"));
+        const accessoryInformationSvc = accessory.getService(this.Service.AccessoryInformation);
+        if (accessoryInformationSvc) {
+            accessoryInformationSvc.updateCharacteristic(this.Characteristic.Name, new Error("Device Unavailable"));
             this.platform.logWarn(`Marked ${accessory.name} as Unavailable`);
+        } else {
+            this.platform.logWarn(`AccessoryInformation service not found for ${accessory.name}`);
         }
     }
 
-    // Set accessory as available by resetting the primary characteristic
+    /**
+     * Mark the accessory as available by resetting the Name characteristic.
+     * @param {PlatformAccessory} accessory - The accessory to mark as available.
+     */
     setAccessoryAvailable(accessory) {
-        const primaryService = accessory.getService(this.Service.AccessoryInformation) || accessory.getService(this.Service.Switch); // Choose a primary service
-        if (primaryService) {
-            // Reset the primary characteristic, e.g., Name
-            primaryService.updateCharacteristic(this.Characteristic.Name, accessory.name);
+        const accessoryInformationSvc = accessory.getService(this.Service.AccessoryInformation);
+        if (accessoryInformationSvc) {
+            accessoryInformationSvc.updateCharacteristic(this.Characteristic.Name, accessory.name);
             this.platform.logInfo(`Marked ${accessory.name} as Available`);
+        } else {
+            this.platform.logWarn(`AccessoryInformation service not found for ${accessory.name}`);
         }
     }
 
-    // Handle device attribute updates
+    /**
+     * Handle device attribute updates.
+     * @param {Object} change - The change object containing deviceid, attribute, value, etc.
+     * @returns {Promise<boolean>} - Resolves to true if successful, false otherwise.
+     */
     processDeviceAttributeUpdate(change) {
         return new Promise((resolve) => {
             const accessory = this.getAccessoryFromCache({ deviceid: change.deviceid });
@@ -304,32 +349,47 @@ class DeviceTypes {
                 return;
             }
 
-            accessory.context.deviceData.attributes[change.attribute] = change.value;
-            accessory.context.lastUpdate = new Date().toLocaleString();
-
-            // Get device types and handle updates
-            const deviceTypes = this.getDeviceTypes(accessory);
-            if (deviceTypes.length > 0) {
-                deviceTypes.forEach((deviceType) => {
-                    const typeModule = this.deviceTypes[deviceType.name];
-                    if (typeModule && typeof typeModule.handleAttributeUpdate === "function" && typeModule.relevantAttributes.includes(change.attribute)) {
-                        typeModule.handleAttributeUpdate(accessory, change, this);
-                    }
-                });
+            // Update the attribute
+            if (change.attribute === "isUnavailable") {
+                accessory.context.deviceData.isUnavailable = change.value;
+                if (change.value) {
+                    this.setAccessoryUnavailable(accessory);
+                } else {
+                    this.setAccessoryAvailable(accessory);
+                }
             } else {
-                this.platform.logWarn(`No device types found for accessory: ${accessory.name}`);
+                accessory.context.deviceData.attributes[change.attribute] = change.value;
+                accessory.context.lastUpdate = new Date().toLocaleString();
+
+                // Get device types and handle updates
+                const deviceTypes = this.getDeviceTypes(accessory);
+                if (deviceTypes.length > 0) {
+                    deviceTypes.forEach((deviceType) => {
+                        const typeModule = this.deviceTypes[deviceType.name];
+                        if (typeModule && typeof typeModule.handleAttributeUpdate === "function" && typeModule.relevantAttributes.includes(change.attribute)) {
+                            typeModule.handleAttributeUpdate(accessory, change, this);
+                        }
+                    });
+                } else {
+                    this.platform.logWarn(`No device types found for accessory: ${accessory.name}`);
+                }
             }
 
             resolve(true);
         });
     }
 
-    // Send command with debouncing
+    /**
+     * Send a command to a device with debouncing.
+     * @param {Function} callback - The callback function.
+     * @param {PlatformAccessory} acc - The accessory.
+     * @param {string} dev - The device ID.
+     * @param {string} cmd - The command to send.
+     * @param {any} vals - The values associated with the command.
+     */
     sendCommand(callback, acc, dev, cmd, vals) {
         const id = `${cmd}`;
         const tsNow = Date.now();
-        let delay = 0;
-        let trailing = false;
 
         // Define debounce parameters based on command type
         const debounceConfig = {
@@ -346,90 +406,142 @@ class DeviceTypes {
         };
 
         if (debounceConfig[cmd]) {
-            delay = debounceConfig[cmd].delay;
-            trailing = debounceConfig[cmd].trailing;
-        } else {
-            appEvts.emit("event:device_command", dev, cmd, vals);
-            if (callback) callback();
-            return;
-        }
+            const { delay, trailing } = debounceConfig[cmd];
 
-        if (acc.commandTimers[id]) {
-            acc.commandTimers[id].cancel();
-            acc.commandTimers[id] = null;
-            const lastTS = tsNow - (acc.commandTimersTS[id] || 0);
-            if (lastTS < delay) {
-                delay = debounceConfig[cmd].delay * 2; // Adjust delay if needed
+            if (acc.commandTimers[id]) {
+                acc.commandTimers[id].cancel();
+                acc.commandTimers[id] = null;
             }
+
+            acc.commandTimers[id] = _.debounce(
+                () => {
+                    acc.commandTimersTS[id] = Date.now();
+                    appEvts.emit("event:device_command", dev, cmd, vals);
+                },
+                delay,
+                { trailing },
+            );
+
+            acc.commandTimers[id]();
+        } else {
+            // Immediate command emission for commands without debounce configuration
+            appEvts.emit("event:device_command", dev, cmd, vals);
         }
-
-        acc.commandTimers[id] = _.debounce(
-            () => {
-                acc.commandTimersTS[id] = Date.now();
-                appEvts.emit("event:device_command", dev, cmd, vals);
-            },
-            delay,
-            { trailing },
-        );
-
-        acc.commandTimers[id]();
 
         if (callback) callback();
     }
 
-    // Log characteristic changes
+    /**
+     * Log characteristic changes.
+     * @param {string} attr - The attribute name.
+     * @param {Characteristic} char - The characteristic.
+     * @param {PlatformAccessory} acc - The accessory.
+     * @param {Object} chgObj - The change object containing new and old values.
+     */
     log_change(attr, char, acc, chgObj) {
         if (this.platform.logConfig.debug) {
             this.platform.logNotice(`[CHARACTERISTIC (${char.name}) CHANGE] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | NewValue: (${chgObj.newValue}) | OldValue: (${chgObj.oldValue})`);
         }
     }
 
-    // Log characteristic get
+    /**
+     * Log characteristic get requests.
+     * @param {string} attr - The attribute name.
+     * @param {Characteristic} char - The characteristic.
+     * @param {PlatformAccessory} acc - The accessory.
+     * @param {any} val - The value being retrieved.
+     */
     log_get(attr, char, acc, val) {
         if (this.platform.logConfig.debug) {
             this.platform.logGreen(`[CHARACTERISTIC (${char.name}) GET] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | Value: (${val})`);
         }
     }
 
-    // Log characteristic set
+    /**
+     * Log characteristic set requests.
+     * @param {string} attr - The attribute name.
+     * @param {Characteristic} char - The characteristic.
+     * @param {PlatformAccessory} acc - The accessory.
+     * @param {any} val - The value being set.
+     */
     log_set(attr, char, acc, val) {
         if (this.platform.logConfig.debug) {
             this.platform.logWarn(`[CHARACTERISTIC (${char.name}) SET] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | Value: (${val})`);
         }
     }
 
-    // Capability checks
+    /**
+     * Check if the accessory has a specific capability.
+     * @param {string} cap - The capability to check.
+     * @returns {boolean} - True if the capability exists, false otherwise.
+     */
     hasCapability(cap) {
         const caps = Object.keys(this.context.deviceData.capabilities);
         return caps.includes(cap) || caps.includes(cap.replace(/\s/g, ""));
     }
 
+    /**
+     * Get all capabilities of the accessory.
+     * @returns {Array<string>} - List of capabilities.
+     */
     getCapabilities() {
         return Object.keys(this.context.deviceData.capabilities);
     }
 
+    /**
+     * Check if the accessory has a specific attribute.
+     * @param {string} attr - The attribute to check.
+     * @returns {boolean} - True if the attribute exists, false otherwise.
+     */
     hasAttribute(attr) {
         return this.context.deviceData.attributes.hasOwnProperty(attr);
     }
 
+    /**
+     * Check if the accessory has a specific command.
+     * @param {string} cmd - The command to check.
+     * @returns {boolean} - True if the command exists, false otherwise.
+     */
     hasCommand(cmd) {
         return this.context.deviceData.commands.hasOwnProperty(cmd);
     }
 
+    /**
+     * Check if the accessory has a specific service.
+     * @param {Service} service - The service to check.
+     * @returns {boolean} - True if the service exists, false otherwise.
+     */
     hasService(service) {
         return this.services.map((s) => s.UUID).includes(service.UUID);
     }
 
+    /**
+     * Check if the accessory has a specific characteristic within a service.
+     * @param {Service} svc - The service containing the characteristic.
+     * @param {Characteristic} char - The characteristic to check.
+     * @returns {boolean} - True if the characteristic exists, false otherwise.
+     */
     hasCharacteristic(svc, char) {
         const service = this.getService(svc);
         return service ? service.getCharacteristic(char) !== undefined : false;
     }
 
+    /**
+     * Check if the accessory has a specific device flag.
+     * @param {string} flag - The device flag to check.
+     * @returns {boolean} - True if the flag exists, false otherwise.
+     */
     hasDeviceFlag(flag) {
         return this.context?.deviceData?.deviceflags?.hasOwnProperty(flag) || false;
     }
 
-    // Button Service Management
+    /**
+     * Get or add a button service by name and subtype.
+     * @param {Service} service - The service constructor.
+     * @param {string} dispName - The display name of the service.
+     * @param {string} subType - The subtype identifier.
+     * @returns {Service} - The button service.
+     */
     getButtonSvcByName(service, dispName, subType) {
         this.log.debug(`${this.name} | Getting or adding button service: ${dispName} (subType: ${subType})`);
         let svc = this.services.find((s) => s.displayName === dispName && s.subtype === subType);
@@ -445,11 +557,14 @@ class DeviceTypes {
         }
     }
 
-    // Remove unused services
+    /**
+     * Remove services that are no longer needed.
+     * @param {PlatformAccessory} acc - The accessory from which to remove services.
+     * @returns {PlatformAccessory} - The accessory after service removal.
+     */
     removeUnusedServices(acc) {
-        // console.log("serviceUUIDsToKeep:", acc.serviceUUIDsToKeep);
-        let newSvcUuids = acc.serviceUUIDsToKeep || [];
-        let svcs2rmv = acc.services.filter((s) => !newSvcUuids.includes(s.UUID));
+        const newSvcUuids = acc.serviceUUIDsToKeep || [];
+        const svcs2rmv = acc.services.filter((s) => !newSvcUuids.includes(s.UUID));
         if (svcs2rmv.length) {
             svcs2rmv.forEach((s) => {
                 acc.removeService(s);
@@ -459,31 +574,57 @@ class DeviceTypes {
         return acc;
     }
 
-    // Accessory Cache Management
+    /**
+     * Get the unique identifier for an accessory.
+     * @param {PlatformAccessory} accessory - The accessory.
+     * @returns {string|undefined} - The accessory ID.
+     */
     getAccessoryId(accessory) {
         return accessory.deviceid || accessory.context.deviceData.deviceid || undefined;
     }
 
+    /**
+     * Retrieve an accessory from the cache based on device information.
+     * @param {Object} device - The device object containing deviceid.
+     * @returns {PlatformAccessory|undefined} - The cached accessory.
+     */
     getAccessoryFromCache(device) {
         const key = this.getAccessoryId(device);
         return this._platformAccessories[key];
     }
 
+    /**
+     * Retrieve all accessories from the cache.
+     * @returns {Object} - All cached accessories.
+     */
     getAllAccessoriesFromCache() {
         return this._platformAccessories;
     }
 
+    /**
+     * Clear the accessory cache and force a device reload.
+     */
     clearAccessoryCache() {
         this.platform.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
         this._platformAccessories = {};
     }
 
+    /**
+     * Add an accessory to the cache.
+     * @param {PlatformAccessory} accessory - The accessory to add.
+     * @returns {boolean} - True if added successfully.
+     */
     addAccessoryToCache(accessory) {
         const key = this.getAccessoryId(accessory);
         this._platformAccessories[key] = accessory;
         return true;
     }
 
+    /**
+     * Remove an accessory from the cache.
+     * @param {PlatformAccessory} accessory - The accessory to remove.
+     * @returns {PlatformAccessory|undefined} - The removed accessory.
+     */
     removeAccessoryFromCache(accessory) {
         const key = this.getAccessoryId(accessory);
         const removed = this._platformAccessories[key];
@@ -491,34 +632,72 @@ class DeviceTypes {
         return removed;
     }
 
-    // Utility Methods
+    /**
+     * Clamp a value between a minimum and maximum.
+     * @param {number} value - The value to clamp.
+     * @param {number} min - The minimum allowed value.
+     * @param {number} max - The maximum allowed value.
+     * @returns {number} - The clamped value.
+     */
     clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
     }
 
+    /**
+     * Iterate over each accessory and apply a function.
+     * @param {Function} fn - The function to apply.
+     */
     forEach(fn) {
         return _.forEach(this._platformAccessories, fn);
     }
 
+    /**
+     * Find accessories that intersect with the given devices.
+     * @param {Array} devices - The list of devices to compare.
+     * @returns {Array} - The intersecting accessories.
+     */
     intersection(devices) {
         const accessories = _.values(this._platformAccessories);
         return _.intersectionWith(devices, accessories, this.comparator);
     }
 
+    /**
+     * Find devices that need to be added.
+     * @param {Array} devices - The list of current devices.
+     * @returns {Array} - The devices to add.
+     */
     diffAdd(devices) {
         const accessories = _.values(this._platformAccessories);
         return _.differenceWith(devices, accessories, this.comparator);
     }
 
+    /**
+     * Find accessories that need to be removed.
+     * @param {Array} devices - The list of current devices.
+     * @returns {Array} - The accessories to remove.
+     */
     diffRemove(devices) {
         const accessories = _.values(this._platformAccessories);
         return _.differenceWith(accessories, devices, this.comparator);
     }
 
+    /**
+     * Comparator function to determine if two accessories represent the same device.
+     * @param {PlatformAccessory} accessory1 - The first accessory.
+     * @param {PlatformAccessory} accessory2 - The second accessory.
+     * @returns {boolean} - True if they are the same, false otherwise.
+     */
     comparator(accessory1, accessory2) {
         return this.getAccessoryId(accessory1) === this.getAccessoryId(accessory2);
     }
 
+    /**
+     * Clear an existing timeout and set a new one.
+     * @param {NodeJS.Timeout} timeoutReference - The existing timeout reference.
+     * @param {Function} fn - The function to execute after the timeout.
+     * @param {number} timeoutMs - The timeout duration in milliseconds.
+     * @returns {NodeJS.Timeout} - The new timeout reference.
+     */
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {
         if (timeoutReference) clearTimeout(timeoutReference);
         return setTimeout(fn, timeoutMs);
@@ -527,6 +706,12 @@ class DeviceTypes {
 
 // DeviceTypeTest Class
 class DeviceTypeTest {
+    /**
+     * Create a new DeviceTypeTest.
+     * @param {string} name - The name of the device type.
+     * @param {Function} testFn - The function to test if an accessory matches this device type.
+     * @param {boolean} [onlyOnNoGrps=false] - Whether to block this device type if other groups are already found.
+     */
     constructor(name, testFn, onlyOnNoGrps = false) {
         this.Name = name;
         this.ImplementsDevice = testFn;

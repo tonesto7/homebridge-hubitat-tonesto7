@@ -305,6 +305,10 @@ module.exports = class HE_Platform {
     }
 
     removeAccessory(accessory) {
+        if (accessory.context.deviceGroups.includes("button")) {
+            this.deviceTypes.deviceTypes.button.removeServices(accessory);
+        }
+
         if (this.deviceTypes.removeAccessoryFromCache(accessory)) {
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
             this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);

@@ -9,10 +9,15 @@ module.exports = {
         const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.MotionSensor) || accessory.addService(Service.MotionSensor);
 
-        function convertAccelerationStatus(status) {
+        /**
+         * Convert acceleration status to HomeKit MotionDetected characteristic values.
+         * @param {string} status - The acceleration status from the device.
+         * @returns {number} - The corresponding HomeKit MotionDetected value.
+         */
+        const convertAccelerationStatus = (status) => {
             accessory.log.debug(`${accessory.name} | Acceleration Status: ${status}`);
             return status === "active" ? Characteristic.MotionDetected.MOTION_DETECTED : Characteristic.MotionDetected.NO_MOTION;
-        }
+        };
 
         // Motion Detected Characteristic
         service.getCharacteristic(Characteristic.MotionDetected).onGet(() => {
@@ -43,6 +48,12 @@ module.exports = {
         accessory.context.deviceGroups.push("acceleration_sensor");
     },
 
+    /**
+     * Handle attribute updates for the acceleration sensor.
+     * @param {PlatformAccessory} accessory - The accessory to update.
+     * @param {Object} change - The change object containing attribute and value.
+     * @param {DeviceTypes} deviceClass - The DeviceTypes instance.
+     */
     handleAttributeUpdate: (accessory, change, deviceClass) => {
         const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.MotionSensor);
