@@ -1904,7 +1904,7 @@ def changeHandler(evt) {
                 if ((String)evt.value == 'pistonList') {
                     List<Map> p; p = (List<Map>)webCoREFLD?.pistons ?: []
                     Map d = evt.jsonData ?: [:]
-                    if (d.id && d.pistons && (d.pistons instanceof List)) {
+                    if (d.id && d.pistons && (d.pistons is List)) {
                         p.removeAll { it.iid == d.id }
                         p += ((List<Map>)d.pistons).collect { [iid:d.id] + it }.sort { (String)it.name }
                         def a = webCoREFLD?.cbk
@@ -2378,7 +2378,7 @@ private void remTsVal(key) {
     String appId = gtAppId()
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) {
-        if(key instanceof List) {
+        if(key is List) {
             List<String> klist = (List)key
             klist.each { k -> if (data.containsKey(k)) { data.remove(k) } }
         } else {
@@ -2452,7 +2452,7 @@ private getWebData(Map params, String desc, Boolean text=true) {
             }
         }
     } catch (ex) {
-        if (ex instanceof groovyx.net.http.HttpResponseException) { logWarn("${desc} file not found") }
+        if (ex is groovyx.net.http.HttpResponseException) { logWarn("${desc} file not found") }
         else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}", ex) }
         return text ? "${desc} info not found" : null
     }
@@ -2744,19 +2744,19 @@ private Boolean getBoolDefSetting(String name, Boolean defVal=true){
 private List getListSetting(String name) { return (List)settings.get(name) ?: [] }
 
 static String getObjType(obj) {
-    if (obj instanceof String) { return 'String' }
-    else if (obj instanceof Map) { return 'Map' }
-    else if (obj instanceof List) { return 'List' }
-    else if (obj instanceof ArrayList) { return 'ArrayList' }
-    else if (obj instanceof BigInteger) { return 'BigInt' }
-    else if (obj instanceof Long) { return 'Long' }
-    else if (obj instanceof Integer) { return 'Int' }
-    else if (obj instanceof Boolean) { return 'Bool' }
-    else if (obj instanceof BigDecimal) { return 'BigDec' }
-    else if (obj instanceof Double) { return 'Double' }
-    else if (obj instanceof Float) { return 'Float' }
-    else if (obj instanceof Byte) { return 'Byte' }
-    else if (obj instanceof com.hubitat.app.DeviceWrapper) { return 'Device' }
+    if (obj is String) { return 'String' }
+    else if (obj is Map) { return 'Map' }
+    else if (obj is List) { return 'List' }
+    else if (obj is ArrayList) { return 'ArrayList' }
+    else if (obj is BigInteger) { return 'BigInt' }
+    else if (obj is Long) { return 'Long' }
+    else if (obj is Integer) { return 'Int' }
+    else if (obj is Boolean) { return 'Bool' }
+    else if (obj is BigDecimal) { return 'BigDec' }
+    else if (obj is Double) { return 'Double' }
+    else if (obj is Float) { return 'Float' }
+    else if (obj is Byte) { return 'Byte' }
+    else if (obj is com.hubitat.app.DeviceWrapper) { return 'Device' }
 
     //      if(eric()) log.error "object: ${describeObject(obj)}"
     return 'unknown'
