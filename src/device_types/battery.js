@@ -6,7 +6,7 @@ module.exports = {
     relevantAttributes: ["battery", "powerSource"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.Battery) || accessory.addService(Service.Battery);
 
         // Battery Level
@@ -48,7 +48,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.Battery);
 
         if (!service) {

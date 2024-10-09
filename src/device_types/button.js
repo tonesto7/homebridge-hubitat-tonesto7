@@ -20,7 +20,7 @@ module.exports = {
     relevantAttributes: ["button", "numberOfButtons"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const btnCnt = deviceClass.clamp(accessory.context.deviceData.attributes.numberOfButtons || 1, 1, 10); // Assuming max 10 buttons
 
         accessory.log.debug(`${accessory.name} | Initializing button accessory with ${btnCnt} buttons`);
@@ -63,7 +63,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic } = deviceClass.mainPlatform;
+        const { Characteristic } = deviceClass.platform;
 
         if (change.attribute === "button") {
             const [btnNum, btnVal] = change.value.split(":");

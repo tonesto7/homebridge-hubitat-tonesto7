@@ -21,7 +21,7 @@ module.exports = {
     relevantAttributes: ["lock"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.LockMechanism) || accessory.addService(Service.LockMechanism);
 
         // Lock Current State
@@ -49,7 +49,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.LockMechanism);
 
         if (!service) {

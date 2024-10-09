@@ -5,7 +5,7 @@ module.exports = {
     relevantAttributes: ["switch"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.Outlet) || accessory.addService(Service.Outlet);
 
         // On/Off Characteristic
@@ -33,7 +33,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.Outlet);
 
         if (!service) {

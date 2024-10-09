@@ -15,7 +15,7 @@ module.exports = {
     relevantAttributes: ["airQualityIndex", "battery", "pm25", "tamper", "status"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.AirQualitySensor) || accessory.addService(Service.AirQualitySensor);
 
         function aqiToPm25(aqi) {
@@ -71,7 +71,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.AirQualitySensor);
 
         if (!service) {

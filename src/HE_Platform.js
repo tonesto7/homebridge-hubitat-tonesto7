@@ -96,10 +96,6 @@ module.exports = class HE_Platform {
         if (sanitizedName !== originalName) {
             // Update the name properties
             accessory.name = sanitizedName;
-            // accessory.context.name = sanitizedName;
-
-            // Important: Update displayName like this
-            // accessory._associatedHAPAccessory.displayName = sanitizedName;
 
             // Update the AccessoryInformation service
             const accessoryInformation = accessory.getService(this.Service.AccessoryInformation);

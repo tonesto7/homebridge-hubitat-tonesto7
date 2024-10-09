@@ -14,7 +14,7 @@ module.exports = {
     relevantAttributes: ["contact", "status", "tamper"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.ContactSensor) || accessory.addService(Service.ContactSensor);
 
         // Contact Sensor State
@@ -45,7 +45,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.ContactSensor);
 
         if (!service) {

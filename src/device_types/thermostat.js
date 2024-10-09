@@ -42,7 +42,7 @@ function thermostatTargetTemp(accessory, deviceClass) {
     }
 
     // Convert to Celsius if necessary and clamp to HomeKit range
-    if (deviceClass.mainPlatform.getTempUnit() === "F") {
+    if (deviceClass.platform.getTempUnit() === "F") {
         targetTemp = ((targetTemp - 32) * 5) / 9; // Convert Fahrenheit to Celsius
     }
     targetTemp = clamp(targetTemp, 10, 38); // Clamp to HomeKit range (10°C to 38°C)
@@ -113,7 +113,7 @@ module.exports = {
     relevantAttributes: ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.Thermostat) || accessory.addService(Service.Thermostat);
 
         // Current Heating/Cooling State
@@ -186,8 +186,8 @@ module.exports = {
             .getCharacteristic(Characteristic.CurrentTemperature)
             .onGet(() => {
                 const temp = accessory.context.deviceData.attributes.temperature;
-                const convertedTemp = thermostatTempConversion(temp, deviceClass.mainPlatform);
-                accessory.log.debug(`${accessory.name} | Current Temperature Retrieved: ${convertedTemp}°C (${temp}°${deviceClass.mainPlatform.getTempUnit()})`);
+                const convertedTemp = thermostatTempConversion(temp, deviceClass.platform);
+                accessory.log.debug(`${accessory.name} | Current Temperature Retrieved: ${convertedTemp}°C (${temp}°${deviceClass.platform.getTempUnit()})`);
                 return convertedTemp;
             })
             .onSet(() => {
@@ -210,13 +210,13 @@ module.exports = {
             .onSet((value) => {
                 let { cmdName, attrName } = thermostatTargetTemp_set(accessory);
                 let temp;
-                if (deviceClass.mainPlatform.getTempUnit() === "C") {
-                    temp = thermostatTempConversion(value, deviceClass.mainPlatform, true);
+                if (deviceClass.platform.getTempUnit() === "C") {
+                    temp = thermostatTempConversion(value, deviceClass.platform, true);
                 } else {
                     // Convert C to F for setting
-                    temp = thermostatTempConversion((value * 9) / 5 + 32, deviceClass.mainPlatform, true);
+                    temp = thermostatTempConversion((value * 9) / 5 + 32, deviceClass.platform, true);
                 }
-                accessory.log.info(`${accessory.name} | Setting thermostat setpoint to ${temp}°${deviceClass.mainPlatform.getTempUnit()} via command ${cmdName}`);
+                accessory.log.info(`${accessory.name} | Setting thermostat setpoint to ${temp}°${deviceClass.platform.getTempUnit()} via command ${cmdName}`);
                 accessory.sendCommand(null, accessory, accessory.context.deviceData, cmdName, { value1: temp });
                 accessory.context.deviceData.attributes[attrName] = temp;
             });
@@ -239,7 +239,7 @@ module.exports = {
         service
             .getCharacteristic(Characteristic.TemperatureDisplayUnits)
             .onGet(() => {
-                const unit = deviceClass.mainPlatform.getTempUnit() === "F" ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT : Characteristic.TemperatureDisplayUnits.CELSIUS;
+                const unit = deviceClass.platform.getTempUnit() === "F" ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT : Characteristic.TemperatureDisplayUnits.CELSIUS;
                 accessory.log.debug(`${accessory.name} | Temperature Display Units Retrieved: ${unit === Characteristic.TemperatureDisplayUnits.FAHRENHEIT ? "Fahrenheit" : "Celsius"}`);
                 return unit;
             })
@@ -251,7 +251,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.Thermostat);
 
         if (!service) {
@@ -296,7 +296,7 @@ module.exports = {
                 break;
 
             case "temperature":
-                const currentTemp = thermostatTempConversion(change.value, deviceClass.mainPlatform);
+                const currentTemp = thermostatTempConversion(change.value, deviceClass.platform);
                 service.updateCharacteristic(Characteristic.CurrentTemperature, currentTemp);
                 accessory.log.debug(`${accessory.name} | Updated Current Temperature: ${currentTemp}°C`);
                 break;

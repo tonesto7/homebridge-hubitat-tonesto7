@@ -9,7 +9,7 @@ module.exports = {
     relevantAttributes: ["water", "status", "tamper"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.LeakSensor) || accessory.addService(Service.LeakSensor);
 
         // Leak Detected Characteristic
@@ -56,7 +56,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.LeakSensor);
 
         if (!service) {

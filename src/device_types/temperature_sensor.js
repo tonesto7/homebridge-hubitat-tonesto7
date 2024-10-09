@@ -29,7 +29,7 @@ module.exports = {
     relevantAttributes: ["temperature", "tamper", "status"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.TemperatureSensor) || accessory.addService(Service.TemperatureSensor);
 
         // Current Temperature Characteristic
@@ -42,8 +42,8 @@ module.exports = {
             })
             .onGet(() => {
                 let temp = parseFloat(accessory.context.deviceData.attributes.temperature);
-                temp = isNaN(temp) ? 0 : convertTemperature(temp, deviceClass.mainPlatform);
-                accessory.log.debug(`${accessory.name} | Temperature Sensor Current Temperature Retrieved: ${temp} ${deviceClass.mainPlatform.getTempUnit()}`);
+                temp = isNaN(temp) ? 0 : convertTemperature(temp, deviceClass.platform);
+                accessory.log.debug(`${accessory.name} | Temperature Sensor Current Temperature Retrieved: ${temp} ${deviceClass.platform.getTempUnit()}`);
                 return temp;
             })
             .onSet(() => {
@@ -82,7 +82,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.TemperatureSensor);
 
         if (!service) {
@@ -93,9 +93,9 @@ module.exports = {
         switch (change.attribute) {
             case "temperature":
                 let temp = parseFloat(change.value);
-                temp = isNaN(temp) ? 0 : convertTemperature(temp, deviceClass.mainPlatform);
+                temp = isNaN(temp) ? 0 : convertTemperature(temp, deviceClass.platform);
                 service.updateCharacteristic(Characteristic.CurrentTemperature, temp);
-                accessory.log.debug(`${accessory.name} | Updated Temperature: ${temp} ${deviceClass.mainPlatform.getTempUnit()}`);
+                accessory.log.debug(`${accessory.name} | Updated Temperature: ${temp} ${deviceClass.platform.getTempUnit()}`);
                 break;
             case "tamper":
                 if (accessory.hasCapability("TamperAlert")) {

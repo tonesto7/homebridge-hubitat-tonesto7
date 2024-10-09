@@ -6,7 +6,7 @@ module.exports = {
     relevantAttributes: ["switch", "fanMode", "status", "tamper"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic, CommunityTypes } = deviceClass.mainPlatform;
+        const { Service, Characteristic, CommunityTypes } = deviceClass.platform;
 
         // Ensure CommunityTypes.NewAirPurifierService exists
         if (!CommunityTypes || !CommunityTypes.NewAirPurifierService) {
@@ -152,7 +152,7 @@ module.exports = {
     },
 
     andleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, CommunityTypes } = deviceClass.mainPlatform;
+        const { Characteristic, CommunityTypes } = deviceClass.platform;
         const service = accessory.getService(CommunityTypes.NewAirPurifierService);
 
         if (!service) {

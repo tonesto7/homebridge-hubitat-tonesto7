@@ -12,7 +12,7 @@ module.exports = {
     relevantAttributes: ["position", "level", "windowShade", "status"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.WindowCovering) || accessory.addService(Service.WindowCovering);
 
         // Determine position attribute
@@ -106,7 +106,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.WindowCovering);
 
         if (!service) {

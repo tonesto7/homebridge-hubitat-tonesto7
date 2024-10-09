@@ -6,7 +6,7 @@ module.exports = {
     relevantAttributes: ["acceleration", "tamper", "status"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.MotionSensor) || accessory.addService(Service.MotionSensor);
 
         function convertAccelerationStatus(status) {
@@ -44,7 +44,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.MotionSensor);
 
         if (!service) {

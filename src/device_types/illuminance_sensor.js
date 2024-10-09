@@ -6,7 +6,7 @@ module.exports = {
     relevantAttributes: ["illuminance", "status", "tamper"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.LightSensor) || accessory.addService(Service.LightSensor);
 
         // Current Ambient Light Level
@@ -46,7 +46,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.LightSensor);
 
         if (!service) {

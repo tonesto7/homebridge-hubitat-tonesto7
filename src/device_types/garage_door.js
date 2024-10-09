@@ -25,7 +25,7 @@ module.exports = {
     relevantAttributes: ["door", "obstruction"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.GarageDoorOpener) || accessory.addService(Service.GarageDoorOpener);
 
         // Current Door State
@@ -60,7 +60,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.GarageDoorOpener);
 
         if (!service) {

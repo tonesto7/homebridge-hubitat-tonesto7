@@ -5,7 +5,7 @@ module.exports = {
     relevantAttributes: ["carbonMonoxide", "status", "tamper"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.CarbonMonoxideSensor) || accessory.addService(Service.CarbonMonoxideSensor);
 
         // Carbon Monoxide Detected
@@ -37,7 +37,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.CarbonMonoxideSensor);
 
         if (!service) {

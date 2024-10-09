@@ -15,7 +15,7 @@ module.exports = {
     relevantAttributes: ["presence", "status", "tamper"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.mainPlatform;
+        const { Service, Characteristic } = deviceClass.platform;
         const service = accessory.getService(Service.OccupancySensor) || accessory.addService(Service.OccupancySensor);
 
         // Occupancy Detected Characteristic
@@ -62,7 +62,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const { Characteristic, Service } = deviceClass.platform;
         const service = accessory.getService(Service.OccupancySensor);
 
         if (!service) {

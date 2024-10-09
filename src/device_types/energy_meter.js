@@ -5,7 +5,7 @@ module.exports = {
     relevantAttributes: ["energy"],
 
     initializeAccessory: (accessory, deviceClass) => {
-        const { Service, CommunityTypes, Characteristic } = deviceClass.mainPlatform;
+        const { Service, CommunityTypes, Characteristic } = deviceClass.platform;
         const serviceName = `${accessory.context.deviceData.deviceid}_EnergyMeter`;
         const existingService = accessory.getServiceByName(Service.Switch, serviceName);
         const service = existingService || accessory.addService(Service.Switch, serviceName, "Energy Meter");
@@ -27,7 +27,7 @@ module.exports = {
     },
 
     handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { CommunityTypes, Service } = deviceClass.mainPlatform;
+        const { CommunityTypes, Service } = deviceClass.platform;
         const service = accessory.getServiceByName(Service.Switch, `${accessory.context.deviceData.deviceid}_EnergyMeter`);
 
         if (!service) {
