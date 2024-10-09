@@ -378,7 +378,7 @@ module.exports = class DeviceTypes {
 
     removeAccessoryFromCache(accessory) {
         const key = this.getAccessoryId(accessory);
-        const _accessory = this._platformAccessories[key];
+        const removed = this._platformAccessories[key];
         delete this._platformAccessories[key];
         return _accessory;
     }
