@@ -1,27 +1,22 @@
 // device_types/water_sensor.js
 
+function convertWaterStatus(status, Characteristic) {
+    return status === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
+}
+
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("WaterSensor"),
+    relevantAttributes: ["water", "status", "tamper"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.LeakSensor) || accessory.addService(Service.LeakSensor);
-
-        /**
-         * Converts water status to HomeKit LeakDetected.
-         * @param {string} status - The water status from the device.
-         * @returns {number} - HomeKit LeakDetected value.
-         */
-        function convertWaterStatus(status) {
-            accessory.log.debug(`${accessory.name} | Water Status: ${status}`);
-            return status === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
-        }
 
         // Leak Detected Characteristic
         service
             .getCharacteristic(Characteristic.LeakDetected)
             .onGet(() => {
-                const leak = convertWaterStatus(accessory.context.deviceData.attributes.water);
+                const leak = convertWaterStatus(accessory.context.deviceData.attributes.water, Characteristic);
                 accessory.log.debug(`${accessory.name} | Leak Detected Retrieved: ${leak}`);
                 return leak;
             })
@@ -58,5 +53,37 @@ module.exports = {
         }
 
         accessory.context.deviceGroups.push("water_sensor");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.LeakSensor);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Leak Sensor service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "water":
+                const leakDetected = convertWaterStatus(change.value, Characteristic);
+                service.updateCharacteristic(Characteristic.LeakDetected, leakDetected);
+                accessory.log.debug(`${accessory.name} | Updated Leak Detected: ${leakDetected}`);
+                break;
+            case "status":
+                const isActive = change.value === "online";
+                service.updateCharacteristic(Characteristic.StatusActive, isActive);
+                accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
+                break;
+            case "tamper":
+                if (accessory.hasCapability("TamperAlert")) {
+                    const isTampered = change.value === "detected";
+                    service.updateCharacteristic(Characteristic.StatusTampered, isTampered);
+                    accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
+                }
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

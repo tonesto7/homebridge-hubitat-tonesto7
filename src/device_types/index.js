@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const _ = require("lodash");
 // const ServiceTypes = require("../HE_ServiceTypes");
-const Transforms = require("../HE_Transforms");
+// const Transforms = require("../HE_Transforms");
 const CommunityTypes = require("../libs/CommunityTypes");
 
 var appEvts;
@@ -36,12 +36,10 @@ module.exports = class DeviceTypes {
         this.CommunityTypes = CommunityTypes(this.Service, this.Characteristic);
         this.client = platform.client;
         this.comparator = this.comparator.bind(this);
-        this.transforms = new Transforms(this, this.Characteristic);
-        // this.serviceTypes = new ServiceTypes(this, this.Service);
+        // this.transforms = new Transforms(this, this.Characteristic);
         this.services = [];
         this._platformAccessories = {};
         this._buttonMap = {};
-        this._attributeLookup = {};
 
         this.deviceTypes = {};
         this.loadDeviceTypesFiles();
@@ -98,15 +96,14 @@ module.exports = class DeviceTypes {
             this.mainPlatform.logDebug(`Initializing Cached Device ${accessory.name} | ${accessory.deviceid}`);
         }
         try {
+            accessory._buttonMap = {};
             accessory.commandTimers = {};
             accessory.commandTimersTS = {};
             accessory.context.uuid = accessory.UUID || this.uuid.generate(`hubitat_v2_${accessory.deviceid}`);
             accessory.log = this.log;
             accessory.homebridgeApi = this.homebridge;
             accessory.getPlatformConfig = this.mainPlatform.getConfigItems();
-            accessory.getOrAddService = this.getOrAddService.bind(accessory);
-            accessory.getOrAddServiceByName = this.getOrAddServiceByName.bind(accessory);
-            accessory.getOrAddCharacteristic = this.getOrAddCharacteristic.bind(accessory);
+            accessory.getButtonSvcByName = this.getButtonSvcByName.bind(accessory);
             accessory.hasCapability = this.hasCapability.bind(accessory);
             accessory.getCapabilities = this.getCapabilities.bind(accessory);
             accessory.hasAttribute = this.hasAttribute.bind(accessory);
@@ -114,11 +111,6 @@ module.exports = class DeviceTypes {
             accessory.hasDeviceFlag = this.hasDeviceFlag.bind(accessory);
             accessory.hasService = this.hasService.bind(accessory);
             accessory.hasCharacteristic = this.hasCharacteristic.bind(accessory);
-            accessory.updateDeviceAttr = this.updateDeviceAttr.bind(accessory);
-            accessory.updateCharacteristicVal = this.updateCharacteristicVal.bind(accessory);
-            // accessory.manageGetCharacteristic = this.device_types.manageGetCharacteristic.bind(accessory);
-            // accessory.manageGetSetCharacteristic = this.device_types.manageGetSetCharacteristic.bind(accessory);
-            accessory.setServiceLabelIndex = this.setServiceLabelIndex.bind(accessory);
             accessory.sendCommand = this.sendCommand.bind(accessory);
             accessory.platformConfigItems = this.configItems;
             // console.log("accessory:", accessory);
@@ -138,23 +130,23 @@ module.exports = class DeviceTypes {
             if (knownCapabilities.indexOf(index) === -1 && this.mainPlatform.unknownCapabilities.indexOf(index) === -1) this.mainPlatform.unknownCapabilities.push(index);
         }
         accessory.context.deviceGroups = [];
-        accessory.servicesToKeep = [];
+        accessory.serviceUUIDsToKeep = [];
         accessory.reachable = true;
         accessory.context.lastUpdate = new Date();
 
-        let accessoryInformation = accessory
-            .getOrAddService(this.Service.AccessoryInformation)
+        // Add the AccessoryInformation service
+        const accessoryInformationSvc = accessory.getService(this.Service.AccessoryInformation) || accessory.addService(Service.AccessoryInformation);
+        accessoryInformationSvc
             .setCharacteristic(this.Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
             .setCharacteristic(this.Characteristic.Manufacturer, accessory.context.deviceData.manufacturerName)
             .setCharacteristic(this.Characteristic.Model, accessory.context.deviceData.modelName ? `${this.myUtils.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
             .setCharacteristic(this.Characteristic.Name, accessory.name)
-
             .setCharacteristic(this.Characteristic.HardwareRevision, pluginVersion)
             .setCharacteristic(this.Characteristic.SerialNumber, "he_deviceid_" + accessory.context.deviceData.deviceid);
-        accessory.servicesToKeep.push(this.Service.AccessoryInformation.UUID);
+        accessory.serviceUUIDsToKeep.push(this.Service.AccessoryInformation.UUID);
 
-        if (!accessoryInformation.listeners("identify")) {
-            accessoryInformation.on("identify", function (paired, callback) {
+        if (!accessoryInformationSvc.listeners("identify")) {
+            accessoryInformationSvc.on("identify", function (paired, callback) {
                 this.mainPlatform.logInfo(accessory.displayName + " - identify");
                 callback();
             });
@@ -168,11 +160,11 @@ module.exports = class DeviceTypes {
                     if (this.deviceTypes[deviceType.name]) {
                         const service = this.deviceTypes[deviceType.name].initializeAccessory(accessory, this);
                         if (service) {
-                            accessory.servicesToKeep.push(service.UUID);
+                            accessory.serviceUUIDsToKeep.push(service.UUID);
                         }
                         // Add the corresponding service UUID from the deviceTypeMap
                         if (this.deviceTypeMap[deviceType.name]) {
-                            accessory.servicesToKeep.push(this.deviceTypeMap[deviceType.name].UUID);
+                            accessory.serviceUUIDsToKeep.push(this.deviceTypeMap[deviceType.name].UUID);
                         }
                     } else {
                         this.mainPlatform.logError(`Device type ${deviceType.name} not found for ${accessory.name}`);
@@ -188,41 +180,30 @@ module.exports = class DeviceTypes {
 
     processDeviceAttributeUpdate(change) {
         return new Promise((resolve) => {
-            // this.mainPlatform.logInfo("change: ", change);
-            // console.log("change: ", change);
-            let characteristics = this.getAttributeStoreItem(change.attribute, change.deviceid);
-            let accessory = this.getAccessoryFromCache(change);
-            // console.log(characteristics);
-            if (!characteristics || !accessory) resolve(false);
-            if (characteristics instanceof Array) {
-                characteristics.forEach((char) => {
-                    const currentVal = accessory.context.deviceData.attributes[change.attribute];
-                    accessory.context.deviceData.attributes[change.attribute] = change.value;
-                    accessory.context.lastUpdate = new Date().toLocaleString();
-                    if (change.attribute === "thermostatSetpoint") {
-                        // don't remember why i'm doing this...
-                        char.getValue();
-                    } else if (change.attribute === "button") {
-                        // this.mainPlatform.logInfo("button change: " + change);
-                        const btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;
-                        if (btnNum && accessory.buttonEvent !== undefined) {
-                            accessory.buttonEvent(btnNum, change.value, change.deviceid, this._buttonMap);
-                        }
-                    } else {
-                        const val = this.transforms.transformAttributeState(change.attribute, change.value, char.displayName);
-                        if (val === null || val === undefined) {
-                            console.log("change:", change);
-                            console.log("char: ", char.props);
-                            this.mainPlatform.logWarn(`[${accessory.context.deviceData.name}] Attribute (${change.attribute}) | OldValue: ${currentVal} | NewValueIn: [${change.value}] | NewValueOut: [${val}] | Characteristic: (${char.displayName}`);
-                        } else {
-                            char.updateValue(val);
-                        }
+            const accessory = this._platformAccessories[change.deviceid];
+            if (!accessory) {
+                this.mainPlatform.logError(`Accessory not found for device ID: ${change.deviceid}`);
+                resolve(false);
+                return;
+            }
+
+            accessory.context.deviceData.attributes[change.attribute] = change.value;
+            accessory.context.lastUpdate = new Date().toLocaleString();
+
+            // Get the device types for this accessory
+            const deviceTypes = this.getDeviceTypes(accessory);
+
+            if (deviceTypes && deviceTypes.length > 0) {
+                deviceTypes.forEach((deviceType) => {
+                    if (this.deviceTypes[deviceType.name] && typeof this.deviceTypes[deviceType.name].handleAttributeUpdate === "function" && this.deviceTypes[deviceType.name].relevantAttributes.includes(change.attribute)) {
+                        this.deviceTypes[deviceType.name].handleAttributeUpdate(accessory, change, this);
                     }
                 });
-                resolve(this.addAccessoryToCache(accessory));
             } else {
-                resolve(false);
+                this.mainPlatform.logWarn(`No device types found for accessory: ${accessory.name}`);
             }
+
+            resolve(true);
         });
     }
 
@@ -330,58 +311,36 @@ module.exports = class DeviceTypes {
         return (s && s.getCharacteristic(char) !== undefined) || false;
     }
 
-    updateCharacteristicVal(svc, char, val) {
-        this.getOrAddService(svc).setCharacteristic(char, val);
-    }
-
-    updateCharacteristicProps(svc, char, props) {
-        this.getOrAddService(svc).getCharacteristic(char).setProps(props);
-    }
-
     hasDeviceFlag(flag) {
         return (this.context && this.context.deviceData && this.context.deviceData.deviceflags && Object.keys(this.context.deviceData.deviceflags).includes(flag)) || false;
     }
 
-    updateDeviceAttr(attr, val) {
-        this.context.deviceData.attributes[attr] = val;
-    }
-
-    getOrAddService(svc) {
-        return this.getService(svc) || this.addService(svc);
-    }
-
-    getOrAddServiceByName(service, dispName, subType) {
-        // console.log(this.services);
-        let svc = this.services.find((s) => s.displayName === dispName);
+    getButtonSvcByName(service, dispName, subType) {
+        this.log.debug(`${this.name} | Getting or adding button service: ${dispName} (subType: ${subType})`);
+        let svc = this.services.find((s) => s.displayName === dispName && s.subtype === subType);
         if (svc) {
-            // console.log('service found');
+            this.log.debug(`${this.name} | Existing service found for: ${dispName}`);
             return svc;
         } else {
-            // console.log('service not found adding new one...');
-            svc = this.addService(new service(dispName, subType));
+            this.log.debug(`${this.name} | Adding new service for: ${dispName}`);
+            svc = new service(dispName, subType);
+            // accessory.services.push(svc);
+
+            this.addService(svc);
+            this.serviceUUIDsToKeep.push(svc.UUID);
+            // Mark the accessory as needing update
+            // if (accessory.configureAccessory) {
+            //     accessory.configureAccessory();
+            // } else {
+            //     accessory.log.warn(`${accessory.name} | configureAccessory method not found on accessory`);
+            // }
             return svc;
         }
     }
 
-    getServiceByNameType(service, dispName, subType) {
-        return dispName ? this.services.find((s) => (subType ? s.displayName === dispName && s.subType === subType : s.displayName === dispName)) : undefined;
-    }
-
-    setServiceLabelIndex(service, index) {
-        service.setCharacteristic(this.Characteristic.ServiceLabelIndex, index);
-    }
-
-    getOrAddCharacteristic(service, characteristic) {
-        return service.getCharacteristic(characteristic) || service.addCharacteristic(characteristic);
-    }
-
-    getServices() {
-        return this.services;
-    }
-
     removeUnusedServices(acc) {
-        // console.log('servicesToKeep:', acc.servicesToKeep);
-        let newSvcUuids = acc.servicesToKeep || [];
+        // console.log("serviceUUIDsToKeep:", acc.serviceUUIDsToKeep);
+        let newSvcUuids = acc.serviceUUIDsToKeep || [];
         let svcs2rmv = acc.services.filter((s) => !newSvcUuids.includes(s.UUID));
         if (Object.keys(svcs2rmv).length) {
             svcs2rmv.forEach((s) => {
@@ -390,36 +349,6 @@ module.exports = class DeviceTypes {
             });
         }
         return acc;
-    }
-
-    storeCharacteristicItem(attr, devid, char) {
-        // console.log('storeCharacteristicItem: ', attr, devid, char);
-        if (!this._attributeLookup[attr]) {
-            this._attributeLookup[attr] = {};
-        }
-        if (!this._attributeLookup[attr][devid]) {
-            this._attributeLookup[attr][devid] = [];
-        }
-        this._attributeLookup[attr][devid].push(char);
-    }
-
-    getAttributeStoreItem(attr, devid) {
-        if (!this._attributeLookup[attr] || !this._attributeLookup[attr][devid]) {
-            return undefined;
-        }
-        return this._attributeLookup[attr][devid] || undefined;
-    }
-
-    removeAttributeStoreItem(attr, devid) {
-        if (!this._attributeLookup[attr] || !this._attributeLookup[attr][devid]) return;
-        delete this._attributeLookup[attr][devid];
-    }
-
-    getDeviceAttributeValueFromCache(device, attr) {
-        const key = this.getAccessoryId(device);
-        let result = this._platformAccessories[key] ? this._platformAccessories[key].context.deviceData.attributes[attr] : undefined;
-        this.mainPlatform.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
-        return result;
     }
 
     getAccessoryId(accessory) {
@@ -452,6 +381,10 @@ module.exports = class DeviceTypes {
         const _accessory = this._platformAccessories[key];
         delete this._platformAccessories[key];
         return _accessory;
+    }
+
+    clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     forEach(fn) {

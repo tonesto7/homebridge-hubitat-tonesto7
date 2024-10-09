@@ -1,35 +1,26 @@
 // device_types/valve.js
 
+function convertValveState(state, Characteristic) {
+    return state === "open" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
+}
+
+function convertInUseState(state, Characteristic) {
+    return state === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
+}
+
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("Valve"),
+    relevantAttributes: ["valve"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.Valve) || accessory.addService(Service.Valve);
-
-        /**
-         * Converts valve state string to HomeKit Active state.
-         * @param {string} state - The valve state from the device.
-         * @returns {number} - HomeKit Active state.
-         */
-        function convertValveState(state) {
-            return state === "open" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
-        }
-
-        /**
-         * Converts valve state string to HomeKit InUse state.
-         * @param {string} state - The valve state from the device.
-         * @returns {number} - HomeKit InUse state.
-         */
-        function convertInUseState(state) {
-            return state === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
-        }
 
         // Active Characteristic
         service
             .getCharacteristic(Characteristic.Active)
             .onGet(() => {
-                const isActive = convertValveState(accessory.context.deviceData.attributes.valve);
+                const isActive = convertValveState(accessory.context.deviceData.attributes.valve, Characteristic);
                 accessory.log.debug(`${accessory.name} | Valve Active State Retrieved: ${isActive}`);
                 return isActive;
             })
@@ -43,7 +34,7 @@ module.exports = {
         service
             .getCharacteristic(Characteristic.InUse)
             .onGet(() => {
-                const inUse = convertInUseState(accessory.context.deviceData.attributes.valve);
+                const inUse = convertInUseState(accessory.context.deviceData.attributes.valve, Characteristic);
                 accessory.log.debug(`${accessory.name} | Valve InUse State Retrieved: ${inUse}`);
                 return inUse;
             })
@@ -58,5 +49,27 @@ module.exports = {
         service.updateCharacteristic(Characteristic.ValveType, Characteristic.ValveType.GENERIC_VALVE);
 
         accessory.context.deviceGroups.push("valve");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.Valve);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Valve service not found`);
+            return;
+        }
+
+        if (change.attribute === "valve") {
+            const isActive = convertValveState(change.value, Characteristic);
+            const inUse = convertInUseState(change.value, Characteristic);
+
+            service.updateCharacteristic(Characteristic.Active, isActive);
+            service.updateCharacteristic(Characteristic.InUse, inUse);
+
+            accessory.log.debug(`${accessory.name} | Updated Valve: Active: ${isActive}, InUse: ${inUse}`);
+        } else {
+            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

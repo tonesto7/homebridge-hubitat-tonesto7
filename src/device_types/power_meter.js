@@ -2,23 +2,13 @@
 
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("Power Meter") && !accessory.hasCapability("Switch"),
+    relevantAttributes: ["power", "status"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, CommunityTypes, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, CommunityTypes, Characteristic } = deviceClass.mainPlatform;
         const serviceName = `${accessory.context.deviceData.deviceid}_PowerMeter`;
         const existingService = accessory.getServiceByName(Service.Switch, serviceName);
         const service = existingService || accessory.addService(Service.Switch, serviceName, "Power Meter");
-
-        /**
-         * Clamps a value between a minimum and maximum.
-         * @param {number} value - The value to clamp.
-         * @param {number} min - The minimum allowable value.
-         * @param {number} max - The maximum allowable value.
-         * @returns {number} - The clamped value.
-         */
-        function clamp(value, min, max) {
-            return Math.max(min, Math.min(max, value));
-        }
 
         // Watts Characteristic
         if (CommunityTypes && CommunityTypes.Watts) {
@@ -26,7 +16,7 @@ module.exports = {
                 .getCharacteristic(CommunityTypes.Watts)
                 .onGet(() => {
                     let power = parseFloat(accessory.context.deviceData.attributes.power);
-                    power = clamp(power, 0, 100000); // Adjust max as per device specifications
+                    power = deviceClass.clamp(power, 0, 100000); // Adjust max as per device specifications
                     accessory.log.debug(`${accessory.name} | Power Consumption Retrieved: ${power} Watts`);
                     return typeof power === "number" ? Math.round(power) : 0;
                 })
@@ -52,5 +42,33 @@ module.exports = {
             });
 
         accessory.context.deviceGroups.push("power_meter");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { CommunityTypes, Characteristic, Service } = deviceClass.mainPlatform;
+        const serviceName = `${accessory.context.deviceData.deviceid}_PowerMeter`;
+        const service = accessory.getServiceByName(Service.Switch, serviceName);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Power Meter service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "power":
+                if (CommunityTypes && CommunityTypes.Watts) {
+                    const power = deviceClass.clamp(parseFloat(change.value), 0, 100000);
+                    service.updateCharacteristic(CommunityTypes.Watts, Math.round(power));
+                    accessory.log.debug(`${accessory.name} | Updated Power Consumption: ${power} Watts`);
+                }
+                break;
+            case "status":
+                const isActive = change.value === "online";
+                service.updateCharacteristic(Characteristic.StatusActive, isActive);
+                accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

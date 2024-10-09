@@ -1,32 +1,33 @@
 // device_types/lock.js
 
+/**
+ * Converts lock state string to HomeKit LockCurrentState.
+ * @param {string} state - The lock state from the device.
+ * @returns {number} - HomeKit LockCurrentState.
+ */
+function convertLockState(state, Characteristic) {
+    switch (state) {
+        case "locked":
+            return Characteristic.LockCurrentState.SECURED;
+        case "unlocked":
+            return Characteristic.LockCurrentState.UNSECURED;
+        default:
+            return Characteristic.LockCurrentState.UNKNOWN;
+    }
+}
+
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("Lock"),
+    relevantAttributes: ["lock"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.LockMechanism) || accessory.addService(Service.LockMechanism);
-
-        /**
-         * Converts lock state string to HomeKit LockCurrentState.
-         * @param {string} state - The lock state from the device.
-         * @returns {number} - HomeKit LockCurrentState.
-         */
-        function convertLockState(state) {
-            switch (state) {
-                case "locked":
-                    return Characteristic.LockCurrentState.SECURED;
-                case "unlocked":
-                    return Characteristic.LockCurrentState.UNSECURED;
-                default:
-                    return Characteristic.LockCurrentState.UNKNOWN;
-            }
-        }
 
         // Lock Current State
         service.getCharacteristic(Characteristic.LockCurrentState).onGet(() => {
             const state = accessory.context.deviceData.attributes.lock;
-            const convertedState = convertLockState(state);
+            const convertedState = convertLockState(state, Characteristic);
             accessory.log.debug(`${accessory.name} | Lock Current State: ${state} => ${convertedState}`);
             return convertedState;
         });
@@ -36,7 +37,7 @@ module.exports = {
             .getCharacteristic(Characteristic.LockTargetState)
             .onGet(() => {
                 const state = accessory.context.deviceData.attributes.lock;
-                return convertLockState(state);
+                return convertLockState(state, Characteristic);
             })
             .onSet((value) => {
                 const command = value === Characteristic.LockTargetState.SECURED ? "lock" : "unlock";
@@ -45,5 +46,24 @@ module.exports = {
             });
 
         accessory.context.deviceGroups.push("lock");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.LockMechanism);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Lock Mechanism service not found`);
+            return;
+        }
+
+        if (change.attribute === "lock") {
+            const convertedState = convertLockState(change.value, Characteristic);
+            service.updateCharacteristic(Characteristic.LockCurrentState, convertedState);
+            service.updateCharacteristic(Characteristic.LockTargetState, convertedState);
+            accessory.log.debug(`${accessory.name} | Updated Lock State: ${change.value} => ${convertedState}`);
+        } else {
+            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

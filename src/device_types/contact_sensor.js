@@ -1,26 +1,26 @@
 // device_types/contact_sensor.js
 
+/**
+ * Converts contact status to HomeKit ContactSensorState.
+ * @param {string} status - The contact status from the device.
+ * @returns {number} - HomeKit ContactSensorState.
+ */
+function convertContactStatus(status, Characteristic) {
+    return status === "closed" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+}
+
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl"),
+    relevantAttributes: ["contact", "status", "tamper"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.ContactSensor) || accessory.addService(Service.ContactSensor);
-
-        /**
-         * Converts contact status to HomeKit ContactSensorState.
-         * @param {string} status - The contact status from the device.
-         * @returns {number} - HomeKit ContactSensorState.
-         */
-        function convertContactStatus(status) {
-            accessory.log.debug(`${accessory.name} | Contact Status: ${status}`);
-            return status === "closed" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-        }
 
         // Contact Sensor State
         service.getCharacteristic(Characteristic.ContactSensorState).onGet(() => {
             const status = accessory.context.deviceData.attributes.contact;
-            return convertContactStatus(status);
+            return convertContactStatus(status, Characteristic);
         });
 
         // Status Active
@@ -42,5 +42,37 @@ module.exports = {
         }
 
         accessory.context.deviceGroups.push("contact_sensor");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.ContactSensor);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Contact Sensor service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "contact":
+                const contactState = convertContactStatus(change.value, Characteristic);
+                service.updateCharacteristic(Characteristic.ContactSensorState, contactState);
+                accessory.log.debug(`${accessory.name} | Updated Contact Sensor State: ${contactState}`);
+                break;
+            case "status":
+                const isActive = change.value === "online";
+                service.updateCharacteristic(Characteristic.StatusActive, isActive);
+                accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
+                break;
+            case "tamper":
+                if (accessory.hasCapability("TamperAlert")) {
+                    const isTampered = change.value === "detected";
+                    service.updateCharacteristic(Characteristic.StatusTampered, isTampered);
+                    accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
+                }
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

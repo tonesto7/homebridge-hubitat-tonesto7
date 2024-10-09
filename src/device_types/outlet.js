@@ -2,9 +2,10 @@
 
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"),
+    relevantAttributes: ["switch"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.Outlet) || accessory.addService(Service.Outlet);
 
         // On/Off Characteristic
@@ -29,5 +30,25 @@ module.exports = {
         });
 
         accessory.context.deviceGroups.push("outlet");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.Outlet);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Outlet service not found`);
+            return;
+        }
+
+        if (change.attribute === "switch") {
+            const isOn = change.value === "on";
+            service.updateCharacteristic(Characteristic.On, isOn);
+            service.updateCharacteristic(Characteristic.OutletInUse, isOn);
+            accessory.log.debug(`${accessory.name} | Updated Outlet State: ${isOn ? "ON" : "OFF"}`);
+            accessory.log.debug(`${accessory.name} | Updated Outlet In Use: ${isOn}`);
+        } else {
+            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

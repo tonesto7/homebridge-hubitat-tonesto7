@@ -3,8 +3,10 @@
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("AirPurifier"),
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic, CommunityTypes } = deviceTypes.mainPlatform;
+    relevantAttributes: ["switch", "fanMode", "status", "tamper"],
+
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic, CommunityTypes } = deviceClass.mainPlatform;
 
         // Ensure CommunityTypes.NewAirPurifierService exists
         if (!CommunityTypes || !CommunityTypes.NewAirPurifierService) {
@@ -13,17 +15,6 @@ module.exports = {
         }
 
         const service = accessory.getService(CommunityTypes.NewAirPurifierService) || accessory.addService(CommunityTypes.NewAirPurifierService);
-
-        /**
-         * Clamps a value between a minimum and maximum.
-         * @param {number} value - The value to clamp.
-         * @param {number} min - The minimum allowable value.
-         * @param {number} max - The maximum allowable value.
-         * @returns {number} - The clamped value.
-         */
-        function clamp(value, min, max) {
-            return Math.max(min, Math.min(max, value));
-        }
 
         /**
          * Converts fan mode string to HomeKit FanOscilationMode.
@@ -158,5 +149,45 @@ module.exports = {
         }
 
         accessory.context.deviceGroups.push("air_purifier");
+    },
+
+    andleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, CommunityTypes } = deviceClass.mainPlatform;
+        const service = accessory.getService(CommunityTypes.NewAirPurifierService);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Air Purifier service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "switch":
+                const isActive = change.value === "on";
+                service.updateCharacteristic(Characteristic.Active, isActive ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE);
+                service.updateCharacteristic(Characteristic.CurrentAirPurifierState, isActive ? Characteristic.CurrentAirPurifierState.PURIFYING_AIR : Characteristic.CurrentAirPurifierState.INACTIVE);
+                accessory.log.debug(`${accessory.name} | Updated Active: ${isActive} and CurrentAirPurifierState: ${isActive ? "PURIFYING_AIR" : "INACTIVE"}`);
+                break;
+            case "fanMode":
+                if (CommunityTypes && CommunityTypes.FanOscilationMode) {
+                    const fanMode = convertFanMode(change.value);
+                    service.updateCharacteristic(CommunityTypes.FanOscilationMode, fanMode);
+                    accessory.log.debug(`${accessory.name} | Updated Fan Oscillation Mode: ${fanMode}`);
+                }
+                break;
+            case "status":
+                const isOnline = change.value === "online";
+                service.updateCharacteristic(Characteristic.StatusActive, isOnline);
+                accessory.log.debug(`${accessory.name} | Updated Status Active: ${isOnline}`);
+                break;
+            case "tamper":
+                if (accessory.hasCapability("TamperAlert")) {
+                    const isTampered = change.value === "detected";
+                    service.updateCharacteristic(Characteristic.StatusTampered, isTampered);
+                    accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
+                }
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

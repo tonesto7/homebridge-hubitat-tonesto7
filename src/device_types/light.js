@@ -1,5 +1,28 @@
 // device_types/light.js
 
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Converts Kelvin to Mireds.
+ * @param {number} kelvin - Temperature in Kelvin.
+ * @returns {number} - Temperature in Mireds.
+ */
+function kelvinToMired(kelvin) {
+    let val = Math.floor(1000000 / kelvin);
+    return clamp(val, 140, 500); // HomeKit supports 140-500 Mireds
+}
+
+/**
+ * Converts Mireds to Kelvin.
+ * @param {number} mired - Temperature in Mireds.
+ * @returns {number} - Temperature in Kelvin.
+ */
+function miredToKelvin(mired) {
+    return Math.floor(1000000 / mired);
+}
+
 module.exports = {
     isSupported: (accessory) => {
         return (
@@ -8,44 +31,18 @@ module.exports = {
         );
     },
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    relevantAttributes: ["switch", "level", "hue", "saturation", "colorTemperature"],
+
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.Lightbulb) || accessory.addService(Service.Lightbulb);
-
-        /**
-         * Clamps a value between a minimum and maximum.
-         * @param {number} value - The value to clamp.
-         * @param {number} min - The minimum allowable value.
-         * @param {number} max - The maximum allowable value.
-         * @returns {number} - The clamped value.
-         */
-        function clamp(value, min, max) {
-            return Math.max(min, Math.min(max, value));
-        }
-
-        /**
-         * Converts Kelvin to Mireds.
-         * @param {number} kelvin - Temperature in Kelvin.
-         * @returns {number} - Temperature in Mireds.
-         */
-        function kelvinToMired(kelvin) {
-            let val = Math.floor(1000000 / kelvin);
-            return clamp(val, 140, 500); // HomeKit supports 140-500 Mireds
-        }
-
-        /**
-         * Converts Mireds to Kelvin.
-         * @param {number} mired - Temperature in Mireds.
-         * @returns {number} - Temperature in Kelvin.
-         */
-        function miredToKelvin(mired) {
-            return Math.floor(1000000 / mired);
-        }
 
         // On/Off Characteristic
         service
             .getCharacteristic(Characteristic.On)
-            .onGet(() => accessory.context.deviceData.attributes.switch === "on")
+            .onGet(() => {
+                return accessory.context.deviceData.attributes.switch === "on";
+            })
             .onSet((value) => {
                 const command = value ? "on" : "off";
                 accessory.log.info(`${accessory.name} | Setting light state to ${command}`);
@@ -131,7 +128,7 @@ module.exports = {
         }
 
         // Adaptive Lighting
-        const canUseAL = deviceTypes.configItems.adaptive_lighting !== false && accessory.isAdaptiveLightingSupported && !accessory.hasDeviceFlag("light_no_al") && accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature");
+        const canUseAL = deviceClass.configItems.adaptive_lighting !== false && accessory.isAdaptiveLightingSupported && !accessory.hasDeviceFlag("light_no_al") && accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature");
 
         if (canUseAL && !accessory.adaptiveLightingController) {
             addAdaptiveLightingController(accessory, service);
@@ -178,6 +175,52 @@ module.exports = {
                 accessory.removeController(accessory.adaptiveLightingController);
                 delete accessory.adaptiveLightingController;
             }
+        }
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.Lightbulb);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Lightbulb service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "switch":
+                const isOn = change.value === "on";
+                service.updateCharacteristic(Characteristic.On, isOn);
+                accessory.log.debug(`${accessory.name} | Updated On: ${isOn}`);
+                break;
+            case "level":
+                const brightness = clamp(parseInt(change.value, 10), 0, 100);
+                service.updateCharacteristic(Characteristic.Brightness, brightness);
+                accessory.log.debug(`${accessory.name} | Updated Brightness: ${brightness}%`);
+                break;
+            case "hue":
+                if (accessory.hasAttribute("hue") && accessory.hasCommand("setHue")) {
+                    const hue = clamp(Math.round(parseFloat(change.value)), 0, 360);
+                    service.updateCharacteristic(Characteristic.Hue, hue);
+                    accessory.log.debug(`${accessory.name} | Updated Hue: ${hue}`);
+                }
+                break;
+            case "saturation":
+                if (accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation")) {
+                    const saturation = clamp(Math.round(parseFloat(change.value)), 0, 100);
+                    service.updateCharacteristic(Characteristic.Saturation, saturation);
+                    accessory.log.debug(`${accessory.name} | Updated Saturation: ${saturation}%`);
+                }
+                break;
+            case "colorTemperature":
+                if (accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature")) {
+                    const mired = kelvinToMired(parseInt(change.value, 10));
+                    service.updateCharacteristic(Characteristic.ColorTemperature, mired);
+                    accessory.log.debug(`${accessory.name} | Updated Color Temperature: ${mired} Mireds`);
+                }
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
         }
     },
 };

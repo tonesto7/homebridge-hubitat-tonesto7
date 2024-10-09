@@ -4,9 +4,10 @@ module.exports = {
     isSupported: (accessory) => {
         return accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || (accessory.platform.configItems.consider_light_by_name === true && accessory.context.deviceData.name.toLowerCase().includes("light")) || accessory.hasCapability("Button"));
     },
+    relevantAttributes: ["switch"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.Switch) || accessory.addService(Service.Switch);
 
         // On/Off Characteristic
@@ -24,5 +25,23 @@ module.exports = {
             });
 
         accessory.context.deviceGroups.push("switch");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.Switch);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Switch service not found`);
+            return;
+        }
+
+        if (change.attribute === "switch") {
+            const isOn = change.value === "on";
+            service.updateCharacteristic(Characteristic.On, isOn);
+            accessory.log.debug(`${accessory.name} | Updated Switch State: ${isOn ? "ON" : "OFF"}`);
+        } else {
+            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

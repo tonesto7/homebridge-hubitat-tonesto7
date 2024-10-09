@@ -2,9 +2,10 @@
 
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("Piston"),
+    relevantAttributes: ["switch", "status"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.Switch) || accessory.addService(Service.Switch, "Virtual Piston", "VirtualPiston");
 
         /**
@@ -47,5 +48,30 @@ module.exports = {
             });
 
         accessory.context.deviceGroups.push("virtual_piston");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.Switch);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Virtual Piston service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "switch":
+                const isOn = change.value === "on";
+                service.updateCharacteristic(Characteristic.On, isOn);
+                accessory.log.debug(`${accessory.name} | Updated Virtual Piston State: ${isOn ? "ON" : "OFF"}`);
+                break;
+            case "status":
+                const isActive = change.value === "online";
+                service.updateCharacteristic(Characteristic.StatusActive, isActive);
+                accessory.log.debug(`${accessory.name} | Updated Virtual Piston Status Active: ${isActive}`);
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

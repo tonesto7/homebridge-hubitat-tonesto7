@@ -2,21 +2,11 @@
 
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("CarbonMonoxideDetector"),
+    relevantAttributes: ["carbonMonoxide", "status", "tamper"],
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.CarbonMonoxideSensor) || accessory.addService(Service.CarbonMonoxideSensor);
-
-        /**
-         * Clamps a value between a minimum and maximum.
-         * @param {number} value - The value to clamp.
-         * @param {number} min - The minimum allowable value.
-         * @param {number} max - The maximum allowable value.
-         * @returns {number} - The clamped value.
-         */
-        function clamp(value, min, max) {
-            return Math.max(min, Math.min(max, value));
-        }
 
         // Carbon Monoxide Detected
         service.getCharacteristic(Characteristic.CarbonMonoxideDetected).onGet(() => {
@@ -44,5 +34,37 @@ module.exports = {
         }
 
         accessory.context.deviceGroups.push("carbon_monoxide");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.CarbonMonoxideSensor);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Carbon Monoxide Sensor service not found`);
+            return;
+        }
+
+        switch (change.attribute) {
+            case "carbonMonoxide":
+                const coStatus = change.value === "clear" ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+                service.updateCharacteristic(Characteristic.CarbonMonoxideDetected, coStatus);
+                accessory.log.debug(`${accessory.name} | Updated Carbon Monoxide Status: ${change.value}`);
+                break;
+            case "status":
+                const isActive = change.value === "online";
+                service.updateCharacteristic(Characteristic.StatusActive, isActive);
+                accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
+                break;
+            case "tamper":
+                if (accessory.hasCapability("TamperAlert")) {
+                    const isTampered = change.value === "detected";
+                    service.updateCharacteristic(Characteristic.StatusTampered, isTampered);
+                    accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
+                }
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };

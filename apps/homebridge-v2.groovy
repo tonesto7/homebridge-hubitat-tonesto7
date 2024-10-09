@@ -1,3 +1,4 @@
+/* groovylint-disable DuplicateMapLiteral, MethodParameterTypeRequired, UnnecessaryObjectReferences, VariableTypeRequired */
 /**
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
@@ -39,7 +40,7 @@ preferences {
     page(name: 'deviceSelectPage')
     page(name: 'changeLogPage')
     page(name: 'capFilterPage')
-    page(name: "attrFilterPage")
+    page(name: 'attrFilterPage')
     page(name: 'developmentPage')
     page(name: 'pluginConfigPage')
     page(name: 'donationPage')
@@ -50,8 +51,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '2.10.0'
-//@Field static final String appModifiedFLD = '09-30-2024'
+@Field static final String appVersionFLD  = '3.0.0'
+//@Field static final String appModifiedFLD = '10-08-2024'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -113,27 +114,27 @@ preferences {
 
 @Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
-        "acceleration", "airQualityIndex", "alarmSystemStatus", "battery", "button", "carbonDioxideMeasurement", "carbonMonoxide", "colorTemperature", "contact", 
-        "coolingSetpoint", "door", "doubleTapped", "energy", "fanMode", "fanState", "fanTargetState", "heatingSetpoint", "held", "hue", "humidity", "illuminance", 
-        "level", "level", "lock", "motion", "mute", "outlet", "pm25", "position", "power", "powerSource", "presence", "pushed", "saturation", "smoke", "speed", "switch", 
-        "tamper", "temperature", "thermostatFanMode", "thermostatMode", "thermostatOperatingState", "thermostatSetPoint", "valve", "volume", "water", "windowShade",
+        'acceleration', 'airQualityIndex', 'alarmSystemStatus', 'battery', 'button', 'carbonDioxideMeasurement', 'carbonMonoxide', 'colorTemperature', 'contact',
+        'coolingSetpoint', 'door', 'doubleTapped', 'energy', 'fanMode', 'fanState', 'fanTargetState', 'heatingSetpoint', 'held', 'hue', 'humidity', 'illuminance',
+        'level', 'level', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power', 'powerSource', 'presence', 'pushed', 'saturation', 'smoke', 'speed', 'switch',
+        'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
     ],
     capabilities: [
-        "AccelerationSensor", "Actuator", "AirQuality", "Alarm", "AlarmSystemStatus", "Audio Mute", "Audio Volume", "Battery", "Bulb", "Button",
-        "CarbonDioxideMeasurement", "CarbonMonoxideDetector", "ColorControl", "ColorTemperature", "ContactSensor", "DoorControl", 
-        "DoubleTapableButton", "EnergyMeter", "Fan", "FanControl", "FanLight", "GarageDoorControl", "HoldableButton", "IlluminanceMeasurement", "Light", 
-        "LightBulb", "Lock", "LockCodes", "Mode", "MotionSensor", "Outlet", "Piston", "PowerMeter", "PowerSource", "PresenceSensor", "PushableButton", 
-        "RelativeHumidityMeasurement", 
-        // "ReleasableButton", 
-        "Routine", "Sensor", "SmokeDetector", "Speaker", "Switch", "SwitchLevel", "TamperAlert", 
-        "TemperatureMeasurement", "Thermostat", "ThermostatCoolingSetpoint", "ThermostatFanMode", "ThermostatHeatingSetpoint", "ThermostatMode", 
-        "ThermostatOperatingState", "ThermostatSetpoint", "Valve", "WaterSensor", "WindowBlind", "WindowShade"
+        'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'Audio Mute', 'Audio Volume', 'Battery', 'Bulb', 'Button',
+        'CarbonDioxideMeasurement', 'CarbonMonoxideDetector', 'ColorControl', 'ColorTemperature', 'ContactSensor', 'DoorControl',
+        'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'GarageDoorControl', 'HoldableButton', 'IlluminanceMeasurement', 'Light',
+        'LightBulb', 'Lock', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet', 'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton',
+        'RelativeHumidityMeasurement',
+        // 'ReleasableButton',
+        'Routine', 'Sensor', 'SmokeDetector', 'Speaker', 'Switch', 'SwitchLevel', 'TamperAlert',
+        'TemperatureMeasurement', 'Thermostat', 'ThermostatCoolingSetpoint', 'ThermostatFanMode', 'ThermostatHeatingSetpoint', 'ThermostatMode',
+        'ThermostatOperatingState', 'ThermostatSetpoint', 'Valve', 'WaterSensor', 'WindowBlind', 'WindowShade'
     ],
     commands: [
-        "armAway", "armHome", "disarm", "auto","heat","cool", "channelDown", "channelUp", "nextTrack", "previousTrack", "emergencyHeat", "fanAuto", 
-        "fanCirculate", "fanOn", "flip", "mute", "on", "off", "open", "close", "pause", "push", "hold", "doubleTap", "setColorTemperature", "setHue", 
-        "setSaturation", "setCoolingSetpoint", "setFanSpeed", "setHeatingSetpoint", "setLevel", "setPosition", "setSchedule", "setSpeed", 
-        "setThermostatFanMode", "setThermostatMode","setThermostatSetpoint","setTiltLevel", "setVolume", "start", "stop", "unmute", "volumeDown", "volumeUp"
+        'armAway', 'armHome', 'disarm', 'auto','heat','cool', 'channelDown', 'channelUp', 'nextTrack', 'previousTrack', 'emergencyHeat', 'fanAuto',
+        'fanCirculate', 'fanOn', 'flip', 'mute', 'on', 'off', 'open', 'close', 'pause', 'push', 'hold', 'doubleTap', 'setColorTemperature', 'setHue',
+        'setSaturation', 'setCoolingSetpoint', 'setFanSpeed', 'setHeatingSetpoint', 'setLevel', 'setPosition', 'setSchedule', 'setSpeed',
+        'setThermostatFanMode', 'setThermostatMode','setThermostatSetpoint','setTiltLevel', 'setVolume', 'start', 'stop', 'unmute', 'volumeDown', 'volumeUp'
     ],
 ]
 
@@ -151,21 +152,23 @@ preferences {
 ]
 
 def startPage() {
-    if (!getAccessToken()) { return dynamicPage(name: 'mainPage', install: false, uninstall: true) {
-        section() { paragraph spanSmBldBr('OAuth Error', sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the Hubitat App Settings in the App Code page.") } }
-    } else {
-        if (!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
+    if (getAccessToken()) {
+        state.installData = state.installData ?: [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false]
         healthCheck(true)
         if (showChgLogOk()) { return changeLogPage() }
         if (showDonationOk()) { return donationPage() }
         return mainPage()
     }
+
+    return dynamicPage(name: 'mainPage', install: false, uninstall: true) {
+        section() { paragraph spanSmBldBr('OAuth Error', sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the Hubitat App Settings in the App Code page.") }
+    }
 }
 
 @Field static List<String> ListVars
 
-static void FILL_ListVars() {
-    if(!ListVars){
+static void fillListVars() {
+    if (!ListVars) {
         List<String> items
         items = deviceSettingKeys().collect { (String)it.key }
         items = items + virtSettingKeys().collect { (String)it.key }
@@ -175,7 +178,7 @@ static void FILL_ListVars() {
 
 def mainPage() {
     // Fill up the ListVars array
-    FILL_ListVars()
+    fillListVars()
     Boolean isInst = ((Boolean)state.isInstalled == true)
     if (getBoolSetting('enableWebCoRE') && !webCoREFLD) { webCoRE_init() }
     // return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
@@ -209,13 +212,13 @@ def mainPage() {
             href 'deviceDebugPage', title: inTS1('View Device Debug Data', sDBG), description: inputFooter(sTTV, sCLRGRY, true)
         }
 
-        section(sectHead("Feature Requests/Issue Reporting"), hideable: true, hidden: true) {
-            String issueUrl = "https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=bug&template=bug_report.md&title=%28BUG%29+&projects=homebridge-hubitat-tonesto7%2F6"
-            String featUrl = "https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=enhancement&template=feature_request.md&title=%5BFeature+Request%5D&projects=homebridge-hubitat-tonesto7%2F6"
-            String devUrl = "https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=device_support&template=device_support.md&title=%5BDevice+Support%5D&projects=homebridge-hubitat-tonesto7%2F6"
-            href url: featUrl, style: sEXTNRL, required: false, title: inTS1("New Feature Request", "info"), description: inputFooter("Tap to open browser", sCLRGRY, true)
-            href url: devUrl, style: sEXTNRL, required: false, title: inTS1("Device Support", "info"), description: inputFooter("Tap to open browser", sCLRGRY, true)
-            href url: issueUrl, style: sEXTNRL, required: false, title: inTS1("Report an Issue", "info"), description: inputFooter("Tap to open browser", sCLRGRY, true)
+        section(sectHead('Feature Requests/Issue Reporting'), hideable: true, hidden: true) {
+            String issueUrl = 'https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=bug&template=bug_report.md&title=%28BUG%29+&projects=homebridge-hubitat-tonesto7%2F6'
+            String featUrl = 'https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=enhancement&template=feature_request.md&title=%5BFeature+Request%5D&projects=homebridge-hubitat-tonesto7%2F6'
+            String devUrl = 'https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues/new?assignees=tonesto7&labels=device_support&template=device_support.md&title=%5BDevice+Support%5D&projects=homebridge-hubitat-tonesto7%2F6'
+            href url: featUrl, style: sEXTNRL, required: false, title: inTS1('New Feature Request', 'info'), description: inputFooter('Tap to open browser', sCLRGRY, true)
+            href url: devUrl, style: sEXTNRL, required: false, title: inTS1('Device Support', 'info'), description: inputFooter('Tap to open browser', sCLRGRY, true)
+            href url: issueUrl, style: sEXTNRL, required: false, title: inTS1('Report an Issue', 'info'), description: inputFooter('Tap to open browser', sCLRGRY, true)
         }
 
         section(sectHead('App Preferences:')) {
@@ -234,7 +237,7 @@ def mainPage() {
                 input 'restartService', sBOOL, title: inTS1('Restart Homebridge plugin when you press Save?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             }
         }
-        if(isInst) {
+        if (isInst) {
             section(sectHead('Save Your Settings')) {
                 paragraph spanSmBldBr('NOTICE:', sCLRGRY) + spanSm('Once you press <b>Done</b> the Homebridge plugin will refresh your device changes after 15-20 seconds.')
             }
@@ -242,7 +245,7 @@ def mainPage() {
         }
         clearTestDeviceItems()
     }
-}
+    }
 
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
@@ -315,15 +318,15 @@ def deviceSelectPage() {
             input 'shadesList', 'capability.windowShade', title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'securityKeypadsList', 'capability.securityKeypad', title: inTS1("Security Keypads: (${securityKeypadsList ? securityKeypadsList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
-        section(sectHead("Buttons:")) {
-            if(pushableButtonList || holdableButtonList || doubleTapableButtonList) {
-                paragraph spanSmBldBr("NOTICE:", sCLRRED) +
+        section(sectHead('Buttons:')) {
+            if (pushableButtonList || holdableButtonList || doubleTapableButtonList) {
+                paragraph spanSmBldBr('NOTICE:', sCLRRED) +
                         spanSmBr("Buttons are a weird device under HomeKit and don't allow any inbound action under Hubitat. They only allow you to execute actions/automations under HomeKit per button you've configured", sCLRRED) +
-                        spanSmBr("Once the remote device is created under HomeKit it will remain in the unconfigured state so find it and configure each button number and pushed/held/tapped event in the Home app.", sCLRRED)
+                        spanSmBr('Once the remote device is created under HomeKit it will remain in the unconfigured state so find it and configure each button number and pushed/held/tapped event in the Home app.', sCLRRED)
             }
-            input "pushableButtonList", "capability.pushableButton", title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "holdableButtonList", "capability.holdableButton", title: inTS1("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "doubleTapableButtonList", "capability.doubleTapableButton", title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'pushableButtonList', 'capability.pushableButton', title: inTS1("Pushable Buttons: (${pushableButtonList ? pushableButtonList.size() : 0} Selected)", 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'holdableButtonList', 'capability.holdableButton', title: inTS1("Holdable Buttons: (${holdableButtonList ? holdableButtonList.size() : 0} Selected)", 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'doubleTapableButtonList', 'capability.doubleTapableButton', title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectHead('Fans:')) {
@@ -360,10 +363,10 @@ def deviceSelectPage() {
                 List<Map> pistons = webCoRE_list()
                 input 'pistonList', sENUM, title: inTS1('Create Devices for these Pistons', webCore_icon()), required: false, description: inputFooter(sTTS, sCLRGRY, true), multiple: true, options: pistons, submitOnChange: true
             } else { webCoREFLD = [:]; unsubscribe(webCoRE_handle());  remTsVal(sLASTWU) }
-        }
+            }
         inputDupeValidation()
+        }
     }
-}
 
 def settingsPage() {
     return dynamicPage(name: 'settingsPage', title: sBLANK, install: false, uninstall: false) {
@@ -391,14 +394,14 @@ private void resetAppToken() {
 
 private String getSelectedDeviceDescs() {
     List tl
-    Boolean conf; conf=false
-    for (String m in ListVars){
-        if(!conf){
+    Boolean conf; conf = false
+    for (String m in ListVars) {
+        if (!conf) {
             tl = getListSetting(m)
-            if(conf || tl.size()) { conf=true }
+            if (conf || tl.size()) { conf = true }
         }
     }
-    String desc; desc= sNULL
+    String desc; desc = sNULL
     Integer devCnt = getDeviceCnt()
     if (conf) {
         //static Map<String,String> fanSettingKeys() {
@@ -416,7 +419,7 @@ private String getSelectedDeviceDescs() {
         items.each { String item ->
             tl = getListSetting(item)
             sz = tl.size()
-            s = tl.size() > 1 ? akeys[item] : akeys[item].replace('Devices','Device')
+            s = tl.size() > 1 ? akeys[item] : akeys[item].replace('Devices', 'Device')
             desc += tl.size() > 0 ? spanSmBld(s) + spanSmBr(" (${sz})") : sBLANK
         }
         desc += fansize > 0 ? spanSmBld("Fan Device${fansize > 1 ? 's' : sBLANK}") + spanSmBr(" (${fansize})") : sBLANK
@@ -425,18 +428,18 @@ private String getSelectedDeviceDescs() {
         desc += spanSmBld('Devices Selected:')  + spanSmBr(" (${devCnt})")
         desc += (devCnt > 149) ? lineBr() + spanSmBld('NOTICE: ', sCLRRED) + spanSmBr('Homebridge only allows 149 Devices per HomeKit Bridge!!!', sCLRRED) : sBLANK
         desc += inputFooter(sTTM)
-    }
+        }
     return desc
-}
+    }
 
 private void resetCapFilters() {
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') }.collect { (String)it.key }
     if (remKeys?.size() > 0) {
-        remKeys.each { String k->
+        remKeys.each { String k ->
             settingRemove(k)
         }
     }
-    settingRemove("customCapFilters")
+    settingRemove('customCapFilters')
 }
 
 private Boolean capFiltersSelected() {
@@ -446,41 +449,42 @@ private Boolean capFiltersSelected() {
     if (perDev && perDev?.keySet()?.size() || global && global?.size()) {
         return true
     }
-    return ( ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value }.collect { (String)it.key })?.size() > 0
+    return (((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value }.collect { (String)it.key })?.size() > 0
 }
 
 private String getCapFilterDesc() {
     String desc; desc = sBLANK
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
     if (remKeys?.size()) {
-        remKeys.sort().each { String k->
+        remKeys.sort().each { String k ->
             String capName = k.replaceAll('remove', sBLANK)
             Integer capSize = settings[k]?.size()
             desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
         }
     }
-    if(desc.size() > 0) {
-        desc += spanSmBr("", sCLR4D9)
+    if (desc.size() > 0) {
+        desc += spanSmBr('', sCLR4D9)
     }
     List<String> capItems
     String s = getStrSetting('customCapFilters')
-    capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
+    // capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
+    capItems = s ? s.split(',')*.trim() : []
     if (capItems?.size()) {
         capItems = capItems.unique().sort()
         desc += spanSmBr("Custom Capabilities: (${capItems.size()})", sCLR4D9)
-        capItems.each { String cap->
+        capItems.each { String cap ->
             desc += spanSmBr(" ${sBULLET} ${cap}", sCLR4D9)
         }
     }
     return desc
 }
 
-private List<String> getCustCapFilters() {
-    List<String> capItems
-    String s = getStrSetting('customCapFilters')
-    capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
-    return capItems?.size() ? capItems.unique().sort() : []
-}
+// private List<String> getCustCapFilters() {
+//     List<String> capItems
+//     String s = getStrSetting('customCapFilters')
+//     capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
+//     return capItems?.size() ? capItems.unique().sort() : []
+// }
 
 private void resetAttrFilters() {
     settingRemove('customAttrFilters')
@@ -490,10 +494,7 @@ private Boolean attrFiltersSelected() {
     Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
     Map perDev = cFilters?.perDevice ?: [:]
     List<String> global = cFilters?.global ?: []
-    if (perDev && perDev.keySet()?.size() || global && global.size()) {
-        return true
-    }
-    return false
+    return ((perDev && perDev.keySet()?.size()) || (global && global.size()))
 }
 
 private String getCustAttrFilterDesc() {
@@ -508,7 +509,7 @@ private String getCustAttrFilterDesc() {
         // perDev.each { String dev, Object attrsObj ->
         //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
         //     desc += spanSmBr("${dev}:", sCLR4D9)
-        //     attrs.each { String attr->
+        //     attrs.each { String attr ->
         //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
         //     }
         // }
@@ -517,7 +518,7 @@ private String getCustAttrFilterDesc() {
     if (global && global.size()) {
         List<String> attrItems = global.unique().sort()
         desc += spanSmBr("Global Attributes: (${attrItems.size()})", sCLR4D9)
-        attrItems.each { String attr->
+        attrItems.each { String attr ->
             desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
         }
     }
@@ -526,7 +527,7 @@ private String getCustAttrFilterDesc() {
 }
 
 private void inputDupeValidation() {
-    Map<String,Map<String,List>> clnUp = (['d': [:], 'o': [:]] as Map<String,Map<String, List>>)
+    Map<String,Map<String,List>> clnUp = ['d': [:], 'o': [:]]
     Map<String,String> dMap
     dMap = [:] + deviceSettingKeys()
     dMap.remove('pushableButtonList'); dMap.remove('holdableButtonList'); dMap.remove('doubleTapableButtonList')
@@ -535,10 +536,10 @@ private void inputDupeValidation() {
         d: dMap,
         o: ['deviceList': 'Other', 'sensorList': 'Sensor', 'switchList': 'Switch']
     ]
-    items.d.each { String k, String v->
+    items.d.each { String k, String v ->
         List priItems = (settings."${k}"?.size()) ? settings."${k}"?.collect { (String)it?.getDisplayName() } : null
         if (priItems && priItems.size()) {
-            items.d.each { String k2, String v2->
+            items.d.each { String k2, String v2 ->
                 List secItems = (settings."${k2}"?.size()) ? settings."${k2}"?.collect { (String)it?.getDisplayName() } : null
                 if (k != k2 && secItems) {
                     secItems?.retainAll(priItems)
@@ -549,7 +550,7 @@ private void inputDupeValidation() {
                 }
             }
 
-            items.o.each { String k2, String v2->
+            items.o.each { String k2, String v2 ->
                 List secItems = (settings."${k2}"?.size()) ? settings."${k2}"?.collect { (String) it?.getDisplayName() } : null
                 if (secItems) {
                     secItems?.retainAll(priItems)
@@ -562,12 +563,12 @@ private void inputDupeValidation() {
         }
     }
     String out; out = sBLANK
-    Boolean show,first
+    Boolean show, first
     show = false
     first = true
     if (clnUp.d.size() > 0) {
         show = true
-        clnUp.d.each { String k, List v->
+        clnUp.d.each { String k, List v ->
             out += (first ? sBLANK : lineBr()) + spanBldBr("${items?.d[k]}:")
             out += spanBr(v.collect { " ${sBULLET} " + it.toString() }?.join(sLINEBR))
             first = false
@@ -575,7 +576,7 @@ private void inputDupeValidation() {
     }
     if (clnUp.o.size() > 0) {
         show = true
-        clnUp.o.each { String k, List v->
+        clnUp.o.each { String k, List v ->
             out += (first ? sBLANK : lineBr()) + spanBldBr("${items?.o[k]}:")
             out += spanBr(v.collect { " ${sBULLET} " + it.toString() }?.join(sLINEBR))
             first = false
@@ -590,9 +591,9 @@ private void inputDupeValidation() {
 
 String getSetDesc() {
     List s = []
-    if (getBoolSetting('showEventLogs') || getBoolDefSetting('showEventLogs',true)) s.push("${sBULLET} Device Event Logging")
-    if (getBoolSetting('showCmdLogs') || getBoolDefSetting('showCmdLogs',true)) s.push("${sBULLET} Command Event Logging")
-    if (getBoolSetting('showDebugLogs')) s.push("${sBULLET} Debug Logging")
+    if (getBoolSetting('showEventLogs') || getBoolDefSetting('showEventLogs', true)) { s.push("${sBULLET} Device Event Logging") }
+    if (getBoolSetting('showCmdLogs') || getBoolDefSetting('showCmdLogs', true)) { s.push("${sBULLET} Command Event Logging") }
+    if (getBoolSetting('showDebugLogs')) { s.push("${sBULLET} Debug Logging") }
     return s.size() > 0 ? spanSmBr("${s.join('<br>')}", sCLR4D9) + inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)
 }
 
@@ -609,34 +610,34 @@ def historyPage() {
                     List hList = []
                     hList.push([name: 'Device:', val: c?.data?.device])
                     hList.push([name: 'Command:', val: c?.data?.cmd])
-                    if (c?.data?.value1) hList.push([name: 'Value1:', val: c?.data?.value1])
-                    if (c?.data?.value2) hList.push([name: 'Value2:', val: c?.data?.value2])
-                    if (c?.data?.execTime) hList.push([name: 'ExecTime:', val: "${c?.data?.execTime}ms"])
+                    if (c?.data?.value1) { hList.push([name: 'Value1:', val: c?.data?.value1]) }
+                    if (c?.data?.value2) { hList.push([name: 'Value2:', val: c?.data?.value2]) }
+                    if (c?.data?.execTime) { hList.push([name: 'ExecTime:', val: "${c?.data?.execTime}ms"]) }
                     hList.push([name: 'Date:', val: c.dt])
                     if (hList.size()) { paragraph kvListToHtmlTable(hList, sCLR4D9) }
                 }
             } else { paragraph spanSm('No Command History Found...', sCLRGRY) }
-        }
+            }
         section(sectHead("Last (${eHist.size()}) Events Sent to HomeKit:")) {
             if (eHist.size() > 0) {
-                eHist.each { Map h->
+                eHist.each { Map h ->
                     List hList = []
                     hList.push([name: 'Device:', val: h?.data?.device])
                     hList.push([name: 'Event:', val: h?.data?.name])
-                    if (h?.data?.value) hList.push([name: 'Value:', val: h?.data?.value])
-                    if (h?.data?.execTime) hList.push([name: 'ExecTime:', val: "${h?.data?.execTime}ms"])
+                    if (h?.data?.value) { hList.push([name: 'Value:', val: h?.data?.value]) }
+                    if (h?.data?.execTime) { hList.push([name: 'ExecTime:', val: "${h?.data?.execTime}ms"]) }
                     if (hList.size()) { paragraph spanSmBldBr((String)h.dt, sCLR4D9) + kvListToHtmlTable(hList, sCLR4D9) }
                 }
             } else { paragraph spanSm('No Event History Found...', sCLRGRY) }
+            }
         }
-    }
-}
+        }
 
 private static String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
     String str; str = sBLANK
     if (tabList?.size()) {
         str += "<table style='border: 1px solid ${color};border-collapse: collapse;'>"
-        tabList.each { it->
+        tabList.each { it ->
             str += "<tr style='border: 1px solid ${color};'><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBld((String)it.name)}</td><td style='border: 1px solid ${color};padding: 0px 3px 0px 3px;'>${spanSmBr("${it.val}")}</td></tr>"
         }
         str += '</table>'
@@ -688,20 +689,20 @@ def capFilterPage() {
         }
 
         section(sectHead('Remove Buttons Capabilities')) {
-            input "removeHoldableButton", "capability.holdableButton", title: inTS1("Remove Holdable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "removeDoubleTapableButton", "capability.doubleTapableButton", title: inTS1("Remove Double Tapable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input "removePushableButton", "capability.pushableButton", title: inTS1("Remove Pushable Buttons from these Devices", "button"), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeHoldableButton', 'capability.holdableButton', title: inTS1('Remove Holdable Buttons from these Devices', 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeDoubleTapableButton', 'capability.doubleTapableButton', title: inTS1('Remove Double Tapable Buttons from these Devices', 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removePushableButton', 'capability.pushableButton', title: inTS1('Remove Pushable Buttons from these Devices', 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectHead('Custom Capabilities')) {
-            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom capabilities per device and/or globally to prevent unwanted characteristics in devices under HomeKit', sCLRGRY) + 
-                spanSmBr("There are 2 ways to format the data:", sCLRGRY) + 
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom capabilities per device and/or globally to prevent unwanted characteristics in devices under HomeKit', sCLRGRY) +
+                spanSmBr('There are 2 ways to format the data:', sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out a specific device capabilities wrap the item in brackets like [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement]", sCLRGRY) +
-                spanSmBr(" ${sBULLET} To filter out an capabilities from all devices don't use brackets", sCLRGRY) + 
-                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") + 
+                spanSmBr(" ${sBULLET} To filter out an capabilities from all devices don't use brackets", sCLRGRY) +
+                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") +
                 spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
-                spanSmBr("Here is an example of mixing per-device and global filters: [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement], SwitchLevel", sCLRORG)
-            input "customCapFilters", "textarea", title: inTS1("Enter custom capabilities", "filter"), description: "Enter the filters using the format mentioned above...",  submitOnChange: true, required: false
+                spanSmBr('Here is an example of mixing per-device and global filters: [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement], SwitchLevel', sCLRORG)
+            input 'customCapFilters', 'textarea', title: inTS1('Enter custom capabilities', 'filter'), description: 'Enter the filters using the format mentioned above...',  submitOnChange: true, required: false
         }
 
         section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
@@ -714,14 +715,14 @@ def capFilterPage() {
 def attrFilterPage() {
     return dynamicPage(name: 'attrFilterPage', title: 'Attribute Filtering', install: false, uninstall: false) {
         section(sectHead('Custom Attributes')) {
-            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom attributes per device or globally to prevent subsciption events and/or the addition of unwanted characteristics in devices under HomeKit', sCLRGRY) + 
-                spanSmBr("There are 2 ways to format the data:", sCLRGRY) + 
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom attributes per device or globally to prevent subsciption events and/or the addition of unwanted characteristics in devices under HomeKit', sCLRGRY) +
+                spanSmBr('There are 2 ways to format the data:', sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out a specific device attributes wrap the item in brackets like [device_id1:speed,switch], [device_id2:temperature,motion]", sCLRGRY) +
-                spanSmBr(" ${sBULLET} To filter out an attribute from all devices don't use brackets", sCLRGRY) + 
-                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") + 
+                spanSmBr(" ${sBULLET} To filter out an attribute from all devices don't use brackets", sCLRGRY) +
+                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") +
                 spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
-                spanSmBr("Here is an example of mixing per-device and global filters: [device_id1:speed,switch], [device_id2:temperature,motion], temperature", sCLRORG)
-            input "customAttrFilters", "textarea", title: inTS1("Enter custom attributes", "filter"), description: "Enter the filters using the format mentioned above...",  submitOnChange: true, required: false
+                spanSmBr('Here is an example of mixing per-device and global filters: [device_id1:speed,switch], [device_id2:temperature,motion], temperature', sCLRORG)
+            input 'customAttrFilters', 'textarea', title: inTS1('Enter custom attributes', 'filter'), description: 'Enter the filters using the format mentioned above...',  submitOnChange: true, required: false
         }
 
         section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
@@ -786,7 +787,7 @@ def deviceDebugPage() {
             }
             section(sectHead('Device Data (JSON):'), hideable: false, hidden: false) {
                 // paragraph spanSmBld('Device Data:', sCLR4D9)
-                paragraph divSm("<textarea rows='30' class='mdl-textfield' readonly='true'>${viewDeviceDebugAsJson()}</textarea>", sCLRGRY)
+                paragraph divSm("<textarea rows='30' class='mdl-textfield' style='font-size: medium !important;' readonly='true'>${viewDeviceDebugAsJson()}</textarea>", sCLRGRY)
             }
         }
     }
@@ -801,7 +802,7 @@ private String viewDeviceDebugPretty() {
     if (debug_device) { sDev = debug_device }
     Map<String,Object> devData = getDeviceDebugMap(sDev)
     String desc; desc = sNULL
-    if(devData) {
+    if (devData) {
         desc = spanMdBldBr(strUnder('MetaData:'), sCLR4D9)
         desc += spanSmBld('DisplayName:')      + spanSmBr(" ${devData.name}", sCLRGRY)
         desc += spanSmBld('BaseName:')         + spanSmBr(" ${devData.basename}", sCLRGRY)
@@ -815,13 +816,13 @@ private String viewDeviceDebugPretty() {
         // List device attributes
         desc += lineBr() +  spanMdBldBr(strUnder('Attributes:'), sCLR4D9)
         Map<String,Object> tmp = (Map<String,Object>)devData.attributes
-        if(tmp.size()) {
+        if (tmp.size()) {
             tmp.keySet().sort().each { String att ->
                 Boolean ck = ((List<String>)devData.attributes_filtered).contains(att)
                 def val = tmp[att]
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
-                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(att + ": ${val.toString()}" + " (${status})", clr) : spanSmBldBr(att + ": ${val.toString()}" + " (${status})", clr)) 
+                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(att + ": ${val.toString()}" + " (${status})", clr) : spanSmBldBr(att + ": ${val.toString()}" + " (${status})", clr))
             }
         } else { desc += spanSmBldBr('No Attributes Found', sCLRRED) }
 
@@ -831,31 +832,31 @@ private String viewDeviceDebugPretty() {
         List<String> tmp1
 
         tmp1 = (List<String>)devData.capabilities
-        if(tmp1?.size()) {
+        if (tmp1?.size()) {
             tmp1.sort().each { String cap ->
                 Boolean ck = ((List<String>)devData.capabilities_filtered).contains(cap)
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
-                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cap + " (${status})", clr) : spanSmBldBr(cap + " (${status})", clr)) 
+                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cap + " (${status})", clr) : spanSmBldBr(cap + " (${status})", clr))
             }
         } else { desc += spanSmBldBr('No Capabilities Found', sCLRRED) }
 
         // List device commands
         desc += lineBr() +  spanMdBldBr(strUnder('Commands:'), sCLR4D9)
         tmp1 = (List<String>)devData.commands
-        if(tmp1?.size()) {
+        if (tmp1?.size()) {
             tmp1.sort().each { String cmd ->
                 Boolean ck = ((List<String>)devData.commands_filtered).contains(cmd)
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
-                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cmd + " (${status})", clr) : spanSmBldBr(cmd + " (${status})", clr)) 
+                desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cmd + " (${status})", clr) : spanSmBldBr(cmd + " (${status})", clr))
             }
         } else { desc += spanSmBldBr('No Commands Found', sCLRRED) }
 
         // List event history
         desc += lineBr() +  spanMdBldBr(strUnder('Event History:'), sCLR4D9)
         tmp1 = (List<String>)devData.eventHistory
-        if(tmp1?.size()) {
+        if (tmp1?.size()) {
             tmp1.each { String evt ->
                 desc += spanSmBr(" ${sBULLET} " + evt, sCLRGRY)
             }
@@ -887,6 +888,7 @@ private Map getDeviceDebugMap(dev) {
             r.deviceNetworkId = dev.getDeviceNetworkId()
             aa = dev.getLastActivity()
             r.lastActivity = aa ?: null
+            r.isUnavailable = markDeviceUnavailable(dev)
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
             aa = deviceCapabilityList(dev)
             r.capabilities_processed = aa ?: [:]
@@ -910,16 +912,33 @@ private Map getDeviceDebugMap(dev) {
     return r
 }
 
+private Boolean markDeviceUnavailable(dev) {
+    if (dev) {
+        def lastAct = dev.getLastActivity()
+        if (lastAct) {
+            Boolean useLongWait = (dev.hasCapability('SmokeDetector') || dev.hasCapability('CarbonMonoxideDetector'))
+            Long inactiveTime = useLongWait ? 172800000 * 2 : 86400000 // 2 days for smoke and CO detectors, 1 day for everything else
+            def lastActTime = new Date().time - lastAct.time
+            if (lastActTime > inactiveTime) {
+                // logWarn("Device: ${dev.displayName} has been marked as unavailable due to inactivity")
+                return true
+            }
+        }
+    }
+    return false
+}
+
 private Integer getDeviceCnt(Boolean phyOnly=false) {
     List devices; devices = []
     List items = deviceSettingKeys().collect { (String)it.key }
     items?.each { String item ->
         List si = getListSetting(item)
-        if (si && si.size() > 0)
+        if (si && si.size() > 0) {
             devices = devices + si.collect { (String)"device_${gtDevId(it)}" }
+        }
     }
     if (!phyOnly) {
-        virtSettingKeys().collect { (String)it.key }.each { String item->
+        virtSettingKeys().collect { (String)it.key }.each { String item ->
             List si = getListSetting(item)
             if (si && si.size() > 0) {
                 String aa = item.replaceAll('List', sBLANK)
@@ -941,7 +960,7 @@ def installed() {
 
 def updated() {
     logDebug("${(String)app.name} | updated() has been called...")
-    if (!state.installData) { state.installData = [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false] }
+    state.installData = state.installData ?: [initVer: appVersionFLD, dt: getDtNow(), updatedDt: getDtNow(), shownDonation: false]
     unsubscribe()
     appCleanup()
     initialize()
@@ -970,14 +989,14 @@ Boolean getAccessToken(Boolean disableRetry=false) {
         }
         return true
     } catch (ex) {
-        if (!disableRetry) {
-            enableOauth() // can fail depending on security settings
-            return getAccessToken(true)
-        } else {
+        if (disableRetry) {
             String msg = "Error: OAuth is not Enabled for ${app.getName()}!. Please click remove and Enable Oauth under in the HE console 'Apps Code'"
-            logError("getAccessToken Exception: ${msg}",ex)
+            logError("getAccessToken Exception: ${msg}", ex)
             return false
         }
+
+        enableOauth() // can fail depending on security settings
+        return getAccessToken(true)
     }
 }
 
@@ -1013,7 +1032,7 @@ void subscribeToEvts() {
 @CompileStatic
 private void healthCheck(Boolean ui=false) {
     checkVersionData()
-    if (checkIfCodeUpdated(ui)) {
+    if (checkIfCodeUpdated()) {
         logWarn('Code Version Change Detected... Health Check will occur on next cycle.')
         updated()
         return
@@ -1031,7 +1050,7 @@ private void healthCheck(Boolean ui=false) {
     else if (dbgLogSec == 0 && getBoolSetting('showDebugLogs')) { updTsVal(sDBGLOGEN) }
 }
 
-Boolean checkIfCodeUpdated(Boolean ui=false) {
+Boolean checkIfCodeUpdated() {
     //if(!ui) logDebug("Code versions: ${state.codeVersions}")
     if (state.codeVersions?.mainApp != appVersionFLD) {
         updCodeVerMap('mainApp', appVersionFLD)
@@ -1058,9 +1077,9 @@ private void appCleanup() {
         removeItems.push('directIP')
         removeItems.push('directPort')
     }
-    removeItems.each { String it -> if (state?.containsKey(it)) state.remove(it) }
+    removeItems.each { String it -> if (state?.containsKey(it)) { state.remove(it) } }
     List<String> removeSettings = ['removeColorTemp', 'hubitatQueryString']
-    removeSettings.each { String it -> if (settings.containsKey(it)) settingRemove(it) }
+    removeSettings.each { String it -> if (settings.containsKey(it)) { settingRemove(it) } }
 }
 
 private List renderDevices() {
@@ -1069,9 +1088,9 @@ private List renderDevices() {
     List items; items = deviceSettingKeys().collect { (String)it.key }
     items = items + virtSettingKeys().collect { (String)it.key }
     items.each { String item ->
-        List tl= getListSetting(item)
+        List tl = getListSetting(item)
         if (tl.size()) {
-            tl.each { dev->
+            tl.each { dev ->
                 Map<String,Object> devObj
                 try {
                     devObj = getDeviceData(item, dev)
@@ -1084,18 +1103,18 @@ private List renderDevices() {
         }
     }
     if (getBoolSetting('addSecurityDevice')) { devList?.push(getSecurityDevice()) }
-    if (devMap.size() > 0) { devMap.sort { (String)it.value.name }?.each { k, v-> devList.push(v) } }
+    if (devMap.size() > 0) { devMap.sort { (String)it.value.name }?.each { k, v -> devList.push(v) } }
     return devList
 }
 
-private Map performPluginTest(){
+private Map performPluginTest() {
     Map params = [
         uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
         headers: ['Content-Type':'text/html;charset=utf-8']
     ]
     try {
         httpPost(params) { resp ->
-            //LogTrace("response data: ${resp.data}")
+        //LogTrace("response data: ${resp.data}")
         }
     } catch (ex) {
         logError("enableOauth something went wrong: ${ex}", ex)
@@ -1117,13 +1136,13 @@ private String sanitizeName(String name) {
 
 private Map<String,Object> getDeviceData(String type, sItem) {
     // log.debug "getDeviceData($type, $sItem)"
-    String curType; curType= 'device'
-    String devId; devId= sBLANK //= sItem.toString()
-    Boolean isVirtual; isVirtual= false
-    String firmware; firmware= sNULL
-    String name; name= sNULL
+    String curType; curType = 'device'
+    String devId; devId = sBLANK //= sItem.toString()
+    Boolean isVirtual; isVirtual = false
+    String firmware; firmware = sNULL
+    String name; name = sNULL
     Map optFlags = [:]
-    def attrVal; attrVal= null
+    def attrVal; attrVal = null
     def obj //= null
     switch (type) {
         case 'pistonList':
@@ -1143,8 +1162,8 @@ private Map<String,Object> getDeviceData(String type, sItem) {
             optFlags['virtual_mode'] = 1
             obj = fndMode(sItem.toString())
             if (obj) {
-// BUGFIX for modes deviceId may not be unique vs. device.id
-                devId = 'm_'+sItem.toString()
+                // BUGFIX for modes deviceId may not be unique vs. device.id
+                devId = 'm_' + sItem.toString()
                 name = 'Mode - ' + (String)obj.name
                 attrVal = modeSwitchState((String)obj.name)
             }
@@ -1166,8 +1185,8 @@ private Map<String,Object> getDeviceData(String type, sItem) {
             break
     }
     if (curType && obj && sItem) {
-        if (curType == 'Security Keypad') {
-            return [
+        return curType == 'Security Keypad' ?
+            [
                 name: sanitizeName(sItem.displayName?.toString()),
                 basename: sItem.name,
                 deviceid: "securityKeypad_${sItem.id}",
@@ -1177,28 +1196,26 @@ private Map<String,Object> getDeviceData(String type, sItem) {
                 serialNumber: sItem.getDeviceNetworkId(),
                 firmwareVersion: firmware ?: '1.0.0',
                 lastTime: sItem?.getLastActivity() ?: null,
+                isUnavailable: isVirtual ? false : markDeviceUnavailable(sItem),
                 capabilities: ['Alarm System Status': 1, 'Alarm': 1],
                 commands: [],
                 attributes: ['alarmSystemStatus': getSecurityKeypadMode((String)sItem.currentValue('securityKeypad')?.toString())]
-            ]
-        }
-        else {
-            return [
-                name: !isVirtual ? sanitizeName(sItem.displayName?.toString()) : sanitizeName(name),
-                basename: !isVirtual ? sItem.name : name,
-                deviceid: !isVirtual ? sItem.id : devId,
-                status: !isVirtual ? sItem.status : 'Online',
-                manufacturerName: (!isVirtual ? sItem.manufacturerName : pluginNameFLD) ?: pluginNameFLD,
-                modelName: !isVirtual ? (sItem.modelName ?: sItem.getTypeName()) : curType+" Device",
-                serialNumber: !isVirtual ? sItem.getDeviceNetworkId() : curType+devId,
+            ] : [
+                name: isVirtual ? sanitizeName(name) : sanitizeName(sItem.displayName?.toString()),
+                basename: isVirtual ? name : sItem.name,
+                deviceid: isVirtual ? devId : sItem.id,
+                status: isVirtual ? 'Online' : sItem.status,
+                manufacturerName: (isVirtual ? pluginNameFLD : sItem.manufacturerName) ?: pluginNameFLD,
+                modelName: isVirtual ? "${curType} Device" : (sItem.modelName ?: sItem.getTypeName()),
+                serialNumber: isVirtual ? "${curType}${devId}" : sItem.getDeviceNetworkId(),
                 firmwareVersion: firmware ?: '1.0.0',
-                lastTime: !isVirtual ? (sItem.getLastActivity() ?: null) : wnow(),
-                capabilities: !isVirtual ? deviceCapabilityList(sItem) : [(curType) : 1],
-                commands: !isVirtual ? deviceCommandList(sItem) : [on: 1],
-                deviceflags: !isVirtual ? getDeviceFlags(sItem) : optFlags,
-                attributes: !isVirtual ? deviceAttributeList(sItem) : [(sSW): attrVal]
+                lastTime: isVirtual ? wnow() : (sItem.getLastActivity() ?: null),
+                isUnavailable: isVirtual ? false : markDeviceUnavailable(sItem),
+                capabilities: isVirtual ? [(curType) : 1] : deviceCapabilityList(sItem),
+                commands: isVirtual ? [on: 1] : deviceCommandList(sItem),
+                deviceflags: isVirtual ? optFlags : getDeviceFlags(sItem),
+                attributes: isVirtual ? [(sSW): attrVal] : deviceAttributeList(sItem)
             ]
-        }
     }
     return null
 }
@@ -1227,22 +1244,22 @@ def getSecurityDevice() {
 @CompileStatic
 Map getDeviceFlags(device) {
     Map<String, Integer> opts = [:]
-    [fan3SpdList: "fan_3_spd", fan4SpdList: "fan_4_spd", fan5SpdList: "fan_5_spd",
-     lightNoAlList: "light_no_al"].each { String k, String v ->
+    [fan3SpdList: 'fan_3_spd', fan4SpdList: 'fan_4_spd', fan5SpdList: 'fan_5_spd',
+     lightNoAlList: 'light_no_al'].each { String k, String v ->
         if (isDeviceInInput(k, gtDevId(device))) {
             opts[v] = 1
         }
-    }
+     }
     // if(opts?.size()>0) log.debug "opts: ${opts}"
     return opts
 }
 
 def findDevice(String dev_id) {
-    List allDevs; allDevs= []
-    deviceSettingKeys().collect { (String)it.key }?.each { String key->
+    List allDevs; allDevs = []
+    deviceSettingKeys().collect { (String)it.key }?.each { String key ->
         List setL = getListSetting(key)
         allDevs = allDevs + (setL ?: [])
-    }
+}
     def aa = allDevs.find { gtDevId(it) == dev_id }
     return aa ?: null
 }
@@ -1282,7 +1299,7 @@ String getSecurityStatus(Boolean retInt=false) {
 }
 
 void setAlarmSystemMode(String mode) {
-    String sMode; sMode= sNULL
+    String sMode; sMode = sNULL
     switch (mode) {
         case 'armAway':
         case 'away':
@@ -1378,11 +1395,11 @@ String renderConfig() {
         access_token: (String)state.accessToken,
         temperature_unit: getStrSetting('temp_unit') ?: (String)location.temperatureScale,
         validateTokenId: getBoolSetting('validate_token'),
-        adaptive_lighting: getBoolDefSetting('adaptive_lighting',true),
-        consider_fan_by_name: getBoolDefSetting('consider_fan_by_name',true),
+        adaptive_lighting: getBoolDefSetting('adaptive_lighting', true),
+        consider_fan_by_name: getBoolDefSetting('consider_fan_by_name', true),
         consider_light_by_name: getBoolSetting('consider_light_by_name'),
         adaptive_lighting_offset: (getBoolSetting('adaptive_lighting') && settings.adaptive_lighting_offset) ? settings.adaptive_lighting_offset.toInteger() : 0,
-        round_levels: getBoolDefSetting('round_levels',true),
+        round_levels: getBoolDefSetting('round_levels', true),
         logConfig: [
             debug: false,
             showChanges: true
@@ -1430,16 +1447,16 @@ def deviceCommand() {
 }
 
 private processCmd(String idevId, String cmd, value1, value2) {
-    String devId; devId=idevId
+    String devId; devId = idevId
     Long execDt = wnow()
     Boolean shw = getBoolSetting('showCmdLogs')
     if (shw) { logInfo("Plugin called Process Command | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
     if (!devId) { return }
     String command; command = cmd
 
-    if (devId.contains("securityKeypad_") && getListSetting('securityKeypadsList')) {
+    if (devId.contains('securityKeypad_') && getListSetting('securityKeypadsList')) {
         command = mapSecurityKeypadMode(command)
-        devId = devId.replaceFirst("securityKeypad_", "")
+        devId = devId.replaceFirst('securityKeypad_', '')
     }
 
     if (devId == "alarmSystemStatus_${location?.id}" && getBoolSetting('addSecurityDevice')) {
@@ -1447,7 +1464,6 @@ private processCmd(String idevId, String cmd, value1, value2) {
         Long pt = execDt ? (wnow() - execDt) : 0L
         logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
-
     } else if (command == 'mode' &&  getListSetting('modeList')) {
         if (shw) { logDebug("Virtual Mode Received: ${devId}") }
         String mdevId = devId.replaceAll('m_', sBLANK)
@@ -1455,51 +1471,49 @@ private processCmd(String idevId, String cmd, value1, value2) {
         Long pt = execDt ? (wnow() - execDt) : 0L
         logCmd([cmd: command, device: 'Mode Device', value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Mode Device | Command: [$command] | Process Time: (${pt}ms)", 200)
-
     } else if (command == 'piston' && getListSetting('pistonList')) {
         if (shw) { logDebug("Virtual Piston Received: ${devId}") }
         String aa = runPiston(devId, shw)
         Long pt = execDt ? (wnow() - execDt) : 0L
         logCmd([cmd: command, device: 'Piston Device', value1: value1, value2: value2, execTime: pt])
         return CommandReply(shw, sSUCC, "Piston | ${aa} | Command: [$command] | Process Time: (${pt}ms)", 200)
+    }
 
-    } else {
-        def device = findDevice(devId)
-        String devN = device?.displayName
-        if (!device) {
-            logError("Device Not Found $devId")
-            return CommandReply(shw, 'Failure', 'Device Not Found', 500)
-        }
-        if (!device?.hasCommand(command)) {
-            logError("Device ${devN} does not have the command $command")
-            return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
-        }
+    def device = findDevice(devId)
+    String devN = device?.displayName
+    if (!device) {
+        logError("Device Not Found $devId")
+        return CommandReply(shw, 'Failure', 'Device Not Found', 500)
+    }
+    if (!device?.hasCommand(command)) {
+        logError("Device ${devN} does not have the command $command")
+        return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
+    }
 
-        if (command == "setColorTemperature" && device.currentValue("switch") != "on"){
-            return CommandReply(shw, sSUCC, 'Command was setColorTemperature but device is not on', 200)
-        }
+    if (command == 'setColorTemperature' && device.currentValue('switch') != 'on') {
+        return CommandReply(shw, sSUCC, 'Command was setColorTemperature but device is not on', 200)
+    }
 
-        String cmdS
-        cmdS = shw ? "Command Successful for Device | Name: ${devN} | Command: [${command}(".toString() : sBLANK
-        try {
-            if (value2 != null) {
-                device."$command"(value1, value2)
-                if (shw) { cmdS = cmdS + "$value1, $value2)]".toString() }
-            } else if (value1 != null) {
-                device."$command"(value1)
-                if (shw) { cmdS = cmdS + "$value1)]".toString() }
-            } else {
-                device."$command"()
-                if (shw) { cmdS = cmdS + ')]' }
-            }
-            if (shw) { logInfo(cmdS) }
-            Long pt = execDt ? (wnow() - execDt) : 0L
-            logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
-            return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}()] | Process Time: (${pt}ms)", 200)
-        } catch (ex) {
-            logError("Error Occurred for Device | Name: ${devN} | Command: [${command}()] ${ex}", ex)
-            return CommandReply(shw, 'Failure', "Error Occurred For Device ${devN} | Command [${command}()]", 500)
+    String cmdS
+    cmdS = shw ? "Command Successful for Device | Name: ${devN} | Command: [${command}(".toString() : sBLANK
+    try {
+        if (value2 != null) {
+            device."$command"(value1, value2)
+            if (shw) { cmdS = cmdS + "$value1, $value2)]".toString() }
+        } else if (value1 != null) {
+            device."$command"(value1)
+            if (shw) { cmdS = cmdS + "$value1)]".toString() }
+        } else {
+            device."$command"()
+            if (shw) { cmdS = cmdS + ')]' }
         }
+        if (shw) { logInfo(cmdS) }
+        Long pt = execDt ? (wnow() - execDt) : 0L
+        logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
+        return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}()] | Process Time: (${pt}ms)", 200)
+    } catch (ex) {
+        logError("Error Occurred for Device | Name: ${devN} | Command: [${command}()] ${ex}", ex)
+        return CommandReply(shw, 'Failure', "Error Occurred For Device ${devN} | Command [${command}()]", 500)
     }
 }
 
@@ -1508,12 +1522,13 @@ private void changeMode(String modeId, Boolean shw) {
         Map<String,String> mode = fndMode(modeId)
         if (mode) {
             if (shw) { logInfo("Setting the Location Mode to (${mode.name})...") }
+            /* groovylint-disable-next-line UnnecessarySetter */
             setLocationMode(mode.name)
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
     }
 }
 
-private runPiston(rtId, Boolean shw) {
+private runPiston(String rtId, Boolean shw) {
     if (rtId) {
         Map rt = findVirtPistonDevice(rtId)
         String name = (String)rt?.name
@@ -1522,7 +1537,8 @@ private runPiston(rtId, Boolean shw) {
             sendLocationEvent(name: rt.id, value:'homebridge', isStateChange: true, displayed: false, linkText: 'Execute Piston from homebridge', descriptionText: "Homebridge piston execute ${name}", data: [:])
             runIn(2, 'endPiston', [data: [id:rtId, name:name]])
             return name
-        } else { logError("Unable to find a matching piston for the id: ${rtId}") }
+        }
+        logError("Unable to find a matching piston for the id: ${rtId}")
     }
     return null
 }
@@ -1536,12 +1552,12 @@ def deviceAttribute() {
     String attribute = (String)params?.attribute
 
     Map res
-    Integer code; code=200
-    if (!device) {
-        code=404
-        res= [status: 'Failure', message: 'Device not found']
+    Integer code; code = 200
+    if (device) {
+        res = [currentValue: device?.currentValue(attribute)]
     } else {
-        res=[currentValue: device?.currentValue(attribute)]
+        code = 404
+        res = [status: 'Failure', message: 'Device not found']
     }
     String resultJson = new JsonOutput().toJson(res)
     wrender contentType: sAPPJSON, data: resultJson, code: code
@@ -1555,16 +1571,16 @@ static Map findVirtPistonDevice(id) {
 Map<String,Integer> deviceCapabilityList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Integer> capItems = ((List)device.getCapabilities())?.findAll { (String)it.name in allowedListFLD.capabilities }?.collectEntries { capability-> [ ((String)capability.name) :1 ] }
+    Map<String,Integer> capItems = ((List)device.getCapabilities())?.findAll { (String)it.name in allowedListFLD.capabilities }?.collectEntries { capability -> [ ((String)capability.name) :1 ] }
 
-    if(isDeviceInInput("pushableButtonList", devid)) { capItems["Button"] = 1; capItems["PushableButton"] = 1 }
-    else { capItems.remove("PushableButton") }
+    if (isDeviceInInput('pushableButtonList', devid)) { capItems['Button'] = 1; capItems['PushableButton'] = 1 }
+    else { capItems.remove('PushableButton') }
 
-    if(isDeviceInInput("holdableButtonList", devid)) { capItems["Button"] = 1; capItems["HoldableButton"] = 1 }
-    else { capItems.remove("HoldableButton") }
+    if (isDeviceInInput('holdableButtonList', devid)) { capItems['Button'] = 1; capItems['HoldableButton'] = 1 }
+    else { capItems.remove('HoldableButton') }
 
-    if(isDeviceInInput("doubleTapableButtonList", devid)) { capItems["Button"] = 1; capItems["DoubleTapableButton"] = 1 }
-    else { capItems.remove("DoubleTapableButton") }
+    if (isDeviceInInput('doubleTapableButtonList', devid)) { capItems['Button'] = 1; capItems['DoubleTapableButton'] = 1 }
+    else { capItems.remove('DoubleTapableButton') }
 
     if (isDeviceInInput('lightList', devid)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('outletList', devid)) { capItems['Outlet'] = 1 }
@@ -1589,9 +1605,9 @@ Map<String,Integer> deviceCapabilityList(device) {
     //This will filter out selected capabilities from the devices selected in filtering inputs.
     List<String> remKeys
     remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-    if (!remKeys) remKeys = []
+    remKeys = remKeys ?: []
     Boolean sdl = getBoolSetting('showDebugLogs')
-    remKeys.each { String k->
+    remKeys.each { String k ->
         String capName = k.replaceAll('remove', sBLANK)
         String theCap = (String)capFilterFLD[capName]
         if (theCap && capItems[theCap] && isDeviceInInput(k, devid)) {
@@ -1606,8 +1622,8 @@ private List<String> filteredOutCaps(device) {
     List<String> capsFiltered; capsFiltered = []
     List<String> remKeys
     remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-    if (!remKeys) remKeys = []
-    remKeys.each { String k->
+    remKeys = remKeys ?: []
+    remKeys.each { String k ->
         String capName = k.replaceAll('remove', sBLANK)
         String theCap = capFilterFLD[capName]
         if (theCap && isDeviceInInput(k, gtDevId(device))) { capsFiltered.push(theCap) }
@@ -1619,27 +1635,30 @@ private List<String> filteredOutCaps(device) {
 
 private Boolean ignoreCapability(device, String icap, Boolean inclIgnoreFld=false) {
     String cap; cap = icap.toLowerCase()
-    if (inclIgnoreFld && !(cap in allowedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
+    // if (inclIgnoreFld && !(cap in allowedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
+    if (inclIgnoreFld && !(cap in allowedListFLD.capabilities*.toLowerCase())) { return true }
+
     Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
     List<String> globalFilters = customFilters.global ?: []
     Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
     if (globalFilters.contains(cap)) { return true }
     String devid = gtDevId(device)
-    if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(cap)) ) { return true }
-    return false
+    // if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(cap)) ) { return true }
+    return perDeviceFilters[devid] && ((List<String>)perDeviceFilters[devid]*.toLowerCase()?.contains(cap))
+// return false
 }
 
 Map<String,Integer> deviceCommandList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Integer> cmds = device.supportedCommands?.findAll { !ignoreCommand((String)it.name) }?.collectEntries { c-> [ ((String)c.name) : 1 ] }
+    Map<String,Integer> cmds = device.supportedCommands?.findAll { !ignoreCommand((String)it.name) }?.collectEntries { c -> [ ((String)c.name) : 1 ] }
     if (isDeviceInInput('tstatList', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
     if (isDeviceInInput('tstatCoolList', devid)) { cmds.remove('setHeatingSetpoint'); cmds.remove('auto'); cmds.remove('heat') }
     if (isDeviceInInput('tstatHeatList', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
     if (isDeviceInInput('removeColorControl', devid)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
     if (isDeviceInInput('removeColorTemperature', devid)) { cmds.remove('setColorTemperature') }
-    if (isDeviceInInput('removeThermostatFanMode', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove("setSupportedThermostatFanModes"); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
-    if (isDeviceInInput('removeThermostatMode', devid)) { cmds.remove('setThermostatMode'); cmds.remove("setSupportedThermostatModes"); cmds.remove('auto'); cmds.remove('cool'); cmds.remove('emergencyHeat'); cmds.remove('heat') }
+    if (isDeviceInInput('removeThermostatFanMode', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('setSupportedThermostatFanModes'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
+    if (isDeviceInInput('removeThermostatMode', devid)) { cmds.remove('setThermostatMode'); cmds.remove('setSupportedThermostatModes'); cmds.remove('auto'); cmds.remove('cool'); cmds.remove('emergencyHeat'); cmds.remove('heat') }
     if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
     if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { cmds.remove('setHeatingSetpoint'); cmds.remove('heat'); cmds.remove('emergencyHeat'); cmds.remove('auto') }
     return cmds
@@ -1650,7 +1669,9 @@ private static Boolean ignoreCommand(String cmd) {
 }
 
 private List<String> filteredOutCommands(device) {
-    List<String> filtered = device.supportedCommands?.findAll { ignoreCommand((String)it.name) }?.collect { c->  (String)c.name } ?: []
+    List<String> filtered = device.supportedCommands
+        ?.findAll { ignoreCommand((String)it.name) }
+        ?.collect { c -> (String)c.name } ?: []
     return filtered
 }
 
@@ -1665,12 +1686,12 @@ private Map parseCustomFilterStr(String text) {
     matcher.each {
         String section
         section = it[0].trim()
-        if (section.startsWith("[") && section.endsWith("]")) {
+        if (section.startsWith('[') && section.endsWith(']')) {
             section = section[1..-2]  // Remove the brackets
-            String[] parts = section.split(":")
+            String[] parts = section.split(':')
             if (parts.size() == 2) {
                 String deviceId = parts[0].trim()
-                String[] attributes = parts[1].split(",\\s*")
+                String[] attributes = parts[1].split(',\\s*')
                 result.perDevice[deviceId] = attributes
             }
         } else {
@@ -1684,14 +1705,13 @@ private Map parseCustomFilterStr(String text) {
 
 private Boolean ignoreAttribute(device, String iattr, Boolean inclIgnoreFld=true) {
     String attr; attr = iattr.toLowerCase()
-    if (inclIgnoreFld && !(attr in allowedListFLD.attributes.collect { it.toLowerCase() })) { return true }
+    if (inclIgnoreFld && !(attr in allowedListFLD.attributes*.toLowerCase())) { return true }
     Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
     List<String> globalFilters = customFilters.global ?: []
     Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
     if (globalFilters.contains(attr)) { return true }
     String devid = gtDevId(device)
-    if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(attr)) ) { return true }
-    return false
+    return perDeviceFilters[devid] && ((List<String>)perDeviceFilters[devid]*.toLowerCase()?.contains(attr))
 }
 
 private List<String> filteredOutAttrs(device) {
@@ -1701,20 +1721,20 @@ private List<String> filteredOutAttrs(device) {
 }
 
 Map<String,Object> deviceAttributeList(device) {
-    String devid= gtDevId(device)
+    String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
     Map<String,Object> atts = ((List)device.getSupportedAttributes())?.findAll { (String)it.name in allowedListFLD.attributes }?.collectEntries { attribute ->
-        String attr=(String)attribute.name
+        String attr = (String) attribute.name
         try {
             // if(attr == "speed") {
             //     [(attr): getFanSpeedInteger(device.currentValue(attr))]
             // } else {
             [(attr): device.currentValue(attr)]
-            // }
+        // }
         } catch (ignored) {
             [(attr): null]
         }
-    }
+}
     if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange') }
     if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange') }
     if (isDeviceInInput('removeColorControl', devid)) { atts.remove('RGB'); atts.remove('color'); atts.remove('colorName'); atts.remove('hue'); atts.remove('saturation') }
@@ -1733,7 +1753,6 @@ def getAllData() {
     updTsVal('lastDeviceDataQueryDt')
     wrender contentType: sAPPJSON, data: deviceJson
 }
-
 
 static Map<String,String> deviceSettingKeys() {
     return [
@@ -1755,11 +1774,10 @@ static Map<String,String> fanSettingKeys() {
 
 static Map<String,String> virtSettingKeys() { return ['modeList': 'Mode Devices', 'pistonList': 'Piston Devices'] }
 
-
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
-    Boolean shw 
-    deviceSettingKeys().each { String k, String v->
+    Boolean shw
+    deviceSettingKeys().each { String k, String v ->
         shw = false //(k=='shadesList')
         List l = getListSetting(k)
         logDebug("Subscribed to (${l?.size() ?: 0}) ${v}")
@@ -1786,8 +1804,6 @@ Boolean isDeviceInInput(String setKey, String devId) {
     }
     return false
 }
-
-
 
 void registerChangeHandler(List devices, Boolean showlog=false) {
     devices?.each { device ->
@@ -1818,7 +1834,7 @@ void registerChangeHandler(List devices, Boolean showlog=false) {
 
 String getAlarmIntrusionMode() {
     String curMode = getSecurityStatus()
-    switch(curMode) {
+    switch (curMode) {
         case 'armedAway':
             return 'intrusion-away'
         case 'armedHome':
@@ -1826,10 +1842,8 @@ String getAlarmIntrusionMode() {
         case 'armedNight':
             return 'intrusion-night'
     }
-    return "disarmed"
+    return 'disarmed'
 }
-
-
 
 def changeHandler(evt) {
     Long execDt = wnow()
@@ -1879,7 +1893,7 @@ def changeHandler(evt) {
             ((List<String>)getListSetting('modeList'))?.each { id ->
                 Map<String,String> md = fndMode(id)
                 if (md && md.id) {
-                    String devId = 'm_'+md.id
+                    String devId = 'm_' + md.id
                     sendItems.push([evtSource: 'MODE', evtDeviceName: "Mode - ${md.name}", evtDeviceId: devId, evtAttr: sSW, evtValue: modeSwitchState(md.name), evtUnit: sBLANK, evtDate: dt])
                 }
             }
@@ -1917,10 +1931,10 @@ def changeHandler(evt) {
         case 'pushed':
         case 'doubleTapped':
             Map evtData = [buttonNumber: value]
-            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: "button", evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
+            sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: 'button', evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
             break
 
-        // case 'speed': 
+        // case 'speed':
         //     if (isDeviceInInput('fanList', deviceid) || isDeviceInInput('fan3SpdList', deviceid) || isDeviceInInput('fan4SpdList', deviceid) || isDeviceInInput('fan5SpdList', deviceid)) {
         //         // Convert the speed to a number for Homebridge based on it's speed 3,4,5 speed type
         //         Integer fanSpd = 1
@@ -1940,12 +1954,12 @@ def changeHandler(evt) {
 
     if (sendEvt && sendItems.size() > 0) {
         String server = getServerAddress()
-        if (server == sCLN || server == sNLCLN ) { // can be configured ngrok??
+        if (server == sCLN || server == sNLCLN) { // can be configured ngrok??
             return
         }
 
         //Send Using the Direct Mechanism
-        sendItems.each { Map send->
+        sendItems.each { Map send ->
             if (evtLog) { //if(getBoolSetting('showEventLogs')) {
                 String unitStr
                 switch ((String)send.evtAttr) {
@@ -1982,28 +1996,26 @@ def changeHandler(evt) {
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: wnow() - execDt])
         }
     }
-}
+    }
 
 private static Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
     Map<String, Integer> speedMappings = [
-        "low": 0,
-        "medium-low": 25,
-        "medium": 50,
-        "medium-high": 75,
-        "high": 100,
-        "on": 100,
-        "off": 0,
-        "auto": 50  // You can adjust this based on your needs
+        'low': 0,
+        'medium-low': 25,
+        'medium': 50,
+        'medium-high': 75,
+        'high': 100,
+        'on': 100,
+        'off': 0,
+        'auto': 50  // You can adjust this based on your needs
     ]
 
     Integer speedPercentage
     speedPercentage = speedMappings[speed] ?: 0
     // Adjust percentage based on the number of speeds
     //  -1 because index is 0-based
-    speedPercentage = Math.round( ((speedPercentage / 100.0) * (numberOfSpeeds - 1)) * 100).toInteger()
-    
+    speedPercentage = Math.round(((speedPercentage / 100.0) * (numberOfSpeeds - 1)) * 100).toInteger()
     return speedPercentage
-
 }
 
 void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, String contentType = sAPPJSON) {
@@ -2011,7 +2023,7 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
     Boolean sendVia = getBoolSetting('sendViaNgrok')
     String url = sendVia ? getStrSetting('ngrokHttpUrl') : sBLANK
     if (!devMode() || !(sendVia && url)) {
-        if (server == sCLN || server == sNLCLN ) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
+        if (server == sCLN || server == sNLCLN) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
     }
     Map params = [
         uri: (devMode() && sendVia && url) ? "https://${url}.ngrok.io/${path}".toString() : "http://${server}/${path}".toString(),
@@ -2024,11 +2036,11 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
 }
 
 void asyncHttpCmdResp(response, Map data) {
-    if (getTsVal(sDBG) == sTRUE && bIs(data,'evtLog')) {
+    if (getTsVal(sDBG) == sTRUE && bIs(data, 'evtLog')) {
         def resp = response?.getData() // || null
         String src = data?.src ? (String)data.src : 'Unknown'
         logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
-        logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (wnow()-(Long)data.execDt) : 0}ms)")
+        logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (wnow() - (Long)data.execDt) : 0}ms)")
     }
 }
 
@@ -2050,17 +2062,17 @@ String getServerAddress() {
 String getPluginStatusDesc() {
     String out; out = sBLANK
     Map pluginDetails = state.pluginDetails ?: [:]
-    if(pluginDetails && pluginDetails.keySet().size() > 0) {
+    if (pluginDetails && pluginDetails.keySet().size() > 0) {
         out += pluginDetails?.directIP && pluginDetails?.directPort ? spanSmBld('Plugin Server:', sCLRGRY) + spanSmBr(" ${pluginDetails?.directIP}:${pluginDetails?.directPort}", sCLRGRY) : sBLANK
         out += state?.pluginDetails?.version ? spanSmBld('Plugin Version:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
-        out += spanBr(" ")
+        out += spanBr(' ')
     }
     return out
 }
 
 private Map<String,String> fndMode(String m){
-    def mode= ((List)location.getModes())?.find{ it-> ((Long)it.getId()).toString()==m || (String)it.getName()==m }
-    return mode ? [ id: ((Long)mode.getId()).toString(), name: (String)mode.getName()] :null
+    def mode = ((List)location.getModes())?.find{ it -> ((Long)it.getId()).toString() == m || (String)it.getName() == m }
+    return mode ? [id: ((Long)mode.getId()).toString(), name: (String)mode.getName()] : null
 }
 
 @Field volatile static Map<String,Object> webCoREFLD = [:]
@@ -2193,21 +2205,21 @@ def appInfoSect() {
     String tStr
     tStr = spanSmBld('Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
     tStr += state?.pluginDetails?.version ? spanSmBld('Plugin:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
-    section (sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), 'orange')) {
+    section(sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), 'orange')) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
-        if (bIs(minUpdMap,'updRequired') && ((List)minUpdMap.updItems).size() > 0) {
+        if (bIs(minUpdMap, 'updRequired') && ((List)minUpdMap.updItems).size() > 0) {
             isNote = true
             String str3
             str3 = spanSmBldBr('Updates Required:', sCLRRED)
-            ((List)minUpdMap.updItems).each { item-> str3 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
+            ((List)minUpdMap.updItems).each { item -> str3 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
             str3 += lineBr() + spanSmBld('If you just updated the code please press Done/Next to let the app process the changes.', sCLRRED)
             paragraph str3
         } else if (codeUpdItems?.size()) {
             isNote = true
             String str2
             str2 = spanSmBldBr('Code Updates Available:', sCLRRED)
-            codeUpdItems?.each { item-> str2 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
+            codeUpdItems?.each { item -> str2 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
             paragraph str2
         }
         if (!isNote) { paragraph spanSm('No Issues to Report', sCLRGRY) }
@@ -2223,8 +2235,8 @@ static String getAppImg(String imgName, String ext='.png') { return "https://raw
 
 static String getPublicImg(String imgName) { return "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png" }
 
-static String sectH3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold'>${i ? "<img src='${i}' width='48'> " : sBLANK} ${t?.replaceAll("\\n", '<br>')}</h3>${st ?: sBLANK}" }
-static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='48'> " : sBLANK}${t?.replaceAll("\\n", '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}".toString() }
+static String sectH3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold'>${i ? "<img src='${i}' width='48'> " : sBLANK} ${t?.replaceAll('\\n', '<br>')}</h3>${st ?: sBLANK}" }
+static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='48'> " : sBLANK}${t?.replaceAll('\\n', '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}".toString() }
 static String sectHead(String str, String img = sNULL) { return str ? "<h3 style='margin-top:0;margin-bottom:0;'>" + spanImgStr(img) + span(str, sCLR4D9, sNULL, true) + '</h3>' + "<hr style='background-color:${sCLRGRY};font-style:italic;height:1px;border:0;margin-top:0;margin-bottom:0;'>" : sBLANK }
 //static String sTS(String t, String i = sNULL, Boolean bold=false) { return "<h3>${i ? "<img src='${i}' width='42'> " : sBLANK} ${bold ? '<b>' : sBLANK}${t?.replaceAll('\n', '<br>')}${bold ? '</b>' : sBLANK}</h3>" }
 //static String s3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold;'>${i ? "<img src='${i}' width='42'> " : sBLANK} ${t?.replaceAll('\n', '<br>')}</h3>${st ? "${st}" : sBLANK}" }
@@ -2286,7 +2298,7 @@ static String dashItem(String inStr, String strVal, newLine=false) { return "${(
 
 static String textDonateLink() { return 'https://www.paypal.com/donate?hosted_button_id=5GMA6C3RTLXH6' }
 
-static Integer versionStr2Int(String str) { return str ? str.tokenize('-')[0]?.replaceAll("\\.", sBLANK)?.toInteger() : null }
+static Integer versionStr2Int(String str) { return str ? str.tokenize('-')[0]?.replaceAll('\\.', sBLANK)?.toInteger() : null }
 
 static String versionCleanup(String str) { return str ? str.tokenize('-')[0] : sNULL }
 
@@ -2294,12 +2306,12 @@ static Boolean codeUpdIsAvail(String inewVer, String icurVer, String type) {
     Boolean result; result = false
     String latestVer
     String newVer, curVer
-    newVer=inewVer
-    curVer=icurVer
+    newVer = inewVer
+    curVer = icurVer
     if (newVer && curVer) {
         newVer = versionCleanup(newVer)
         curVer = versionCleanup(curVer)
-        List<String> versions = [newVer, curVer] as List<String>
+        List<String> versions = [newVer, curVer]
         if (newVer != curVer) {
             latestVer = versions.max { a, b ->
                 List verA = a?.tokenize('.'); List verB = b?.tokenize('.')
@@ -2325,7 +2337,7 @@ private Map getMinVerUpdsRequired() {
     List updItems = []
     Map codeItems = [plugin: 'Homebridge Plugin']
     Map<String,String> codeVers = (Map<String, String>)state.codeVersions ?: [:]
-    codeVers?.each { String k, String v->
+    codeVers?.each { String k, String v ->
         try {
             if (codeItems?.containsKey(k) && v != null && (versionStr2Int(v) < (Integer)minVersionsFLD[k])) { updRequired = true; updItems.push(codeItems[k]) }
         } catch (ex) {
@@ -2339,8 +2351,8 @@ private List codeUpdateItems(Boolean shrt=false) {
     Boolean appUpd = appUpdAvail()
     Boolean plugUpd = pluginUpdAvail()
     List updItems = []
-    if (appUpd) updItems.push("${!shrt ? '\nHomebridge ' : sBLANK}App: (v${state?.appData?.versions?.mainApp?.toString()})")
-    if (plugUpd) updItems.push("${!shrt ? '\n' : sBLANK}Plugin: (v${state?.appData?.versions?.plugin?.toString()})")
+    if (appUpd) { updItems.push("${shrt ? sBLANK : '\nHomebridge '}App: (v${state?.appData?.versions?.mainApp?.toString()})") }
+    if (plugUpd) { updItems.push("${shrt ? sBLANK : '\n'}Plugin: (v${state?.appData?.versions?.plugin?.toString()})") }
     return updItems
 }
 
@@ -2359,22 +2371,22 @@ private void updTsVal(String key, String dt=sNULL) {
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) { data[key] = dt ?: getDtNow() }
     tsDtMapFLD[appId] = data
-    tsDtMapFLD = tsDtMapFLD
+    // tsDtMapFLD = tsDtMapFLD
 }
 
 private void remTsVal(key) {
     String appId = gtAppId()
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) {
-        if( key instanceof List) {
+        if(key instanceof List) {
             List<String> klist = (List)key
-            klist.each { k-> if (data.containsKey(k)) { data.remove(k) } }
+            klist.each { k -> if (data.containsKey(k)) { data.remove(k) } }
         } else {
             String ks = key
             if (ks && data.containsKey(ks)) { data.remove(ks) }
         }
         tsDtMapFLD[appId] = data
-        tsDtMapFLD = tsDtMapFLD
+        // tsDtMapFLD = tsDtMapFLD
     }
 }
 
@@ -2388,7 +2400,7 @@ private String getTsVal(String val) {
 
 private void updCodeVerMap(String key, String val) {
     Map cv; cv = (Map)state.codeVersions
-    if (cv == null) cv = [:]
+    if (cv == null) { cv = [:] }
     if (val && (!cv.containsKey(key) || (cv.containsKey(key) && (String)cv[key] != val))) { cv[key] = val }
     if (cv.containsKey(key) && val == sNULL) { cv.remove(key) }
     state.codeVersions = cv
@@ -2424,7 +2436,7 @@ void getConfigData() {
     ]
     Map data = (Map)getWebData(params, 'appData', false)
     if (data) {
-        assignSt('appData',data)
+        assignSt('appData', data)
         updTsVal('lastAppDataUpdDt')
         logDebug("Successfully Retrieved (v${data.appDataVer}) of AppData Content from GitHub Repo...")
     }
@@ -2442,8 +2454,7 @@ private getWebData(Map params, String desc, Boolean text=true) {
     } catch (ex) {
         if (ex instanceof groovyx.net.http.HttpResponseException) { logWarn("${desc} file not found") }
         else { logError("getWebData Exception | params: $params, desc: $desc, text: $text | Error: ${ex}", ex) }
-        if (text) { return "${desc} info not found" }
-        return null
+        return text ? "${desc} info not found" : null
     }
 }
 
@@ -2536,24 +2547,25 @@ private void addToHistory(String logKey, Map data, Integer max=10) {
 }
     eData.push([dt: getDtNow(), gt: wnow(), data: data])
     Integer lsiz = eData.size()
-    if (!ssOk || lsiz > max) { eData = eData.drop( (lsiz - max) ) }
+    if (!ssOk || lsiz > max) { eData = eData.drop((lsiz - max)) }
     updMemStoreItem(logKey, eData)
 
     releaseTheLock(sHMLF)
 }
 
-private void logDebug(String msg)  { if (getBoolSetting('showDebugLogs')) logPrefix(sDBG, msg, "purple") }
-private void logTrace(String msg)  { if (getBoolSetting('showDebugLogs')) logPrefix('trace', msg, sCLRGRY) }
+private void logDebug(String msg)  { if (getBoolSetting('showDebugLogs')) { logPrefix(sDBG, msg, 'purple') } }
+private void logTrace(String msg)  { if (getBoolSetting('showDebugLogs')) { logPrefix('trace', msg, sCLRGRY) } }
 private void logInfo(String msg)   { logPrefix(sINFO, msg, sCLR9B1) }
 private void logWarn(String msg)   { logPrefix('warn', msg, sCLRORG) }
-private void logError(String msg, ex=null) {
+private void logError(String msg, ex = null) {
     logPrefix('error', msg, sCLRRED)
     String a
     try {
-        if (ex) a = getExceptionMessageWithLine(ex)
+        if (ex) { a = getExceptionMessageWithLine(ex) }
     } catch (ignored) {
+        // log.error "logError Exception: ${ignored}"
     }
-    if(a) { logPrefix('error', a, sCLRRED) }
+    if (a) { logPrefix('error', a, sCLRRED) }
 }
 
 private void logPrefix(String lvl, String msg, String color = sNULL) {
@@ -2567,8 +2579,8 @@ private List<Map> getCmdHistory() {
     // log.trace "lock wait: ${aa}"
 
     List<Map> his; his = getMemStoreItem('cmdHistory')
-    if (his == null) his = []
-    List<Map> newHis = (List<Map>)[] + his
+    if (his == null) { his = [] }
+    List<Map> newHis = [] + his
 
     releaseTheLock(sHMLF)
     return newHis
@@ -2579,8 +2591,8 @@ private List<Map> getEvtHistory() {
     // log.trace "lock wait: ${aa}"
 
     List<Map> his; his = getMemStoreItem('evtHistory')
-    if (his == null) his = []
-    List<Map> newHis = (List<Map>)[] + his
+    if (his == null) { his = [] }
+    List<Map> newHis = [] + his
 
     releaseTheLock(sHMLF)
     return newHis
@@ -2591,8 +2603,8 @@ private void clearHistory() {
     getTheLock(sHMLF, 'clearHistory')
     // log.trace "lock wait: ${aa}"
 
-    historyMapFLD.put(appId, [:] as Map<String,List<Map>>)
-    historyMapFLD = historyMapFLD
+    historyMapFLD.put(appId, [:])
+    // historyMapFLD = historyMapFLD
 
     releaseTheLock(sHMLF)
 }
@@ -2606,7 +2618,7 @@ private void updMemStoreItem(String key, List val) {
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
-    historyMapFLD = historyMapFLD
+    // historyMapFLD = historyMapFLD
 // log.debug("updMemStoreItem(${key}): ${memStore[key]}")
 }
 
@@ -2630,9 +2642,8 @@ static void mb(String meth=sNULL) {
 
 @CompileStatic
 static Integer getSemaNum(String name) {
-    if (name == sHMLF) return 0
     //log.warn 'unrecognized lock name...'
-    return 0
+    return (name == sHMLF) ? 0 : 0
     // Integer stripes=22
     // if(name.isNumber()) return name.toInteger()%stripes
     // Integer hash=smear(name.hashCode())
@@ -2654,8 +2665,8 @@ static Semaphore getSema(Integer snum) {
 @Field volatile static Map<String,String> lockHolderFLD = [:]
 
 @CompileStatic
-void getTheLock(String qname,String meth=sNULL,Boolean longWait=false) {
-    Boolean a = getTheLockW(qname,meth,longWait)
+void getTheLock(String qname, String meth=sNULL, Boolean longWait=false) {
+    Boolean a = getTheLockW(qname, meth, longWait)
 }
 
 @CompileStatic
@@ -2671,7 +2682,7 @@ Boolean getTheLockW(String qname, String meth=sNULL, Boolean longWait=false) {
         if (timeL == null) {
             timeL = wnow()
             lockTimesFLD[semaSNum] = timeL
-            lockTimesFLD = lockTimesFLD
+            // lockTimesFLD = lockTimesFLD
         }
         if (devMode()) { logWarn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}" }
         wpauseExecution(waitT)
@@ -2682,9 +2693,9 @@ Boolean getTheLockW(String qname, String meth=sNULL, Boolean longWait=false) {
         }
     }
     lockTimesFLD[semaSNum] = wnow()
-    lockTimesFLD = lockTimesFLD
+    // lockTimesFLD = lockTimesFLD
     lockHolderFLD[semaSNum] = "${gtAppId()} ${meth}".toString()
-    lockHolderFLD = lockHolderFLD
+    // lockHolderFLD = lockHolderFLD
     return wait
 }
 
@@ -2694,9 +2705,9 @@ static void releaseTheLock(String qname) {
     String semaSNum = semaNum.toString()
     Semaphore sema = getSema(semaNum)
     lockTimesFLD[semaSNum] = (Long)null
-    lockTimesFLD = lockTimesFLD
+    // lockTimesFLD = lockTimesFLD
     lockHolderFLD[semaSNum] = sNULL
-    lockHolderFLD = lockHolderFLD
+    // lockHolderFLD = lockHolderFLD
     sema.release()
 }
 
@@ -2710,21 +2721,21 @@ private static TimeZone getDefTz() { return TimeZone.getDefault() }
 private void wpauseExecution(Long t) { pauseExecution(t) }
 
 @CompileStatic
-private static Boolean bIs(Map m,String v) { (Boolean)m.get(v) }
+private static Boolean bIs(Map m, String v) { return (Boolean)m.get(v) }
 
 /** m.string  */
 @CompileStatic
-private static String sMs(Map m,String v) { (String)m[v] }
+private static String sMs(Map m, String v) { return (String)m[v] }
 
-private void assignSt(String name,v) { ((Map)state).put(name,v) }
+private void assignSt(String name, v) { ((Map)state).put(name, v) }
 private gtState(String name) { return state.get(name) }
 
 private getSetting(String name) { return settings.get(name) }
 private String getStrSetting(String name) { return (String)settings.get(name) }
 private Boolean getBoolSetting(String name) { return (Boolean)settings.get(name) == true }
-private Boolean getBoolDefSetting(String name,Boolean defVal=true){
-    if(settings.get(name) == null) {
-        settingUpdate(name,defVal.toString(),sBOOL)
+private Boolean getBoolDefSetting(String name, Boolean defVal=true){
+    if (settings.get(name) == null) {
+        settingUpdate(name, defVal.toString(), sBOOL)
         return defVal
     }
     return getBoolSetting(name)
@@ -2733,23 +2744,22 @@ private Boolean getBoolDefSetting(String name,Boolean defVal=true){
 private List getListSetting(String name) { return (List)settings.get(name) ?: [] }
 
 static String getObjType(obj) {
-    if(obj instanceof String)return 'String'
-    else if(obj instanceof Map)return 'Map'
-    else if(obj instanceof List)return 'List'
-    else if(obj instanceof ArrayList)return 'ArrayList'
-    else if(obj instanceof BigInteger)return 'BigInt'
-    else if(obj instanceof Long)return 'Long'
-    else if(obj instanceof Integer)return 'Int'
-    else if(obj instanceof Boolean)return 'Bool'
-    else if(obj instanceof BigDecimal)return 'BigDec'
-    else if(obj instanceof Double)return 'Double'
-    else if(obj instanceof Float)return 'Float'
-    else if(obj instanceof Byte)return 'Byte'
-    else if(obj instanceof com.hubitat.app.DeviceWrapper)return 'Device'
-    else{
-        //      if(eric()) log.error "object: ${describeObject(obj)}"
-        return 'unknown'
-    }
+    if (obj instanceof String) { return 'String' }
+    else if (obj instanceof Map) { return 'Map' }
+    else if (obj instanceof List) { return 'List' }
+    else if (obj instanceof ArrayList) { return 'ArrayList' }
+    else if (obj instanceof BigInteger) { return 'BigInt' }
+    else if (obj instanceof Long) { return 'Long' }
+    else if (obj instanceof Integer) { return 'Int' }
+    else if (obj instanceof Boolean) { return 'Bool' }
+    else if (obj instanceof BigDecimal) { return 'BigDec' }
+    else if (obj instanceof Double) { return 'Double' }
+    else if (obj instanceof Float) { return 'Float' }
+    else if (obj instanceof Byte) { return 'Byte' }
+    else if (obj instanceof com.hubitat.app.DeviceWrapper) { return 'Device' }
+
+    //      if(eric()) log.error "object: ${describeObject(obj)}"
+    return 'unknown'
 }
 
 @Field static final String sAE = 'Accept-encoding'
@@ -2758,33 +2768,35 @@ static String getObjType(obj) {
 @Field static final String sDATA = 'data'
 @Field static final String sUTF8 = 'UTF-8'
 
-private Map wrender(Map options=[:]){
+private Map wrender(Map options=[:]) {
     //debug "wrender: options:: ${options} "
     //debug "request: ${request} "
-    Map h=(Map)request?.headers
-    if(h && sMs(h,sAE)?.contains(sGZIP)){
-//              debug "will accept gzip"
-        String s=sMs(options,sDATA)
-        Integer sz=s?.length()
-        if(sz>256){
-            try{
-                String a= string2gzip(s)
-                Integer nsz=a.size()
-                if(devMode())logDebug "options.data is $sz after compression $nsz  saving ${Math.round((1.0D-(nsz/sz))*1000.0D)/10.0D}%"
-//                              options[sDATA]=a
-//                              options[sCE]=sGZIP
-            }catch(ignored){}
+    Map h = (Map)request?.headers
+    if (h && sMs(h, sAE)?.contains(sGZIP)) {
+        //              debug "will accept gzip"
+        String s = sMs(options, sDATA)
+        Integer sz = s?.length()
+        if (sz > 256) {
+            try {
+                String a = string2gzip(s)
+                Integer nsz = a.size()
+                if (devMode()) { logDebug "options.data is $sz after compression $nsz  saving ${Math.round((1.0D - (nsz / sz)) * 1000.0D)/10.0D}%" }
+            //                              options[sDATA]=a
+            //                              options[sCE]=sGZIP
+            } catch (ignored) {
+                // logError("wrender gzip error: ${ignored}")
+            }
         }
     }
     render(options)
 }
 
 static String string2gzip(String s) {
-    ByteArrayOutputStream baos= new ByteArrayOutputStream()
-    GZIPOutputStream zipStream= new GZIPOutputStream(baos)
+    ByteArrayOutputStream baos = new ByteArrayOutputStream()
+    GZIPOutputStream zipStream = new GZIPOutputStream(baos)
     zipStream.write(s.getBytes(sUTF8))
     zipStream.close()
-    byte[] result= baos.toByteArray()
+    byte[] result = baos.toByteArray()
     baos.close()
     return result.encodeBase64()
 }

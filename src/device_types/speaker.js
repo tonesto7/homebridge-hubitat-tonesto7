@@ -1,45 +1,30 @@
 // device_types/speaker.js
 
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function volumeConversion(volume) {
+    // Implement any necessary conversion logic here
+    return clamp(volume, 0, 100); // Assuming device supports 0-100
+}
+
+function volumeToHomeKit(volume) {
+    // Implement any necessary conversion logic here
+    return clamp(volume, 0, 100); // Assuming HomeKit expects 0-100
+}
+
 module.exports = {
     isSupported: (accessory) => accessory.hasCapability("Speaker"),
 
-    initializeAccessory: (accessory, deviceTypes) => {
-        const { Service, Characteristic } = deviceTypes.mainPlatform;
+    relevantAttributes: ["volume", "level", "mute"],
+
+    initializeAccessory: (accessory, deviceClass) => {
+        const { Service, Characteristic } = deviceClass.mainPlatform;
         const service = accessory.getService(Service.Speaker) || accessory.addService(Service.Speaker);
 
         const isSonos = accessory.context.deviceData.manufacturerName === "Sonos";
         const lvlAttr = isSonos || accessory.hasAttribute("volume") ? "volume" : accessory.hasAttribute("level") ? "level" : undefined;
-
-        /**
-         * Clamps a value between a minimum and maximum.
-         * @param {number} value - The value to clamp.
-         * @param {number} min - The minimum allowable value.
-         * @param {number} max - The maximum allowable value.
-         * @returns {number} - The clamped value.
-         */
-        function clamp(value, min, max) {
-            return Math.max(min, Math.min(max, value));
-        }
-
-        /**
-         * Converts HomeKit Volume value to device-specific volume.
-         * @param {number} volume - The HomeKit Volume value.
-         * @returns {number} - The device-specific volume value.
-         */
-        function volumeConversion(volume) {
-            // Implement any necessary conversion logic here
-            return clamp(volume, 0, 100); // Assuming device supports 0-100
-        }
-
-        /**
-         * Converts device-specific volume to HomeKit Volume.
-         * @param {number} volume - The device-specific volume value.
-         * @returns {number} - The HomeKit Volume value.
-         */
-        function volumeToHomeKit(volume) {
-            // Implement any necessary conversion logic here
-            return clamp(volume, 0, 100); // Assuming HomeKit expects 0-100
-        }
 
         // Volume Characteristic
         if (lvlAttr) {
@@ -80,5 +65,38 @@ module.exports = {
         }
 
         accessory.context.deviceGroups.push("speaker_device");
+    },
+
+    handleAttributeUpdate: (accessory, change, deviceClass) => {
+        const { Characteristic, Service } = deviceClass.mainPlatform;
+        const service = accessory.getService(Service.Speaker);
+
+        if (!service) {
+            accessory.log.warn(`${accessory.name} | Speaker service not found`);
+            return;
+        }
+
+        const isSonos = accessory.context.deviceData.manufacturerName === "Sonos";
+        const lvlAttr = isSonos || accessory.hasAttribute("volume") ? "volume" : accessory.hasAttribute("level") ? "level" : undefined;
+
+        switch (change.attribute) {
+            case "volume":
+            case "level":
+                if (lvlAttr && change.attribute === lvlAttr) {
+                    const volume = clamp(parseInt(change.value, 10), 0, 100);
+                    service.updateCharacteristic(Characteristic.Volume, volumeToHomeKit(volume));
+                    accessory.log.debug(`${accessory.name} | Updated Speaker Volume: ${volume}`);
+                }
+                break;
+            case "mute":
+                if (accessory.hasCapability("AudioMute")) {
+                    const isMuted = change.value === "muted";
+                    service.updateCharacteristic(Characteristic.Mute, isMuted);
+                    accessory.log.debug(`${accessory.name} | Updated Speaker Mute: ${isMuted}`);
+                }
+                break;
+            default:
+                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+        }
     },
 };
