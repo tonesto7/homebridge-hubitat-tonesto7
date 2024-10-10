@@ -1,9 +1,9 @@
 // HE_Platform.js
 
-const { pluginName, platformName, platformDesc, pluginVersion } = require("./libs/Constants");
+const { pluginName, platformName, platformDesc, pluginVersion } = require("./Constants");
 const events = require("events");
-const myUtils = require("./libs/MyUtils");
-const HEClient = require("./HE_Client");
+const Utils = require("./libs/Utils");
+const Client = require("./Client");
 // EveTypes = require("./types/eve_types.js"),
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -12,9 +12,9 @@ const webApp = express();
 const fs = require("fs");
 const _ = require("lodash");
 const portFinderSync = require("portfinder-sync");
-const DeviceTypes = require("./device_types");
+const DeviceTypes = require("./DeviceTypes");
 
-module.exports = class HE_Platform {
+module.exports = class Platform {
     constructor(log, config, api) {
         this.config = config;
         this.homebridge = api;
@@ -48,12 +48,12 @@ module.exports = class HE_Platform {
         this.update_method = this.config.update_method || "direct";
         this.temperature_unit = this.config.temperature_unit || "F";
         this.local_hub_ip = undefined;
-        this.myUtils = new myUtils(this);
+        this.Utils = new Utils(this);
         this.configItems = this.getConfigItems();
         // console.log("pluginConfig: ", this.loadConfig());
         this.unknownCapabilities = [];
         this.deviceTypes = new DeviceTypes(this);
-        this.client = new HEClient(this);
+        this.client = new Client(this);
         // this.HEAccessories = new HEAccessories(this);
         this.homebridge.on("didFinishLaunching", this.didFinishLaunching.bind(this));
         this.appEvts.emit("event:plugin_upd_status");
@@ -145,7 +145,7 @@ module.exports = class HE_Platform {
             polling_seconds: this.config.polling_seconds || 3600,
             round_levels: this.config.round_levels !== false,
             direct_port: this.direct_port,
-            direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
+            direct_ip: this.config.direct_ip || this.Utils.getIPAddress(),
             validateTokenId: this.config.validateTokenId === true,
             consider_fan_by_name: this.config.consider_fan_by_name !== false,
             consider_light_by_name: this.config.consider_light_by_name === true,
@@ -214,57 +214,55 @@ module.exports = class HE_Platform {
     didFinishLaunching() {
         this.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
         setInterval(this.refreshDevices.bind(this), this.polling_seconds * 1000);
-        let that = this;
         this.refreshDevices("First Launch")
             .then(() => {
-                that.WebServerInit(that)
-                    .catch((err) => that.logError("WebServerInit Error: ", err))
+                this.WebServerInit(this)
+                    .catch((err) => this.logError("WebServerInit Error: ", err))
                     .then((resp) => {
                         if (resp && resp.status === "OK") this.appEvts.emit("event:plugin_start_direct");
                     });
             })
             .catch((err) => {
-                that.logError(`didFinishLaunching | refreshDevices Exception:` + err);
+                this.logError(`didFinishLaunching | refreshDevices Exception:` + err);
             });
     }
 
     refreshDevices(src = undefined) {
-        let that = this;
         let starttime = new Date();
         return new Promise((resolve, reject) => {
             try {
-                that.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
+                this.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
                 this.client
                     .getDevices()
                     .catch((err) => {
-                        that.logError("getDevices Exception: " + err);
+                        this.logError("getDevices Exception: " + err);
                         reject(err.message);
                     })
                     .then((resp) => {
                         if (resp && resp.location) {
-                            that.updateTempUnit(resp.location.temperature_scale);
+                            this.updateTempUnit(resp.location.temperature_scale);
                             if (resp.location.hubIP) {
-                                that.local_hub_ip = resp.location.hubIP;
-                                that.configItems.use_cloud = resp.location.use_cloud === true;
-                                that.client.updateGlobals(that.local_hub_ip, that.configItems.use_cloud);
+                                this.local_hub_ip = resp.location.hubIP;
+                                this.configItems.use_cloud = resp.location.use_cloud === true;
+                                this.client.updateGlobals(this.local_hub_ip, this.configItems.use_cloud);
                             }
                         }
                         if (resp && resp.deviceList && resp.deviceList instanceof Array) {
-                            // that.logDebug("Received All Device Data");
+                            // this.logDebug("Received All Device Data");
                             const toCreate = this.deviceTypes.diffAdd(resp.deviceList);
                             const toUpdate = this.deviceTypes.intersection(resp.deviceList);
                             const toRemove = this.deviceTypes.diffRemove(resp.deviceList);
-                            that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
-                            that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
-                            that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
+                            this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
+                            this.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
+                            this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
                             toUpdate.forEach((device) => this.updateDevice(device));
                             toCreate.forEach((device) => this.addDevice(device));
                         }
-                        that.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
-                        that.logNotice(`Unknown Capabilities: ${JSON.stringify(that.unknownCapabilities)}`);
-                        that.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.deviceTypes.getAllAccessoriesFromCache()).length})`);
+                        this.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
+                        this.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
+                        this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.deviceTypes.getAllAccessoriesFromCache()).length})`);
                         if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
                         resolve(true);
                     });
@@ -328,11 +326,11 @@ module.exports = class HE_Platform {
         this.deviceTypes.addAccessoryToCache(cachedAccessory);
     }
 
-    processIncrementalUpdate(data, that) {
-        that.logDebug("new data: " + data);
+    processIncrementalUpdate(data) {
+        this.logDebug("new data: " + data);
         if (data && data.attributes && data.attributes instanceof Array) {
             for (let i = 0; i < data.attributes.length; i++) {
-                that.processDeviceAttributeUpdate(data.attributes[i], that);
+                this.processDeviceAttributeUpdate(data.attributes[i], this);
             }
         }
     }
@@ -347,16 +345,15 @@ module.exports = class HE_Platform {
     }
 
     WebServerInit() {
-        let that = this;
         // Get the IP address that we will send to the Hubitat App. This can be overridden in the config file.
         return new Promise((resolve) => {
             try {
-                let ip = that.configItems.direct_ip || that.myUtils.getIPAddress();
-                that.logInfo("WebServer Initiated...");
+                let ip = this.configItems.direct_ip || this.Utils.getIPAddress();
+                this.logInfo("WebServer Initiated...");
 
                 // Start the HTTP Server
-                webApp.listen(that.configItems.direct_port, () => {
-                    that.logInfo(`Direct Connect Active | Listening at ${ip}:${that.configItems.direct_port}`);
+                webApp.listen(this.configItems.direct_port, () => {
+                    this.logInfo(`Direct Connect Active | Listening at ${ip}:${this.configItems.direct_port}`);
                 });
 
                 webApp.use(
@@ -377,8 +374,8 @@ module.exports = class HE_Platform {
 
                 webApp.post("/initial", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
-                    if (body && that.isValidRequestor(body.access_token, body.app_id, "initial")) {
-                        that.logGreen(`${platformName} Hub Communication Established`);
+                    if (body && this.isValidRequestor(body.access_token, body.app_id, "initial")) {
+                        this.logGreen(`${platformName} Hub Communication Established`);
                         res.send({
                             status: "OK",
                         });
@@ -390,7 +387,7 @@ module.exports = class HE_Platform {
                 });
 
                 webApp.get("/debugOpts", (req, res) => {
-                    that.logInfo(`${platformName} Debug Option Request(${req.query.option})...`);
+                    this.logInfo(`${platformName} Debug Option Request(${req.query.option})...`);
                     if (req.query && req.query.option) {
                         let accs = this.deviceTypes.getAllAccessoriesFromCache();
                         // let accsKeys = Object.keys(accs);
@@ -420,7 +417,7 @@ module.exports = class HE_Platform {
                 });
 
                 webApp.get("/pluginTest", (req, res) => {
-                    that.logInfo(`${platformName} Plugin Test Request Received...`);
+                    this.logInfo(`${platformName} Plugin Test Request Received...`);
                     res.status(200).send(
                         JSON.stringify(
                             {
@@ -442,9 +439,9 @@ module.exports = class HE_Platform {
 
                 webApp.post("/restartService", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
-                    if (body && that.isValidRequestor(body.access_token, body.app_id, "restartService")) {
+                    if (body && this.isValidRequestor(body.access_token, body.app_id, "restartService")) {
                         let delay = 10 * 1000;
-                        that.logInfo(`Received request from ${platformName} to restart homebridge service in (${delay / 1000} seconds) | NOTICE: If you using PM2 or Systemd the Homebridge Service should start back up`);
+                        this.logInfo(`Received request from ${platformName} to restart homebridge service in (${delay / 1000} seconds) | NOTICE: If you using PM2 or Systemd the Homebridge Service should start back up`);
                         setTimeout(() => {
                             process.exit(1);
                         }, parseInt(delay));
@@ -460,14 +457,14 @@ module.exports = class HE_Platform {
 
                 webApp.post("/refreshDevices", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
-                    if (body && that.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
-                        that.logGreen(`Received request from ${platformName} to refresh devices`);
-                        that.refreshDevices("Hubitat App Requested");
+                    if (body && this.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
+                        this.logGreen(`Received request from ${platformName} to refresh devices`);
+                        this.refreshDevices("Hubitat App Requested");
                         res.send({
                             status: "OK",
                         });
                     } else {
-                        that.logError(`Unable to start device refresh because we didn't receive a valid access_token and app_id`);
+                        this.logError(`Unable to start device refresh because we didn't receive a valid access_token and app_id`);
                         res.send({
                             status: "Failed: Missing access_token or app_id",
                         });
@@ -476,28 +473,28 @@ module.exports = class HE_Platform {
 
                 webApp.post("/updateprefs", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
-                    if (body && that.isValidRequestor(body.access_token, body.app_id, "updateprefs")) {
-                        that.logInfo(platformName + " Hub Sent Preference Updates");
+                    if (body && this.isValidRequestor(body.access_token, body.app_id, "updateprefs")) {
+                        this.logInfo(platformName + " Hub Sent Preference Updates");
                         let sendUpd = false;
                         // if (body && Object.keys(body).length > 0) {
                         //     Object.keys(body).forEach((key) => {});
                         // }
-                        if (body.use_cloud && that.configItems.use_cloud !== body.use_cloud) {
+                        if (body.use_cloud && this.configItems.use_cloud !== body.use_cloud) {
                             sendUpd = true;
-                            that.logInfo(`${platformName} Updated Use Cloud Preference | Before: ${that.configItems.use_cloud} | Now: ${body.use_cloud}`);
-                            that.configItems.use_cloud = body.use_cloud;
+                            this.logInfo(`${platformName} Updated Use Cloud Preference | Before: ${this.configItems.use_cloud} | Now: ${body.use_cloud}`);
+                            this.configItems.use_cloud = body.use_cloud;
                         }
-                        if (body.validateTokenId && that.configItems.validateTokenId !== body.validateTokenId) {
-                            that.logInfo(`${platformName} Updated Validate Token & Id Preference | Before: ${that.configItems.validateTokenId} | Now: ${body.validateTokenId}`);
-                            that.configItems.validateTokenId = body.validateTokenId;
+                        if (body.validateTokenId && this.configItems.validateTokenId !== body.validateTokenId) {
+                            this.logInfo(`${platformName} Updated Validate Token & Id Preference | Before: ${this.configItems.validateTokenId} | Now: ${body.validateTokenId}`);
+                            this.configItems.validateTokenId = body.validateTokenId;
                         }
-                        if (body.local_hub_ip && that.local_hub_ip !== body.local_hub_ip) {
+                        if (body.local_hub_ip && this.local_hub_ip !== body.local_hub_ip) {
                             sendUpd = true;
-                            that.logInfo(`${platformName} Updated Hub IP Preference | Before: ${that.local_hub_ip} | Now: ${body.local_hub_ip}`);
-                            that.local_hub_ip = body.local_hub_ip;
+                            this.logInfo(`${platformName} Updated Hub IP Preference | Before: ${this.local_hub_ip} | Now: ${body.local_hub_ip}`);
+                            this.local_hub_ip = body.local_hub_ip;
                         }
                         if (sendUpd) {
-                            that.client.updateGlobals(that.local_hub_ip, that.configItems.use_cloud);
+                            this.client.updateGlobals(this.local_hub_ip, this.configItems.use_cloud);
                         }
                         res.send({
                             status: "OK",
@@ -512,7 +509,7 @@ module.exports = class HE_Platform {
                 webApp.post("/update", (req, res) => {
                     if (req.body.length < 3) return;
                     let body = JSON.parse(JSON.stringify(req.body));
-                    if (body && that.isValidRequestor(body.access_token, body.app_id, "update")) {
+                    if (body && this.isValidRequestor(body.access_token, body.app_id, "update")) {
                         if (Object.keys(body).length > 3) {
                             let newChange = {
                                 deviceid: body.change_device,
@@ -521,9 +518,9 @@ module.exports = class HE_Platform {
                                 data: body.change_data,
                                 date: body.change_date,
                             };
-                            that.deviceTypes.processDeviceAttributeUpdate(newChange).then((resp) => {
-                                if (that.logConfig.showChanges) {
-                                    that.logInfo(chalk`[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
+                            this.deviceTypes.processDeviceAttributeUpdate(newChange).then((resp) => {
+                                if (this.logConfig.showChanges) {
+                                    this.logInfo(chalk`[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
                                 }
                                 res.send({
                                     evtSource: `Homebridge_${platformName}_${this.configItems.app_id}`,
@@ -552,7 +549,7 @@ module.exports = class HE_Platform {
                     status: "OK",
                 });
             } catch (ex) {
-                that.logError("WebServerInit Exception: ", ex.message);
+                this.logError("WebServerInit Exception: ", ex.message);
                 resolve({
                     status: ex.message,
                 });

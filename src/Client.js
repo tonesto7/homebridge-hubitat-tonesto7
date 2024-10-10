@@ -1,9 +1,9 @@
 // HE_Client.js
 
-const { platformName, platformDesc, pluginVersion } = require("./libs/Constants");
+const { platformName, platformDesc, pluginVersion } = require("./Constants");
 const axios = require("axios").default;
 
-module.exports = class ST_Client {
+module.exports = class Client {
     constructor(platform) {
         this.platform = platform;
         this.log = platform.log;
@@ -121,7 +121,7 @@ module.exports = class ST_Client {
 
     sendUpdateStatus() {
         return new Promise((resolve) => {
-            this.platform.myUtils.checkVersion().then((res) => {
+            this.platform.Utils.checkVersion().then((res) => {
                 this.platform.logNotice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
                 axios({
                     method: "post",

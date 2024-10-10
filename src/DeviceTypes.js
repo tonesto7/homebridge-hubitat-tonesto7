@@ -1,10 +1,10 @@
 // device_types/index.js
 
-const { knownCapabilities, pluginVersion } = require("../libs/Constants");
+const { knownCapabilities, pluginVersion } = require("./Constants");
 const fs = require("fs");
 const path = require("path");
 const _ = require("lodash");
-const CommunityTypes = require("../libs/CommunityTypes");
+const CommunityTypes = require("./libs/CommunityTypes");
 
 var appEvts;
 
@@ -21,7 +21,7 @@ class DeviceTypes {
 
         this.configItems = platform.getConfigItems();
         this.homebridge = platform.homebridge;
-        this.myUtils = platform.myUtils;
+        this.Utils = platform.Utils;
         this.log = platform.log;
         this.uuid = platform.uuid;
         this.Service = platform.Service;
@@ -49,10 +49,10 @@ class DeviceTypes {
      * Dynamically load all device type modules from the device_types directory.
      */
     loadDeviceTypesFiles() {
-        const deviceTypeFiles = fs.readdirSync(__dirname).filter((file) => file !== "index.js" && file.endsWith(".js"));
-
+        const deviceTypesPath = path.join(__dirname, "device_types");
+        const deviceTypeFiles = fs.readdirSync(deviceTypesPath).filter((file) => file.endsWith(".js"));
         deviceTypeFiles.forEach((file) => {
-            const deviceType = require(path.join(__dirname, file));
+            const deviceType = require(path.join(deviceTypesPath, file));
             const name = path.basename(file, ".js");
             this.deviceTypes[name] = deviceType;
         });
@@ -253,7 +253,7 @@ class DeviceTypes {
         accessoryInformationSvc
             .setCharacteristic(this.Characteristic.FirmwareRevision, deviceData.firmwareVersion)
             .setCharacteristic(this.Characteristic.Manufacturer, deviceData.manufacturerName)
-            .setCharacteristic(this.Characteristic.Model, deviceData.modelName ? this.myUtils.toTitleCase(deviceData.modelName) : "Unknown")
+            .setCharacteristic(this.Characteristic.Model, deviceData.modelName ? this.Utils.toTitleCase(deviceData.modelName) : "Unknown")
             .setCharacteristic(this.Characteristic.Name, accessory.name)
             .setCharacteristic(this.Characteristic.HardwareRevision, pluginVersion)
             .setCharacteristic(this.Characteristic.SerialNumber, `he_deviceid_${deviceData.deviceid}`);
