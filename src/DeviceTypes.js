@@ -1,4 +1,4 @@
-// device_types/index.js
+// device_types.js
 
 const { knownCapabilities, pluginVersion } = require("./Constants");
 const fs = require("fs");
@@ -6,7 +6,7 @@ const path = require("path");
 const _ = require("lodash");
 const CommunityTypes = require("./libs/CommunityTypes");
 
-var appEvts;
+let appEvts;
 
 class DeviceTypes {
     constructor(platform) {

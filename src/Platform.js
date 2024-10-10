@@ -1,4 +1,4 @@
-// HE_Platform.js
+// Platform.js
 
 const { pluginName, platformName, platformDesc, pluginVersion } = require("./Constants");
 const events = require("events");

@@ -1,4 +1,4 @@
-// HE_Client.js
+// Client.js
 
 const { platformName, platformDesc, pluginVersion } = require("./Constants");
 const axios = require("axios").default;

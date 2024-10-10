@@ -1,4 +1,4 @@
-// Constants.js
+// Utils.js
 
 // Description: This file contains the utility functions for the plugin.
 const packageFile = require("../../package.json");
