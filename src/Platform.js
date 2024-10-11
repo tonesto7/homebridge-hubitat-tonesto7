@@ -1,23 +1,26 @@
 // Platform.js
 
-const { pluginName, platformName, platformDesc, pluginVersion } = require("./Constants");
-const events = require("events");
-const Utils = require("./libs/Utils");
-const Client = require("./Client");
-// EveTypes = require("./types/eve_types.js"),
-const express = require("express");
-const bodyParser = require("body-parser");
-const chalk = require("chalk");
-const webApp = express();
-const fs = require("fs");
-const _ = require("lodash");
-const portFinderSync = require("portfinder-sync");
-const DeviceTypes = require("./DeviceTypes");
+import { pluginName, platformDesc, platformName, pluginVersion } from "./Constants.js";
+// console.log("Constants: ", Constants);
+// const { pluginName, platformDesc, platformName, pluginVersion } = Constants;
+import events from "events";
+import Utils from "./libs/Utils.js";
+import Client from "./Client.js";
+import express from "express";
+import bodyParser from "body-parser";
+import chalk from "chalk";
+import fs from "fs";
+import _ from "lodash";
+import portFinderSync from "portfinder-sync";
+import DeviceTypes from "./DeviceTypes.js";
 
-module.exports = class Platform {
+const webApp = express();
+
+export default class Platform {
     constructor(log, config, api) {
         this.config = config;
         this.homebridge = api;
+        // this.constants = Constants;
         this.Service = api.hap.Service;
         this.Characteristic = api.hap.Characteristic;
         this.Categories = api.hap.Categories;
@@ -32,13 +35,6 @@ module.exports = class Platform {
         this.logConfig = this.getLogConfig();
         this.appEvts = new events.EventEmitter();
         this.log = log;
-        this.logInfo = this.logInfo.bind(this);
-        this.logGreen = this.logGreen.bind(this);
-        this.logAlert = this.logAlert.bind(this);
-        this.logNotice = this.logNotice.bind(this);
-        this.logError = this.logError.bind(this);
-        this.logInfo = this.logInfo.bind(this);
-        this.logDebug = this.logDebug.bind(this);
 
         this.logInfo(`Homebridge Version: ${this.homebridge.version}`);
         this.logInfo(`Plugin Version: ${pluginVersion}`);
@@ -54,17 +50,11 @@ module.exports = class Platform {
         this.unknownCapabilities = [];
         this.deviceTypes = new DeviceTypes(this);
         this.client = new Client(this);
-        // this.HEAccessories = new HEAccessories(this);
+
         this.homebridge.on("didFinishLaunching", this.didFinishLaunching.bind(this));
         this.appEvts.emit("event:plugin_upd_status");
     }
 
-    /**
-     * Sanitize accessory names to ensure they are clean and consistent.
-     * Removes unwanted characters and trims spaces.
-     * @param {string} name - The original accessory name.
-     * @returns {string} - The sanitized accessory name.
-     */
     sanitizeName(name) {
         // Remove all characters except alphanumerics, spaces, and apostrophes
         let sanitized = name
@@ -79,16 +69,12 @@ module.exports = class Platform {
 
         // Log if the name was sanitized
         if (name !== sanitized) {
-            this.logWarn(`Sanitized Name: "${name}" => "${sanitized}"`);
+            this.log.warn(`Sanitized Name: "${name}" => "${sanitized}"`);
         }
 
         return sanitized;
     }
 
-    /**
-     * Add or update an accessory's name after sanitizing it.
-     * @param {this.PlatformAccessory} accessory - The accessory to sanitize and update.
-     */
     sanitizeAndUpdateAccessoryName(accessory) {
         const originalName = accessory.context.deviceData.name;
         const sanitizedName = this.sanitizeName(originalName);
@@ -113,18 +99,13 @@ module.exports = class Platform {
             } else {
                 this.logWarn(`AccessoryInformation service not found for device ID: ${accessory.deviceid}`);
             }
-
-            // this.logDebug(`Accessory name updated successfully to "${sanitizedName}"`);
-        } else {
-            // this.logDebug(`No name update needed for accessory "${originalName}"`);
         }
     }
 
     getLogConfig() {
-        let config = this.config;
         return {
-            debug: config.logConfig ? config.logConfig.debug === true : false,
-            showChanges: config.logConfig ? config.logConfig.showChanges === true : true,
+            debug: this.config.logConfig ? this.config.logConfig.debug === true : false,
+            showChanges: this.config.logConfig ? this.config.logConfig.showChanges === true : true,
         };
     }
 
@@ -198,8 +179,6 @@ module.exports = class Platform {
         const serializedConfig = JSON.stringify(config, null, "  ");
         fs.writeFileSync(configPath, serializedConfig, "utf8");
         _.extend(this.config, newConfig);
-        // Update local configItems
-        // this.configItems =
     }
 
     updateTempUnit(unit) {
@@ -227,7 +206,7 @@ module.exports = class Platform {
             });
     }
 
-    refreshDevices(src = undefined) {
+    async refreshDevices(src = undefined) {
         let starttime = new Date();
         return new Promise((resolve, reject) => {
             try {
@@ -277,7 +256,7 @@ module.exports = class Platform {
         let accessory = new this.PlatformAccessory(device.name, UUID);
         accessory.context.deviceData = device;
         this.deviceTypes.initializeAccessory(accessory);
-        this.sanitizeAndUpdateAccessoryName(accessory); // Added name sanitization
+        this.sanitizeAndUpdateAccessoryName(accessory);
         return accessory;
     }
 
@@ -294,17 +273,20 @@ module.exports = class Platform {
 
     updateDevice(device) {
         let cachedAccessory = this.deviceTypes.getAccessoryFromCache(device);
+        if (!cachedAccessory) {
+            this.logError(`Failed to find cached accessory for device: ${device.name} | ${device.deviceid}`);
+            return;
+        }
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         cachedAccessory.context.deviceData = device;
         this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
         cachedAccessory = this.deviceTypes.initializeAccessory(cachedAccessory);
-        this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
+        this.sanitizeAndUpdateAccessoryName(cachedAccessory);
         this.deviceTypes.addAccessoryToCache(cachedAccessory);
     }
 
     removeAccessory(accessory) {
         if (this.deviceTypes.removeAccessoryFromCache(accessory)) {
-            // Remove all services except AccessoryInformation
             accessory.services.forEach((service) => {
                 if (service.UUID !== this.deviceTypes.Service.AccessoryInformation.UUID) {
                     accessory.removeService(service);
@@ -322,7 +304,11 @@ module.exports = class Platform {
         if (!this.ok2Run) return;
         this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
         let cachedAccessory = this.deviceTypes.initializeAccessory(accessory, true);
-        this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
+        if (!cachedAccessory) {
+            this.logError(`Failed to initialize cached accessory: ${accessory.displayName}`);
+            return;
+        }
+        this.sanitizeAndUpdateAccessoryName(cachedAccessory);
         this.deviceTypes.addAccessoryToCache(cachedAccessory);
     }
 
@@ -556,4 +542,4 @@ module.exports = class Platform {
             }
         });
     }
-};
+}

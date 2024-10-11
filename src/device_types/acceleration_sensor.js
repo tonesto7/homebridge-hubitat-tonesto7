@@ -1,88 +1,73 @@
 // device_types/acceleration_sensor.js
 
-module.exports = {
-    isSupported: (accessory) => accessory.hasCapability("AccelerationSensor"),
+export function isSupported(accessory) {
+    return accessory.hasCapability("AccelerationSensor");
+}
 
-    relevantAttributes: ["acceleration", "tamper", "status"],
+export const relevantAttributes = ["acceleration", "tamper", "status"];
 
-    initializeAccessory: (accessory, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.platform;
-        const service = accessory.getService(Service.MotionSensor) || accessory.addService(Service.MotionSensor);
+export function initializeAccessory(accessory, deviceClass) {
+    const { Service, Characteristic } = deviceClass.platform;
+    const service = deviceClass.getOrAddService(accessory, Service.MotionSensor);
 
-        /**
-         * Convert acceleration status to HomeKit MotionDetected characteristic values.
-         * @param {string} status - The acceleration status from the device.
-         * @returns {number} - The corresponding HomeKit MotionDetected value.
-         */
-        const convertAccelerationStatus = (status) => {
-            accessory.log.debug(`${accessory.name} | Acceleration Status: ${status}`);
-            return status === "active" ? Characteristic.MotionDetected.MOTION_DETECTED : Characteristic.MotionDetected.NO_MOTION;
-        };
+    const convertAccelerationStatus = (status) => {
+        accessory.log.debug(`${accessory.name} | Acceleration Status: ${status}`);
+        return status === "active" ? Characteristic.MotionDetected.MOTION_DETECTED : Characteristic.MotionDetected.NO_MOTION;
+    };
 
-        // Motion Detected Characteristic
-        service.getCharacteristic(Characteristic.MotionDetected).onGet(() => {
-            const motionStatus = accessory.context.deviceData.attributes.acceleration;
-            const motionDetected = convertAccelerationStatus(motionStatus);
+    // Motion Detected Characteristic
+    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.MotionDetected, {
+        getHandler: function () {
             accessory.log.debug(`${accessory.name} | Motion Detected Retrieved: ${motionDetected}`);
-            return motionDetected;
-        });
+            return convertAccelerationStatus(accessory.context.deviceData.attributes.acceleration);
+        },
+    });
 
-        // Status Active Characteristic
-        service.getCharacteristic(Characteristic.StatusActive).onGet(() => {
+    // Status Active Characteristic
+    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+        getHandler: function () {
             const isActive = accessory.context.deviceData.status === "online";
             accessory.log.debug(`${accessory.name} | Status Active Retrieved: ${isActive}`);
             return isActive;
-        });
+        },
+    });
 
-        // Status Tampered Characteristic (if supported)
-        if (accessory.hasCapability("TamperAlert")) {
-            service.getCharacteristic(Characteristic.StatusTampered).onGet(() => {
-                const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
-                accessory.log.debug(`${accessory.name} | Status Tampered Retrieved: ${isTampered}`);
-                return isTampered;
-            });
-        } else {
-            service.removeCharacteristic(Characteristic.StatusTampered);
-        }
+    // Status Tampered Characteristic (if supported)
+    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+        preReqChk: (acc) => acc.hasCapability("TamperAlert"),
+        getHandler: function () {
+            const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
+            accessory.log.debug(`${accessory.name} | Status Tampered Retrieved: ${isTampered}`);
+            return isTampered;
+        },
+        removeIfMissingPreReq: true,
+    });
 
-        accessory.context.deviceGroups.push("acceleration_sensor");
-    },
+    accessory.context.deviceGroups.push("acceleration_sensor");
+}
 
-    /**
-     * Handle attribute updates for the acceleration sensor.
-     * @param {PlatformAccessory} accessory - The accessory to update.
-     * @param {Object} change - The change object containing attribute and value.
-     * @param {DeviceTypes} deviceClass - The DeviceTypes instance.
-     */
-    handleAttributeUpdate: (accessory, change, deviceClass) => {
-        const { Service, Characteristic } = deviceClass.platform;
-        const service = accessory.getService(Service.MotionSensor);
+export function handleAttributeUpdate(accessory, change, deviceClass) {
+    const { Service, Characteristic } = deviceClass.platform;
+    const service = accessory.getService(Service.MotionSensor);
 
-        if (!service) {
-            accessory.log.warn(`${accessory.name} | Motion Sensor service not found`);
-            return;
-        }
+    if (!service) {
+        accessory.log.warn(`${accessory.name} | Motion Sensor service not found`);
+        return;
+    }
 
-        switch (change.attribute) {
-            case "acceleration":
-                const motionDetected = change.value === "active";
-                service.updateCharacteristic(Characteristic.MotionDetected, motionDetected);
-                accessory.log.debug(`${accessory.name} | Updated Motion Detected: ${motionDetected}`);
-                break;
-            case "tamper":
-                if (accessory.hasCapability("TamperAlert")) {
-                    const isTampered = change.value === "detected";
-                    service.updateCharacteristic(Characteristic.StatusTampered, isTampered);
-                    accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
-                }
-                break;
-            case "status":
-                const isActive = change.value === "online";
-                service.updateCharacteristic(Characteristic.StatusActive, isActive);
-                accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
-                break;
-            default:
-                accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
-        }
-    },
-};
+    switch (change.attribute) {
+        case "acceleration":
+            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.MotionDetected, change.value === "active");
+            break;
+        case "tamper":
+            if (accessory.hasCapability("TamperAlert")) {
+                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, change.value === "detected");
+            }
+            break;
+        case "status":
+            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, change.value === "online");
+            break;
+        default:
+            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+    }
+}
