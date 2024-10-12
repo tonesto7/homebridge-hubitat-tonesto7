@@ -79,31 +79,31 @@ export default class DeviceTypes {
 
     initializeDeviceTypeTests() {
         this.deviceTypeTests = [
-            new DeviceTypeTest("window_covering", (accessory) => accessory.hasCapability("WindowShade") && !["Speaker", "Fan", "Fan Control"].some((cap) => accessory.hasCapability(cap)), true),
+            new DeviceTypeTest("window_covering", (accessory) => accessory.hasCapability("WindowShade") && !["Speaker", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)), true),
             new DeviceTypeTest(
                 "light",
-                (accessory) =>
-                    accessory.hasCapability("Switch Level") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("Color Control")),
+                (accessory) => accessory.hasCapability("SwitchLevel") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl")),
                 true,
             ),
+            // new DeviceTypeTest("air_purifier", (accessory) => accessory.hasCapability("custom.airPurifierOperationMode")),
             new DeviceTypeTest("garage_door", (accessory) => accessory.hasCapability("GarageDoorControl")),
             new DeviceTypeTest("lock", (accessory) => accessory.hasCapability("Lock")),
             new DeviceTypeTest("valve", (accessory) => accessory.hasCapability("Valve")),
             new DeviceTypeTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
             new DeviceTypeTest("filter_maintenance", (accessory) => accessory.hasCapability("FilterStatus") && accessory.hasAttribute("filterStatus")),
-            new DeviceTypeTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (this.configItems.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
+            new DeviceTypeTest("fan", (accessory) => ["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) || (this.configItems.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
             new DeviceTypeTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
             new DeviceTypeTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
-            new DeviceTypeTest("button", (accessory) => ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton", "ReleasableButton"].some((cap) => accessory.hasCapability(cap))),
+            new DeviceTypeTest("button", (accessory) => ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton"].some((cap) => accessory.hasCapability(cap))),
             new DeviceTypeTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))), true),
             new DeviceTypeTest("outlet", (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"), true),
-            new DeviceTypeTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button"].some((cap) => accessory.hasCapability(cap)) && !(this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))),
+            new DeviceTypeTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))),
             new DeviceTypeTest("smoke_detector", (accessory) => accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke")),
             new DeviceTypeTest("carbon_monoxide", (accessory) => accessory.hasCapability("CarbonMonoxideDetector") && accessory.hasAttribute("carbonMonoxide")),
             new DeviceTypeTest("carbon_dioxide", (accessory) => accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxide")),
-            new DeviceTypeTest("motion_sensor", (accessory) => accessory.hasCapability("Motion Sensor")),
-            new DeviceTypeTest("acceleration_sensor", (accessory) => accessory.hasCapability("Acceleration Sensor")),
-            new DeviceTypeTest("leak_sensor", (accessory) => accessory.hasCapability("Water Sensor")),
+            new DeviceTypeTest("motion_sensor", (accessory) => accessory.hasCapability("MotionSensor")),
+            new DeviceTypeTest("acceleration_sensor", (accessory) => accessory.hasCapability("AccelerationSensor")),
+            new DeviceTypeTest("leak_sensor", (accessory) => accessory.hasCapability("WaterSensor")),
             new DeviceTypeTest("presence_sensor", (accessory) => accessory.hasCapability("PresenceSensor")),
             new DeviceTypeTest("humidity_sensor", (accessory) => accessory.hasCapability("RelativeHumidityMeasurement") && accessory.hasAttribute("humidity") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState")),
             new DeviceTypeTest("temperature_sensor", (accessory) => accessory.hasCapability("TemperatureMeasurement") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState")),
@@ -111,6 +111,8 @@ export default class DeviceTypes {
             new DeviceTypeTest("contact_sensor", (accessory) => accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl")),
             new DeviceTypeTest("air_quality", (accessory) => accessory.hasCapability("airQuality") || accessory.hasCapability("AirQuality")),
             new DeviceTypeTest("battery", (accessory) => accessory.hasCapability("Battery")),
+            new DeviceTypeTest("energy_meter", (accessory) => accessory.hasCapability("EnergyMeter") && !accessory.hasCapability("Switch"), true),
+            new DeviceTypeTest("power_meter", (accessory) => accessory.hasCapability("PowerMeter") && !accessory.hasCapability("Switch"), true),
             new DeviceTypeTest("thermostat", (accessory) => accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState")),
             new DeviceTypeTest("thermostat_fan", (accessory) => accessory.hasCapability("Thermostat") && accessory.hasAttribute("thermostatFanMode") && accessory.hasCommand("fanAuto") && accessory.hasCommand("fanOn")),
             new DeviceTypeTest("alarm_system", (accessory) => accessory.hasAttribute("alarmSystemStatus")),
@@ -184,7 +186,7 @@ export default class DeviceTypes {
             accessory.isAdaptiveLightingSupported = (this.homebridge.version >= 2.7 && this.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.homebridge.hap.AdaptiveLightingController;
 
             // Check availability and set error if unavailable
-            this.handleAvailability(accessory);
+            // this.handleAvailability(accessory);
 
             return this.configureCharacteristics(accessory);
         } catch (err) {
@@ -375,8 +377,9 @@ export default class DeviceTypes {
         if (!accessory.servicesToKeep) {
             accessory.servicesToKeep = [];
         }
-        if (!accessory.servicesToKeep.includes(service.UUID)) {
-            accessory.servicesToKeep.push(service.UUID);
+        const serviceKey = `${service.UUID}:${service.subtype || ""}`;
+        if (!accessory.servicesToKeep.includes(serviceKey)) {
+            accessory.servicesToKeep.push(serviceKey);
         }
     }
 
@@ -419,17 +422,18 @@ export default class DeviceTypes {
      * @param {Function} this.platform.logInfo - A method to log informational messages.
      * @returns {Object} The accessory object with unused services removed.
      */
-    removeUnusedServices(acc) {
-        const servicesToKeep = new Set(acc.servicesToKeep);
-        acc.services.forEach((service) => {
-            if (!servicesToKeep.has(service.UUID)) {
-                acc.removeService(service);
-                this.platform.logInfo(`Removing Unused Service: ${service.displayName ? service.displayName : service.UUID} from ${acc.displayName}`);
+    removeUnusedServices(accessory) {
+        const servicesToKeep = new Set(accessory.servicesToKeep);
+        accessory.services.forEach((service) => {
+            const serviceKey = `${service.UUID}:${service.subtype || ""}`;
+            if (!servicesToKeep.has(serviceKey)) {
+                accessory.removeService(service);
+                this.platform.logInfo(`Removing Unused Service: ${service.displayName ? service.displayName : service.UUID} from ${accessory.displayName}`);
             } else {
-                this.removeUnusedCharacteristics(acc, service);
+                this.removeUnusedCharacteristics(accessory, service);
             }
         });
-        return acc;
+        return accessory;
     }
 
     removeUnusedCharacteristics(accessory, service) {
@@ -592,17 +596,29 @@ export default class DeviceTypes {
 
     getButtonSvcByName(service, dispName, subType) {
         this.log.debug(`${this.name} | Getting or adding button service: ${dispName} (subType: ${subType})`);
-        let svc = this.services.find((s) => s.displayName === dispName && s.subtype === subType);
+
+        // Check for existing service with the same UUID and subtype
+        let svc = this.services.find((s) => s instanceof service && s.subtype === subType);
+
         if (svc) {
-            this.log.debug(`${this.name} | Existing service found for: ${dispName}`);
-            return svc;
+            this.log.debug(`${this.name} | Existing service found for: ${dispName} (subType: ${subType})`);
+            // Update the display name if it has changed
+            if (svc.displayName !== dispName) {
+                svc.displayName = dispName;
+            }
         } else {
-            this.log.debug(`${this.name} | Adding new service for: ${dispName}`);
+            this.log.debug(`${this.name} | Adding new service for: ${dispName} (subType: ${subType})`);
             svc = new service(dispName, subType);
             this.addService(svc);
-            this.servicesToKeep.push(svc.UUID);
-            return svc;
         }
+
+        // Ensure the service is in servicesToKeep regardless of whether it's new or existing
+        const serviceKey = `${svc.UUID}:${svc.subtype || ""}`;
+        if (!this.servicesToKeep.includes(serviceKey)) {
+            this.servicesToKeep.push(serviceKey);
+        }
+
+        return svc;
     }
 
     getAccessoryId(accessory) {

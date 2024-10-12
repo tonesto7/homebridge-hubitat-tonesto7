@@ -10,7 +10,7 @@ export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
 }
 
 export function isSupported(accessory) {
-    return accessory.hasCapability("Button") || accessory.hasCapability("DoubleTapableButton") || accessory.hasCapability("HoldableButton") || accessory.hasCapability("PushableButton") || accessory.hasCapability("ReleasableButton");
+    return accessory.hasCapability("Button") || accessory.hasCapability("DoubleTapableButton") || accessory.hasCapability("HoldableButton") || accessory.hasCapability("PushableButton");
 }
 
 export const relevantAttributes = ["button", "numberOfButtons"];
