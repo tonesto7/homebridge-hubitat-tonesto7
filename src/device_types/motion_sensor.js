@@ -1,32 +1,40 @@
 // device_types/motion_sensor.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("MotionSensor");
 }
 
 export const relevantAttributes = ["motion", "tamper", "status"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.MotionSensor);
+export function initializeAccessory(accessory) {
+    const motionSvc = DeviceClass.getOrAddService(accessory, Service.MotionSensor);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.MotionDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, motionSvc, Characteristic.MotionDetected, {
         getHandler: function () {
-            const motion = accessory.context.deviceData.attributes.motion === "active";
-            accessory.log.debug(`${accessory.name} | Motion Detected: ${motion}`);
-            return motion;
+            const motionDetected = accessory.context.deviceData.attributes.motion === "active";
+            accessory.log.debug(`${accessory.name} | Motion Detected: ${motionDetected}`);
+            return motionDetected;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, motionSvc, Characteristic.StatusActive, {
         getHandler: function () {
-            const isActive = accessory.context.deviceData.status === "online";
+            const isActive = accessory.context.deviceData.status === "ACTIVE";
             accessory.log.debug(`${accessory.name} | Status Active: ${isActive}`);
             return isActive;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, motionSvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -39,31 +47,29 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("motion_sensor");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = accessory.getService(Service.MotionSensor);
+export function handleAttributeUpdate(accessory, change) {
+    const motionSvc = accessory.getService(Service.MotionSensor);
 
-    if (!service) {
+    if (!motionSvc) {
         accessory.log.warn(`${accessory.name} | Motion Sensor service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "motion":
-            const motionDetected = change.value === "active";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.MotionDetected, motionDetected);
+            DeviceClass.updateCharacteristicValue(accessory, motionSvc, Characteristic.MotionDetected, change.value === "active");
             // accessory.log.debug(`${accessory.name} | Updated Motion Detected: ${motionDetected}`);
             break;
         case "tamper":
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, motionSvc, Characteristic.StatusTampered, isTampered);
                 // accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
         case "status":
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, motionSvc, Characteristic.StatusActive, isActive);
             // accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         default:

@@ -1,32 +1,40 @@
 // device_types/presence_sensor.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("PresenceSensor");
 }
 
 export const relevantAttributes = ["presence", "status", "tamper"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.OccupancySensor);
+export function initializeAccessory(accessory) {
+    const occupancySvc = DeviceClass.getOrAddService(accessory, Service.OccupancySensor);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.OccupancyDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, occupancySvc, Characteristic.OccupancyDetected, {
         getHandler: function () {
-            const occupancy = convertPresence(accessory.context.deviceData.attributes.presence, Characteristic);
+            const occupancy = convertPresence(accessory.context.deviceData.attributes.presence);
             accessory.log.debug(`${accessory.name} | Occupancy Detected Retrieved: ${occupancy}`);
             return occupancy;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, occupancySvc, Characteristic.StatusActive, {
         getHandler: function () {
-            const isActive = accessory.context.deviceData.status === "online";
+            const isActive = accessory.context.deviceData.status === "ACTIVE";
             accessory.log.debug(`${accessory.name} | Presence Sensor Status Active Retrieved: ${isActive}`);
             return isActive;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, occupancySvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -39,30 +47,28 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("presence_sensor");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.OccupancySensor);
-
-    if (!service) {
+export function handleAttributeUpdate(accessory, change) {
+    const occupancySvc = accessory.getService(Service.OccupancySensor);
+    if (!occupancySvc) {
         accessory.log.warn(`${accessory.name} | Occupancy Sensor service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "presence":
-            const occupancy = convertPresence(change.value, Characteristic);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.OccupancyDetected, occupancy);
+            const occupancy = convertPresence(change.value);
+            DeviceClass.updateCharacteristicValue(accessory, occupancySvc, Characteristic.OccupancyDetected, occupancy);
             // accessory.log.debug(`${accessory.name} | Updated Occupancy Detected: ${occupancy}`);
             break;
         case "status":
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, occupancySvc, Characteristic.StatusActive, isActive);
             // accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         case "tamper":
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, occupancySvc, Characteristic.StatusTampered, isTampered);
                 // accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
@@ -71,6 +77,6 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
-function convertPresence(presence, Characteristic) {
+function convertPresence(presence) {
     return presence === "present" ? Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
 }

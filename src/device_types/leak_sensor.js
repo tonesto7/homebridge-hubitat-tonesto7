@@ -1,16 +1,24 @@
 // device_types/leak_sensor.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("WaterSensor");
 }
 
 export const relevantAttributes = ["water", "status", "tamper"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.LeakSensor);
+export function initializeAccessory(accessory) {
+    const leakSensorSvc = DeviceClass.getOrAddService(accessory, Service.LeakSensor);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.LeakDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, leakSensorSvc, Characteristic.LeakDetected, {
         getHandler: function () {
             const leak = convertWaterStatus(accessory.context.deviceData.attributes.water, Characteristic);
             accessory.log.debug(`${accessory.name} | Leak Detected Retrieved: ${leak}`);
@@ -18,15 +26,15 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, leakSensorSvc, Characteristic.StatusActive, {
         getHandler: function () {
-            const isActive = accessory.context.deviceData.status === "online";
+            const isActive = accessory.context.deviceData.status === "ACTIVE";
             accessory.log.debug(`${accessory.name} | Water Sensor Status Active Retrieved: ${isActive}`);
             return isActive;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, leakSensorSvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -39,11 +47,10 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("leak_sensor");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.LeakSensor);
+export function handleAttributeUpdate(accessory, change) {
+    const leakSensorSvc = accessory.getService(Service.LeakSensor);
 
-    if (!service) {
+    if (!leakSensorSvc) {
         accessory.log.warn(`${accessory.name} | Leak Sensor service not found`);
         return;
     }
@@ -51,18 +58,18 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     switch (change.attribute) {
         case "water":
             const leakDetected = convertWaterStatus(change.value, Characteristic);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.LeakDetected, leakDetected);
+            DeviceClass.updateCharacteristicValue(accessory, leakSensorSvc, Characteristic.LeakDetected, leakDetected);
             accessory.log.debug(`${accessory.name} | Updated Leak Detected: ${leakDetected}`);
             break;
         case "status":
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, leakSensorSvc, Characteristic.StatusActive, isActive);
             accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         case "tamper":
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, leakSensorSvc, Characteristic.StatusTampered, isTampered);
                 accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
@@ -71,6 +78,6 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
-function convertWaterStatus(status, Characteristic) {
+function convertWaterStatus(status) {
     return status === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED;
 }

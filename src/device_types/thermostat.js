@@ -1,54 +1,41 @@
 // device_types/thermostat.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState");
 }
 
 export const relevantAttributes = ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.Thermostat);
+export function initializeAccessory(accessory) {
+    const thermostatSvc = DeviceClass.getOrAddService(accessory, Service.Thermostat);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentHeatingCoolingState, {
+    DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.CurrentHeatingCoolingState, {
         getHandler: function () {
-            const operatingState = accessory.context.deviceData.attributes.thermostatOperatingState;
-            switch (operatingState) {
-                case "cooling":
-                    accessory.log.debug(`${accessory.name} | Current HeatingCoolingState: COOL`);
-                    return Characteristic.CurrentHeatingCoolingState.COOL;
-                case "heating":
-                    accessory.log.debug(`${accessory.name} | Current HeatingCoolingState: HEAT`);
-                    return Characteristic.CurrentHeatingCoolingState.HEAT;
-                default:
-                    accessory.log.debug(`${accessory.name} | Current HeatingCoolingState: OFF`);
-                    return Characteristic.CurrentHeatingCoolingState.OFF;
-            }
+            const operatingState = getCurrentOperatingState(accessory.context.deviceData.attributes.thermostatOperatingState);
+            accessory.log.debug(`${accessory.name} | Current HeatingCoolingState: ${accessory.context.deviceData.attributes.thermostatOperatingState.replace("ing", "").toUpperCase()}`);
+            return operatingState;
         },
     });
 
-    const supportedModes = getSupportedThermostatModes(accessory, Characteristic);
+    // Get the supported thermostat modes to set the valid values for TargetHeatingCoolingState which is used by the UI to offer the correct options
+    const supportedModes = getSupportedThermostatModes(accessory);
+    // console.log("supportedThermostatModes:", supportedModes);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.TargetHeatingCoolingState, {
+    DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.TargetHeatingCoolingState, {
         props: {
             validValues: supportedModes,
         },
         getHandler: function () {
-            const mode = accessory.context.deviceData.attributes.thermostatMode;
-            let targetState;
-            switch (mode) {
-                case "cool":
-                    targetState = Characteristic.TargetHeatingCoolingState.COOL;
-                    break;
-                case "heat":
-                    targetState = Characteristic.TargetHeatingCoolingState.HEAT;
-                    break;
-                case "auto":
-                    targetState = Characteristic.TargetHeatingCoolingState.AUTO;
-                    break;
-                default:
-                    targetState = Characteristic.TargetHeatingCoolingState.OFF;
-            }
+            const targetState = getTargetOperatingState(accessory.context.deviceData.attributes.thermostatMode);
             accessory.log.debug(`${accessory.name} | Target HeatingCoolingState Retrieved: ${targetState}`);
             return targetState;
         },
@@ -72,53 +59,52 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentTemperature, {
+    DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.CurrentTemperature, {
         getHandler: function () {
             const temp = accessory.context.deviceData.attributes.temperature;
-            const convertedTemp = thermostatTempConversion(temp, deviceClass.platform);
-            accessory.log.debug(`${accessory.name} | Current Temperature Retrieved: ${convertedTemp}°C (${temp}°${deviceClass.platform.getTempUnit()})`);
+            const convertedTemp = thermostatTempConversion(temp);
+            accessory.log.debug(`${accessory.name} | Current Temperature Retrieved: ${convertedTemp}°C (${temp}°${DeviceClass.platform.getTempUnit()})`);
             return convertedTemp;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.TargetTemperature, {
+    DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.TargetTemperature, {
         props: {
             minValue: 10,
             maxValue: 38,
             minStep: 0.1,
         },
         getHandler: function () {
-            const targetTemp = thermostatTargetTemp(accessory, deviceClass);
+            const targetTemp = thermostatTargetTemp(accessory, DeviceClass);
             accessory.log.debug(`${accessory.name} | Target Temperature Retrieved: ${targetTemp}°C`);
             return targetTemp;
         },
         setHandler: function (value) {
             let { cmdName, attrName } = thermostatTargetTemp_set(accessory);
             let temp;
-            if (deviceClass.platform.getTempUnit() === "C") {
-                temp = thermostatTempConversion(value, deviceClass.platform, true);
+            if (DeviceClass.platform.getTempUnit() === "C") {
+                temp = thermostatTempConversion(value, true);
             } else {
-                temp = thermostatTempConversion((value * 9) / 5 + 32, deviceClass.platform, true);
+                temp = thermostatTempConversion((value * 9) / 5 + 32, true);
             }
-            accessory.log.info(`${accessory.name} | Setting thermostat setpoint to ${temp}°${deviceClass.platform.getTempUnit()} via command ${cmdName}`);
+            accessory.log.info(`${accessory.name} | Setting thermostat setpoint to ${temp}°${DeviceClass.platform.getTempUnit()} via command ${cmdName}`);
             accessory.sendCommand(null, accessory, accessory.context.deviceData, cmdName, { value1: temp });
             accessory.context.deviceData.attributes[attrName] = temp;
         },
     });
 
-    if (accessory.hasCapability("RelativeHumidityMeasurement")) {
-        deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentRelativeHumidity, {
-            getHandler: function () {
-                const humidity = Math.round(clamp(parseFloat(accessory.context.deviceData.attributes.humidity) || 0, 0, 100));
-                accessory.log.debug(`${accessory.name} | Current Humidity Retrieved: ${humidity}%`);
-                return humidity;
-            },
-        });
-    }
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.TemperatureDisplayUnits, {
+    DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.CurrentRelativeHumidity, {
+        preReqChk: (acc) => acc.hasCapability("RelativeHumidityMeasurement"),
         getHandler: function () {
-            const unit = deviceClass.platform.getTempUnit() === "F" ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT : Characteristic.TemperatureDisplayUnits.CELSIUS;
+            const humidity = Math.round(clamp(parseFloat(accessory.context.deviceData.attributes.humidity) || 0, 0, 100));
+            accessory.log.debug(`${accessory.name} | Current Humidity Retrieved: ${humidity}%`);
+            return humidity;
+        },
+    });
+
+    DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.TemperatureDisplayUnits, {
+        getHandler: function () {
+            const unit = DeviceClass.platform.getTempUnit() === "F" ? Characteristic.TemperatureDisplayUnits.FAHRENHEIT : Characteristic.TemperatureDisplayUnits.CELSIUS;
             accessory.log.debug(`${accessory.name} | Temperature Display Units Retrieved: ${unit === Characteristic.TemperatureDisplayUnits.FAHRENHEIT ? "Fahrenheit" : "Celsius"}`);
             return unit;
         },
@@ -127,69 +113,46 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("thermostat");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.Thermostat);
+export function handleAttributeUpdate(accessory, change) {
+    const thermostatSvc = accessory.getService(Service.Thermostat);
 
-    if (!service) {
+    if (!thermostatSvc) {
         accessory.log.warn(`${accessory.name} | Thermostat service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "thermostatOperatingState":
-            let currentState;
-            switch (change.value) {
-                case "cooling":
-                    currentState = Characteristic.CurrentHeatingCoolingState.COOL;
-                    break;
-                case "heating":
-                    currentState = Characteristic.CurrentHeatingCoolingState.HEAT;
-                    break;
-                default:
-                    currentState = Characteristic.CurrentHeatingCoolingState.OFF;
-            }
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentHeatingCoolingState, currentState);
+            const currentState = getCurrentOperatingState(change.value);
+            DeviceClass.updateCharacteristicValue(accessory, thermostatSvc, Characteristic.CurrentHeatingCoolingState, currentState);
             // accessory.log.debug(`${accessory.name} | Updated Current HeatingCoolingState: ${currentState}`);
             break;
 
         case "thermostatMode":
-            let targetState;
-            switch (change.value) {
-                case "cool":
-                    targetState = Characteristic.TargetHeatingCoolingState.COOL;
-                    break;
-                case "heat":
-                    targetState = Characteristic.TargetHeatingCoolingState.HEAT;
-                    break;
-                case "auto":
-                    targetState = Characteristic.TargetHeatingCoolingState.AUTO;
-                    break;
-                default:
-                    targetState = Characteristic.TargetHeatingCoolingState.OFF;
-            }
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.TargetHeatingCoolingState, targetState);
+            // updateThermostatModeValidValues(accessory);
+            const targetState = getTargetOperatingState(change.value);
+            DeviceClass.updateCharacteristicValue(accessory, thermostatSvc, Characteristic.TargetHeatingCoolingState, targetState);
             // accessory.log.debug(`${accessory.name} | Updated Target HeatingCoolingState: ${targetState}`);
             break;
 
         case "temperature":
-            const currentTemp = thermostatTempConversion(change.value, deviceClass.platform);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentTemperature, currentTemp);
+            const currentTemp = thermostatTempConversion(change.value);
+            DeviceClass.updateCharacteristicValue(accessory, thermostatSvc, Characteristic.CurrentTemperature, currentTemp);
             // accessory.log.debug(`${accessory.name} | Updated Current Temperature: ${currentTemp}°C`);
             break;
 
         case "coolingSetpoint":
         case "heatingSetpoint":
         case "thermostatSetpoint":
-            const targetTemp = thermostatTargetTemp(accessory, deviceClass);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.TargetTemperature, targetTemp);
+            const targetTemp = thermostatTargetTemp(accessory);
+            DeviceClass.updateCharacteristicValue(accessory, thermostatSvc, Characteristic.TargetTemperature, targetTemp);
             // accessory.log.debug(`${accessory.name} | Updated Target Temperature: ${targetTemp}°C`);
             break;
 
         case "humidity":
             if (accessory.hasCapability("RelativeHumidityMeasurement")) {
                 const humidity = Math.round(clamp(parseFloat(change.value) || 0, 0, 100));
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentRelativeHumidity, humidity);
+                DeviceClass.updateCharacteristicValue(accessory, thermostatSvc, Characteristic.CurrentRelativeHumidity, humidity);
                 // accessory.log.debug(`${accessory.name} | Updated Current Humidity: ${humidity}%`);
             }
             break;
@@ -199,19 +162,43 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
+function getCurrentOperatingState(state) {
+    switch (state) {
+        case "cooling":
+            return Characteristic.CurrentHeatingCoolingState.COOL;
+        case "heating":
+            return Characteristic.CurrentHeatingCoolingState.HEAT;
+        default:
+            return Characteristic.CurrentHeatingCoolingState.OFF;
+    }
+}
+
+function getTargetOperatingState(mode) {
+    switch (mode) {
+        case "cool":
+            return Characteristic.TargetHeatingCoolingState.COOL;
+        case "heat":
+            return Characteristic.TargetHeatingCoolingState.HEAT;
+        case "auto":
+            return Characteristic.TargetHeatingCoolingState.AUTO;
+        default:
+            return Characteristic.TargetHeatingCoolingState.OFF;
+    }
+}
+
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-function thermostatTempConversion(temp, platform, isSet = false) {
+function thermostatTempConversion(temp, isSet = false) {
     if (isSet) {
-        if (platform.getTempUnit() === "C") {
+        if (DeviceClass.platform.getTempUnit() === "C") {
             return clamp(Math.round(temp), 10, 38);
         } else {
             return clamp(Math.round(temp), 50, 100);
         }
     } else {
-        if (platform.getTempUnit() === "C") {
+        if (DeviceClass.platform.getTempUnit() === "C") {
             return Math.round(temp * 10) / 10;
         } else {
             return Math.round(((temp - 32) / 1.8) * 10) / 10;
@@ -219,7 +206,7 @@ function thermostatTempConversion(temp, platform, isSet = false) {
     }
 }
 
-function thermostatTargetTemp(accessory, deviceClass) {
+function thermostatTargetTemp(accessory) {
     const mode = accessory.context.deviceData.attributes.thermostatMode;
     const currentTemp = accessory.context.deviceData.attributes.temperature;
     let targetTemp;
@@ -240,7 +227,7 @@ function thermostatTargetTemp(accessory, deviceClass) {
             targetTemp = accessory.context.deviceData.attributes.thermostatSetpoint || currentTemp;
     }
 
-    if (deviceClass.platform.getTempUnit() === "F") {
+    if (DeviceClass.platform.getTempUnit() === "F") {
         targetTemp = ((targetTemp - 32) * 5) / 9;
     }
     targetTemp = clamp(targetTemp, 10, 38);
@@ -252,7 +239,6 @@ function thermostatTargetTemp(accessory, deviceClass) {
 function thermostatTargetTemp_set(accessory) {
     const mode = accessory.context.deviceData.attributes.thermostatMode;
     let cmdName, attrName;
-
     switch (mode) {
         case "cool":
             cmdName = "setCoolingSetpoint";
@@ -279,10 +265,10 @@ function thermostatTargetTemp_set(accessory) {
     return { cmdName, attrName };
 }
 
-function getSupportedThermostatModes(accessory, Characteristic) {
+function getSupportedThermostatModes(accessory) {
     const supportedModes = [];
     const modes = accessory.context.deviceData.attributes.supportedThermostatModes || ["off", "heat", "cool", "auto"];
-
+    // console.log("modes:", modes);
     modes.forEach((mode) => {
         switch (mode) {
             case "off":
@@ -304,4 +290,16 @@ function getSupportedThermostatModes(accessory, Characteristic) {
 
     accessory.log.debug(`${accessory.name} | Supported Thermostat Modes: ${supportedModes}`);
     return supportedModes;
+}
+
+function updateThermostatModeValidValues(accessory) {
+    // Update the valid values for TargetHeatingCoolingState if they are different from the current prop values
+    const thermostatSvc = accessory.getService(Service.Thermostat);
+    const supportedModes = getSupportedThermostatModes(accessory);
+    const currentModes = thermostatSvc.getCharacteristic(Characteristic.TargetHeatingCoolingState).props.validValues;
+
+    if (JSON.stringify(currentModes) !== JSON.stringify(supportedModes)) {
+        thermostatSvc.getCharacteristic(Characteristic.TargetHeatingCoolingState).props.validValues = supportedModes;
+        accessory.log.debug(`${accessory.name} | Updated Supported Thermostat Modes: ${supportedModes}`);
+    }
 }

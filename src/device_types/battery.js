@@ -1,40 +1,34 @@
 // device_types/battery.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("Battery");
 }
 
 export const relevantAttributes = ["battery", "powerSource"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    // const service = accessory.getService(Service.Battery) || accessory.addService(Service.Battery);
-    const service = deviceClass.getOrAddService(accessory, Service.Battery);
+export function initializeAccessory(accessory) {
+    const batterySvc = DeviceClass.getOrAddService(accessory, Service.Battery);
 
     // Battery Level
-    // service.getCharacteristic(Characteristic.BatteryLevel).onGet(() => {
-    //     const battery = deviceClass.clamp(accessory.context.deviceData.attributes.battery, 0, 100);
-    //     accessory.log.debug(`${accessory.name} | Battery Level: ${battery}%`);
-    //     return battery;
-    // });
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.BatteryLevel, {
+    DeviceClass.getOrAddCharacteristic(accessory, batterySvc, Characteristic.BatteryLevel, {
         getHandler: function () {
-            const battery = deviceClass.clamp(accessory.context.deviceData.attributes.battery, 0, 100);
+            const battery = DeviceClass.clamp(accessory.context.deviceData.attributes.battery, 0, 100);
             accessory.log.debug(`${accessory.name} | Battery Level: ${battery}%`);
             return battery;
         },
     });
 
     // Status Low Battery
-    // service.getCharacteristic(Characteristic.StatusLowBattery).onGet(() => {
-    //     const battery = accessory.context.deviceData.attributes.battery;
-    //     const lowBattery = battery < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    //     accessory.log.debug(`${accessory.name} | Battery Level: ${battery}% => StatusLowBattery: ${lowBattery}`);
-    //     return lowBattery;
-    // });
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusLowBattery, {
+    DeviceClass.getOrAddCharacteristic(accessory, batterySvc, Characteristic.StatusLowBattery, {
         getHandler: function () {
             const battery = accessory.context.deviceData.attributes.battery;
             const lowBattery = battery < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
@@ -44,39 +38,10 @@ export function initializeAccessory(accessory, deviceClass) {
     });
 
     // Charging State
-    // service.getCharacteristic(Characteristic.ChargingState).onGet(() => {
-    //     const powerSource = accessory.context.deviceData.attributes.powerSource;
-    //     let chargingState = Characteristic.ChargingState.NOT_CHARGEABLE;
-    //     switch (powerSource) {
-    //         case "mains":
-    //         case "dc":
-    //         case "USB Cable":
-    //             chargingState = Characteristic.ChargingState.CHARGING;
-    //             break;
-    //         case "battery":
-    //             chargingState = Characteristic.ChargingState.NOT_CHARGING;
-    //             break;
-    //     }
-    //     if (chargingState !== 2) {
-    //         accessory.log.debug(`${accessory.name} | Power Source: ${powerSource} => Charging State: ${chargingState}`);
-    //     }
-    //     return chargingState;
-    // });
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.ChargingState, {
+    DeviceClass.getOrAddCharacteristic(accessory, batterySvc, Characteristic.ChargingState, {
         getHandler: function () {
             const powerSource = accessory.context.deviceData.attributes.powerSource;
-            let chargingState = Characteristic.ChargingState.NOT_CHARGEABLE;
-            switch (powerSource) {
-                case "mains":
-                case "dc":
-                case "USB Cable":
-                    chargingState = Characteristic.ChargingState.CHARGING;
-                    break;
-                case "battery":
-                    chargingState = Characteristic.ChargingState.NOT_CHARGING;
-                    break;
-            }
+            const chargingState = getChargeState(powerSource);
             if (chargingState !== 2) {
                 accessory.log.debug(`${accessory.name} | Power Source: ${powerSource} => Charging State: ${chargingState}`);
             }
@@ -87,44 +52,40 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("battery");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.Battery);
+export function handleAttributeUpdate(accessory, change) {
+    const batterySvc = accessory.getService(Service.Battery);
 
-    if (!service) {
+    if (!batterySvc) {
         accessory.log.warn(`${accessory.name} | Battery service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "battery":
-            const batteryLevel = deviceClass.clamp(parseInt(change.value), 0, 100);
-            // service.updateCharacteristic(Characteristic.BatteryLevel, batteryLevel);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.BatteryLevel, batteryLevel);
+            const batteryLevel = DeviceClass.clamp(parseInt(change.value), 0, 100);
             const lowBattery = batteryLevel < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-            // service.updateCharacteristic(Characteristic.StatusLowBattery, lowBattery);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusLowBattery, lowBattery);
+            DeviceClass.updateCharacteristicValue(accessory, batterySvc, Characteristic.BatteryLevel, batteryLevel);
+            DeviceClass.updateCharacteristicValue(accessory, batterySvc, Characteristic.StatusLowBattery, lowBattery);
             // accessory.log.debug(`${accessory.name} | Updated Battery Level: ${batteryLevel}%, Low Battery: ${lowBattery}`);
             break;
         case "powerSource":
-            let chargingState;
-            switch (change.value) {
-                case "mains":
-                case "dc":
-                case "USB Cable":
-                    chargingState = Characteristic.ChargingState.CHARGING;
-                    break;
-                case "battery":
-                    chargingState = Characteristic.ChargingState.NOT_CHARGING;
-                    break;
-                default:
-                    chargingState = Characteristic.ChargingState.NOT_CHARGEABLE;
-            }
-            // service.updateCharacteristic(Characteristic.ChargingState, chargingState);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.ChargingState, chargingState);
-            // accessory.log.debug(`${accessory.name} | Updated Charging State: ${chargingState}`);
+            const chargingState = getChargeState(change.value);
+            DeviceClass.updateCharacteristicValue(accessory, batterySvc, Characteristic.ChargingState, chargingState);
             break;
         default:
             accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+    }
+}
+
+function getChargeState(powerSource) {
+    switch (powerSource) {
+        case "mains":
+        case "dc":
+        case "USB Cable":
+            return Characteristic.ChargingState.CHARGING;
+        case "battery":
+            return Characteristic.ChargingState.NOT_CHARGING;
+        default:
+            return Characteristic.ChargingState.NOT_CHARGEABLE;
     }
 }

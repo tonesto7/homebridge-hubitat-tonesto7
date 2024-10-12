@@ -1,21 +1,26 @@
 // device_types/fan.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (accessory.context.deviceData.name.toLowerCase().includes("fan") && accessory.platform.configItems.consider_fan_by_name !== false) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed");
 }
 
 export const relevantAttributes = ["switch", "speed", "level"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.Fanv2);
+export function initializeAccessory(accessory) {
+    const fanSvc = DeviceClass.getOrAddService(accessory, Service.Fanv2);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.Active, {
+    DeviceClass.getOrAddCharacteristic(accessory, fanSvc, Characteristic.Active, {
         preReqChk: (acc) => acc.hasAttribute("switch"),
         getHandler: function () {
-            if (accessory.context.deviceData.isUnavailable) {
-                throw new Error("Device is unavailable");
-            }
             const isActive = accessory.context.deviceData.attributes.switch === "on" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
             accessory.log.debug(`${accessory.name} | Fan Active State: ${isActive === Characteristic.Active.ACTIVE ? "Active" : "Inactive"}`);
             return isActive;
@@ -28,7 +33,7 @@ export function initializeAccessory(accessory, deviceClass) {
         removeIfMissingPreReq: true,
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentFanState, {
+    DeviceClass.getOrAddCharacteristic(accessory, fanSvc, Characteristic.CurrentFanState, {
         preReqChk: (acc) => acc.hasAttribute("switch"),
         getHandler: function () {
             const currentState = accessory.context.deviceData.attributes.switch === "on" ? Characteristic.CurrentFanState.BLOWING_AIR : Characteristic.CurrentFanState.IDLE;
@@ -44,9 +49,9 @@ export function initializeAccessory(accessory, deviceClass) {
     if (accessory.hasDeviceFlag("fan_4_spd")) spdSteps = 25;
     if (accessory.hasDeviceFlag("fan_5_spd")) spdSteps = 20;
 
-    let spdAttr = accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed") ? "speed" : accessory.hasAttribute("level") ? "level" : undefined;
+    const spdAttr = accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed") ? "speed" : accessory.hasAttribute("level") ? "level" : undefined;
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.RotationSpeed, {
+    DeviceClass.getOrAddCharacteristic(accessory, fanSvc, Characteristic.RotationSpeed, {
         preReqChk: (acc) => spdAttr !== undefined,
         props: { minStep: spdSteps, maxValue: 100, minValue: 0 },
         getHandler: function () {
@@ -56,7 +61,7 @@ export function initializeAccessory(accessory, deviceClass) {
             return rotationSpeed;
         },
         setHandler: function (value) {
-            const clampedValue = deviceClass.clamp(value, 0, 100);
+            const clampedValue = DeviceClass.clamp(value, 0, 100);
             const speed = fanSpeedConversion(clampedValue);
             accessory.log.info(`${accessory.name} | Setting fan speed to ${speed}`);
             accessory.sendCommand(null, accessory, accessory.context.deviceData, `set${spdAttr.charAt(0).toUpperCase() + spdAttr.slice(1)}`, { value1: speed });
@@ -67,11 +72,10 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("fan");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.Fanv2);
+export function handleAttributeUpdate(accessory, change) {
+    const fanSvc = accessory.getService(Service.Fanv2);
 
-    if (!service) {
+    if (!fanSvc) {
         accessory.log.warn(`${accessory.name} | Fan service not found`);
         return;
     }
@@ -79,14 +83,14 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     switch (change.attribute) {
         case "switch":
             const isActive = change.value === "on";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.Active, isActive ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentFanState, isActive ? Characteristic.CurrentFanState.BLOWING_AIR : Characteristic.CurrentFanState.IDLE);
+            DeviceClass.updateCharacteristicValue(accessory, fanSvc, Characteristic.Active, isActive ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE);
+            DeviceClass.updateCharacteristicValue(accessory, fanSvc, Characteristic.CurrentFanState, isActive ? Characteristic.CurrentFanState.BLOWING_AIR : Characteristic.CurrentFanState.IDLE);
             // accessory.log.debug(`${accessory.name} | Updated Fan Active: ${isActive}`);
             break;
         case "speed":
         case "level":
             const rotationSpeed = fanSpeedToLevel(change.value);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.RotationSpeed, rotationSpeed);
+            DeviceClass.updateCharacteristicValue(accessory, fanSvc, Characteristic.RotationSpeed, rotationSpeed);
             // accessory.log.debug(`${accessory.name} | Updated Rotation Speed: ${rotationSpeed}`);
             break;
         default:

@@ -1,16 +1,24 @@
 // device_types/temperature_sensor.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("TemperatureMeasurement") && !(accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState"));
 }
 
 export const relevantAttributes = ["temperature", "tamper", "status"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.TemperatureSensor);
+export function initializeAccessory(accessory) {
+    const temperatureSvc = DeviceClass.getOrAddService(accessory, Service.TemperatureSensor);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentTemperature, {
+    DeviceClass.getOrAddCharacteristic(accessory, temperatureSvc, Characteristic.CurrentTemperature, {
         props: {
             minValue: -100,
             maxValue: 200,
@@ -18,13 +26,13 @@ export function initializeAccessory(accessory, deviceClass) {
         },
         getHandler: function () {
             let temp = parseFloat(accessory.context.deviceData.attributes.temperature);
-            temp = isNaN(temp) ? 0 : convertTemperature(temp, deviceClass.platform);
-            accessory.log.debug(`${accessory.name} | Temperature Sensor Current Temperature Retrieved: ${temp} ${deviceClass.platform.getTempUnit()}`);
+            temp = isNaN(temp) ? 0 : convertTemperature(temp, DeviceClass.platform);
+            accessory.log.debug(`${accessory.name} | Temperature Sensor Current Temperature Retrieved: ${temp} ${DeviceClass.platform.getTempUnit()}`);
             return temp;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, temperatureSvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -34,9 +42,9 @@ export function initializeAccessory(accessory, deviceClass) {
         removeIfMissingPreReq: true,
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, temperatureSvc, Characteristic.StatusActive, {
         getHandler: function () {
-            const isActive = accessory.context.deviceData.status === "online";
+            const isActive = accessory.context.deviceData.status === "ACTIVE";
             accessory.log.debug(`${accessory.name} | Temperature Sensor Status Active Retrieved: ${isActive}`);
             return isActive;
         },
@@ -45,11 +53,9 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("temperature_sensor");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.TemperatureSensor);
-
-    if (!service) {
+export function handleAttributeUpdate(accessory, change) {
+    const temperatureSvc = accessory.getService(Service.TemperatureSensor);
+    if (!temperatureSvc) {
         accessory.log.warn(`${accessory.name} | Temperature Sensor service not found`);
         return;
     }
@@ -57,24 +63,24 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     switch (change.attribute) {
         case "temperature": {
             let temp = parseFloat(change.value);
-            temp = isNaN(temp) ? 0 : convertTemperature(temp, deviceClass.platform);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentTemperature, temp);
+            temp = isNaN(temp) ? 0 : convertTemperature(temp, DeviceClass.platform);
+            DeviceClass.updateCharacteristicValue(accessory, temperatureSvc, Characteristic.CurrentTemperature, temp);
             // accessory.log.debug(
-            //     `${accessory.name} | Updated Temperature: ${temp} ${deviceClass.platform.getTempUnit()}`
+            //     `${accessory.name} | Updated Temperature: ${temp} ${DeviceClass.platform.getTempUnit()}`
             // );
             break;
         }
         case "tamper": {
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, temperatureSvc, Characteristic.StatusTampered, isTampered);
                 // accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
         }
         case "status": {
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, temperatureSvc, Characteristic.StatusActive, isActive);
             // accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         }

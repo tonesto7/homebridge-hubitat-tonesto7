@@ -1,5 +1,14 @@
 // device_types/light.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return (
         accessory.hasCapability("Switch Level") &&
@@ -9,11 +18,10 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic, hap } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.Lightbulb);
+export function initializeAccessory(accessory) {
+    const lightSvc = DeviceClass.getOrAddService(accessory, Service.Lightbulb);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.On, {
+    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.On, {
         getHandler: function () {
             return accessory.context.deviceData.attributes.switch === "on";
         },
@@ -24,84 +32,80 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    if (accessory.hasAttribute("level")) {
-        deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.Brightness, {
-            getHandler: function () {
-                let brightness = parseInt(accessory.context.deviceData.attributes.level, 10);
-                brightness = deviceClass.clamp(brightness, 0, 100);
-                accessory.log.debug(`${accessory.name} | Current Brightness: ${brightness}%`);
-                return isNaN(brightness) ? 0 : brightness;
-            },
-            setHandler: function (value) {
-                const brightness = deviceClass.clamp(value, 0, 100);
-                accessory.log.info(`${accessory.name} | Setting brightness to ${brightness}%`);
-                accessory.sendCommand(null, accessory, accessory.context.deviceData, "setLevel", { value1: brightness });
-            },
-        });
-    }
+    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.Brightness, {
+        preReqFunc: () => accessory.hasAttribute("level") && accessory.hasCommand("setLevel"),
+        getHandler: function () {
+            let brightness = parseInt(accessory.context.deviceData.attributes.level, 10);
+            brightness = DeviceClass.clamp(brightness, 0, 100);
+            accessory.log.debug(`${accessory.name} | Current Brightness: ${brightness}%`);
+            return isNaN(brightness) ? 0 : brightness;
+        },
+        setHandler: function (value) {
+            const brightness = DeviceClass.clamp(value, 0, 100);
+            accessory.log.info(`${accessory.name} | Setting brightness to ${brightness}%`);
+            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setLevel", { value1: brightness });
+        },
+    });
 
-    if (accessory.hasAttribute("hue") && accessory.hasCommand("setHue")) {
-        deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.Hue, {
-            props: {
-                minValue: 0,
-                maxValue: 360,
-                minStep: 1,
-            },
-            getHandler: function () {
-                let hue = parseFloat(accessory.context.deviceData.attributes.hue);
-                hue = deviceClass.clamp(hue, 0, 360);
-                accessory.log.debug(`${accessory.name} | Current Hue: ${hue}`);
-                return isNaN(hue) ? 0 : Math.round(hue);
-            },
-            setHandler: function (value) {
-                const hue = deviceClass.clamp(Math.round(value), 0, 360);
-                accessory.log.info(`${accessory.name} | Setting hue to ${hue}`);
-                accessory.sendCommand(null, accessory, accessory.context.deviceData, "setHue", { value1: hue });
-            },
-        });
-    }
+    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.Hue, {
+        preReqFunc: () => accessory.hasAttribute("hue") && accessory.hasCommand("setHue"),
+        props: {
+            minValue: 0,
+            maxValue: 360,
+            minStep: 1,
+        },
+        getHandler: function () {
+            let hue = parseFloat(accessory.context.deviceData.attributes.hue);
+            hue = DeviceClass.clamp(hue, 0, 360);
+            accessory.log.debug(`${accessory.name} | Current Hue: ${hue}`);
+            return isNaN(hue) ? 0 : Math.round(hue);
+        },
+        setHandler: function (value) {
+            const hue = DeviceClass.clamp(Math.round(value), 0, 360);
+            accessory.log.info(`${accessory.name} | Setting hue to ${hue}`);
+            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setHue", { value1: hue });
+        },
+    });
 
-    if (accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation")) {
-        deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.Saturation, {
-            getHandler: function () {
-                let saturation = parseFloat(accessory.context.deviceData.attributes.saturation);
-                saturation = deviceClass.clamp(saturation, 0, 100);
-                accessory.log.debug(`${accessory.name} | Current Saturation: ${saturation}%`);
-                return isNaN(saturation) ? 0 : Math.round(saturation);
-            },
-            setHandler: function (value) {
-                const saturation = deviceClass.clamp(Math.round(value), 0, 100);
-                accessory.log.info(`${accessory.name} | Setting saturation to ${saturation}%`);
-                accessory.sendCommand(null, accessory, accessory.context.deviceData, "setSaturation", { value1: saturation });
-            },
-        });
-    }
+    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.Saturation, {
+        preReqFunc: () => accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation"),
+        getHandler: function () {
+            let saturation = parseFloat(accessory.context.deviceData.attributes.saturation);
+            saturation = DeviceClass.clamp(saturation, 0, 100);
+            accessory.log.debug(`${accessory.name} | Current Saturation: ${saturation}%`);
+            return isNaN(saturation) ? 0 : Math.round(saturation);
+        },
+        setHandler: function (value) {
+            const saturation = DeviceClass.clamp(Math.round(value), 0, 100);
+            accessory.log.info(`${accessory.name} | Setting saturation to ${saturation}%`);
+            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setSaturation", { value1: saturation });
+        },
+    });
 
-    if (accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature")) {
-        deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.ColorTemperature, {
-            props: {
-                minValue: 140,
-                maxValue: 500,
-            },
-            getHandler: function () {
-                let mired = kelvinToMired(parseInt(accessory.context.deviceData.attributes.colorTemperature));
-                mired = deviceClass.clamp(mired, 140, 500);
-                accessory.log.debug(`${accessory.name} | Current Color Temperature: ${mired} Mireds`);
-                return isNaN(mired) ? 140 : mired;
-            },
-            setHandler: function (value) {
-                const mired = deviceClass.clamp(Math.round(value), 140, 500);
-                const kelvin = miredToKelvin(mired);
-                accessory.log.info(`${accessory.name} | Setting color temperature to ${kelvin}K (${mired} Mireds)`);
-                accessory.sendCommand(null, accessory, accessory.context.deviceData, "setColorTemperature", { value1: kelvin });
-            },
-        });
-    }
+    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.ColorTemperature, {
+        preReqFunc: () => accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature"),
+        props: {
+            minValue: 140,
+            maxValue: 500,
+        },
+        getHandler: function () {
+            let mired = kelvinToMired(parseInt(accessory.context.deviceData.attributes.colorTemperature));
+            mired = DeviceClass.clamp(mired, 140, 500);
+            accessory.log.debug(`${accessory.name} | Current Color Temperature: ${mired} Mireds`);
+            return isNaN(mired) ? 140 : mired;
+        },
+        setHandler: function (value) {
+            const mired = DeviceClass.clamp(Math.round(value), 140, 500);
+            const kelvin = miredToKelvin(mired);
+            accessory.log.info(`${accessory.name} | Setting color temperature to ${kelvin}K (${mired} Mireds)`);
+            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setColorTemperature", { value1: kelvin });
+        },
+    });
 
-    const canUseAL = deviceClass.configItems.adaptive_lighting !== false && accessory.isAdaptiveLightingSupported && !accessory.hasDeviceFlag("light_no_al") && accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature");
+    const canUseAL = DeviceClass.configItems.adaptive_lighting !== false && accessory.isAdaptiveLightingSupported && !accessory.hasDeviceFlag("light_no_al") && accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature");
 
     if (canUseAL && !accessory.adaptiveLightingController) {
-        addAdaptiveLightingController(accessory, service, hap);
+        addAdaptiveLightingController(accessory, lightSvc, DeviceClass.homebridge.hap);
     } else if (!canUseAL && accessory.adaptiveLightingController) {
         removeAdaptiveLightingController(accessory);
     }
@@ -110,18 +114,18 @@ export function initializeAccessory(accessory, deviceClass) {
 
     function kelvinToMired(kelvin) {
         let val = Math.floor(1000000 / kelvin);
-        return deviceClass.clamp(val, 140, 500);
+        return DeviceClass.clamp(val, 140, 500);
     }
 
     function miredToKelvin(mired) {
         return Math.floor(1000000 / mired);
     }
 
-    function addAdaptiveLightingController(accessory, service, hapAPI) {
+    function addAdaptiveLightingController(accessory, svc, hapAPI) {
         const offset = accessory.getPlatformConfig.adaptive_lighting_offset || 0;
         const controlMode = hapAPI.AdaptiveLightingControllerMode.AUTOMATIC;
-        if (service) {
-            accessory.adaptiveLightingController = new hapAPI.AdaptiveLightingController(service, {
+        if (svc) {
+            accessory.adaptiveLightingController = new hapAPI.AdaptiveLightingController(svc, {
                 controllerMode: controlMode,
                 customTemperatureAdjustment: offset,
             });
@@ -148,11 +152,10 @@ export function initializeAccessory(accessory, deviceClass) {
     }
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.Lightbulb);
+export function handleAttributeUpdate(accessory, change) {
+    const lightSvc = accessory.getService(Service.Lightbulb);
 
-    if (!service) {
+    if (!lightSvc) {
         accessory.log.warn(`${accessory.name} | Lightbulb service not found`);
         return;
     }
@@ -160,32 +163,32 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     switch (change.attribute) {
         case "switch":
             const isOn = change.value === "on";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.On, isOn);
+            DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.On, isOn);
             // accessory.log.debug(`${accessory.name} | Updated On: ${isOn}`);
             break;
         case "level":
-            const brightness = deviceClass.clamp(parseInt(change.value, 10), 0, 100);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.Brightness, brightness);
+            const brightness = DeviceClass.clamp(parseInt(change.value, 10), 0, 100);
+            DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.Brightness, brightness);
             // accessory.log.debug(`${accessory.name} | Updated Brightness: ${brightness}%`);
             break;
         case "hue":
             if (accessory.hasAttribute("hue") && accessory.hasCommand("setHue")) {
-                const hue = deviceClass.clamp(Math.round(parseFloat(change.value)), 0, 360);
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.Hue, hue);
+                const hue = DeviceClass.clamp(Math.round(parseFloat(change.value)), 0, 360);
+                DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.Hue, hue);
                 // accessory.log.debug(`${accessory.name} | Updated Hue: ${hue}`);
             }
             break;
         case "saturation":
             if (accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation")) {
-                const saturation = deviceClass.clamp(Math.round(parseFloat(change.value)), 0, 100);
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.Saturation, saturation);
+                const saturation = DeviceClass.clamp(Math.round(parseFloat(change.value)), 0, 100);
+                DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.Saturation, saturation);
                 // accessory.log.debug(`${accessory.name} | Updated Saturation: ${saturation}%`);
             }
             break;
         case "colorTemperature":
             if (accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature")) {
                 const mired = kelvinToMired(parseInt(change.value, 10));
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.ColorTemperature, mired);
+                DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.ColorTemperature, mired);
                 // accessory.log.debug(`${accessory.name} | Updated Color Temperature: ${mired} Mireds`);
             }
             break;

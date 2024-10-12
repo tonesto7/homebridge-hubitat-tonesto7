@@ -38,7 +38,7 @@ export default class Platform {
 
         this.logInfo(`Homebridge Version: ${this.homebridge.version}`);
         this.logInfo(`Plugin Version: ${pluginVersion}`);
-        this.polling_seconds = config.polling_seconds || 3600;
+        this.polling_seconds = config.polling_seconds || 900;
         this.excludedAttributes = this.config.excluded_attributes || [];
         this.excludedCapabilities = this.config.excluded_capabilities || [];
         this.update_method = this.config.update_method || "direct";

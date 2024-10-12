@@ -1,40 +1,39 @@
 // device_types/air_quality.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("AirQuality");
 }
 
 export const relevantAttributes = ["airQualityIndex", "battery", "pm25", "tamper", "status"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.AirQualitySensor);
+export function initializeAccessory(accessory) {
+    const airQualitySvc = DeviceClass.getOrAddService(accessory, Service.AirQualitySensor);
 
     // Status Fault
-    // service.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT);
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusFault, {
+    DeviceClass.getOrAddCharacteristic(accessory, airQualitySvc, Characteristic.StatusFault, {
         getHandler: function () {
             return Characteristic.StatusFault.NO_FAULT;
         },
     });
 
     // Status Active
-    // service.getCharacteristic(Characteristic.StatusActive).onGet(() => accessory.context.deviceData.status === "online");
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, airQualitySvc, Characteristic.StatusActive, {
         getHandler: function () {
-            return accessory.context.deviceData.status === "online";
+            return accessory.context.deviceData.status === "ACTIVE";
         },
     });
 
     // Air Quality
-    // service.getCharacteristic(Characteristic.AirQuality).onGet(() => {
-    //     const aqi = accessory.context.deviceData.attributes.airQualityIndex;
-    //     const airQuality = aqiToPm25(aqi, Characteristic);
-    //     accessory.log.debug(`${accessory.name} | Air Quality (AQI): ${aqi} => HomeKit AirQuality: ${airQuality}`);
-    //     return airQuality;
-    // });
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.AirQuality, {
+    DeviceClass.getOrAddCharacteristic(accessory, airQualitySvc, Characteristic.AirQuality, {
         getHandler: function () {
             const aqi = accessory.context.deviceData.attributes.airQualityIndex;
             const airQuality = aqiToPm25(aqi, Characteristic);
@@ -44,18 +43,9 @@ export function initializeAccessory(accessory, deviceClass) {
     });
 
     // Status Low Battery
-    // if (accessory.hasAttribute("Battery")) {
-    //     service.getCharacteristic(Characteristic.StatusLowBattery).onGet(() => {
-    //         const battery = deviceClass.clamp(accessory.context.deviceData.attributes.battery, 0, 100);
-    //         const lowBattery = battery < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    //         accessory.log.debug(`${accessory.name} | Battery Level: ${battery} => StatusLowBattery: ${lowBattery}`);
-    //         return lowBattery;
-    //     });
-    // }
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusLowBattery, {
+    DeviceClass.getOrAddCharacteristic(accessory, airQualitySvc, Characteristic.StatusLowBattery, {
         getHandler: function () {
-            const battery = deviceClass.clamp(accessory.context.deviceData.attributes.battery, 0, 100);
+            const battery = DeviceClass.clamp(accessory.context.deviceData.attributes.battery, 0, 100);
             accessory.log.debug(`${accessory.name} | Battery Level: ${battery}`);
             return battery < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
         },
@@ -63,17 +53,9 @@ export function initializeAccessory(accessory, deviceClass) {
     });
 
     // PM2.5 Density (if available)
-    // if (accessory.hasAttribute("pm25")) {
-    //     service.getCharacteristic(Characteristic.PM2_5Density).onGet(() => {
-    //         const pm25 = deviceClass.clamp(accessory.context.deviceData.attributes.pm25, 0, 1000);
-    //         accessory.log.debug(`${accessory.name} | PM2.5 Density: ${pm25}`);
-    //         return pm25;
-    //     });
-    // }
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.PM2_5Density, {
+    DeviceClass.getOrAddCharacteristic(accessory, airQualitySvc, Characteristic.PM2_5Density, {
         getHandler: function () {
-            const pm25 = deviceClass.clamp(accessory.context.deviceData.attributes.pm25, 0, 1000);
+            const pm25 = DeviceClass.clamp(accessory.context.deviceData.attributes.pm25, 0, 1000);
             accessory.log.debug(`${accessory.name} | PM2.5 Density: ${pm25}`);
             return pm25;
         },
@@ -81,16 +63,7 @@ export function initializeAccessory(accessory, deviceClass) {
     });
 
     // Status Tampered (if supported)
-    // if (accessory.hasCapability("TamperAlert")) {
-    //     service.getCharacteristic(Characteristic.StatusTampered).onGet(() => accessory.context.deviceData.attributes.tamper === "detected");
-
-    //     // Add the characteristic to keep
-    //     deviceClass.addCharacteristicToKeep(accessory, service, Characteristic.StatusTampered);
-    // } else {
-    //     service.removeCharacteristic(Characteristic.StatusTampered);
-    // }
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, airQualitySvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -103,51 +76,48 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("air_quality");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = accessory.getService(Service.AirQualitySensor);
+export function handleAttributeUpdate(accessory, change) {
+    const airQualitySvc = accessory.getService(Service.AirQualitySensor);
 
-    if (!service) {
-        accessory.log.warn(`${accessory.name} | Air Quality Sensor service not found`);
+    if (!airQualitySvc) {
+        accessory.log.warn(`${accessory.name} | AirQualitySensor service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "airQualityIndex":
             const airQuality = aqiToPm25(change.value, Characteristic);
-            // service.updateCharacteristic(Characteristic.AirQuality, airQuality);
             // accessory.log.debug(`${accessory.name} | Updated Air Quality: ${airQuality}`);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.AirQuality, airQuality);
+            DeviceClass.updateCharacteristicValue(accessory, airQualitySvc, Characteristic.AirQuality, airQuality);
             break;
         case "battery":
             if (accessory.hasAttribute("Battery")) {
-                const battery = deviceClass.clamp(change.value, 0, 100);
+                const battery = DeviceClass.clamp(change.value, 0, 100);
                 const lowBattery = battery < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusLowBattery, lowBattery);
-                // service.updateCharacteristic(Characteristic.StatusLowBattery, lowBattery);
+                DeviceClass.updateCharacteristicValue(accessory, airQualitySvc, Characteristic.StatusLowBattery, lowBattery);
+
                 // accessory.log.debug(`${accessory.name} | Updated Status Low Battery: ${lowBattery}`);
             }
             break;
         case "pm25":
             if (accessory.hasAttribute("pm25")) {
-                const pm25 = deviceClass.clamp(change.value, 0, 1000);
-                // service.updateCharacteristic(Characteristic.PM2_5Density, pm25);
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.PM2_5Density, pm25);
+                const pm25 = DeviceClass.clamp(change.value, 0, 1000);
+
+                DeviceClass.updateCharacteristicValue(accessory, airQualitySvc, Characteristic.PM2_5Density, pm25);
                 // accessory.log.debug(`${accessory.name} | Updated PM2.5 Density: ${pm25}`);
             }
             break;
         case "tamper":
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
-                // service.updateCharacteristic(Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, airQualitySvc, Characteristic.StatusTampered, isTampered);
                 // accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
         case "status":
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
-            // service.updateCharacteristic(Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, airQualitySvc, Characteristic.StatusActive, isActive);
+
             // accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         default:

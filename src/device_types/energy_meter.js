@@ -1,23 +1,31 @@
 // device_types/energy_meter.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("Energy Meter") && !accessory.hasCapability("Switch");
 }
 
 export const relevantAttributes = ["energy"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, CommunityTypes, Characteristic } = deviceClass.platform;
+export function initializeAccessory(accessory) {
     const serviceName = `${accessory.context.deviceData.deviceid}_EnergyMeter`;
-    const service = accessory.getServiceByName(Service.Switch, serviceName) || accessory.addService(Service.Switch, serviceName, "Energy Meter");
+    const energySvc = accessory.getServiceByName(Service.Switch, serviceName) || accessory.addService(Service.Switch, serviceName, "Energy Meter");
 
-    deviceClass.addServiceToKeep(accessory, service);
+    DeviceClass.addServiceToKeep(accessory, energySvc);
 
     // Kilowatt Hours Characteristic
     if (CommunityTypes.KilowattHours) {
-        deviceClass.getOrAddCharacteristic(accessory, service, CommunityTypes.KilowattHours, {
+        DeviceClass.getOrAddCharacteristic(accessory, energySvc, CommunityTypes.KilowattHours, {
             getHandler: function () {
-                const energy = deviceClass.clamp(accessory.context.deviceData.attributes.energy, 0, 100000);
+                const energy = DeviceClass.clamp(accessory.context.deviceData.attributes.energy, 0, 100000);
                 accessory.log.debug(`${accessory.name} | Energy Consumption: ${energy} kWh`);
                 return typeof energy === "number" ? Math.round(energy) : 0;
             },
@@ -29,19 +37,18 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("energy_meter");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { CommunityTypes, Service } = deviceClass.platform;
+export function handleAttributeUpdate(accessory, change) {
     const serviceName = `${accessory.context.deviceData.deviceid}_EnergyMeter`;
-    const service = accessory.getServiceByName(Service.Switch, serviceName);
+    const energySvc = accessory.getServiceByName(Service.Switch, serviceName);
 
-    if (!service) {
+    if (!energySvc) {
         accessory.log.warn(`${accessory.name} | Energy Meter service not found`);
         return;
     }
 
     if (change.attribute === "energy" && CommunityTypes && CommunityTypes.KilowattHours) {
-        const energy = deviceClass.clamp(parseFloat(change.value), 0, 100000);
-        deviceClass.updateCharacteristicValue(accessory, service, CommunityTypes.KilowattHours, Math.round(energy));
+        const energy = DeviceClass.clamp(parseFloat(change.value), 0, 100000);
+        DeviceClass.updateCharacteristicValue(accessory, energySvc, CommunityTypes.KilowattHours, Math.round(energy));
         // accessory.log.debug(`${accessory.name} | Updated Energy Consumption: ${energy} kWh`);
     } else {
         accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);

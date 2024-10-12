@@ -1,32 +1,40 @@
 // device_types/smoke_detector.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke");
 }
 
 export const relevantAttributes = ["smoke", "status", "tamper"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.SmokeSensor);
+export function initializeAccessory(accessory) {
+    const smokeSensorSvc = DeviceClass.getOrAddService(accessory, Service.SmokeSensor);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.SmokeDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, smokeSensorSvc, Characteristic.SmokeDetected, {
         getHandler: function () {
-            const smoke = convertSmokeStatus(accessory.context.deviceData.attributes.smoke, Characteristic);
+            const smoke = convertSmokeStatus(accessory.context.deviceData.attributes.smoke);
             accessory.log.debug(`${accessory.name} | Smoke Detected Retrieved: ${smoke}`);
             return smoke;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, smokeSensorSvc, Characteristic.StatusActive, {
         getHandler: function () {
-            const isActive = accessory.context.deviceData.status === "online";
+            const isActive = accessory.context.deviceData.status === "ACTIVE";
             accessory.log.debug(`${accessory.name} | Smoke Detector Status Active Retrieved: ${isActive}`);
             return isActive;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, smokeSensorSvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -39,32 +47,30 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("smoke_detector");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.SmokeSensor);
-
-    if (!service) {
+export function handleAttributeUpdate(accessory, change) {
+    const smokeSensorSvc = accessory.getService(Service.SmokeSensor);
+    if (!smokeSensorSvc) {
         accessory.log.warn(`${accessory.name} | Smoke Sensor service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "smoke": {
-            const smokeDetected = convertSmokeStatus(change.value, Characteristic);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.SmokeDetected, smokeDetected);
+            const smokeDetected = convertSmokeStatus(change.value);
+            DeviceClass.updateCharacteristicValue(accessory, smokeSensorSvc, Characteristic.SmokeDetected, smokeDetected);
             // accessory.log.debug(`${accessory.name} | Updated Smoke Detected: ${smokeDetected}`);
             break;
         }
         case "status": {
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, smokeSensorSvc, Characteristic.StatusActive, isActive);
             // accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         }
         case "tamper": {
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, smokeSensorSvc, Characteristic.StatusTampered, isTampered);
                 // accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
@@ -74,6 +80,6 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
-function convertSmokeStatus(smokeStatus, Characteristic) {
+function convertSmokeStatus(smokeStatus) {
     return smokeStatus === "clear" ? Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : Characteristic.SmokeDetected.SMOKE_DETECTED;
 }

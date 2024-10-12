@@ -1,16 +1,24 @@
 // device_types/garage_door.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("GarageDoorControl");
 }
 
 export const relevantAttributes = ["door", "obstruction"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.GarageDoorOpener);
+export function initializeAccessory(accessory) {
+    const garageDoorSvc = DeviceClass.getOrAddService(accessory, Service.GarageDoorOpener);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentDoorState, {
+    DeviceClass.getOrAddCharacteristic(accessory, garageDoorSvc, Characteristic.CurrentDoorState, {
         getHandler: function () {
             const state = accessory.context.deviceData.attributes.door;
             const convertedState = convertDoorState(state, Characteristic);
@@ -19,7 +27,7 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.TargetDoorState, {
+    DeviceClass.getOrAddCharacteristic(accessory, garageDoorSvc, Characteristic.TargetDoorState, {
         getHandler: function () {
             const currentState = accessory.context.deviceData.attributes.door;
             return currentState === "open" || currentState === "opening" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.CLOSED;
@@ -31,7 +39,7 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.ObstructionDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, garageDoorSvc, Characteristic.ObstructionDetected, {
         getHandler: function () {
             const obstruction = accessory.context.deviceData.attributes.obstruction === "detected";
             accessory.log.debug(`${accessory.name} | Obstruction Detected: ${obstruction}`);
@@ -42,27 +50,26 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("garage_door");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.GarageDoorOpener);
+export function handleAttributeUpdate(accessory, change) {
+    const garageDoorSvc = accessory.getService(Service.GarageDoorOpener);
 
-    if (!service) {
-        accessory.log.warn(`${accessory.name} | Garage Door Opener service not found`);
+    if (!garageDoorSvc) {
+        accessory.log.warn(`${accessory.name} | GarageDoorOpener service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "door": {
-            const currentState = convertDoorState(change.value, Characteristic);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentDoorState, currentState);
+            const currentState = convertDoorState(change.value);
             const targetState = change.value === "open" || change.value === "opening" ? Characteristic.TargetDoorState.OPEN : Characteristic.TargetDoorState.CLOSED;
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.TargetDoorState, targetState);
+            DeviceClass.updateCharacteristicValue(accessory, garageDoorSvc, Characteristic.CurrentDoorState, currentState);
+            DeviceClass.updateCharacteristicValue(accessory, garageDoorSvc, Characteristic.TargetDoorState, targetState);
             accessory.log.debug(`${accessory.name} | Updated Door State: ${change.value} => Current: ${currentState}, Target: ${targetState}`);
             break;
         }
         case "obstruction": {
             const obstruction = change.value === "detected";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.ObstructionDetected, obstruction);
+            DeviceClass.updateCharacteristicValue(accessory, garageDoorSvc, Characteristic.ObstructionDetected, obstruction);
             // accessory.log.debug(`${accessory.name} | Updated Obstruction Detected: ${obstruction}`);
             break;
         }
@@ -71,7 +78,7 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
-function convertDoorState(state, Characteristic) {
+function convertDoorState(state) {
     switch (state) {
         case "open":
             return Characteristic.CurrentDoorState.OPEN;

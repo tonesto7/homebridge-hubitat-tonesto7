@@ -1,20 +1,28 @@
 // device_types/speaker.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("Speaker");
 }
 
 export const relevantAttributes = ["volume", "level", "mute"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.Speaker);
+export function initializeAccessory(accessory) {
+    const speakerSvc = DeviceClass.getOrAddService(accessory, Service.Speaker);
 
     const isSonos = accessory.context.deviceData.manufacturerName === "Sonos";
     const lvlAttr = isSonos || accessory.hasAttribute("volume") ? "volume" : accessory.hasAttribute("level") ? "level" : undefined;
 
     if (lvlAttr) {
-        deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.Volume, {
+        DeviceClass.getOrAddCharacteristic(accessory, speakerSvc, Characteristic.Volume, {
             getHandler: function () {
                 let volume = parseInt(accessory.context.deviceData.attributes[lvlAttr], 10);
                 volume = clamp(volume, 0, 100);
@@ -34,7 +42,7 @@ export function initializeAccessory(accessory, deviceClass) {
         });
     }
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.Mute, {
+    DeviceClass.getOrAddCharacteristic(accessory, speakerSvc, Characteristic.Mute, {
         preReqChk: (acc) => acc.hasCapability("AudioMute"),
         getHandler: function () {
             const isMuted = accessory.context.deviceData.attributes.mute === "muted";
@@ -52,11 +60,9 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("speaker_device");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.Speaker);
-
-    if (!service) {
+export function handleAttributeUpdate(accessory, change) {
+    const speakerSvc = accessory.getService(Service.Speaker);
+    if (!speakerSvc) {
         accessory.log.warn(`${accessory.name} | Speaker service not found`);
         return;
     }
@@ -69,14 +75,14 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
         case "level":
             if (lvlAttr && change.attribute === lvlAttr) {
                 const volume = clamp(parseInt(change.value, 10), 0, 100);
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.Volume, volumeToHomeKit(volume));
+                DeviceClass.updateCharacteristicValue(accessory, speakerSvc, Characteristic.Volume, volumeToHomeKit(volume));
                 // accessory.log.debug(`${accessory.name} | Updated Speaker Volume: ${volume}`);
             }
             break;
         case "mute":
             if (accessory.hasCapability("AudioMute")) {
                 const isMuted = change.value === "muted";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.Mute, isMuted);
+                DeviceClass.updateCharacteristicValue(accessory, speakerSvc, Characteristic.Mute, isMuted);
                 // accessory.log.debug(`${accessory.name} | Updated Speaker Mute: ${isMuted}`);
             }
             break;

@@ -114,21 +114,20 @@ preferences {
 
 @Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
-        'acceleration', 'airQualityIndex', 'alarmSystemStatus', 'battery', 'button', 'carbonDioxideMeasurement', 'carbonMonoxide', 'colorTemperature', 'contact',
-        'coolingSetpoint', 'door', 'doubleTapped', 'energy', 'fanMode', 'fanState', 'fanTargetState', 'heatingSetpoint', 'held', 'hue', 'humidity', 'illuminance',
-        'level', 'level', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power', 'powerSource', 'presence', 'pushed', 'saturation', 'smoke', 'speed', 'switch',
-        'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
+        'acceleration', 'airQualityIndex', 'alarmSystemStatus', 'battery', 'button', 'carbonDioxide', 'carbonMonoxide', 'colorTemperature', 'contact',
+        'coolingSetpoint', 'door', 'doubleTapped', 'energy', 'fanMode', 'fanState', 'fanTargetState', 'filterStatus', 'heatingSetpoint', 'held', 'hue', 'humidity',
+        'illuminance', 'level', 'level', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power', 'powerSource', 'presence', 'pushed',
+        'saturation', 'smoke', 'speed', 'switch', 'supportedThermostatModes', 'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 
+        'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
     ],
     capabilities: [
-        'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'Audio Mute', 'Audio Volume', 'Battery', 'Bulb', 'Button',
+        'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'AudioMute', 'AudioVolume', 'Battery', 'Bulb', 'Button',
         'CarbonDioxideMeasurement', 'CarbonMonoxideDetector', 'ColorControl', 'ColorTemperature', 'ContactSensor', 'DoorControl',
-        'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'GarageDoorControl', 'HoldableButton', 'IlluminanceMeasurement', 'Light',
+        'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'FilterStatus', 'GarageDoorControl', 'HoldableButton', 'IlluminanceMeasurement', 'Light',
         'LightBulb', 'Lock', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet', 'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton',
-        'RelativeHumidityMeasurement',
-        // 'ReleasableButton',
-        'Routine', 'Sensor', 'SmokeDetector', 'Speaker', 'Switch', 'SwitchLevel', 'TamperAlert',
-        'TemperatureMeasurement', 'Thermostat', 'ThermostatCoolingSetpoint', 'ThermostatFanMode', 'ThermostatHeatingSetpoint', 'ThermostatMode',
-        'ThermostatOperatingState', 'ThermostatSetpoint', 'Valve', 'WaterSensor', 'WindowBlind', 'WindowShade'
+        'RelativeHumidityMeasurement', 'Routine', 'Sensor', 'SmokeDetector', 'Speaker', 'Switch', 'SwitchLevel', 'TamperAlert', 'TemperatureMeasurement',
+        'Thermostat', 'ThermostatCoolingSetpoint', 'ThermostatFanMode', 'ThermostatHeatingSetpoint', 'ThermostatMode', 'ThermostatOperatingState',
+        'ThermostatSetpoint', 'Valve', 'WaterSensor', 'WindowBlind', 'WindowShade'
     ],
     commands: [
         'armAway', 'armHome', 'disarm', 'auto','heat','cool', 'channelDown', 'channelUp', 'nextTrack', 'previousTrack', 'emergencyHeat', 'fanAuto',
@@ -139,16 +138,18 @@ preferences {
 ]
 
 @Field static final Map<String, String> attMapFLD = [
-    'acceleration': 'Acceleration', 'battery': 'Battery', 'contact': 'Contact', 'energy': 'Energy', 'humidity': 'Humidity', 'illuminance': 'Illuminance',
+    'acceleration': 'Acceleration', 'battery': 'Battery', 'contact': 'Contact', 'energy': 'Energy', 'filterStatus': 'FilterStatus', 'humidity': 'Humidity', 'illuminance': 'Illuminance',
     'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power', 'presence': 'Presence', 'securityKeypad' : 'SecurityKeypad', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
     'temperature': 'Temp', 'valve': 'Valve', 'pushed': 'PushableButton', 'held': 'HoldableButton', 'doubleTapped': 'DoubleTapableButton'
 ]
 
 @Field static final Map<String, String> capFilterFLD = [
-    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature', 'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'Humidity': 'RelativeHumidityMeasurement',
-    'Illuminance': 'IlluminanceMeasurement', 'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'SecurityKeypad' : 'SecurityKeypad', 'Switch': 'Switch', 'Water': 'WaterSensor',
-    'Thermostat': 'Thermostat', 'ThermostatFanMode': 'ThermostatFanMode', 'ThermostatOperatingState': 'ThermostatOperatingState', 'ThermostatSetpoint': 'ThermostatSetpoint', 'ThermostatCoolingSetpoint': 'ThermostatCoolingSetpoint', 'ThermostatHeatingSetpoint': 'ThermostatHeatingSetpoint',
-    'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve', 'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
+    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature', 
+    'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'filterStatus': 'Filter Status', 'Humidity': 'RelativeHumidityMeasurement', 'Illuminance': 'IlluminanceMeasurement',
+    'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'SecurityKeypad' : 'SecurityKeypad', 'Switch': 'Switch', 
+    'Water': 'WaterSensor', 'Thermostat': 'Thermostat', 'ThermostatFanMode': 'ThermostatFanMode', 'ThermostatOperatingState': 'ThermostatOperatingState', 'ThermostatSetpoint': 'ThermostatSetpoint',
+    'ThermostatCoolingSetpoint': 'ThermostatCoolingSetpoint', 'ThermostatHeatingSetpoint': 'ThermostatHeatingSetpoint', 'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve',
+    'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
 ]
 
 def startPage() {
@@ -1735,8 +1736,8 @@ Map<String,Object> deviceAttributeList(device) {
             [(attr): null]
         }
 }
-    if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange') }
-    if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange') }
+    if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['cool', 'off'] }
+    if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['heat', 'off'] }
     if (isDeviceInInput('removeColorControl', devid)) { atts.remove('RGB'); atts.remove('color'); atts.remove('colorName'); atts.remove('hue'); atts.remove('saturation') }
     if (isDeviceInInput('removeColorTemperature', devid)) { atts.remove('colorTemperature') }
     if (isDeviceInInput('removeThermostatFanMode', devid)) { atts.remove('thermostatFanMode'); atts.remove('supportedThermostatFanModes') }
@@ -1953,6 +1954,7 @@ def changeHandler(evt) {
     }
 
     if (sendEvt && sendItems.size() > 0) {
+        // Boolean deviceUnavailable = markDeviceUnavailable(findDevice(deviceid))
         String server = getServerAddress()
         if (server == sCLN || server == sNLCLN) { // can be configured ngrok??
             return
@@ -1990,6 +1992,7 @@ def changeHandler(evt) {
                 change_value    : send.evtValue,
                 change_data     : send.evtData,
                 change_date     : send.evtDate,
+                // device_unavailable     : deviceUnavailable,
                 app_id          : gtAppId(),
                 access_token    : getTsVal(sATK)
             ], sEVTUPD, evtLog)

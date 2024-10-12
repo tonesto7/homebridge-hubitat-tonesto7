@@ -1,14 +1,22 @@
 // device_types/window_covering.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("WindowShade") && !(accessory.hasCapability("Speaker") || accessory.hasCapability("Fan") || accessory.hasCapability("FanControl"));
 }
 
 export const relevantAttributes = ["position", "level", "windowShade"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.WindowCovering);
+export function initializeAccessory(accessory) {
+    const windowCoverSvc = DeviceClass.getOrAddService(accessory, Service.WindowCovering);
 
     // Determine position attribute
     const positionAttr = accessory.hasCommand("setPosition") ? "position" : accessory.hasAttribute("level") ? "level" : undefined;
@@ -17,31 +25,31 @@ export function initializeAccessory(accessory, deviceClass) {
         return;
     }
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CurrentPosition, {
+    DeviceClass.getOrAddCharacteristic(accessory, windowCoverSvc, Characteristic.CurrentPosition, {
         getHandler: function () {
             let position = parseInt(accessory.context.deviceData.attributes[positionAttr], 10);
-            position = deviceClass.clamp(position, 0, 100);
+            position = DeviceClass.clamp(position, 0, 100);
             accessory.log.debug(`${accessory.name} | Window Shade Current Position Retrieved: ${position}%`);
             return isNaN(position) ? 0 : position;
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.TargetPosition, {
+    DeviceClass.getOrAddCharacteristic(accessory, windowCoverSvc, Characteristic.TargetPosition, {
         getHandler: function () {
             let position = parseInt(accessory.context.deviceData.attributes[positionAttr], 10);
-            position = deviceClass.clamp(position, 0, 100);
+            position = DeviceClass.clamp(position, 0, 100);
             accessory.log.debug(`${accessory.name} | Window Shade Target Position Retrieved: ${position}%`);
             return isNaN(position) ? 0 : position;
         },
         setHandler: function (value) {
-            let target = deviceClass.clamp(value, 0, 100);
+            let target = DeviceClass.clamp(value, 0, 100);
             const command = accessory.hasCommand("setPosition") ? "setPosition" : "setLevel";
             accessory.log.info(`${accessory.name} | Setting window shade target position to ${target}% via command: ${command}`);
             accessory.sendCommand(null, accessory, accessory.context.deviceData, command, { value1: target });
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.PositionState, {
+    DeviceClass.getOrAddCharacteristic(accessory, windowCoverSvc, Characteristic.PositionState, {
         getHandler: function () {
             const state = accessory.context.deviceData.attributes.windowShade;
             const positionState = convertPositionState(state, Characteristic);
@@ -50,7 +58,7 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.ObstructionDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, windowCoverSvc, Characteristic.ObstructionDetected, {
         getHandler: function () {
             // Assuming no obstruction detection implemented
             accessory.log.debug(`${accessory.name} | Window Shade Obstruction Detected Retrieved: false`);
@@ -58,7 +66,7 @@ export function initializeAccessory(accessory, deviceClass) {
         },
     });
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.HoldPosition, {
+    DeviceClass.getOrAddCharacteristic(accessory, windowCoverSvc, Characteristic.HoldPosition, {
         setHandler: function (value) {
             if (value) {
                 accessory.log.info(`${accessory.name} | Pausing window shade movement via command: pause`);
@@ -74,11 +82,9 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("window_covering");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.WindowCovering);
-
-    if (!service) {
+export function handleAttributeUpdate(accessory, change) {
+    const windowCoverSvc = accessory.getService(Service.WindowCovering);
+    if (!windowCoverSvc) {
         accessory.log.warn(`${accessory.name} | Window Covering service not found`);
         return;
     }
@@ -89,15 +95,15 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
         case "position":
         case "level":
             if (change.attribute === positionAttr) {
-                let position = deviceClass.clamp(parseInt(change.value, 10), 0, 100);
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CurrentPosition, position);
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.TargetPosition, position);
+                let position = DeviceClass.clamp(parseInt(change.value, 10), 0, 100);
+                DeviceClass.updateCharacteristicValue(accessory, windowCoverSvc, Characteristic.CurrentPosition, position);
+                DeviceClass.updateCharacteristicValue(accessory, windowCoverSvc, Characteristic.TargetPosition, position);
                 // accessory.log.debug(`${accessory.name} | Updated Window Shade Position: ${position}%`);
             }
             break;
         case "windowShade":
             const positionState = convertPositionState(change.value, Characteristic);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.PositionState, positionState);
+            DeviceClass.updateCharacteristicValue(accessory, windowCoverSvc, Characteristic.PositionState, positionState);
             // accessory.log.debug(`${accessory.name} | Updated Window Shade Position State: ${positionState}`);
             break;
         default:
@@ -105,8 +111,13 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
-function convertPositionState(state, Characteristic) {
-    if (state === "opening") return Characteristic.PositionState.INCREASING;
-    if (state === "closing") return Characteristic.PositionState.DECREASING;
-    return Characteristic.PositionState.STOPPED;
+function convertPositionState(state) {
+    switch (state) {
+        case "opening":
+            return Characteristic.PositionState.INCREASING;
+        case "closing":
+            return Characteristic.PositionState.DECREASING;
+        default:
+            return Characteristic.PositionState.STOPPED;
+    }
 }

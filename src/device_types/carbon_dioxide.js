@@ -1,44 +1,52 @@
 // device_types/carbon_dioxide.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("CarbonDioxideMeasurement");
 }
 
-export const relevantAttributes = ["carbonDioxideMeasurement", "status", "tamper"];
+export const relevantAttributes = ["carbonDioxide", "status", "tamper"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.CarbonDioxideSensor);
+export function initializeAccessory(accessory) {
+    const carbonDioxideSvc = DeviceClass.getOrAddService(accessory, Service.CarbonDioxideSensor);
 
     // Carbon Dioxide Detected
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CarbonDioxideDetected, {
+    DeviceClass.getOrAddCharacteristic(accessory, carbonDioxideSvc, Characteristic.CarbonDioxideDetected, {
         getHandler: function () {
-            const co2Level = deviceClass.clamp(accessory.context.deviceData.attributes.carbonDioxideMeasurement, 0, 10000);
+            const co2Level = DeviceClass.clamp(accessory.context.deviceData.attributes.carbonDioxide, 0, 10000);
             accessory.log.debug(`${accessory.name} | CO2 Level: ${co2Level} ppm`);
             return co2Level < 2000 ? Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL : Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
         },
     });
 
     // Carbon Dioxide Level
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.CarbonDioxideLevel, {
+    DeviceClass.getOrAddCharacteristic(accessory, carbonDioxideSvc, Characteristic.CarbonDioxideLevel, {
         getHandler: function () {
-            const co2Level = deviceClass.clamp(parseInt(accessory.context.deviceData.attributes.carbonDioxideMeasurement, 10), 0, 10000);
+            const co2Level = DeviceClass.clamp(parseInt(accessory.context.deviceData.attributes.carbonDioxide, 10), 0, 10000);
             accessory.log.debug(`${accessory.name} | Carbon Dioxide Level: ${co2Level} ppm`);
             return co2Level;
         },
     });
 
     // Status Active
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusActive, {
+    DeviceClass.getOrAddCharacteristic(accessory, carbonDioxideSvc, Characteristic.StatusActive, {
         getHandler: function () {
-            const isActive = accessory.context.deviceData.status === "online";
+            const isActive = accessory.context.deviceData.status === "ACTIVE";
             accessory.log.debug(`${accessory.name} | Status Active: ${isActive}`);
             return isActive;
         },
     });
 
     // Status Tampered (if supported)
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.StatusTampered, {
+    DeviceClass.getOrAddCharacteristic(accessory, carbonDioxideSvc, Characteristic.StatusTampered, {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
@@ -51,41 +59,39 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("carbon_dioxide");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.CarbonDioxideSensor);
+export function handleAttributeUpdate(accessory, change) {
+    const carbonDioxideSvc = accessory.getService(Service.CarbonDioxideSensor);
 
-    if (!service) {
+    if (!carbonDioxideSvc) {
         accessory.log.warn(`${accessory.name} | Carbon Dioxide Sensor service not found`);
         return;
     }
 
     switch (change.attribute) {
-        case "carbonDioxideMeasurement": {
-            const co2Level = deviceClass.clamp(parseInt(change.value, 10), 0, 10000);
+        case "carbonDioxide": {
+            const co2Level = DeviceClass.clamp(parseInt(change.value, 10), 0, 10000);
             const co2Detected = co2Level < 2000 ? Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL : Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
-
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CarbonDioxideDetected, co2Detected);
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.CarbonDioxideLevel, co2Level);
-
+            DeviceClass.updateCharacteristicValue(accessory, carbonDioxideSvc, Characteristic.CarbonDioxideDetected, co2Detected);
+            DeviceClass.updateCharacteristicValue(accessory, carbonDioxideSvc, Characteristic.CarbonDioxideLevel, co2Level);
             // accessory.log.debug(`${accessory.name} | Updated CO2 Level: ${co2Level} ppm`);
             break;
         }
         case "status": {
-            const isActive = change.value === "online";
-            deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusActive, isActive);
+            const isActive = change.value === "ACTIVE";
+            DeviceClass.updateCharacteristicValue(accessory, carbonDioxideSvc, Characteristic.StatusActive, isActive);
             // accessory.log.debug(`${accessory.name} | Updated Status Active: ${isActive}`);
             break;
         }
         case "tamper": {
             if (accessory.hasCapability("TamperAlert")) {
                 const isTampered = change.value === "detected";
-                deviceClass.updateCharacteristicValue(accessory, service, Characteristic.StatusTampered, isTampered);
+                DeviceClass.updateCharacteristicValue(accessory, carbonDioxideSvc, Characteristic.StatusTampered, isTampered);
                 // accessory.log.debug(`${accessory.name} | Updated Status Tampered: ${isTampered}`);
             }
             break;
         }
         default:
             accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+            break;
     }
 }

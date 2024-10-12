@@ -1,54 +1,41 @@
 // device_types/alarm_system.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export const isSupported = (accessory) => accessory.hasAttribute("alarmSystemStatus");
 
 export const relevantAttributes = ["alarmSystemStatus"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.SecuritySystem);
+export function initializeAccessory(accessory) {
+    const securitySystemSvc = DeviceClass.getOrAddService(accessory, Service.SecuritySystem);
 
     // Current State
-    // service.getCharacteristic(Characteristic.SecuritySystemCurrentState).onGet(() => {
-    //     const state = accessory.context.deviceData.attributes.alarmSystemStatus;
-    //     const currentState = convertAlarmState(state, Characteristic);
-    //     accessory.log.debug(`${accessory.name} | Alarm System Current State: ${currentState}`);
-    //     return currentState;
-    // });
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.SecuritySystemCurrentState, {
+    DeviceClass.getOrAddCharacteristic(accessory, securitySystemSvc, Characteristic.SecuritySystemCurrentState, {
         getHandler: function () {
             const state = accessory.context.deviceData.attributes.alarmSystemStatus;
-            const currentState = convertAlarmState(state, Characteristic);
+            const currentState = convertAlarmState(state);
             accessory.log.debug(`${accessory.name} | Alarm System Current State: ${currentState}`);
             return currentState;
         },
     });
 
     // Target State
-    // service
-    //     .getCharacteristic(Characteristic.SecuritySystemTargetState)
-    //     .onGet(() => {
-    //         const state = accessory.context.deviceData.attributes.alarmSystemStatus;
-    //         const targetState = convertAlarmState(state, Characteristic);
-    //         accessory.log.debug(`${accessory.name} | Alarm System Target State: ${targetState}`);
-    //         return targetState;
-    //     })
-    //     .onSet((value) => {
-    //         const cmd = convertAlarmCmd(value, Characteristic);
-    //         accessory.log.info(`${accessory.name} | Setting alarm system state via command: ${cmd}`);
-    //         accessory.sendCommand(null, accessory, accessory.context.deviceData, cmd);
-    //     });
-
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.SecuritySystemTargetState, {
+    DeviceClass.getOrAddCharacteristic(accessory, securitySystemSvc, Characteristic.SecuritySystemTargetState, {
         getHandler: function () {
             const state = accessory.context.deviceData.attributes.alarmSystemStatus;
-            const targetState = convertAlarmState(state, Characteristic);
+            const targetState = convertAlarmState(state);
             accessory.log.debug(`${accessory.name} | Alarm System Target State: ${targetState}`);
             return targetState;
         },
         setHandler: function (value) {
-            const cmd = convertAlarmCmd(value, Characteristic);
+            const cmd = convertAlarmCmd(value);
             accessory.log.info(`${accessory.name} | Setting alarm system state via command: ${cmd}`);
             accessory.sendCommand(null, accessory, accessory.context.deviceData, cmd);
         },
@@ -57,22 +44,18 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("alarm_system");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.SecuritySystem);
-
-    if (!service) {
-        accessory.log.warn(`${accessory.name} | Security System service not found`);
+export function handleAttributeUpdate(accessory, change) {
+    const securitySystemSvc = accessory.getService(Service.SecuritySystem);
+    if (!securitySystemSvc) {
+        accessory.log.warn(`${accessory.name} | SecuritySystem service not found`);
         return;
     }
 
     switch (change.attribute) {
         case "alarmSystemStatus":
-            const currentState = convertAlarmState(change.value, Characteristic);
-            deviceClass.updateCharacteristicValue(service, Characteristic.SecuritySystemCurrentState, currentState);
-            deviceClass.updateCharacteristicValue(service, Characteristic.SecuritySystemTargetState, currentState);
-            // service.updateCharacteristic(Characteristic.SecuritySystemCurrentState, currentState);
-            // service.updateCharacteristic(Characteristic.SecuritySystemTargetState, currentState);
+            const currentState = convertAlarmState(change.value);
+            DeviceClass.updateCharacteristicValue(securitySystemSvc, Characteristic.SecuritySystemCurrentState, currentState);
+            DeviceClass.updateCharacteristicValue(securitySystemSvc, Characteristic.SecuritySystemTargetState, currentState);
             // accessory.log.debug(`${accessory.name} | Updated Security System State: ${currentState}`);
             break;
         default:
@@ -81,7 +64,7 @@ export function handleAttributeUpdate(accessory, change, deviceClass) {
     }
 }
 
-function convertAlarmState(value, Characteristic) {
+function convertAlarmState(value) {
     switch (value) {
         case "armedHome":
             return Characteristic.SecuritySystemCurrentState.STAY_ARM;
@@ -101,7 +84,7 @@ function convertAlarmState(value, Characteristic) {
     }
 }
 
-function convertAlarmCmd(value, Characteristic) {
+function convertAlarmCmd(value) {
     switch (value) {
         case Characteristic.SecuritySystemTargetState.STAY_ARM:
             return "armHome";

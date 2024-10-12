@@ -43,21 +43,6 @@ export default class DeviceTypes {
         this.initializeDeviceTypeTests();
     }
 
-    async loadDeviceTypesFiles() {
-        const deviceTypesPath = path.join(__dirname, "device_types");
-        const deviceTypeFiles = fs.readdirSync(deviceTypesPath).filter((file) => file.endsWith(".js"));
-        const importPromises = deviceTypeFiles.map(async (file) => {
-            try {
-                const module = await import(path.join(deviceTypesPath, file));
-                const name = path.basename(file, ".js");
-                this.deviceTypes[name] = module.default || module;
-            } catch (error) {
-                this.platform.logError(`Error loading device type ${file}: ${error}`);
-            }
-        });
-        await Promise.all(importPromises);
-    }
-
     getDeviceTypeMap() {
         return {
             acceleration_sensor: this.Service.MotionSensor,
@@ -70,6 +55,7 @@ export default class DeviceTypes {
             carbon_monoxide: this.Service.CarbonMonoxideSensor,
             contact_sensor: this.Service.ContactSensor,
             fan: this.Service.Fanv2,
+            filter_maintenance: this.Service.FilterMaintenance,
             garage_door: this.Service.GarageDoorOpener,
             humidity_sensor: this.Service.HumiditySensor,
             illuminance_sensor: this.Service.LightSensor,
@@ -105,6 +91,7 @@ export default class DeviceTypes {
             new DeviceTypeTest("lock", (accessory) => accessory.hasCapability("Lock")),
             new DeviceTypeTest("valve", (accessory) => accessory.hasCapability("Valve")),
             new DeviceTypeTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
+            new DeviceTypeTest("filter_maintenance", (accessory) => accessory.hasCapability("FilterStatus") && accessory.hasAttribute("filterStatus")),
             new DeviceTypeTest("fan", (accessory) => accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (this.configItems.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed")),
             new DeviceTypeTest("virtual_mode", (accessory) => accessory.hasCapability("Mode")),
             new DeviceTypeTest("virtual_piston", (accessory) => accessory.hasCapability("Piston")),
@@ -114,7 +101,7 @@ export default class DeviceTypes {
             new DeviceTypeTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button"].some((cap) => accessory.hasCapability(cap)) && !(this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))),
             new DeviceTypeTest("smoke_detector", (accessory) => accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke")),
             new DeviceTypeTest("carbon_monoxide", (accessory) => accessory.hasCapability("CarbonMonoxideDetector") && accessory.hasAttribute("carbonMonoxide")),
-            new DeviceTypeTest("carbon_dioxide", (accessory) => accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxideMeasurement")),
+            new DeviceTypeTest("carbon_dioxide", (accessory) => accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxide")),
             new DeviceTypeTest("motion_sensor", (accessory) => accessory.hasCapability("Motion Sensor")),
             new DeviceTypeTest("acceleration_sensor", (accessory) => accessory.hasCapability("Acceleration Sensor")),
             new DeviceTypeTest("leak_sensor", (accessory) => accessory.hasCapability("Water Sensor")),
@@ -260,7 +247,26 @@ export default class DeviceTypes {
                 const { name, type } = deviceType;
                 if (name && type && this.deviceTypes[name]) {
                     // this.platform.logGreen(`Device type ${name} found for ${accessory.name}`);
-                    this.deviceTypes[name].initializeAccessory(accessory, this);
+
+                    // check if init method is available for the device type and call it
+                    if (typeof this.deviceTypes[name].init === "function") {
+                        this.deviceTypes[name].init(this, this.Characteristic, this.Service, this.CommunityTypes);
+                    } else {
+                        this.platform.logError(`Device type ${name} does not have an initializeAccessory method`);
+                    }
+
+                    // check if the device type isSupported for the accessory
+                    // if (typeof this.deviceTypes[name].isSupported === "function" && !this.deviceTypes[name].isSupported(accessory)) {
+                    //     this.platform.logError(`Device type ${name} is not supported for ${accessory.name}`);
+                    //     return;
+                    // }
+
+                    // Check if the device type has an initializeAccessory method
+                    if (typeof this.deviceTypes[name].initializeAccessory === "function") {
+                        this.deviceTypes[name].initializeAccessory(accessory);
+                    } else {
+                        this.platform.logError(`Device type ${name} does not have an initializeAccessory method`);
+                    }
                 } else {
                     this.platform.logError(`Device type ${name} not found for ${accessory.name}`);
                 }
@@ -313,13 +319,12 @@ export default class DeviceTypes {
 
         // Check if preReqChk is provided and evaluates to false
         if (preReqChk && !preReqChk(accessory)) {
-            accessory.log.debug(`Prerequisite not met for characteristic ${characteristicType.name} for ${accessory.displayName}`);
-
+            // accessory.log.debug(`Prerequisite not met for characteristic ${characteristicType.name} for ${accessory.displayName}`);
             if (removeIfMissingPreReq) {
                 const existingChar = service.getCharacteristic(characteristicType);
                 if (existingChar) {
                     service.removeCharacteristic(existingChar);
-                    accessory.log.debug(`Removed characteristic ${characteristicType.name} from ${accessory.displayName} due to unmet prerequisites`);
+                    // accessory.log.debug(`Removed characteristic ${characteristicType.name} from ${accessory.displayName} due to unmet prerequisites`);
                 }
             }
             return null;
@@ -353,7 +358,7 @@ export default class DeviceTypes {
             characteristic.onSet(setHandler.bind(accessory));
         }
 
-        this.addCharacteristicToKeep(accessory, service, characteristicType);
+        this.addCharacteristicToKeep(accessory, service, characteristic);
 
         return characteristic;
     }
@@ -446,6 +451,7 @@ export default class DeviceTypes {
     updateCharacteristicValue(accessory, service, characteristicType, value) {
         if (service && service.testCharacteristic(characteristicType)) {
             service.updateCharacteristic(characteristicType, value);
+            // service.getCharacteristic(characteristicType).updateValue(value);//
             accessory.log.debug(`${accessory.name} | Updated ${characteristicType.name}: ${value}`);
         } else {
             accessory.log.warn(`${accessory.name} | Failed to update ${characteristicType.name}: Service or Characteristic not found`);
@@ -454,28 +460,12 @@ export default class DeviceTypes {
 
     handleAvailability(accessory) {
         const { isUnavailable } = accessory.context.deviceData;
-        if (isUnavailable) {
-            this.setAccessoryUnavailable(accessory);
-        } else {
-            this.setAccessoryAvailable(accessory);
-        }
-    }
-
-    setAccessoryUnavailable(accessory) {
         const accInfoSvc = accessory.getService(this.Service.AccessoryInformation);
         if (accInfoSvc) {
-            accInfoSvc.updateCharacteristic(this.Characteristic.Name, new Error("Device Unavailable"));
-            this.platform.logWarn(`Marked ${accessory.name} as Unavailable`);
-        } else {
-            this.platform.logWarn(`AccessoryInformation service not found for ${accessory.name}`);
-        }
-    }
-
-    setAccessoryAvailable(accessory) {
-        const accInfoSvc = accessory.getService(this.Service.AccessoryInformation);
-        if (accInfoSvc) {
-            accInfoSvc.updateCharacteristic(this.Characteristic.Name, accessory.name);
-            // this.platform.logInfo(`Marked ${accessory.name} as Available`);
+            accInfoSvc.updateCharacteristic(this.Characteristic.Name, isUnavailable ? new Error("Device Unavailable") : accessory.name);
+            if (isUnavailable) {
+                this.platform.logWarn(`Marked ${accessory.name} as ${isUnavailable ? "Unavailable" : "Available"}`);
+            }
         } else {
             this.platform.logWarn(`AccessoryInformation service not found for ${accessory.name}`);
         }
@@ -489,30 +479,22 @@ export default class DeviceTypes {
         }
 
         // Update the attribute
-        if (change.attribute === "isUnavailable") {
-            accessory.context.deviceData.isUnavailable = change.value;
-            if (change.value) {
-                this.setAccessoryUnavailable(accessory);
-            } else {
-                this.setAccessoryAvailable(accessory);
-            }
-        } else {
-            accessory.context.deviceData.attributes[change.attribute] = change.value;
-            accessory.context.lastUpdate = new Date().toLocaleString();
+        accessory.context.deviceData.attributes[change.attribute] = change.value;
+        accessory.context.lastUpdate = new Date().toLocaleString();
 
-            // Get device types and handle updates
-            const deviceTypes = this.getDeviceTypes(accessory);
-            if (deviceTypes.length > 0) {
-                deviceTypes.forEach((deviceType) => {
-                    const typeModule = this.deviceTypes[deviceType.name];
-                    if (typeModule && typeof typeModule.handleAttributeUpdate === "function" && typeModule.relevantAttributes.includes(change.attribute)) {
-                        typeModule.handleAttributeUpdate(accessory, change, this);
-                    }
-                });
-            } else {
-                this.platform.logWarn(`No device types found for accessory: ${accessory.name}`);
-            }
+        // Get device types and handle updates
+        const deviceTypes = this.getDeviceTypes(accessory);
+        if (deviceTypes.length > 0) {
+            deviceTypes.forEach((deviceType) => {
+                const typeModule = this.deviceTypes[deviceType.name];
+                if (typeModule && typeof typeModule.handleAttributeUpdate === "function" && typeModule.relevantAttributes.includes(change.attribute)) {
+                    typeModule.handleAttributeUpdate(accessory, change);
+                }
+            });
+        } else {
+            this.platform.logWarn(`No device types found for accessory: ${accessory.name}`);
         }
+        // }
 
         return true;
     }
@@ -623,28 +605,6 @@ export default class DeviceTypes {
             return svc;
         }
     }
-
-    // removeUnusedServices(acc) {
-    //     const newSvcUuids = acc.servicesToKeep || [];
-    //     const svcs2rmv = acc.services.filter((s) => !newSvcUuids.includes(s.UUID));
-    //     if (svcs2rmv.length) {
-    //         svcs2rmv.forEach((s) => {
-    //             acc.removeService(s);
-    //             // Get the service name for logging from Service using the UUID
-    //             const svcName = Object.keys(this.Service).find((key) => this.Service[key].UUID === s.UUID);
-    //             this.platform.logInfo(`Removing Unused Service (${svcName}) | UUID: ${s.UUID}`);
-    //         });
-    //     } else {
-    //         this.platform.logDebug(`No unused services to remove for ${acc.name}`);
-    //     }
-
-    //     // Remove unused characteristics from remaining services
-    //     acc.services.forEach((service) => {
-    //         this.removeUnusedCharacteristics(acc, service);
-    //     });
-
-    //     return acc;
-    // }
 
     getAccessoryId(accessory) {
         return accessory.deviceid || accessory.context.deviceData.deviceid || undefined;

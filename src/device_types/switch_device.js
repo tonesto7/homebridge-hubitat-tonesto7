@@ -1,16 +1,24 @@
 // device_types/switch_device.js
 
+let DeviceClass, Characteristic, Service, CommunityTypes;
+
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+    DeviceClass = _deviceClass;
+    Characteristic = _Characteristic;
+    Service = _Service;
+    CommunityTypes = _CommunityTypes;
+}
+
 export function isSupported(accessory) {
     return accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || (accessory.platform.configItems.consider_light_by_name === true && accessory.context.deviceData.name.toLowerCase().includes("light")) || accessory.hasCapability("Button"));
 }
 
 export const relevantAttributes = ["switch"];
 
-export function initializeAccessory(accessory, deviceClass) {
-    const { Service, Characteristic } = deviceClass.platform;
-    const service = deviceClass.getOrAddService(accessory, Service.Switch);
+export function initializeAccessory(accessory) {
+    const switchSvc = DeviceClass.getOrAddService(accessory, Service.Switch);
 
-    deviceClass.getOrAddCharacteristic(accessory, service, Characteristic.On, {
+    DeviceClass.getOrAddCharacteristic(accessory, switchSvc, Characteristic.On, {
         getHandler: function () {
             const isOn = accessory.context.deviceData.attributes.switch === "on";
             accessory.log.debug(`${accessory.name} | Switch State Retrieved: ${isOn ? "ON" : "OFF"}`);
@@ -26,18 +34,16 @@ export function initializeAccessory(accessory, deviceClass) {
     accessory.context.deviceGroups.push("switch");
 }
 
-export function handleAttributeUpdate(accessory, change, deviceClass) {
-    const { Characteristic, Service } = deviceClass.platform;
-    const service = accessory.getService(Service.Switch);
-
-    if (!service) {
+export function handleAttributeUpdate(accessory, change) {
+    const switchSvc = accessory.getService(Service.Switch);
+    if (!switchSvc) {
         accessory.log.warn(`${accessory.name} | Switch service not found`);
         return;
     }
 
     if (change.attribute === "switch") {
         const isOn = change.value === "on";
-        deviceClass.updateCharacteristicValue(accessory, service, Characteristic.On, isOn);
+        DeviceClass.updateCharacteristicValue(accessory, switchSvc, Characteristic.On, isOn);
         // accessory.log.debug(`${accessory.name} | Updated Switch State: ${isOn ? "ON" : "OFF"}`);
     } else {
         accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
