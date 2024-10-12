@@ -1,7 +1,6 @@
 // DeviceTypes.js
 
 import { knownCapabilities, pluginVersion } from "./Constants.js";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import _ from "lodash";
@@ -272,7 +271,7 @@ export default class DeviceTypes {
                 }
             });
         } else {
-            throw new Error(`Unable to determine the device type of ${deviceData.deviceid}`);
+            this.platform.logError(`Unable to determine the device type of ${deviceData.deviceid}`);
         }
 
         return this.removeUnusedServices(accessory);

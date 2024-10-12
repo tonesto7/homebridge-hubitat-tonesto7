@@ -1,7 +1,5 @@
 // device_types/filter_maintenance.js
 
-import { get } from "lodash";
-
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
 export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
@@ -23,7 +21,7 @@ export function initializeAccessory(accessory) {
     DeviceClass.getOrAddCharacteristic(accessory, filterSvc, Characteristic.FilterChangeIndication, {
         getHandler: function () {
             const doReplace = accessory.context.deviceData.attributes.switch === "replace";
-            accessory.log.debug(`${accessory.name} | SFilterChangeIndication Retrieved: ${doReplace ? "REPLACE" : "OFF"}`);
+            accessory.log.debug(`${accessory.name} | FilterChangeIndication Retrieved: ${doReplace ? "REPLACE" : "OFF"}`);
             return getFilterStatus(accessory.context.deviceData.attributes.filterStatus);
         },
     });
@@ -34,7 +32,7 @@ export function initializeAccessory(accessory) {
 export function handleAttributeUpdate(accessory, change) {
     const filterSvc = accessory.getService(Service.FilterMaintenance);
     if (!filterSvc) {
-        accessory.log.warn(`${accessory.name} | Switch service not found`);
+        accessory.log.warn(`${accessory.name} | FilterMaintenance service not found`);
         return;
     }
 

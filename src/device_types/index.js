@@ -11,6 +11,7 @@ import * as carbon_monoxide from "./carbon_monoxide.js";
 import * as contact_sensor from "./contact_sensor.js";
 import * as energy_meter from "./energy_meter.js";
 import * as fan from "./fan.js";
+import * as filter_maintenance from "./filter_maintenance.js";
 import * as garage_door from "./garage_door.js";
 import * as humidity_sensor from "./humidity_sensor.js";
 import * as illuminance_sensor from "./illuminance_sensor.js";
@@ -44,6 +45,7 @@ export default {
     contact_sensor,
     energy_meter,
     fan,
+    filter_maintenance,
     garage_door,
     humidity_sensor,
     illuminance_sensor,

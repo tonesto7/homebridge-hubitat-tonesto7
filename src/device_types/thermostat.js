@@ -266,10 +266,19 @@ function thermostatTargetTemp_set(accessory) {
 }
 
 function getSupportedThermostatModes(accessory) {
-    const supportedModes = [];
-    const modes = accessory.context.deviceData.attributes.supportedThermostatModes || ["off", "heat", "cool", "auto"];
-    // console.log("modes:", modes);
-    modes.forEach((mode) => {
+    let supportedModes = [];
+    let modes = accessory.context.deviceData.attributes.supportedThermostatModes || ["off", "heat", "cool", "auto"];
+    // check modes are an array and not empty and if its a string then split it
+    if (typeof modes === "string") {
+        try {
+            modes = JSON.parse(modes);
+        } catch (e) {
+            modes = modes.split(",");
+        }
+    }
+
+    // console.log("modes:", modes, modes.length);
+    for (const [i, mode] of modes.entries()) {
         switch (mode) {
             case "off":
                 supportedModes.push(Characteristic.TargetHeatingCoolingState.OFF);
@@ -286,7 +295,7 @@ function getSupportedThermostatModes(accessory) {
             default:
                 accessory.log.warn(`${accessory.name} | Unsupported thermostat mode: ${mode}`);
         }
-    });
+    }
 
     accessory.log.debug(`${accessory.name} | Supported Thermostat Modes: ${supportedModes}`);
     return supportedModes;
