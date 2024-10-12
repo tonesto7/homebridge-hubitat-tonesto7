@@ -292,8 +292,8 @@ function getSupportedThermostatModes(accessory) {
             case "auto":
                 supportedModes.push(Characteristic.TargetHeatingCoolingState.AUTO);
                 break;
-            default:
-                accessory.log.warn(`${accessory.name} | Unsupported thermostat mode: ${mode}`);
+            // default:
+            //     accessory.log.warn(`${accessory.name} | Unsupported thermostat mode: ${mode}`);
         }
     }
 

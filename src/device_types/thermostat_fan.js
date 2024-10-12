@@ -21,9 +21,9 @@ export function initializeAccessory(accessory) {
     DeviceClass.getOrAddCharacteristic(accessory, fanV2Svc, Characteristic.Active, {
         getHandler: function () {
             const mode = accessory.context.deviceData.attributes.thermostatFanMode;
-            console.log("current thermostatFanMode:", mode);
+            // console.log("current thermostatFanMode:", mode);
             const activeState = convertFanModeToActive(mode);
-            console.log("current activeState:", activeState);
+            // console.log("current activeState:", activeState);
             accessory.log.debug(`${accessory.name} | Thermostat Fan Active State Retrieved: ${activeState}`);
             return activeState;
         },

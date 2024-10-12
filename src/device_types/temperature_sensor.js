@@ -27,7 +27,7 @@ export function initializeAccessory(accessory) {
         getHandler: function () {
             let temp = parseFloat(accessory.context.deviceData.attributes.temperature);
             temp = isNaN(temp) ? 0 : convertTemperature(temp, DeviceClass.platform);
-            accessory.log.debug(`${accessory.name} | Temperature Sensor Current Temperature Retrieved: ${temp} ${DeviceClass.platform.getTempUnit()}`);
+            accessory.log.debug(`${accessory.name} | Temperature Sensor CurrentTemperature Retrieved: ${temp} ${DeviceClass.platform.getTempUnit()}`);
             return temp;
         },
     });
@@ -36,7 +36,7 @@ export function initializeAccessory(accessory) {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
-            accessory.log.debug(`${accessory.name} | Temperature Sensor Status Tampered Retrieved: ${isTampered}`);
+            accessory.log.debug(`${accessory.name} | Temperature Sensor StatusTampered Retrieved: ${isTampered}`);
             return isTampered;
         },
         removeIfMissingPreReq: true,
@@ -45,7 +45,7 @@ export function initializeAccessory(accessory) {
     DeviceClass.getOrAddCharacteristic(accessory, temperatureSvc, Characteristic.StatusActive, {
         getHandler: function () {
             const isActive = accessory.context.deviceData.status === "ACTIVE";
-            accessory.log.debug(`${accessory.name} | Temperature Sensor Status Active Retrieved: ${isActive}`);
+            accessory.log.debug(`${accessory.name} | Temperature Sensor StatusActive Retrieved: ${isActive}`);
             return isActive;
         },
     });
@@ -95,7 +95,8 @@ function clamp(value, min, max) {
 
 function convertTemperature(temp, platform) {
     if (platform.getTempUnit() === "F") {
-        return clamp((temp - 32) / 1.8, -100, 200);
+        const tempOut = Math.round((temp - 32) / 1.8, 1);
+        return clamp(tempOut, -100, 200);
     }
     return clamp(temp, -100, 200);
 }

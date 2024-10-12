@@ -30,7 +30,7 @@ export function initializeAccessory(accessory) {
     DeviceClass.getOrAddCharacteristic(accessory, contactSvc, Characteristic.StatusActive, {
         getHandler: function () {
             const isActive = accessory.context.deviceData.status === "ACTIVE";
-            accessory.log.debug(`${accessory.name} | Status Active: ${isActive}`);
+            accessory.log.debug(`${accessory.name} | StatusActive: ${isActive}`);
             return isActive;
         },
     });
@@ -40,7 +40,7 @@ export function initializeAccessory(accessory) {
         preReqChk: (acc) => acc.hasCapability("TamperAlert"),
         getHandler: function () {
             const isTampered = accessory.context.deviceData.attributes.tamper === "detected";
-            accessory.log.debug(`${accessory.name} | Status Tampered: ${isTampered}`);
+            accessory.log.debug(`${accessory.name} | StatusTampered: ${isTampered}`);
             return isTampered;
         },
         removeIfMissingPreReq: true,

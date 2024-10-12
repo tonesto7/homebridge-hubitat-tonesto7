@@ -19,13 +19,21 @@ export function initializeAccessory(accessory) {
     const btnCnt = DeviceClass.clamp(accessory.context.deviceData.attributes.numberOfButtons || 1, 1, 10);
 
     accessory.log.debug(`${accessory.name} | Initializing button accessory with ${btnCnt} buttons`);
+    console.log(`${accessory.name} | Initializing button accessory with ${btnCnt} buttons`);
 
     for (let btnNum = 1; btnNum <= btnCnt; btnNum++) {
         const serviceName = `${accessory.context.deviceData.deviceid} Button ${btnNum}`;
         accessory.log.debug(`${accessory.name} | Initializing button service: ${serviceName}`);
 
         const buttonSvc = accessory.getButtonSvcByName(Service.StatelessProgrammableSwitch, serviceName, btnNum);
+        if (accessory.name === "Button Master Bedroom") {
+            console.log(`${accessory.name} | Initializing button service: ${serviceName}`, JSON.stringify(buttonSvc));
+        }
+
         const validValues = getSupportedBtnValues(accessory);
+        if (accessory.name === "Button Master Bedroom") {
+            console.log(`${accessory.name} | Initializing button service: ${serviceName} | Valid Values:`, validValues);
+        }
 
         // Ensure the service is kept
         DeviceClass.addServiceToKeep(accessory, buttonSvc);
@@ -88,11 +96,8 @@ function getSupportedBtnValues(accessory) {
         if (accessory.hasCapability("HoldableButton")) {
             validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS); // LONG_PRESS
         }
-        if (validValues.length < 1) {
-            validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
-            validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
-        }
-    } else {
+    }
+    if (validValues.length < 1) {
         validValues.push(Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS);
         validValues.push(Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
     }
@@ -102,13 +107,13 @@ function getSupportedBtnValues(accessory) {
 function getButtonState(btnVal, accessory) {
     switch (btnVal) {
         case "pushed":
-            accessory.log.debug(`${accessory.name} | Button State: pushed`);
+            accessory.log.debug(`${accessory.name} | ButtonState: pushed`);
             return Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
         case "doubleTapped":
-            accessory.log.debug(`${accessory.name} | Button State: doubleTapped`);
+            accessory.log.debug(`${accessory.name} | ButtonState: doubleTapped`);
             return Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
         case "held":
-            accessory.log.debug(`${accessory.name} | Button State: held`);
+            accessory.log.debug(`${accessory.name} | ButtonState: held`);
             return Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
         default:
             accessory.log.warn(`${accessory.name} | Unknown button value: ${btnVal}`);

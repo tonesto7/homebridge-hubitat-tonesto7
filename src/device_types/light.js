@@ -91,7 +91,7 @@ export function initializeAccessory(accessory) {
         getHandler: function () {
             let mired = kelvinToMired(parseInt(accessory.context.deviceData.attributes.colorTemperature));
             mired = DeviceClass.clamp(mired, 140, 500);
-            accessory.log.debug(`${accessory.name} | Current Color Temperature: ${mired} Mireds`);
+            accessory.log.debug(`${accessory.name} | Current ColorTemperature: ${mired} Mireds`);
             return isNaN(mired) ? 140 : mired;
         },
         setHandler: function (value) {

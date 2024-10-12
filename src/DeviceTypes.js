@@ -111,8 +111,8 @@ export default class DeviceTypes {
             new DeviceTypeTest("contact_sensor", (accessory) => accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl")),
             new DeviceTypeTest("air_quality", (accessory) => accessory.hasCapability("airQuality") || accessory.hasCapability("AirQuality")),
             new DeviceTypeTest("battery", (accessory) => accessory.hasCapability("Battery")),
-            new DeviceTypeTest("energy_meter", (accessory) => accessory.hasCapability("EnergyMeter") && !accessory.hasCapability("Switch"), true),
-            new DeviceTypeTest("power_meter", (accessory) => accessory.hasCapability("PowerMeter") && !accessory.hasCapability("Switch"), true),
+            // new DeviceTypeTest("energy_meter", (accessory) => accessory.hasCapability("EnergyMeter") && !accessory.hasCapability("Switch"), true),
+            // new DeviceTypeTest("power_meter", (accessory) => accessory.hasCapability("PowerMeter") && !accessory.hasCapability("Switch"), true),
             new DeviceTypeTest("thermostat", (accessory) => accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState")),
             new DeviceTypeTest("thermostat_fan", (accessory) => accessory.hasCapability("Thermostat") && accessory.hasAttribute("thermostatFanMode") && accessory.hasCommand("fanAuto") && accessory.hasCommand("fanOn")),
             new DeviceTypeTest("alarm_system", (accessory) => accessory.hasAttribute("alarmSystemStatus")),
@@ -143,6 +143,10 @@ export default class DeviceTypes {
             this.platform.logDebug(`(${accessory.name}) | Device Types BLOCKED | ${devicesBlocked}`);
         }
 
+        console.log(
+            `${accessory.name} | deviceTypesFound:`,
+            devicesFound.map((d) => d.name),
+        );
         return devicesFound;
     }
 
@@ -273,7 +277,7 @@ export default class DeviceTypes {
                 }
             });
         } else {
-            this.platform.logError(`Unable to determine the device type of ${deviceData.deviceid}`);
+            this.platform.logError(`${accessory.name} | Unable to determine the device type of ${deviceData.deviceid}`);
         }
 
         return this.removeUnusedServices(accessory);
@@ -320,7 +324,8 @@ export default class DeviceTypes {
 
         // Check if preReqChk is provided and evaluates to false
         if (preReqChk && !preReqChk(accessory)) {
-            // accessory.log.debug(`Prerequisite not met for characteristic ${characteristicType.name} for ${accessory.displayName}`);
+            // accessory.log.error(`Prerequisite not met for characteristic ${characteristicType.name} for ${accessory.displayName}`);
+
             if (removeIfMissingPreReq) {
                 const existingChar = service.getCharacteristic(characteristicType);
                 if (existingChar) {
@@ -594,22 +599,31 @@ export default class DeviceTypes {
         return this.context?.deviceData?.deviceflags?.hasOwnProperty(flag) || false;
     }
 
-    getButtonSvcByName(service, dispName, subType) {
-        this.log.debug(`${this.name} | Getting or adding button service: ${dispName} (subType: ${subType})`);
+    getButtonSvcByName(serviceType, displayName, subType) {
+        this.log.debug(`${this.name} | Getting or adding button service: ${displayName} (subType: ${subType})`);
 
-        // Check for existing service with the same UUID and subtype
-        let svc = this.services.find((s) => s instanceof service && s.subtype === subType);
+        // Attempt to find the service with the same UUID and subtype within the accessory's services
+        let svc = this.services.find((s) => s.UUID === serviceType.UUID && s.subtype === subType);
 
-        if (svc) {
-            this.log.debug(`${this.name} | Existing service found for: ${dispName} (subType: ${subType})`);
-            // Update the display name if it has changed
-            if (svc.displayName !== dispName) {
-                svc.displayName = dispName;
+        if (!svc) {
+            // Attempt to find the service using the old naming scheme
+            const oldServiceName = `${this.getAccessoryId(this)}_${subType}`;
+            svc = this.services.find((s) => s.displayName === oldServiceName);
+
+            if (svc) {
+                this.log.debug(`${this.name} | Found existing service with old naming scheme: ${oldServiceName}. Updating to new naming.`);
+                // Update the service's display name to the new naming scheme
+                svc.displayName = displayName;
+                svc.subtype = subType; // Ensure the subtype is correctly set
             }
-        } else {
-            this.log.debug(`${this.name} | Adding new service for: ${dispName} (subType: ${subType})`);
-            svc = new service(dispName, subType);
+        }
+
+        if (!svc) {
+            this.log.debug(`${this.name} | Adding new service for: ${displayName} (subType: ${subType})`);
+            svc = new serviceType(displayName, subType);
             this.addService(svc);
+        } else {
+            this.log.debug(`${this.name} | Reusing existing service for: ${displayName} (subType: ${subType})`);
         }
 
         // Ensure the service is in servicesToKeep regardless of whether it's new or existing
@@ -617,6 +631,9 @@ export default class DeviceTypes {
         if (!this.servicesToKeep.includes(serviceKey)) {
             this.servicesToKeep.push(serviceKey);
         }
+
+        // Log the current services for debugging
+        this.log.debug(`${this.name} | Current Services: ${this.services.map((s) => s.displayName).join(", ")}`);
 
         return svc;
     }
