@@ -143,10 +143,7 @@ export default class DeviceTypes {
             this.platform.logDebug(`(${accessory.name}) | Device Types BLOCKED | ${devicesBlocked}`);
         }
 
-        console.log(
-            `${accessory.name} | deviceTypesFound:`,
-            devicesFound.map((d) => d.name),
-        );
+        // console.log(`${accessory.name} | deviceTypesFound:`, devicesFound.map((d) => d.name).join(", "));
         return devicesFound;
     }
 

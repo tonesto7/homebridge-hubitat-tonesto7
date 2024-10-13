@@ -231,9 +231,9 @@ export default class Platform {
                             const toCreate = this.deviceTypes.diffAdd(resp.deviceList);
                             const toUpdate = this.deviceTypes.intersection(resp.deviceList);
                             const toRemove = this.deviceTypes.diffRemove(resp.deviceList);
-                            this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
+                            this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name).join(", "));
                             this.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
-                            this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
+                            this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name).join(", "));
 
                             toRemove.forEach((accessory) => this.removeAccessory(accessory));
                             toUpdate.forEach((device) => this.updateDevice(device));
@@ -296,7 +296,7 @@ export default class Platform {
 
             // Unregister the accessory
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-            this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
+            this.logInfo(`Removed Accessory: ${accessory.name} (${accessory.deviceid})`);
         }
     }
 
