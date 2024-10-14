@@ -106,7 +106,7 @@ export default class Client {
     sendUpdateStatus = async () => {
         try {
             const res = await this.platform.Utils.checkVersion();
-            this.platform.logNotice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
+            this.platform.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
             const response = await axios({
                 method: "post",
                 url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,

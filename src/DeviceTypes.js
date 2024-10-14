@@ -442,7 +442,7 @@ export default class DeviceTypes {
         service.characteristics.forEach((characteristic) => {
             if (!characteristicsToKeep.includes(characteristic.UUID)) {
                 service.removeCharacteristic(characteristic);
-                this.platform.logInfo(`Removing Unused Characteristic: ${characteristic.name} from ${service.displayName} from ${accessory.name}`);
+                this.platform.logInfo(`Removing Unused Characteristic: ${characteristic.name ? characteristic.name : characteristic.displayName} from ${service.displayName} from ${accessory.name}`);
             }
         });
     }
@@ -598,7 +598,7 @@ export default class DeviceTypes {
 
         if (!svc) {
             // Attempt to find the service using the old naming scheme
-            const oldServiceName = `${this.getAccessoryId(this)}_${subType}`;
+            const oldServiceName = `${this.deviceId || this.context.deviceData.deviceId}_${subType}`;
             svc = this.services.find((s) => s.displayName === oldServiceName);
 
             if (svc) {
