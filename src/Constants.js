@@ -40,6 +40,7 @@ export const knownCapabilities = [
     "Light",
     "LightBulb",
     "Lock",
+    // "Lock2",
     "LockCodes",
     "Mode",
     "MotionSensor",

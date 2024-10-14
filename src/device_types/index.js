@@ -18,6 +18,7 @@ import * as illuminance_sensor from "./illuminance_sensor.js";
 import * as leak_sensor from "./leak_sensor.js";
 import * as light from "./light.js";
 import * as lock from "./lock.js";
+import * as lock2 from "./lock2.js";
 import * as motion_sensor from "./motion_sensor.js";
 import * as outlet from "./outlet.js";
 import * as power_meter from "./power_meter.js";
@@ -52,6 +53,7 @@ export default {
     leak_sensor,
     light,
     lock,
+    lock2,
     motion_sensor,
     outlet,
     power_meter,

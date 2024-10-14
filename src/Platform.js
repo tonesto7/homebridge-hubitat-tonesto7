@@ -290,7 +290,7 @@ export default class Platform {
             accessory.services.forEach((service) => {
                 if (service.UUID !== this.deviceTypes.Service.AccessoryInformation.UUID) {
                     accessory.removeService(service);
-                    this.logInfo(`Removed Service: ${service.UUID} (${service.displayName}) from ${accessory.name}`);
+                    this.logInfo(`Removed Service: ${service.UUID} (${service.displayName ? service.displayName : service.constructorName}) from ${accessory.name}`);
                 }
             });
 

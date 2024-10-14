@@ -124,7 +124,7 @@ preferences {
         'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'AudioMute', 'Battery', 'Bulb', 'Button',
         'CarbonDioxideMeasurement', 'CarbonMonoxideDetector', 'ColorControl', 'ColorTemperature', 'ContactSensor', 'DoorControl',
         'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'FilterStatus', 'GarageDoorControl', 'HoldableButton', 'IlluminanceMeasurement', 'Light',
-        'LightBulb', 'Lock', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet', 'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton',
+        'LightBulb', 'Lock', 'Lock2', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet', 'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton',
         'RelativeHumidityMeasurement', 'Routine', 'Sensor', 'SmokeDetector', 'Speaker', 'Switch', 'SwitchLevel', 'TamperAlert', 'TemperatureMeasurement',
         'Thermostat', 'ThermostatCoolingSetpoint', 'ThermostatFanMode', 'ThermostatHeatingSetpoint', 'ThermostatMode', 'ThermostatOperatingState',
         'ThermostatSetpoint', 'Valve', 'WaterSensor', 'WindowBlind', 'WindowShade'
@@ -312,8 +312,9 @@ def deviceSelectPage() {
             paragraph spanSmBldBr('NOTE: ') + spanSmBldBr('Please do not select a device more than once in the inputs below')
 
             input 'lightList', sCAP_SW, title: inTS1("Lights: (${lightList ? lightList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'outletList', sCAP_SW, title: inTS1("Outlets: (${outletList ? outletList.size() : 0} Selected)", 'outlet'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'lightNoAlList', sCAP_SW, title: inTS1("Lights (No Adaptive Lighting): (${lightNoAlList ? lightNoAlList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'outletList', sCAP_SW, title: inTS1("Outlets: (${outletList ? outletList.size() : 0} Selected)", 'outlet'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            // input 'lockTestList', 'capability.lock', title: inTS1("Locks (Test): (${lockTestList ? lockTestList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'garageList', 'capability.garageDoorControl', title: inTS1("Garage Doors: (${garageList ? garageList.size() : 0} Selected)", 'garage_door'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'speakerList', sCAP_SW, title: inTS1("Speakers: (${speakerList ? speakerList.size() : 0} Selected)", 'media_player'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'shadesList', 'capability.windowShade', title: inTS1("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -1595,6 +1596,7 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (isDeviceInInput('tstatFanList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
     if (isDeviceInInput('tstatCoolList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatHeatingSetpoint') }
     if (isDeviceInInput('tstatHeatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
+    if (isDeviceInInput('lockTestList', devid)) { capItems['Lock2'] = 1 }
     //switchList, deviceList
 
     if (getBoolSetting('noTemp') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
@@ -1763,7 +1765,7 @@ static Map<String,String> deviceSettingKeys() {
     [
         'speakerList': 'Speaker Devices', 'shadesList': 'Window Shade Devices', 'securityKeypadsList': 'Security Keypad Devices',
         'garageList': 'Garage Door Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat (HeatOnly) Devices', 'tstatCoolList': 'T-Stat (CoolOnly) Devices',
-        'sensorList': 'Sensor Devices', 'switchList': 'Switch Devices', 'deviceList': 'Other Devices',
+        'sensorList': 'Sensor Devices', 'switchList': 'Switch Devices', 'deviceList': 'Other Devices', 'lockTestList': 'Lock Devices',
     ]
 }
 

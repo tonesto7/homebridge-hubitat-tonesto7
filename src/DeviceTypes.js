@@ -60,6 +60,7 @@ export default class DeviceTypes {
             illuminance_sensor: this.Service.LightSensor,
             light: this.Service.Lightbulb,
             lock: this.Service.LockMechanism,
+            lock2: this.Service.LockManagement,
             motion_sensor: this.Service.MotionSensor,
             presence_sensor: this.Service.OccupancySensor,
             outlet: this.Service.Outlet,
@@ -79,7 +80,7 @@ export default class DeviceTypes {
 
     initializeDeviceTypeTests() {
         this.deviceTypeTests = [
-            new DeviceTypeTest("window_covering", (accessory) => accessory.hasCapability("WindowShade") && !["Speaker", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)), true),
+            new DeviceTypeTest("window_covering", (accessory) => accessory.hasCapability("WindowShade"), true),
             new DeviceTypeTest(
                 "light",
                 (accessory) => accessory.hasCapability("SwitchLevel") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl")),
@@ -88,6 +89,7 @@ export default class DeviceTypes {
             // new DeviceTypeTest("air_purifier", (accessory) => accessory.hasCapability("custom.airPurifierOperationMode")),
             new DeviceTypeTest("garage_door", (accessory) => accessory.hasCapability("GarageDoorControl")),
             new DeviceTypeTest("lock", (accessory) => accessory.hasCapability("Lock")),
+            // new DeviceTypeTest("lock2", (accessory) => accessory.hasCapability("Lock2")),
             new DeviceTypeTest("valve", (accessory) => accessory.hasCapability("Valve")),
             new DeviceTypeTest("speaker", (accessory) => accessory.hasCapability("Speaker")),
             new DeviceTypeTest("filter_maintenance", (accessory) => accessory.hasCapability("FilterStatus") && accessory.hasAttribute("filterStatus")),
@@ -97,7 +99,7 @@ export default class DeviceTypes {
             new DeviceTypeTest("button", (accessory) => ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton"].some((cap) => accessory.hasCapability(cap))),
             new DeviceTypeTest("light", (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))), true),
             new DeviceTypeTest("outlet", (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"), true),
-            new DeviceTypeTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))),
+            new DeviceTypeTest("switch_device", (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.configItems.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"))),
             new DeviceTypeTest("smoke_detector", (accessory) => accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke")),
             new DeviceTypeTest("carbon_monoxide", (accessory) => accessory.hasCapability("CarbonMonoxideDetector") && accessory.hasAttribute("carbonMonoxide")),
             new DeviceTypeTest("carbon_dioxide", (accessory) => accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxide")),
@@ -143,6 +145,12 @@ export default class DeviceTypes {
             this.platform.logDebug(`(${accessory.name}) | Device Types BLOCKED | ${devicesBlocked}`);
         }
 
+        // const deviceTypesFound = devicesFound.map((d) => d.name);
+        // if (deviceTypesFound.includes("fan", "light", "lock2")) {
+        //     console.log(`${accessory.name} | deviceTypesFound:`, deviceTypesFound.join(", "));
+        //     console.log("capabilities:", accessory.context.deviceData.capabilities);
+        //     console.log("attributes:", accessory.context.deviceData.attributes);
+        // }
         // console.log(`${accessory.name} | deviceTypesFound:`, devicesFound.map((d) => d.name).join(", "));
         return devicesFound;
     }

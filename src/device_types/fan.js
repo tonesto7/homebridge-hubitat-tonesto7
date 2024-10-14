@@ -69,6 +69,18 @@ export function initializeAccessory(accessory) {
         removeIfMissingPreReq: true,
     });
 
+    // DeviceClass.getOrAddCharacteristic(accessory, fanSvc, Characteristic.LockPhysicalControls, {
+    //     getHandler: function () {
+    //         const isLocked = accessory.context.deviceData.attributes.locked || true;
+    //         return isLocked ? Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED : Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED;
+    //     },
+    //     setHandler: function (value) {
+    //         const isLocked = value === Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED;
+    //         accessory.log.info(`${accessory.name} | Lock Physical Controls set to: ${isLocked}`);
+    //         // accessory.sendCommand(null, accessory, accessory.context.deviceData, isLocked ? "lock" : "unlock");
+    //     },
+    // });
+
     accessory.context.deviceGroups.push("fan");
 }
 
