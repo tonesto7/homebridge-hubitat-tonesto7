@@ -52,7 +52,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '3.0.0'
-//@Field static final String appModifiedFLD = '10-08-2024'
+//@Field static final String appModifiedFLD = '10-13-2024'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -121,7 +121,7 @@ preferences {
         'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
     ],
     capabilities: [
-        'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'AudioMute', 'AudioVolume', 'Battery', 'Bulb', 'Button',
+        'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'AudioMute', 'Battery', 'Bulb', 'Button',
         'CarbonDioxideMeasurement', 'CarbonMonoxideDetector', 'ColorControl', 'ColorTemperature', 'ContactSensor', 'DoorControl',
         'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'FilterStatus', 'GarageDoorControl', 'HoldableButton', 'IlluminanceMeasurement', 'Light',
         'LightBulb', 'Lock', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet', 'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton',
@@ -2136,7 +2136,9 @@ void activateDirectUpdates(Boolean isLocal=false) {
     logTrace("activateDirectUpdates: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('initial', [
         app_id: gtAppId(),
-        access_token: (String)state.accessToken
+        access_token: (String)state.accessToken,
+        app_name: app.getLabel(),
+        app_version: appVersionFLD
     ], 'activateDirectUpdates', getBoolSetting('showDebugLogs'))
 }
 
@@ -2144,7 +2146,9 @@ void attemptServiceRestart(Boolean isLocal=false) {
     logTrace("attemptServiceRestart: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('restart', [
         app_id: gtAppId(),
-        access_token: (String)state.accessToken
+        access_token: (String)state.accessToken,
+        app_name: app.getLabel(),
+        app_version: appVersionFLD
     ], 'attemptServiceRestart', getBoolSetting('showDebugLogs'))
 }
 
@@ -2152,7 +2156,9 @@ void sendDeviceRefreshCmd(Boolean isLocal=false) {
     logTrace("sendDeviceRefreshCmd: ${getServerAddress()}${isLocal ? ' | (Local)' : sBLANK}")
     sendHttpPost('refreshDevices', [
         app_id: gtAppId(),
-        access_token: (String)state.accessToken
+        access_token: (String)state.accessToken,
+        app_name: app.getLabel(),
+        app_version: appVersionFLD
     ], 'sendDeviceRefreshCmd', getBoolSetting('showDebugLogs'))
 }
 
@@ -2161,6 +2167,8 @@ void updateServicePrefs(Boolean isLocal=false) {
     sendHttpPost('updateprefs', [
         app_id: gtAppId(),
         access_token: (String)state.accessToken,
+        app_name: app.getLabel(),
+        app_version: appVersionFLD,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
         validateTokenId: getBoolSetting('validate_token'),
         local_hub_ip: ((List)location?.hubs)[0]?.localIP

@@ -18,7 +18,7 @@ export const knownCapabilities = [
     "Alarm",
     "AlarmSystemStatus",
     // "AudioMute",
-    "AudioVolume",
+    // "AudioVolume",
     "Battery",
     "Bulb",
     "Button",

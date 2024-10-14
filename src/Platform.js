@@ -302,10 +302,10 @@ export default class Platform {
 
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
-        this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
+        this.logDebug(`Configure Cached Accessory: ${accessory.name}, UUID: ${accessory.UUID}`);
         let cachedAccessory = this.deviceTypes.initializeAccessory(accessory, true);
         if (!cachedAccessory) {
-            this.logError(`Failed to initialize cached accessory: ${accessory.displayName}`);
+            this.logError(`Failed to initialize cached accessory: ${accessory.name}`);
             return;
         }
         this.sanitizeAndUpdateAccessoryName(cachedAccessory);
@@ -373,7 +373,7 @@ export default class Platform {
                 });
 
                 webApp.get("/debugOpts", (req, res) => {
-                    this.logInfo(`${platformName} Debug Option Request(${req.query.option})...`);
+                    this.logInfo(`${platformName} | Debug Option Request(${req.query.option})...`);
                     if (req.query && req.query.option) {
                         let accs = this.deviceTypes.getAllAccessoriesFromCache();
                         // let accsKeys = Object.keys(accs);
@@ -427,7 +427,7 @@ export default class Platform {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && this.isValidRequestor(body.access_token, body.app_id, "restartService")) {
                         let delay = 10 * 1000;
-                        this.logInfo(`Received request from ${platformName} to restart homebridge service in (${delay / 1000} seconds) | NOTICE: If you using PM2 or Systemd the Homebridge Service should start back up`);
+                        this.logInfo(`Received request from ${body.app_name} to restart homebridge service in (${delay / 1000} seconds) | NOTICE: If you using PM2 or Systemd the Homebridge Service should start back up`);
                         setTimeout(() => {
                             process.exit(1);
                         }, parseInt(delay));
@@ -444,7 +444,7 @@ export default class Platform {
                 webApp.post("/refreshDevices", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && this.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
-                        this.logGreen(`Received request from ${platformName} to refresh devices`);
+                        this.logGreen(`${body.app_name} | Received request to refresh device data`);
                         this.refreshDevices("Hubitat App Requested");
                         res.send({
                             status: "OK",
@@ -460,7 +460,7 @@ export default class Platform {
                 webApp.post("/updateprefs", (req, res) => {
                     let body = JSON.parse(JSON.stringify(req.body));
                     if (body && this.isValidRequestor(body.access_token, body.app_id, "updateprefs")) {
-                        this.logInfo(platformName + " Hub Sent Preference Updates");
+                        this.logInfo(`${body.app_name} | Hub Sent Preference Updates`);
                         let sendUpd = false;
                         // if (body && Object.keys(body).length > 0) {
                         //     Object.keys(body).forEach((key) => {});

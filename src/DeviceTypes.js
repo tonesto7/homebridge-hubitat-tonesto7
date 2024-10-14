@@ -237,7 +237,7 @@ export default class DeviceTypes {
         // Handle Identify event
         if (!accInfoSvc.listeners("identify").length) {
             accInfoSvc.on("identify", (paired, callback) => {
-                this.platform.logInfo(`${accessory.displayName} - identify`);
+                this.platform.logInfo(`${accessory.name} - identify`);
                 callback();
             });
         }
@@ -257,12 +257,6 @@ export default class DeviceTypes {
                         this.platform.logError(`Device type ${name} does not have an initializeAccessory method`);
                     }
 
-                    // check if the device type isSupported for the accessory
-                    // if (typeof this.deviceTypes[name].isSupported === "function" && !this.deviceTypes[name].isSupported(accessory)) {
-                    //     this.platform.logError(`Device type ${name} is not supported for ${accessory.name}`);
-                    //     return;
-                    // }
-
                     // Check if the device type has an initializeAccessory method
                     if (typeof this.deviceTypes[name].initializeAccessory === "function") {
                         this.deviceTypes[name].initializeAccessory(accessory);
@@ -274,7 +268,7 @@ export default class DeviceTypes {
                 }
             });
         } else {
-            this.platform.logError(`${accessory.name} | Unable to determine the device type of ${deviceData.deviceid}`);
+            this.platform.logWarn(`Unable to determine the device type for device | ${accessory.name} | deviceId: (${deviceData.deviceid})`);
         }
 
         return this.removeUnusedServices(accessory);
@@ -321,13 +315,13 @@ export default class DeviceTypes {
 
         // Check if preReqChk is provided and evaluates to false
         if (preReqChk && !preReqChk(accessory)) {
-            // accessory.log.error(`Prerequisite not met for characteristic ${characteristicType.name} for ${accessory.displayName}`);
+            // accessory.log.error(`Prerequisite not met for characteristic ${characteristicType.name} for ${accessory.name}`);
 
             if (removeIfMissingPreReq) {
                 const existingChar = service.getCharacteristic(characteristicType);
                 if (existingChar) {
                     service.removeCharacteristic(existingChar);
-                    // accessory.log.debug(`Removed characteristic ${characteristicType.name} from ${accessory.displayName} due to unmet prerequisites`);
+                    // accessory.log.debug(`Removed characteristic ${characteristicType.name} from ${accessory.name} due to unmet prerequisites`);
                 }
             }
             return null;
@@ -337,7 +331,7 @@ export default class DeviceTypes {
         try {
             characteristic = service.getCharacteristic(characteristicType) || service.addCharacteristic(characteristicType);
         } catch (error) {
-            accessory.log.error(`Error adding characteristic ${characteristicType.name} to ${accessory.displayName}: ${error.message}`);
+            accessory.log.error(`Error adding characteristic ${characteristicType.constructorName} to ${accessory.name}: ${error.message}`);
             return null;
         }
 
@@ -345,7 +339,7 @@ export default class DeviceTypes {
             try {
                 characteristic.setProps(props);
             } catch (error) {
-                accessory.log.error(`Error setting props for ${characteristicType.name} on ${accessory.displayName}: ${error.message}`);
+                accessory.log.error(`Error setting props for ${characteristicType.name} on ${accessory.name}: ${error.message}`);
             }
         }
 
@@ -448,7 +442,7 @@ export default class DeviceTypes {
         service.characteristics.forEach((characteristic) => {
             if (!characteristicsToKeep.includes(characteristic.UUID)) {
                 service.removeCharacteristic(characteristic);
-                this.platform.logInfo(`Removing Unused Characteristic: ${characteristic.displayName} from ${service.displayName}`);
+                this.platform.logInfo(`Removing Unused Characteristic: ${characteristic.name} from ${service.displayName} from ${accessory.name}`);
             }
         });
     }
@@ -630,7 +624,12 @@ export default class DeviceTypes {
         }
 
         // Log the current services for debugging
-        this.log.debug(`${this.name} | Current Services: ${this.services.map((s) => s.displayName).join(", ")}`);
+        this.log.debug(
+            `${this.name} | Current Services: ${this.services
+                .map((s) => s.displayName)
+                .filter((s) => s.length > 0)
+                .join(", ")}`,
+        );
 
         return svc;
     }
