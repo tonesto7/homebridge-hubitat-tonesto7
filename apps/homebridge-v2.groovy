@@ -72,6 +72,7 @@ preferences {
 @Field static final String sTRUE          = 'true'
 @Field static final String sBOOL          = 'bool'
 @Field static final String sENUM          = 'enum'
+@Field static final String sNUM           = 'number'
 //@Field static final String sTIME          = 'time'
 @Field static final String sSVR           = 'svraddr'
 @Field static final String sCLN           = ':'
@@ -117,7 +118,7 @@ preferences {
         'acceleration', 'airQualityIndex', 'alarmSystemStatus', 'battery', 'button', 'carbonDioxide', 'carbonMonoxide', 'colorTemperature', 'contact',
         'coolingSetpoint', 'door', 'doubleTapped', 'energy', 'fanMode', 'fanState', 'fanTargetState', 'filterStatus', 'heatingSetpoint', 'held', 'hue', 'humidity',
         'illuminance', 'level', 'level', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power', 'powerSource', 'presence', 'pushed',
-        'saturation', 'smoke', 'speed', 'switch', 'supportedThermostatModes', 'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 
+        'saturation', 'smoke', 'speed', 'switch', 'supportedThermostatModes', 'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState',
         'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
     ],
     capabilities: [
@@ -144,9 +145,9 @@ preferences {
 ]
 
 @Field static final Map<String, String> capFilterFLD = [
-    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature', 
+    'Acceleration': 'AccelerationSensor', 'Battery': 'Battery', 'Button': 'Button', 'ColorControl': 'ColorControl', 'ColorTemperature': 'ColorTemperature',
     'Contact': 'ContactSensor', 'Energy': 'EnergyMeter', 'filterStatus': 'Filter Status', 'Humidity': 'RelativeHumidityMeasurement', 'Illuminance': 'IlluminanceMeasurement',
-    'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'SecurityKeypad' : 'SecurityKeypad', 'Switch': 'Switch', 
+    'Level': 'SwitchLevel', 'Lock': 'Lock', 'Motion': 'MotionSensor', 'Power': 'PowerMeter', 'Presence': 'PresenceSensor', 'SecurityKeypad' : 'SecurityKeypad', 'Switch': 'Switch',
     'Water': 'WaterSensor', 'Thermostat': 'Thermostat', 'ThermostatFanMode': 'ThermostatFanMode', 'ThermostatOperatingState': 'ThermostatOperatingState', 'ThermostatSetpoint': 'ThermostatSetpoint',
     'ThermostatCoolingSetpoint': 'ThermostatCoolingSetpoint', 'ThermostatHeatingSetpoint': 'ThermostatHeatingSetpoint', 'Tamper': 'TamperAlert', 'Temp': 'TemperatureMeasurement', 'Valve': 'Valve',
     'PushableButton': 'PushableButton', 'HoldableButton': 'HoldableButton', 'DoubleTapableButton': 'DoubleTapableButton',
@@ -162,7 +163,7 @@ def startPage() {
     }
 
     return dynamicPage(name: 'mainPage', install: false, uninstall: true) {
-        section() { paragraph spanSmBldBr('OAuth Error', sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the Hubitat App Settings in the App Code page.") }
+        section { paragraph spanSmBldBr('OAuth Error', sCLRRED) + spanSmBld("OAuth is not Enabled for ${app?.getName()}!.<br><br>Please click remove and Enable Oauth under the Hubitat App Settings in the App Code page.") }
     }
 }
 
@@ -250,14 +251,14 @@ def mainPage() {
 
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
-        section(sectHead('Plugin Communication Options:')) {
+        section(sectHead('Plugin Configuration Options:')) {
+            input 'polling_seconds',        sNUM,  title: inTS1('Plugin Polls Hubitat for Updates (in Seconds)?', sCMD), required: false, defaultValue: 900, submitOnChange: true
             input 'consider_fan_by_name',   sBOOL, title: inTS1('Use the word Fan in device name to determine if device is a Fan?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'consider_light_by_name', sBOOL, title: inTS1('Use the word Light in device name to determine if device is a Light?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'use_cloud_endpoint',     sBOOL, title: inTS1('Communicate with Plugin Using Cloud Endpoint?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'validate_token',         sBOOL, title: inTS1('Validate AppID & Token for All Communications?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'round_levels',           sBOOL, title: inTS1('Round Levels <5% to 0% and >95% to 100%?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'temp_unit',              sENUM, title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
-            // input 'polling_seconds',        number, title: inTS1('Plugin Polls Hubitat for Updates (in Seconds)?', sCMD), required: false, defaultValue: 3600, submitOnChange: true
         }
 
         section(sectHead('HomeKit Adaptive Lighting')) {
@@ -269,11 +270,6 @@ def pluginConfigPage() {
             }
         }
 
-        // section(sectHead("Plugin Device Options:")) {
-        //     input "round_up_99", sBOOL, title: inTS1("Round Up Devices with 9?", sCMD)), required: false, defaultValue: false, submitOnChange: true
-        //     input "temp_unit",          sENUM, title: inTS1("Temperature Unit?", "temp_unit")), required: true, defaultValue: location?.temperatureScale, options: ["F":"Fahrenheit", "C":"Celcius"], submitOnChange: true
-        //     input "validate_token",     sBOOL, title: inTS1("Validate AppID & Token for All Communications?", sCMD)), required: false, defaultValue: false, submitOnChange: true
-        // }
 
         section(sectHead('Generated HomeBridge Plugin Platform Config')) {
             paragraph divSm("<textarea rows=23 class='mdl-textfield' style='font-size: medium !important;' readonly='true'>${renderConfig()}</textarea>")
@@ -298,7 +294,14 @@ static Map deviceValidationErrors() {
                 r: ['thermostatOperatingState', 'heatingSetpoint'],
                 o: []
             ]
-        ]
+        ],
+        tstat_cool: [
+            c: ['Thermostat Operating State'],
+            a: [
+                r: ['thermostatOperatingState', 'coolingSetpoint'],
+                o: []
+            ]
+        ],
     ]
 
     // if(tstatHeatList || tstatCoolList || tstatList || tstatFanList) {}
@@ -518,7 +521,7 @@ private String getCustAttrFilterDesc() {
     }
 
     if (global && global.size()) {
-        List<String> attrItems = global.unique().sort()
+        List<String> attrItems = global.toSet().toList().sort()
         desc += spanSmBr("Global Attributes: (${attrItems.size()})", sCLR4D9)
         attrItems.each { String attr ->
             desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
@@ -1109,20 +1112,20 @@ private List renderDevices() {
     return devList
 }
 
-private Map performPluginTest() {
-    Map params = [
-        uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
-        headers: ['Content-Type':'text/html;charset=utf-8']
-    ]
-    try {
-        httpPost(params) { resp ->
-        //LogTrace("response data: ${resp.data}")
-        }
-    } catch (ex) {
-        logError("enableOauth something went wrong: ${ex}", ex)
-        null
-    }
-}
+// private Map performPluginTest() {
+//     Map params = [
+//         uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
+//         headers: ['Content-Type':'text/html;charset=utf-8']
+//     ]
+//     try {
+//         httpPost(params) { resp ->
+//         //LogTrace("response data: ${resp.data}")
+//         }
+//     } catch (ex) {
+//         logError("enableOauth something went wrong: ${ex}", ex)
+//         null
+//     }
+// }
 
 private String sanitizeName(String name) {
     // Remove all characters except alphanumerics, spaces, and apostrophes
@@ -1163,7 +1166,7 @@ private Map<String,Object> getDeviceData(String type, sItem) {
             curType = 'Mode'
             optFlags['virtual_mode'] = 1
             obj = fndMode(sItem.toString())
-            if (obj) {
+            if (obj && obj.name) {
                 // BUGFIX for modes deviceId may not be unique vs. device.id
                 devId = 'm_' + sItem.toString()
                 name = 'Mode - ' + (String)obj.name
@@ -1256,13 +1259,13 @@ Map getDeviceFlags(device) {
     return opts
 }
 
-def findDevice(String dev_id) {
+def findDevice(String devId) {
     List allDevs; allDevs = []
     deviceSettingKeys().collect { (String)it.key }?.each { String key ->
         List setL = getListSetting(key)
         allDevs = allDevs + (setL ?: [])
 }
-    def aa = allDevs.find { gtDevId(it) == dev_id }
+    def aa = allDevs.find { gtDevId(it) == devId }
     return aa ?: null
 }
 
@@ -1274,7 +1277,7 @@ static String getAlarmSystemName(Boolean abbr=false) {
     return (abbr ? 'HSM' : 'Hubitat Safety Monitor')
 }
 
-String getSecurityStatus(Boolean retInt=false) {
+String getSecurityStatus() {
     String cur = (String)location.hsmStatus
     /*if (retInt) {
         switch (cur) {
@@ -1393,7 +1396,7 @@ String renderConfig() {
         app_id: gtAppId(),
         app_platform: platformFLD,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
-        polling_seconds: (Integer)settings.polling_seconds ?: 3600,
+        polling_seconds: (Integer)settings.polling_seconds ?: 900,
         access_token: (String)state.accessToken,
         temperature_unit: getStrSetting('temp_unit') ?: (String)location.temperatureScale,
         validateTokenId: getBoolSetting('validate_token'),
@@ -1522,7 +1525,7 @@ private processCmd(String idevId, String cmd, value1, value2) {
 private void changeMode(String modeId, Boolean shw) {
     if (modeId) {
         Map<String,String> mode = fndMode(modeId)
-        if (mode) {
+        if (mode && mode.name) {
             if (shw) { logInfo("Setting the Location Mode to (${mode.name})...") }
             /* groovylint-disable-next-line UnnecessarySetter */
             setLocationMode(mode.name)
@@ -1567,6 +1570,7 @@ def deviceAttribute() {
 
 static Map findVirtPistonDevice(id) {
     Map aa = getPistonById("${id}".toString())
+    /* groovylint-disable-next-line ReturnsNullInsteadOfEmptyCollection */
     return aa ?: null
 }
 
@@ -1596,7 +1600,7 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (isDeviceInInput('tstatFanList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
     if (isDeviceInInput('tstatCoolList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatHeatingSetpoint') }
     if (isDeviceInInput('tstatHeatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
-    if (isDeviceInInput('lockTestList', devid)) { capItems['Lock2'] = 1 }
+    // if (isDeviceInInput('lockTestList', devid)) { capItems['Lock2'] = 1 }
     //switchList, deviceList
 
     if (getBoolSetting('noTemp') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
@@ -2003,25 +2007,25 @@ def changeHandler(evt) {
     }
     }
 
-private static Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
-    Map<String, Integer> speedMappings = [
-        'low': 0,
-        'medium-low': 25,
-        'medium': 50,
-        'medium-high': 75,
-        'high': 100,
-        'on': 100,
-        'off': 0,
-        'auto': 50  // You can adjust this based on your needs
-    ]
+// private static Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
+//     Map<String, Integer> speedMappings = [
+//         'low': 0,
+//         'medium-low': 25,
+//         'medium': 50,
+//         'medium-high': 75,
+//         'high': 100,
+//         'on': 100,
+//         'off': 0,
+//         'auto': 50  // You can adjust this based on your needs
+//     ]
 
-    Integer speedPercentage
-    speedPercentage = speedMappings[speed] ?: 0
-    // Adjust percentage based on the number of speeds
-    //  -1 because index is 0-based
-    speedPercentage = Math.round(((speedPercentage / 100.0) * (numberOfSpeeds - 1)) * 100).toInteger()
-    return speedPercentage
-}
+//     Integer speedPercentage
+//     speedPercentage = speedMappings[speed] ?: 0
+//     // Adjust percentage based on the number of speeds
+//     //  -1 because index is 0-based
+//     speedPercentage = Math.round(((speedPercentage / 100.0) * (numberOfSpeeds - 1)) * 100).toInteger()
+//     return speedPercentage
+// }
 
 void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, String contentType = sAPPJSON) {
     String server = getServerAddress()
@@ -2075,9 +2079,9 @@ String getPluginStatusDesc() {
     return out
 }
 
-private Map<String,String> fndMode(String m){
-    def mode = ((List)location.getModes())?.find{ it -> ((Long)it.getId()).toString() == m || (String)it.getName() == m }
-    return mode ? [id: ((Long)mode.getId()).toString(), name: (String)mode.getName()] : null
+private Map<String,String> fndMode(String m) {
+    def mode = ((List)location.getModes())?.find { it -> ((Long)it.getId()).toString() == m || (String)it.getName() == m }
+    return mode ? [id: ((Long)mode.getId()).toString(), name: (String)mode.getName()] : [:]
 }
 
 @Field volatile static Map<String,Object> webCoREFLD = [:]
@@ -2086,7 +2090,7 @@ private static String webCoRE_handle() { return 'webCoRE' }
 
 static String webCore_icon() { return 'https://raw.githubusercontent.com/ady624/webCoRE/master/resources/icons/app-CoRE.png' }
 
-private webCoRE_init(pistonExecutedCbk=null) {
+private void webCoRE_init(pistonExecutedCbk=null) {
     if (getBoolSetting('enableWebCoRE')) {
         List tmp = getListSetting('pistonList')
         if (tmp) { logInfo("Subscribed to (${tmp.size()} WebCoRE Pistons)") }
@@ -2425,11 +2429,11 @@ private void updInstData(String key, val) {
     state.installData = iData
 }
 
-private getInstData(String key) {
-    Map iMap = (Map)state.installData
-    if (key && iMap && iMap[key]) { return iMap[key] }
-    return null
-}
+// private getInstData(String key) {
+//     Map iMap = (Map)state.installData
+//     if (key && iMap && iMap[key]) { return iMap[key] }
+//     return null
+// }
 
 @CompileStatic
 private void checkVersionData(Boolean now = false) { //This reads a JSON file from GitHub with version numbers
@@ -2576,7 +2580,7 @@ private void logError(String msg, ex = null) {
     try {
         if (ex) { a = getExceptionMessageWithLine(ex) }
     } catch (ignored) {
-        // log.error "logError Exception: ${ignored}"
+    // log.error "logError Exception: ${ignored}"
     }
     if (a) { logPrefix('error', a, sCLRRED) }
 }
@@ -2611,16 +2615,16 @@ private List<Map> getEvtHistory() {
     return newHis
 }
 
-private void clearHistory() {
-    String appId = gtAppId()
-    getTheLock(sHMLF, 'clearHistory')
-    // log.trace "lock wait: ${aa}"
+// private void clearHistory() {
+//     String appId = gtAppId()
+//     getTheLock(sHMLF, 'clearHistory')
+//     // log.trace "lock wait: ${aa}"
 
-    historyMapFLD.put(appId, [:])
-    // historyMapFLD = historyMapFLD
+//     historyMapFLD.put(appId, [:])
+//     // historyMapFLD = historyMapFLD
 
-    releaseTheLock(sHMLF)
-}
+//     releaseTheLock(sHMLF)
+// }
 
 private void logEvt(Map evtData) { addToHistory('evtHistory', evtData, 25) }
 private void logCmd(Map cmdData) { addToHistory('cmdHistory', cmdData, 25) }
@@ -2631,7 +2635,7 @@ private void updMemStoreItem(String key, List val) {
     Map memStore = historyMapFLD[appId] ?: [:]
     memStore[key] = val
     historyMapFLD[appId] = memStore
-    // historyMapFLD = historyMapFLD
+// historyMapFLD = historyMapFLD
 // log.debug("updMemStoreItem(${key}): ${memStore[key]}")
 }
 
@@ -2657,11 +2661,11 @@ static void mb(String meth=sNULL) {
 static Integer getSemaNum(String name) {
     //log.warn 'unrecognized lock name...'
     return (name == sHMLF) ? 0 : 0
-    // Integer stripes=22
-    // if(name.isNumber()) return name.toInteger()%stripes
-    // Integer hash=smear(name.hashCode())
-    // return Math.abs(hash)%stripes
-    // log.info "sema $name # $sema"
+// Integer stripes=22
+// if(name.isNumber()) return name.toInteger()%stripes
+// Integer hash=smear(name.hashCode())
+// return Math.abs(hash)%stripes
+// log.info "sema $name # $sema"
 }
 
 @CompileStatic
@@ -2695,7 +2699,7 @@ Boolean getTheLockW(String qname, String meth=sNULL, Boolean longWait=false) {
         if (timeL == null) {
             timeL = wnow()
             lockTimesFLD[semaSNum] = timeL
-            // lockTimesFLD = lockTimesFLD
+        // lockTimesFLD = lockTimesFLD
         }
         if (devMode()) { logWarn "waiting for ${qname} ${semaSNum} lock access, $meth, long: $longWait, holder: ${(String)lockHolderFLD[semaSNum]}" }
         wpauseExecution(waitT)
@@ -2724,11 +2728,11 @@ static void releaseTheLock(String qname) {
     sema.release()
 }
 
-String gtDevId(dev){ return (String)dev.getId() }
+String gtDevId(dev) { return (String)dev.getId() }
 
-String gtAppId(){ return ((Long)app.getId()).toString() }
+String gtAppId() { return ((Long)app.getId()).toString() }
 
-private Long wnow(){ return (Long)now() }
+private Long wnow() { return (Long)now() }
 private static TimeZone getDefTz() { return TimeZone.getDefault() }
 
 private void wpauseExecution(Long t) { pauseExecution(t) }
@@ -2746,7 +2750,7 @@ private gtState(String name) { return state.get(name) }
 private getSetting(String name) { return settings.get(name) }
 private String getStrSetting(String name) { return (String)settings.get(name) }
 private Boolean getBoolSetting(String name) { return (Boolean)settings.get(name) == true }
-private Boolean getBoolDefSetting(String name, Boolean defVal=true){
+private Boolean getBoolDefSetting(String name, Boolean defVal=true) {
     if (settings.get(name) == null) {
         settingUpdate(name, defVal.toString(), sBOOL)
         return defVal
@@ -2797,7 +2801,7 @@ private Map wrender(Map options=[:]) {
             //                              options[sDATA]=a
             //                              options[sCE]=sGZIP
             } catch (ignored) {
-                // logError("wrender gzip error: ${ignored}")
+            // logError("wrender gzip error: ${ignored}")
             }
         }
     }

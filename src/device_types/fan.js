@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["switch", "speed", "level"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const fanSvc = DeviceClass.getOrAddService(accessory, Service.Fanv2);
 
     DeviceClass.getOrAddCharacteristic(accessory, fanSvc, Characteristic.Active, {
@@ -84,7 +84,7 @@ export function initializeAccessory(accessory) {
     accessory.context.deviceGroups.push("fan");
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const fanSvc = accessory.getService(Service.Fanv2);
 
     if (!fanSvc) {

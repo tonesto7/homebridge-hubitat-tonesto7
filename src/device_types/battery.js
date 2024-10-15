@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["battery", "powerSource"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const batterySvc = DeviceClass.getOrAddService(accessory, Service.Battery);
 
     // Battery Level
@@ -52,7 +52,7 @@ export function initializeAccessory(accessory) {
     accessory.context.deviceGroups.push("battery");
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const batterySvc = accessory.getService(Service.Battery);
 
     if (!batterySvc) {

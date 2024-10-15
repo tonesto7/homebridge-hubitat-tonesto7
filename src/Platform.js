@@ -48,6 +48,7 @@ export default class Platform {
         this.configItems = this.getConfigItems();
         // console.log("pluginConfig: ", this.loadConfig());
         this.unknownCapabilities = [];
+        this._cachedAccessories = {};
         this.deviceTypes = new DeviceTypes(this);
         this.client = new Client(this);
 
@@ -228,9 +229,9 @@ export default class Platform {
                         }
                         if (resp && resp.deviceList && resp.deviceList instanceof Array) {
                             // this.logDebug("Received All Device Data");
-                            const toCreate = this.deviceTypes.diffAdd(resp.deviceList);
-                            const toUpdate = this.deviceTypes.intersection(resp.deviceList);
-                            const toRemove = this.deviceTypes.diffRemove(resp.deviceList);
+                            const toCreate = this.diffAdd(resp.deviceList);
+                            const toUpdate = this.intersection(resp.deviceList);
+                            const toRemove = this.diffRemove(resp.deviceList);
                             this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name).join(", "));
                             this.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
                             this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name).join(", "));
@@ -241,7 +242,7 @@ export default class Platform {
                         }
                         this.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
                         this.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
-                        this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.deviceTypes.getAllAccessoriesFromCache()).length})`);
+                        this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.getAllAccessoriesFromCache()).length})`);
                         if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
                         resolve(true);
                     });
@@ -255,7 +256,7 @@ export default class Platform {
     getNewAccessory(device, UUID) {
         let accessory = new this.PlatformAccessory(device.name, UUID);
         accessory.context.deviceData = device;
-        this.deviceTypes.initializeAccessory(accessory);
+        this.deviceTypes.initializeBaseAccessory(accessory);
         this.sanitizeAndUpdateAccessoryName(accessory);
         return accessory;
     }
@@ -267,12 +268,12 @@ export default class Platform {
         this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
         accessory = this.getNewAccessory(device, new_uuid);
         this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
-        this.deviceTypes.addAccessoryToCache(accessory);
+        this.addAccessoryToCache(accessory);
         this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
     }
 
     updateDevice(device) {
-        let cachedAccessory = this.deviceTypes.getAccessoryFromCache(device);
+        let cachedAccessory = this.getAccessoryFromCache(device);
         if (!cachedAccessory) {
             this.logError(`Failed to find cached accessory for device: ${device.name} | ${device.deviceid}`);
             return;
@@ -280,13 +281,13 @@ export default class Platform {
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         cachedAccessory.context.deviceData = device;
         this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
-        cachedAccessory = this.deviceTypes.initializeAccessory(cachedAccessory);
+        cachedAccessory = this.deviceTypes.initializeBaseAccessory(cachedAccessory);
         this.sanitizeAndUpdateAccessoryName(cachedAccessory);
-        this.deviceTypes.addAccessoryToCache(cachedAccessory);
+        this.addAccessoryToCache(cachedAccessory);
     }
 
     removeAccessory(accessory) {
-        if (this.deviceTypes.removeAccessoryFromCache(accessory)) {
+        if (this.removeAccessoryFromCache(accessory)) {
             accessory.services.forEach((service) => {
                 if (service.UUID !== this.deviceTypes.Service.AccessoryInformation.UUID) {
                     accessory.removeService(service);
@@ -303,13 +304,72 @@ export default class Platform {
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
         this.logDebug(`Configure Cached Accessory: ${accessory.name}, UUID: ${accessory.UUID}`);
-        let cachedAccessory = this.deviceTypes.initializeAccessory(accessory, true);
+        let cachedAccessory = this.deviceTypes.initializeBaseAccessory(accessory, true);
         if (!cachedAccessory) {
             this.logError(`Failed to initialize cached accessory: ${accessory.name}`);
             return;
         }
         this.sanitizeAndUpdateAccessoryName(cachedAccessory);
-        this.deviceTypes.addAccessoryToCache(cachedAccessory);
+        this.addAccessoryToCache(cachedAccessory);
+    }
+
+    getAccessoryId(accessory) {
+        const devId = accessory.deviceid || accessory.context.deviceData.deviceid || undefined;
+        return devId;
+    }
+
+    getAccessoryFromCache(device) {
+        const key = this.getAccessoryId(device);
+        return this._cachedAccessories[key];
+    }
+
+    getAllAccessoriesFromCache() {
+        return this._cachedAccessories;
+    }
+
+    clearAccessoryCache() {
+        this.platform.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
+        this._cachedAccessories = {};
+    }
+
+    addAccessoryToCache(accessory) {
+        const key = this.getAccessoryId(accessory);
+        this._cachedAccessories[key] = accessory;
+        return true;
+    }
+
+    removeAccessoryFromCache(accessory) {
+        const key = this.getAccessoryId(accessory);
+        const removed = this._cachedAccessories[key];
+        delete this._cachedAccessories[key];
+        return removed;
+    }
+
+    clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    // forEach(fn) {
+    //     return _.forEach(this._cachedAccessories, fn);
+    // }
+
+    intersection(devices) {
+        const accessories = _.values(this._cachedAccessories);
+        return _.intersectionWith(devices, accessories, this.comparator);
+    }
+
+    diffAdd(devices) {
+        const accessories = _.values(this._cachedAccessories);
+        return _.differenceWith(devices, accessories, this.comparator);
+    }
+
+    diffRemove(devices) {
+        const accessories = _.values(this._cachedAccessories);
+        return _.differenceWith(accessories, devices, this.comparator);
+    }
+
+    comparator(accessory1, accessory2) {
+        return accessory1.deviceid || accessory1.context.deviceData.deviceid || undefined === accessory2.deviceid || accessory2.context.deviceData.deviceid || undefined;
     }
 
     processIncrementalUpdate(data) {
@@ -375,7 +435,7 @@ export default class Platform {
                 webApp.get("/debugOpts", (req, res) => {
                     this.logInfo(`${platformName} | Debug Option Request(${req.query.option})...`);
                     if (req.query && req.query.option) {
-                        let accs = this.deviceTypes.getAllAccessoriesFromCache();
+                        let accs = this.getAllAccessoriesFromCache();
                         // let accsKeys = Object.keys(accs);
                         // console.log(accsKeys);
                         switch (req.query.option) {
@@ -391,7 +451,7 @@ export default class Platform {
                             //     res.send(JSON.stringify(o));
                             //     break;
                             // case 'accContext':
-                            //     res.send(JSON.stringify(this.deviceTypes.getAllAccessoriesFromCache()));
+                            //     res.send(JSON.stringify(this.getAllAccessoriesFromCache()));
                             //     break;
                             default:
                                 res.send(`Error: Invalid Option Parameter Received | Option: ${req.query.option}`);

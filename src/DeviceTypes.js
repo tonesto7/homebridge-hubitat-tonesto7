@@ -29,11 +29,10 @@ export default class DeviceTypes {
         this.client = platform.client;
 
         // Bind comparator for use in lodash functions
-        this.comparator = this.comparator.bind(this);
+        // this.comparator = this.comparator.bind(this);
 
         // Accessory Cache
         this.services = [];
-        this._platformAccessories = {};
         this._buttonMap = {};
 
         // Load device type modules and initialize mappings
@@ -155,7 +154,7 @@ export default class DeviceTypes {
         return devicesFound;
     }
 
-    initializeAccessory(accessory, fromCache = false) {
+    initializeBaseAccessory(accessory, fromCache = false) {
         try {
             const { deviceData } = accessory.context;
             accessory.deviceid = deviceData.deviceid;
@@ -205,7 +204,7 @@ export default class DeviceTypes {
 
             return this.configureCharacteristics(accessory);
         } catch (err) {
-            this.platform.logError(`initializeAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ${err}`);
+            this.platform.logError(`initializeBaseAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ${err}`);
             console.error(err);
             return accessory;
         }
@@ -259,23 +258,23 @@ export default class DeviceTypes {
         // Determine device types and initialize corresponding services
         const deviceTypeMatches = this.getDeviceTypes(accessory);
         if (deviceTypeMatches.length > 0) {
-            deviceTypeMatches.forEach((deviceType) => {
+            deviceTypeMatches.forEach(async (deviceType) => {
                 const { name, type } = deviceType;
                 if (name && type && this.deviceTypes[name]) {
                     // this.platform.logGreen(`Device type ${name} found for ${accessory.name}`);
 
                     // check if init method is available for the device type and call it
                     if (typeof this.deviceTypes[name].init === "function") {
-                        this.deviceTypes[name].init(this, this.Characteristic, this.Service, this.CommunityTypes);
+                        await this.deviceTypes[name].init(this, this.Characteristic, this.Service, this.CommunityTypes);
                     } else {
-                        this.platform.logError(`Device type ${name} does not have an initializeAccessory method`);
+                        this.platform.logError(`Device type ${name} does not have an init method`);
                     }
 
-                    // Check if the device type has an initializeAccessory method
-                    if (typeof this.deviceTypes[name].initializeAccessory === "function") {
-                        this.deviceTypes[name].initializeAccessory(accessory);
+                    // Check if the device type has an initializeService method
+                    if (typeof this.deviceTypes[name].initializeService === "function") {
+                        await this.deviceTypes[name].initializeService(accessory);
                     } else {
-                        this.platform.logError(`Device type ${name} does not have an initializeAccessory method`);
+                        this.platform.logError(`Device type ${name} does not have an initializeService method`);
                     }
                 } else {
                     this.platform.logError(`Device type ${name} not found for ${accessory.name}`);
@@ -498,10 +497,10 @@ export default class DeviceTypes {
         // Get device types and handle updates
         const deviceTypes = this.getDeviceTypes(accessory);
         if (deviceTypes.length > 0) {
-            deviceTypes.forEach((deviceType) => {
+            deviceTypes.forEach(async (deviceType) => {
                 const typeModule = this.deviceTypes[deviceType.name];
                 if (typeModule && typeof typeModule.handleAttributeUpdate === "function" && typeModule.relevantAttributes.includes(change.attribute)) {
-                    typeModule.handleAttributeUpdate(accessory, change);
+                    await typeModule.handleAttributeUpdate(accessory, change);
                 }
             });
         } else {
@@ -648,62 +647,8 @@ export default class DeviceTypes {
         return svc;
     }
 
-    getAccessoryId(accessory) {
-        return accessory.deviceid || accessory.context.deviceData.deviceid || undefined;
-    }
-
-    getAccessoryFromCache(device) {
-        const key = this.getAccessoryId(device);
-        return this._platformAccessories[key];
-    }
-
-    getAllAccessoriesFromCache() {
-        return this._platformAccessories;
-    }
-
-    clearAccessoryCache() {
-        this.platform.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
-        this._platformAccessories = {};
-    }
-
-    addAccessoryToCache(accessory) {
-        const key = this.getAccessoryId(accessory);
-        this._platformAccessories[key] = accessory;
-        return true;
-    }
-
-    removeAccessoryFromCache(accessory) {
-        const key = this.getAccessoryId(accessory);
-        const removed = this._platformAccessories[key];
-        delete this._platformAccessories[key];
-        return removed;
-    }
-
     clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
-    }
-
-    forEach(fn) {
-        return _.forEach(this._platformAccessories, fn);
-    }
-
-    intersection(devices) {
-        const accessories = _.values(this._platformAccessories);
-        return _.intersectionWith(devices, accessories, this.comparator);
-    }
-
-    diffAdd(devices) {
-        const accessories = _.values(this._platformAccessories);
-        return _.differenceWith(devices, accessories, this.comparator);
-    }
-
-    diffRemove(devices) {
-        const accessories = _.values(this._platformAccessories);
-        return _.differenceWith(accessories, devices, this.comparator);
-    }
-
-    comparator(accessory1, accessory2) {
-        return this.getAccessoryId(accessory1) === this.getAccessoryId(accessory2);
     }
 
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {

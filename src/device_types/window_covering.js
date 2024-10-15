@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["position", "level", "windowShade"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const windowCoverSvc = DeviceClass.getOrAddService(accessory, Service.WindowCovering);
 
     // Determine position attribute
@@ -82,7 +82,7 @@ export function initializeAccessory(accessory) {
     accessory.context.deviceGroups.push("window_covering");
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const windowCoverSvc = accessory.getService(Service.WindowCovering);
     if (!windowCoverSvc) {
         accessory.log.warn(`${accessory.name} | Window Covering service not found`);

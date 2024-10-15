@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["temperature", "tamper", "status"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const temperatureSvc = DeviceClass.getOrAddService(accessory, Service.TemperatureSensor);
 
     DeviceClass.getOrAddCharacteristic(accessory, temperatureSvc, Characteristic.CurrentTemperature, {
@@ -53,7 +53,7 @@ export function initializeAccessory(accessory) {
     accessory.context.deviceGroups.push("temperature_sensor");
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const temperatureSvc = accessory.getService(Service.TemperatureSensor);
     if (!temperatureSvc) {
         accessory.log.warn(`${accessory.name} | Temperature Sensor service not found`);

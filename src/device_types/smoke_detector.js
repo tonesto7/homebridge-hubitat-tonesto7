@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["smoke", "status", "tamper"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const smokeSensorSvc = DeviceClass.getOrAddService(accessory, Service.SmokeSensor);
 
     DeviceClass.getOrAddCharacteristic(accessory, smokeSensorSvc, Characteristic.SmokeDetected, {
@@ -47,7 +47,7 @@ export function initializeAccessory(accessory) {
     accessory.context.deviceGroups.push("smoke_detector");
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const smokeSensorSvc = accessory.getService(Service.SmokeSensor);
     if (!smokeSensorSvc) {
         accessory.log.warn(`${accessory.name} | Smoke Sensor service not found`);

@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["switch"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const outletSvc = DeviceClass.getOrAddService(accessory, Service.Outlet);
 
     DeviceClass.getOrAddCharacteristic(accessory, outletSvc, Characteristic.On, {
@@ -42,7 +42,7 @@ export function initializeAccessory(accessory) {
     accessory.context.deviceGroups.push("outlet");
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const outletSvc = accessory.getService(Service.Outlet);
 
     if (!outletSvc) {

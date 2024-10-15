@@ -2,23 +2,16 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
     CommunityTypes = _CommunityTypes;
 }
 
-export function isSupported(accessory) {
-    return (
-        accessory.hasCapability("Switch Level") &&
-        (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || accessory.hasAttribute("saturation") || accessory.hasAttribute("hue") || accessory.hasAttribute("colorTemperature") || accessory.hasCapability("Color Control"))
-    );
-}
-
 export const relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
 
-export function initializeAccessory(accessory) {
+export async function initializeService(accessory) {
     const lightSvc = DeviceClass.getOrAddService(accessory, Service.Lightbulb);
 
     DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.On, {
@@ -130,7 +123,7 @@ export function initializeAccessory(accessory) {
         if (svc) {
             accessory.adaptiveLightingController = new accessory.homebridgeApi.hap.AdaptiveLightingController(svc);
 
-            console.log("Adaptive Lighting Controller: ", accessory.adaptiveLightingController);
+            // console.log("Adaptive Lighting Controller: ", accessory.adaptiveLightingController);
             accessory.adaptiveLightingController.on("update", (evt) => {
                 accessory.log.debug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
             });
@@ -154,7 +147,7 @@ export function initializeAccessory(accessory) {
     }
 }
 
-export function handleAttributeUpdate(accessory, change) {
+export async function handleAttributeUpdate(accessory, change) {
     const lightSvc = accessory.getService(Service.Lightbulb);
 
     if (!lightSvc) {
