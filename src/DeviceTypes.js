@@ -12,6 +12,14 @@ const __dirname = path.dirname(__filename);
 
 let appEvts;
 
+class DeviceTypeTest {
+    constructor(name, testFn, onlyOnNoGrps = false) {
+        this.Name = name;
+        this.ImplementsDevice = testFn;
+        this.onlyOnNoGrps = onlyOnNoGrps;
+    }
+}
+
 export default class DeviceTypes {
     constructor(platform) {
         this.platform = platform;
@@ -27,9 +35,6 @@ export default class DeviceTypes {
         this.Categories = platform.Categories;
         this.CommunityTypes = CommunityTypes(this.Service, this.Characteristic);
         this.client = platform.client;
-
-        // Bind comparator for use in lodash functions
-        // this.comparator = this.comparator.bind(this);
 
         // Accessory Cache
         this.services = [];
@@ -144,13 +149,7 @@ export default class DeviceTypes {
             this.platform.logDebug(`(${accessory.name}) | Device Types BLOCKED | ${devicesBlocked}`);
         }
 
-        // const deviceTypesFound = devicesFound.map((d) => d.name);
-        // if (deviceTypesFound.includes("fan", "light", "lock2")) {
-        //     console.log(`${accessory.name} | deviceTypesFound:`, deviceTypesFound.join(", "));
-        //     console.log("capabilities:", accessory.context.deviceData.capabilities);
-        //     console.log("attributes:", accessory.context.deviceData.attributes);
-        // }
-        console.log(`${accessory.name} | deviceTypesFound:`, devicesFound.map((d) => d.name).join(", "));
+        this.platform.log.info(`${accessory.name} | deviceTypesFound: ${devicesFound.map((d) => d.name).join(", ")}`);
         return devicesFound;
     }
 
@@ -192,12 +191,12 @@ export default class DeviceTypes {
 
             // Adaptive Lighting Support
             accessory.isAdaptiveLightingSupported = (this.homebridge.version >= 2.7 && this.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.homebridge.hap.AdaptiveLightingController;
-            // accessory.addAdaptiveLightingController = this.addAdaptiveLightingController.bind(accessory);
-            // accessory.removeAdaptiveLightingController = this.removeAdaptiveLightingController.bind(accessory);
+            accessory.addAdaptiveLightingController = this.addAdaptiveLightingController.bind(accessory);
+            accessory.removeAdaptiveLightingController = this.removeAdaptiveLightingController.bind(accessory);
             // accessory.getAdaptiveLightingController = this.getAdaptiveLightingController.bind(accessory);
             // accessory.getAdaptiveLightingData = this.getAdaptiveLightingData.bind(accessory);
-            // accessory.isAdaptiveLightingActive = this.isAdaptiveLightingActive.bind(accessory);
-            // accessory.disableAdaptiveLighting = this.disableAdaptiveLighting.bind(accessory);
+            accessory.isAdaptiveLightingActive = this.isAdaptiveLightingActive.bind(accessory);
+            accessory.disableAdaptiveLighting = this.disableAdaptiveLighting.bind(accessory);
 
             // Check availability and set error if unavailable
             // this.handleAvailability(accessory);
@@ -657,14 +656,15 @@ export default class DeviceTypes {
     }
 
     // Adaptive Lighting Functions
-    addAdaptiveLightingController(_service) {
+    async addAdaptiveLightingController(_service) {
         // let that = this;
-        const offset = this.platform.configItems.adaptive_lighting_offset || 0;
-        const controlMode = this.platform.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+
+        const offset = this.platformConfig.adaptive_lighting_offset || 0;
+        const controlMode = this.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC;
         console.log("Adaptive Lighting Offset: ", offset);
         console.log("Adaptive Lighting Control Mode: ", controlMode);
         if (_service) {
-            this.adaptiveLightingController = new this.platform.homebridge.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
+            this.adaptiveLightingController = new this.homebridgeApi.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
             this.adaptiveLightingController.on("update", (evt) => {
                 this.logDebug(`[${this.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
             });
@@ -678,7 +678,7 @@ export default class DeviceTypes {
         }
     }
 
-    removeAdaptiveLightingController() {
+    async removeAdaptiveLightingController() {
         if (this.adaptiveLightingController) {
             this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
             this.removeController(this.adaptiveLightingController);
@@ -686,15 +686,15 @@ export default class DeviceTypes {
         }
     }
 
-    getAdaptiveLightingController() {
+    async getAdaptiveLightingController() {
         return this.adaptiveLightingController || undefined;
     }
 
-    isAdaptiveLightingActive() {
+    async isAdaptiveLightingActive() {
         return this.adaptiveLightingController ? this.adaptiveLightingController.isAdaptiveLightingActive() : false;
     }
 
-    getAdaptiveLightingData() {
+    async getAdaptiveLightingData() {
         if (this.adaptiveLightingController) {
             return {
                 isActive: this.adaptiveLightingController.disableAdaptiveLighting(),
@@ -710,15 +710,7 @@ export default class DeviceTypes {
         return undefined;
     }
 
-    disableAdaptiveLighting() {
+    async disableAdaptiveLighting() {
         if (this.adaptiveLightingController) this.adaptiveLightingController.disableAdaptiveLighting();
-    }
-}
-
-class DeviceTypeTest {
-    constructor(name, testFn, onlyOnNoGrps = false) {
-        this.Name = name;
-        this.ImplementsDevice = testFn;
-        this.onlyOnNoGrps = onlyOnNoGrps;
     }
 }

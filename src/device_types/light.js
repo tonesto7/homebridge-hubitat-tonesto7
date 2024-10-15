@@ -1,193 +1,181 @@
 // device_types/light.js
 
-let DeviceClass, Characteristic, Service, CommunityTypes;
+import HubitatAccessory from "../HubitatAccessory.js";
 
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
-    DeviceClass = _deviceClass;
-    Characteristic = _Characteristic;
-    Service = _Service;
-    CommunityTypes = _CommunityTypes;
-}
-
-export const relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
-
-export function initializeAccessory(accessory) {
-    const lightSvc = DeviceClass.getOrAddService(accessory, Service.Lightbulb);
-
-    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.On, {
-        getHandler: function () {
-            return accessory.context.deviceData.attributes.switch === "on";
-        },
-        setHandler: function (value) {
-            const command = value ? "on" : "off";
-            accessory.log.info(`${accessory.name} | Setting light state to ${command}`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, command);
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.Brightness, {
-        preReqFunc: () => accessory.hasAttribute("level") && accessory.hasCommand("setLevel"),
-        getHandler: function () {
-            let brightness = parseInt(accessory.context.deviceData.attributes.level, 10);
-            brightness = DeviceClass.clamp(brightness, 0, 100);
-            accessory.log.debug(`${accessory.name} | Current Brightness: ${brightness}%`);
-            return isNaN(brightness) ? 0 : brightness;
-        },
-        setHandler: function (value) {
-            const brightness = DeviceClass.clamp(value, 0, 100);
-            accessory.log.info(`${accessory.name} | Setting brightness to ${brightness}%`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setLevel", { value1: brightness });
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.Hue, {
-        preReqFunc: () => accessory.hasAttribute("hue") && accessory.hasCommand("setHue"),
-        props: {
-            minValue: 0,
-            maxValue: 360,
-            minStep: 1,
-        },
-        getHandler: function () {
-            let hue = parseFloat(accessory.context.deviceData.attributes.hue);
-            hue = DeviceClass.clamp(hue, 0, 360);
-            accessory.log.debug(`${accessory.name} | Current Hue: ${hue}`);
-            return isNaN(hue) ? 0 : Math.round(hue);
-        },
-        setHandler: function (value) {
-            const hue = DeviceClass.clamp(Math.round(value), 0, 360);
-            accessory.log.info(`${accessory.name} | Setting hue to ${hue}`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setHue", { value1: hue });
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.Saturation, {
-        preReqFunc: () => accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation"),
-        getHandler: function () {
-            let saturation = parseFloat(accessory.context.deviceData.attributes.saturation);
-            saturation = DeviceClass.clamp(saturation, 0, 100);
-            accessory.log.debug(`${accessory.name} | Current Saturation: ${saturation}%`);
-            return isNaN(saturation) ? 0 : Math.round(saturation);
-        },
-        setHandler: function (value) {
-            const saturation = DeviceClass.clamp(Math.round(value), 0, 100);
-            accessory.log.info(`${accessory.name} | Setting saturation to ${saturation}%`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setSaturation", { value1: saturation });
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.ColorTemperature, {
-        preReqFunc: () => accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature"),
-        props: {
-            minValue: 140,
-            maxValue: 500,
-        },
-        getHandler: function () {
-            let mired = kelvinToMired(parseInt(accessory.context.deviceData.attributes.colorTemperature));
-            mired = DeviceClass.clamp(mired, 140, 500);
-            accessory.log.debug(`${accessory.name} | Current ColorTemperature: ${mired} Mireds`);
-            return isNaN(mired) ? 140 : mired;
-        },
-        setHandler: function (value) {
-            const mired = DeviceClass.clamp(Math.round(value), 140, 500);
-            const kelvin = miredToKelvin(mired);
-            accessory.log.info(`${accessory.name} | Setting color temperature to ${kelvin}K (${mired} Mireds)`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, "setColorTemperature", { value1: kelvin });
-        },
-    });
-
-    const canUseAL = DeviceClass.configItems.adaptive_lighting !== false && accessory.isAdaptiveLightingSupported && !accessory.hasDeviceFlag("light_no_al") && accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature");
-
-    if (canUseAL && !accessory.adaptiveLightingController) {
-        addAdaptiveLightingController(accessory, lightSvc);
-    } else if (!canUseAL && accessory.adaptiveLightingController) {
-        removeAdaptiveLightingController(accessory);
+export default class Light extends HubitatAccessory {
+    constructor(platform, accessory) {
+        super(platform, accessory);
+        this.deviceData = accessory.context.deviceData;
+        this.relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
     }
 
-    accessory.context.deviceGroups.push("light_bulb");
+    initializeService() {
+        this.lightService = this.getOrAddService(this.Service.Lightbulb);
 
-    function kelvinToMired(kelvin) {
-        let val = Math.floor(1000000 / kelvin);
-        return DeviceClass.clamp(val, 140, 500);
-    }
+        this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
+            getHandler: () => this.deviceData.attributes.switch === "on",
+            setHandler: (value) => {
+                const command = value ? "on" : "off";
+                this.log.info(`${this.accessory.displayName} | Setting light state to ${command}`);
+                this.sendCommand(null, this.accessory, this.deviceData, command);
+            },
+        });
 
-    function miredToKelvin(mired) {
-        return Math.floor(1000000 / mired);
-    }
-
-    function addAdaptiveLightingController(accessory, svc) {
-        const offset = accessory.platformConfig.adaptive_lighting_offset || 0;
-        const controlMode = accessory.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC;
-        console.log("Adaptive Lighting Offset: ", offset);
-        console.log("Adaptive Lighting Control Mode: ", controlMode);
-
-        if (svc) {
-            accessory.adaptiveLightingController = new accessory.homebridgeApi.hap.AdaptiveLightingController(svc);
-
-            // console.log("Adaptive Lighting Controller: ", accessory.adaptiveLightingController);
-            accessory.adaptiveLightingController.on("update", (evt) => {
-                accessory.log.debug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
+        if (this.hasAttribute("level") && this.hasCommand("setLevel")) {
+            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Brightness, {
+                getHandler: () => {
+                    let brightness = parseInt(this.deviceData.attributes.level, 10);
+                    brightness = this.clamp(brightness, 0, 100);
+                    this.log.debug(`${this.accessory.displayName} | Current Brightness: ${brightness}%`);
+                    return isNaN(brightness) ? 0 : brightness;
+                },
+                setHandler: (value) => {
+                    const brightness = this.clamp(value, 0, 100);
+                    this.log.info(`${this.accessory.displayName} | Setting brightness to ${brightness}%`);
+                    this.sendCommand(null, this.accessory, this.deviceData, "setLevel", { value1: brightness });
+                },
             });
-            accessory.adaptiveLightingController.on("disable", (evt) => {
-                accessory.log.debug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
+        }
+
+        if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
+            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Hue, {
+                props: {
+                    minValue: 0,
+                    maxValue: 360,
+                    minStep: 1,
+                },
+                getHandler: () => {
+                    let hue = parseFloat(this.deviceData.attributes.hue);
+                    hue = this.clamp(hue, 0, 360);
+                    this.log.debug(`${this.accessory.displayName} | Current Hue: ${hue}`);
+                    return isNaN(hue) ? 0 : Math.round(hue);
+                },
+                setHandler: (value) => {
+                    const hue = this.clamp(Math.round(value), 0, 360);
+                    this.log.info(`${this.accessory.displayName} | Setting hue to ${hue}`);
+                    this.sendCommand(null, this.accessory, this.deviceData, "setHue", { value1: hue });
+                },
+            });
+        }
+
+        if (this.hasAttribute("saturation") && this.hasCommand("setSaturation")) {
+            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
+                getHandler: () => {
+                    let saturation = parseFloat(this.deviceData.attributes.saturation);
+                    saturation = this.clamp(saturation, 0, 100);
+                    this.log.debug(`${this.accessory.displayName} | Current Saturation: ${saturation}%`);
+                    return isNaN(saturation) ? 0 : Math.round(saturation);
+                },
+                setHandler: (value) => {
+                    const saturation = this.clamp(Math.round(value), 0, 100);
+                    this.log.info(`${this.accessory.displayName} | Setting saturation to ${saturation}%`);
+                    this.sendCommand(null, this.accessory, this.deviceData, "setSaturation", { value1: saturation });
+                },
+            });
+        }
+
+        if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
+            this.getOrAddCharacteristic(this.lightService, this.Characteristic.ColorTemperature, {
+                props: {
+                    minValue: 140,
+                    maxValue: 500,
+                },
+                getHandler: () => {
+                    let mired = this.kelvinToMired(parseInt(this.deviceData.attributes.colorTemperature));
+                    mired = this.clamp(mired, 140, 500);
+                    this.log.debug(`${this.accessory.displayName} | Current ColorTemperature: ${mired} Mireds`);
+                    return isNaN(mired) ? 140 : mired;
+                },
+                setHandler: (value) => {
+                    const mired = this.clamp(Math.round(value), 140, 500);
+                    const kelvin = this.miredToKelvin(mired);
+                    this.log.info(`${this.accessory.displayName} | Setting color temperature to ${kelvin}K (${mired} Mireds)`);
+                    this.sendCommand(null, this.accessory, this.deviceData, "setColorTemperature", { value1: kelvin });
+                },
+            });
+        }
+
+        this.setupAdaptiveLighting();
+    }
+
+    handleAttributeUpdate(change) {
+        switch (change.attribute) {
+            case "switch":
+                const isOn = change.value === "on";
+                this.updateCharacteristicValue(this.lightService, this.Characteristic.On, isOn);
+                break;
+            case "level":
+                const brightness = this.clamp(parseInt(change.value, 10), 0, 100);
+                this.updateCharacteristicValue(this.lightService, this.Characteristic.Brightness, brightness);
+                break;
+            case "hue":
+                if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
+                    const hue = this.clamp(Math.round(parseFloat(change.value)), 0, 360);
+                    this.updateCharacteristicValue(this.lightService, this.Characteristic.Hue, hue);
+                }
+                break;
+            case "saturation":
+                if (this.hasAttribute("saturation") && this.hasCommand("setSaturation")) {
+                    const saturation = this.clamp(Math.round(parseFloat(change.value)), 0, 100);
+                    this.updateCharacteristicValue(this.lightService, this.Characteristic.Saturation, saturation);
+                }
+                break;
+            case "colorTemperature":
+                if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
+                    const mired = this.kelvinToMired(parseInt(change.value, 10));
+                    this.updateCharacteristicValue(this.lightService, this.Characteristic.ColorTemperature, mired);
+                }
+                break;
+        }
+    }
+
+    setupAdaptiveLighting() {
+        const canUseAL = this.config.adaptive_lighting !== false && this.accessory.isAdaptiveLightingSupported && !this.hasDeviceFlag("light_no_al") && this.hasAttribute("level") && this.hasAttribute("colorTemperature");
+
+        if (canUseAL && !this.accessory.adaptiveLightingController) {
+            this.addAdaptiveLightingController(this.lightService);
+        } else if (!canUseAL && this.accessory.adaptiveLightingController) {
+            this.removeAdaptiveLightingController();
+        }
+    }
+
+    addAdaptiveLightingController(service) {
+        const offset = this.config.adaptive_lighting_offset || 0;
+        const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+        this.log.debug(`Adaptive Lighting Offset: ${offset}`);
+        this.log.debug(`Adaptive Lighting Control Mode: ${controlMode}`);
+
+        if (service) {
+            this.accessory.adaptiveLightingController = new this.homebridge.hap.AdaptiveLightingController(service);
+
+            this.accessory.adaptiveLightingController.on("update", (evt) => {
+                this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Controller Update Event: ${JSON.stringify(evt)}`);
+            });
+            this.accessory.adaptiveLightingController.on("disable", (evt) => {
+                this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Controller Disabled Event: ${JSON.stringify(evt)}`);
             });
 
-            accessory.configureController(accessory.adaptiveLightingController);
-            accessory.log.info(`Adaptive Lighting Supported... Assigned Adaptive Lighting Controller to [${accessory.context.deviceData.name}]`);
+            this.accessory.configureController(this.accessory.adaptiveLightingController);
+            this.log.info(`Adaptive Lighting Supported... Assigned Adaptive Lighting Controller to [${this.accessory.displayName}]`);
         } else {
-            accessory.log.error(`${accessory.name} | Unable to add Adaptive Lighting Controller because the required service parameter was missing...`);
+            this.log.error(`${this.accessory.displayName} | Unable to add Adaptive Lighting Controller because the required service parameter was missing...`);
         }
     }
 
-    function removeAdaptiveLightingController(accessory) {
-        if (accessory.adaptiveLightingController) {
-            accessory.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${accessory.context.deviceData.name}]`);
-            accessory.removeController(accessory.adaptiveLightingController);
-            delete accessory.adaptiveLightingController;
+    removeAdaptiveLightingController() {
+        if (this.accessory.adaptiveLightingController) {
+            this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.accessory.displayName}]`);
+            this.accessory.removeController(this.accessory.adaptiveLightingController);
+            delete this.accessory.adaptiveLightingController;
         }
     }
-}
 
-export function handleAttributeUpdate(accessory, change) {
-    const lightSvc = accessory.getService(Service.Lightbulb);
-
-    if (!lightSvc) {
-        accessory.log.warn(`${accessory.name} | Lightbulb service not found`);
-        return;
+    kelvinToMired(kelvin) {
+        let val = Math.floor(1000000 / kelvin);
+        return this.clamp(val, 140, 500);
     }
 
-    switch (change.attribute) {
-        case "switch":
-            const isOn = change.value === "on";
-            DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.On, isOn);
-            // accessory.log.debug(`${accessory.name} | Updated On: ${isOn}`);
-            break;
-        case "level":
-            const brightness = DeviceClass.clamp(parseInt(change.value, 10), 0, 100);
-            DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.Brightness, brightness);
-            // accessory.log.debug(`${accessory.name} | Updated Brightness: ${brightness}%`);
-            break;
-        case "hue":
-            if (accessory.hasAttribute("hue") && accessory.hasCommand("setHue")) {
-                const hue = DeviceClass.clamp(Math.round(parseFloat(change.value)), 0, 360);
-                DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.Hue, hue);
-                // accessory.log.debug(`${accessory.name} | Updated Hue: ${hue}`);
-            }
-            break;
-        case "saturation":
-            if (accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation")) {
-                const saturation = DeviceClass.clamp(Math.round(parseFloat(change.value)), 0, 100);
-                DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.Saturation, saturation);
-                // accessory.log.debug(`${accessory.name} | Updated Saturation: ${saturation}%`);
-            }
-            break;
-        case "colorTemperature":
-            if (accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature")) {
-                const mired = kelvinToMired(parseInt(change.value, 10));
-                DeviceClass.updateCharacteristicValue(accessory, lightSvc, Characteristic.ColorTemperature, mired);
-                // accessory.log.debug(`${accessory.name} | Updated Color Temperature: ${mired} Mireds`);
-            }
-            break;
-        default:
-            accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+    miredToKelvin(mired) {
+        return Math.floor(1000000 / mired);
     }
 }
