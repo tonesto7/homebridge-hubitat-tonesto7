@@ -178,7 +178,7 @@ export default class DeviceTypes {
             accessory.context.uuid = accessory.UUID || this.uuid.generate(`hubitat_v2_${accessory.deviceid}`);
             accessory.log = this.log;
             accessory.homebridgeApi = this.homebridge;
-            accessory.getPlatformConfig = this.configItems;
+            accessory.platformConfig = this.configItems;
 
             // Bind utility methods
             accessory.getButtonSvcByName = this.getButtonSvcByName.bind(accessory);
@@ -193,6 +193,12 @@ export default class DeviceTypes {
 
             // Adaptive Lighting Support
             accessory.isAdaptiveLightingSupported = (this.homebridge.version >= 2.7 && this.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.homebridge.hap.AdaptiveLightingController;
+            // accessory.addAdaptiveLightingController = this.addAdaptiveLightingController.bind(accessory);
+            // accessory.removeAdaptiveLightingController = this.removeAdaptiveLightingController.bind(accessory);
+            // accessory.getAdaptiveLightingController = this.getAdaptiveLightingController.bind(accessory);
+            // accessory.getAdaptiveLightingData = this.getAdaptiveLightingData.bind(accessory);
+            // accessory.isAdaptiveLightingActive = this.isAdaptiveLightingActive.bind(accessory);
+            // accessory.disableAdaptiveLighting = this.disableAdaptiveLighting.bind(accessory);
 
             // Check availability and set error if unavailable
             // this.handleAvailability(accessory);
@@ -703,6 +709,64 @@ export default class DeviceTypes {
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {
         if (timeoutReference) clearTimeout(timeoutReference);
         return setTimeout(fn, timeoutMs);
+    }
+
+    // Adaptive Lighting Functions
+    addAdaptiveLightingController(_service) {
+        // let that = this;
+        const offset = this.platform.configItems.adaptive_lighting_offset || 0;
+        const controlMode = this.platform.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+        console.log("Adaptive Lighting Offset: ", offset);
+        console.log("Adaptive Lighting Control Mode: ", controlMode);
+        if (_service) {
+            this.adaptiveLightingController = new this.platform.homebridge.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
+            this.adaptiveLightingController.on("update", (evt) => {
+                this.logDebug(`[${this.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
+            });
+            this.adaptiveLightingController.on("disable", (evt) => {
+                this.logDebug(`[${this.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
+            });
+            this.configureController(this.adaptiveLightingController);
+            this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
+        } else {
+            this.log.error("Unable to add adaptiveLightingController because the required service parameter was missing...");
+        }
+    }
+
+    removeAdaptiveLightingController() {
+        if (this.adaptiveLightingController) {
+            this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
+            this.removeController(this.adaptiveLightingController);
+            delete this.adaptiveLightingController;
+        }
+    }
+
+    getAdaptiveLightingController() {
+        return this.adaptiveLightingController || undefined;
+    }
+
+    isAdaptiveLightingActive() {
+        return this.adaptiveLightingController ? this.adaptiveLightingController.isAdaptiveLightingActive() : false;
+    }
+
+    getAdaptiveLightingData() {
+        if (this.adaptiveLightingController) {
+            return {
+                isActive: this.adaptiveLightingController.disableAdaptiveLighting(),
+                brightnessMultiplierRange: this.adaptiveLightingController.getAdaptiveLightingBrightnessMultiplierRange(),
+                notifyIntervalThreshold: this.adaptiveLightingController.getAdaptiveLightingNotifyIntervalThreshold(),
+                startTimeOfTransition: this.adaptiveLightingController.getAdaptiveLightingStartTimeOfTransition(),
+                timeOffset: this.adaptiveLightingController.getAdaptiveLightingTimeOffset(),
+                transitionCurve: this.adaptiveLightingController.getAdaptiveLightingTransitionCurve(),
+                updateInterval: this.adaptiveLightingController.getAdaptiveLightingUpdateInterval(),
+                transitionPoint: this.adaptiveLightingController.getCurrentAdaptiveLightingTransitionPoint(),
+            };
+        }
+        return undefined;
+    }
+
+    disableAdaptiveLighting() {
+        if (this.adaptiveLightingController) this.adaptiveLightingController.disableAdaptiveLighting();
     }
 }
 

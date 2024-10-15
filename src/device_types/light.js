@@ -105,7 +105,7 @@ export function initializeAccessory(accessory) {
     const canUseAL = DeviceClass.configItems.adaptive_lighting !== false && accessory.isAdaptiveLightingSupported && !accessory.hasDeviceFlag("light_no_al") && accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature");
 
     if (canUseAL && !accessory.adaptiveLightingController) {
-        addAdaptiveLightingController(accessory, lightSvc, DeviceClass.homebridge.hap);
+        addAdaptiveLightingController(accessory, lightSvc);
     } else if (!canUseAL && accessory.adaptiveLightingController) {
         removeAdaptiveLightingController(accessory);
     }
@@ -121,14 +121,16 @@ export function initializeAccessory(accessory) {
         return Math.floor(1000000 / mired);
     }
 
-    function addAdaptiveLightingController(accessory, svc, hapAPI) {
-        const offset = accessory.getPlatformConfig.adaptive_lighting_offset || 0;
-        const controlMode = hapAPI.AdaptiveLightingControllerMode.AUTOMATIC;
+    function addAdaptiveLightingController(accessory, svc) {
+        const offset = accessory.platformConfig.adaptive_lighting_offset || 0;
+        const controlMode = accessory.homebridgeApi.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+        console.log("Adaptive Lighting Offset: ", offset);
+        console.log("Adaptive Lighting Control Mode: ", controlMode);
+
         if (svc) {
-            accessory.adaptiveLightingController = new hapAPI.AdaptiveLightingController(svc, {
-                controllerMode: controlMode,
-                customTemperatureAdjustment: offset,
-            });
+            accessory.adaptiveLightingController = new accessory.homebridgeApi.hap.AdaptiveLightingController(svc);
+
+            console.log("Adaptive Lighting Controller: ", accessory.adaptiveLightingController);
             accessory.adaptiveLightingController.on("update", (evt) => {
                 accessory.log.debug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
             });
