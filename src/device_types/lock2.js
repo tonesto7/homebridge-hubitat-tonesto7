@@ -3,7 +3,7 @@
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
 // Initialize custom characteristics if already defined elsewhere
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -19,7 +19,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["lock", "adminOnlyAccess", "audioFeedback", "autoSecurityTimeout", "lastKnownAction", "logs", "motionDetected"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     // Initialize Lock Management Service
     const lockMgmtSvc = DeviceClass.getOrAddService(accessory, Service.LockManagement);
 
@@ -161,7 +161,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("lockManagement");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const lockSvc = accessory.getService(Service.LockMechanism);
     const lockMgmtSvc = accessory.getService(Service.LockManagement);
 

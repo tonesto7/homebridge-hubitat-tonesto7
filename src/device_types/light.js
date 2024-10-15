@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -11,7 +11,7 @@ export async function init(_deviceClass, _Characteristic, _Service, _CommunityTy
 
 export const relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const lightSvc = DeviceClass.getOrAddService(accessory, Service.Lightbulb);
 
     DeviceClass.getOrAddCharacteristic(accessory, lightSvc, Characteristic.On, {
@@ -147,7 +147,7 @@ export async function initializeService(accessory) {
     }
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const lightSvc = accessory.getService(Service.Lightbulb);
 
     if (!lightSvc) {

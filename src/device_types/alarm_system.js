@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -13,7 +13,7 @@ export const isSupported = (accessory) => accessory.hasAttribute("alarmSystemSta
 
 export const relevantAttributes = ["alarmSystemStatus"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const securitySystemSvc = DeviceClass.getOrAddService(accessory, Service.SecuritySystem);
 
     // Current State
@@ -44,7 +44,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("alarm_system");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const securitySystemSvc = accessory.getService(Service.SecuritySystem);
     if (!securitySystemSvc) {
         accessory.log.warn(`${accessory.name} | SecuritySystem service not found`);

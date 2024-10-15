@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["humidity", "status", "tamper"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const humiditySvc = DeviceClass.getOrAddService(accessory, Service.HumiditySensor);
 
     DeviceClass.getOrAddCharacteristic(accessory, humiditySvc, Characteristic.CurrentRelativeHumidity, {
@@ -48,7 +48,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("humidity_sensor");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const humiditySvc = accessory.getService(Service.HumiditySensor);
 
     if (!humiditySvc) {

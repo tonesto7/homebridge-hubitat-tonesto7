@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["power"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const serviceName = `${accessory.context.deviceData.deviceid}_PowerMeter`;
     const powerSvc = accessory.getServiceByName(Service.Switch, serviceName) || accessory.addService(Service.Switch, serviceName, "Power Meter");
 
@@ -39,7 +39,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("power_meter");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const serviceName = `${accessory.context.deviceData.deviceid}_PowerMeter`;
     const powerSvc = accessory.getServiceByName(Service.Switch, serviceName);
 

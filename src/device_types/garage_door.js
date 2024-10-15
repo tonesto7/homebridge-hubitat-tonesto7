@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["door", "obstruction"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const garageDoorSvc = DeviceClass.getOrAddService(accessory, Service.GarageDoorOpener);
 
     DeviceClass.getOrAddCharacteristic(accessory, garageDoorSvc, Characteristic.CurrentDoorState, {
@@ -50,7 +50,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("garage_door");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const garageDoorSvc = accessory.getService(Service.GarageDoorOpener);
 
     if (!garageDoorSvc) {

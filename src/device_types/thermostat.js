@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const thermostatSvc = DeviceClass.getOrAddService(accessory, Service.Thermostat);
 
     DeviceClass.getOrAddCharacteristic(accessory, thermostatSvc, Characteristic.CurrentHeatingCoolingState, {
@@ -113,7 +113,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("thermostat");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const thermostatSvc = accessory.getService(Service.Thermostat);
 
     if (!thermostatSvc) {

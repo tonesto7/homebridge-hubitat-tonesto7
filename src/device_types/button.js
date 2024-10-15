@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["button", "numberOfButtons"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const btnCnt = DeviceClass.clamp(accessory.context.deviceData.attributes.numberOfButtons || 1, 1, 10);
 
     accessory.log.debug(`${accessory.name} | Initializing button accessory with ${btnCnt} buttons`);
@@ -56,7 +56,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("button");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     if (change.attribute === "button") {
         const btnVal = change.value;
         const btnNum = change.data && change.data.buttonNumber ? change.data.buttonNumber : 1;

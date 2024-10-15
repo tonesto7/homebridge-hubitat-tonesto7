@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["acceleration", "tamper", "status"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const motionSvc = DeviceClass.getOrAddService(accessory, Service.MotionSensor);
 
     // Motion Detected Characteristic
@@ -50,7 +50,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("acceleration_sensor");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const motionSvc = accessory.getService(Service.MotionSensor);
     if (!motionSvc) {
         accessory.log.warn(`${accessory.name} | Motion Sensor service not found`);

@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["presence", "status", "tamper"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const occupancySvc = DeviceClass.getOrAddService(accessory, Service.OccupancySensor);
 
     DeviceClass.getOrAddCharacteristic(accessory, occupancySvc, Characteristic.OccupancyDetected, {
@@ -47,7 +47,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("presence_sensor");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const occupancySvc = accessory.getService(Service.OccupancySensor);
     if (!occupancySvc) {
         accessory.log.warn(`${accessory.name} | Occupancy Sensor service not found`);

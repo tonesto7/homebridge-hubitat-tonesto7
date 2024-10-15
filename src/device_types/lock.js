@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["lock"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const lockSvc = DeviceClass.getOrAddService(accessory, Service.LockMechanism);
 
     DeviceClass.getOrAddCharacteristic(accessory, lockSvc, Characteristic.LockCurrentState, {
@@ -42,7 +42,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("lock");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const lockSvc = accessory.getService(Service.LockMechanism);
 
     if (!lockSvc) {

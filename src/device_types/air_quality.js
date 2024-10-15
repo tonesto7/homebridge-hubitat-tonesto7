@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["airQualityIndex", "battery", "pm25", "tamper", "status"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const airQualitySvc = DeviceClass.getOrAddService(accessory, Service.AirQualitySensor);
 
     // Status Fault
@@ -76,7 +76,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("air_quality");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const airQualitySvc = accessory.getService(Service.AirQualitySensor);
 
     if (!airQualitySvc) {

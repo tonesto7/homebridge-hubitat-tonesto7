@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["carbonDioxide", "status", "tamper"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const carbonDioxideSvc = DeviceClass.getOrAddService(accessory, Service.CarbonDioxideSensor);
 
     // Carbon Dioxide Detected
@@ -59,7 +59,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("carbon_dioxide");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const carbonDioxideSvc = accessory.getService(Service.CarbonDioxideSensor);
 
     if (!carbonDioxideSvc) {

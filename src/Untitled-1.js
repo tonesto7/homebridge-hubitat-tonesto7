@@ -29,10 +29,11 @@ export default class DeviceTypes {
         this.client = platform.client;
 
         // Bind comparator for use in lodash functions
-        // this.comparator = this.comparator.bind(this);
+        this.comparator = this.comparator.bind(this);
 
         // Accessory Cache
         this.services = [];
+        this._platformAccessories = {};
         this._buttonMap = {};
 
         // Load device type modules and initialize mappings
@@ -150,11 +151,11 @@ export default class DeviceTypes {
         //     console.log("capabilities:", accessory.context.deviceData.capabilities);
         //     console.log("attributes:", accessory.context.deviceData.attributes);
         // }
-        console.log(`${accessory.name} | deviceTypesFound:`, devicesFound.map((d) => d.name).join(", "));
+        // console.log(`${accessory.name} | deviceTypesFound:`, devicesFound.map((d) => d.name).join(", "));
         return devicesFound;
     }
 
-    initializeBaseAccessory(accessory, fromCache = false) {
+    initializeAccessory(accessory, fromCache = false) {
         try {
             const { deviceData } = accessory.context;
             accessory.deviceid = deviceData.deviceid;
@@ -204,7 +205,7 @@ export default class DeviceTypes {
 
             return this.configureCharacteristics(accessory);
         } catch (err) {
-            this.platform.logError(`initializeBaseAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ${err}`);
+            this.platform.logError(`initializeAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ${err}`);
             console.error(err);
             return accessory;
         }
@@ -267,10 +268,10 @@ export default class DeviceTypes {
                     if (typeof this.deviceTypes[name].init === "function") {
                         this.deviceTypes[name].init(this, this.Characteristic, this.Service, this.CommunityTypes);
                     } else {
-                        this.platform.logError(`Device type ${name} does not have an init method`);
+                        this.platform.logError(`Device type ${name} does not have an initializeAccessory method`);
                     }
 
-                    // Check if the device type has an initializeService method
+                    // Check if the device type has an initializeAccessory method
                     if (typeof this.deviceTypes[name].initializeAccessory === "function") {
                         this.deviceTypes[name].initializeAccessory(accessory);
                     } else {
@@ -484,7 +485,7 @@ export default class DeviceTypes {
     }
 
     async processDeviceAttributeUpdate(change) {
-        const accessory = this.platform.getAccessoryFromCache({ deviceid: change.deviceid });
+        const accessory = this.getAccessoryFromCache({ deviceid: change.deviceid });
         if (!accessory) {
             this.platform.logError(`Accessory not found for device ID: ${change.deviceid}`);
             return false;
@@ -647,8 +648,62 @@ export default class DeviceTypes {
         return svc;
     }
 
+    getAccessoryId(accessory) {
+        return accessory.deviceid || accessory.context.deviceData.deviceid || undefined;
+    }
+
+    getAccessoryFromCache(device) {
+        const key = this.getAccessoryId(device);
+        return this._platformAccessories[key];
+    }
+
+    getAllAccessoriesFromCache() {
+        return this._platformAccessories;
+    }
+
+    clearAccessoryCache() {
+        this.platform.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
+        this._platformAccessories = {};
+    }
+
+    addAccessoryToCache(accessory) {
+        const key = this.getAccessoryId(accessory);
+        this._platformAccessories[key] = accessory;
+        return true;
+    }
+
+    removeAccessoryFromCache(accessory) {
+        const key = this.getAccessoryId(accessory);
+        const removed = this._platformAccessories[key];
+        delete this._platformAccessories[key];
+        return removed;
+    }
+
     clamp(value, min, max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    forEach(fn) {
+        return _.forEach(this._platformAccessories, fn);
+    }
+
+    intersection(devices) {
+        const accessories = _.values(this._platformAccessories);
+        return _.intersectionWith(devices, accessories, this.comparator);
+    }
+
+    diffAdd(devices) {
+        const accessories = _.values(this._platformAccessories);
+        return _.differenceWith(devices, accessories, this.comparator);
+    }
+
+    diffRemove(devices) {
+        const accessories = _.values(this._platformAccessories);
+        return _.differenceWith(accessories, devices, this.comparator);
+    }
+
+    comparator(accessory1, accessory2) {
+        return this.getAccessoryId(accessory1) === this.getAccessoryId(accessory2);
     }
 
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {

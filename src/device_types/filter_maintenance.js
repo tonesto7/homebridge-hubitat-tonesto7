@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["filterStatus"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const filterSvc = DeviceClass.getOrAddService(accessory, Service.FilterMaintenance);
 
     DeviceClass.getOrAddCharacteristic(accessory, filterSvc, Characteristic.FilterChangeIndication, {
@@ -29,7 +29,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("filter_maintenance");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const filterSvc = accessory.getService(Service.FilterMaintenance);
     if (!filterSvc) {
         accessory.log.warn(`${accessory.name} | FilterMaintenance service not found`);

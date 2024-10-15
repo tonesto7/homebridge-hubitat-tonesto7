@@ -176,10 +176,12 @@ export default class Platform {
         const file = fs.readFileSync(configPath);
         const config = JSON.parse(file);
         const platConfig = config.platforms.find((x) => x.name === this.config.name);
-        _.extend(platConfig, newConfig);
+        // _.extend(platConfig, newConfig);
+        Object.assign(platConfig, newConfig);
         const serializedConfig = JSON.stringify(config, null, "  ");
         fs.writeFileSync(configPath, serializedConfig, "utf8");
-        _.extend(this.config, newConfig);
+        // _.extend(this.config, newConfig);
+        Object.assign(this.config, newConfig);
     }
 
     updateTempUnit(unit) {
@@ -247,8 +249,8 @@ export default class Platform {
                         resolve(true);
                     });
             } catch (ex) {
-                this.logError("refreshDevices Error: ", ex);
-                resolve(false);
+                this.logError(`didFinishLaunching | refreshDevices Exception: ${ex.message}`, ex.stack);
+                reject(ex);
             }
         });
     }
@@ -349,9 +351,9 @@ export default class Platform {
         return Math.max(min, Math.min(max, value));
     }
 
-    // forEach(fn) {
-    //     return _.forEach(this._cachedAccessories, fn);
-    // }
+    forEach(fn) {
+        return _.forEach(this._cachedAccessories, fn);
+    }
 
     intersection(devices) {
         const accessories = _.values(this._cachedAccessories);
@@ -369,8 +371,25 @@ export default class Platform {
     }
 
     comparator(accessory1, accessory2) {
-        return accessory1.deviceid || accessory1.context.deviceData.deviceid || undefined === accessory2.deviceid || accessory2.context.deviceData.deviceid || undefined;
+        const id1 = accessory1.deviceid || accessory1.context.deviceData.deviceid;
+        const id2 = accessory2.deviceid || accessory2.context.deviceData.deviceid;
+        return id1 === id2;
     }
+
+    // intersection(devices) {
+    //     const deviceIds = new Set(devices.map((d) => d.deviceid));
+    //     return Object.values(this._cachedAccessories).filter((acc) => deviceIds.has(acc.deviceid));
+    // }
+
+    // diffAdd(devices) {
+    //     const cachedIds = new Set(Object.keys(this._cachedAccessories));
+    //     return devices.filter((d) => !cachedIds.has(d.deviceid));
+    // }
+
+    // diffRemove(devices) {
+    //     const deviceIds = new Set(devices.map((d) => d.deviceid));
+    //     return Object.values(this._cachedAccessories).filter((acc) => !deviceIds.has(acc.deviceid));
+    // }
 
     processIncrementalUpdate(data) {
         this.logDebug("new data: " + data);

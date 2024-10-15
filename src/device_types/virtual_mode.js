@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["switch"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     // const switchSvc = accessory.getService(Service.Switch) || accessory.addService(Service.Switch, "Virtual Mode", "VirtualMode");
     const switchSvc = DeviceClass.getOrAddService(accessory, Service.Switch);
 
@@ -40,7 +40,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("virtual_mode");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const switchSvc = accessory.getService(Service.Switch);
 
     if (!switchSvc) {

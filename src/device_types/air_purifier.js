@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["switch", "fanMode", "tamper"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     // Ensure CommunityTypes.NewAirPurifierService exists
     if (!CommunityTypes || !CommunityTypes.NewAirPurifierService) {
         accessory.log.warn(`${accessory.name} | CommunityTypes.NewAirPurifierService is not defined.`);

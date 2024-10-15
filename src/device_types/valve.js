@@ -2,7 +2,7 @@
 
 let DeviceClass, Characteristic, Service, CommunityTypes;
 
-export async function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
+export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
     DeviceClass = _deviceClass;
     Characteristic = _Characteristic;
     Service = _Service;
@@ -15,7 +15,7 @@ export function isSupported(accessory) {
 
 export const relevantAttributes = ["valve"];
 
-export async function initializeService(accessory) {
+export function initializeAccessory(accessory) {
     const valveSvc = DeviceClass.getOrAddService(accessory, Service.Valve);
 
     DeviceClass.getOrAddCharacteristic(accessory, valveSvc, Characteristic.Active, {
@@ -46,7 +46,7 @@ export async function initializeService(accessory) {
     accessory.context.deviceGroups.push("valve");
 }
 
-export async function handleAttributeUpdate(accessory, change) {
+export function handleAttributeUpdate(accessory, change) {
     const valveSvc = accessory.getService(Service.Valve);
 
     if (!valveSvc) {
