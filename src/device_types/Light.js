@@ -136,8 +136,8 @@ export default class Light extends HubitatAccessory {
     }
 
     setupAdaptiveLighting() {
-        const canUseAL = this.config.adaptive_lighting !== false && this.accessory.isAdaptiveLightingSupported && !this.hasDeviceFlag("light_no_al") && this.hasAttribute("level") && this.hasAttribute("colorTemperature");
-
+        const canUseAL = this.platform.config.adaptive_lighting !== false && this.accessory.isAdaptiveLightingSupported && !this.hasDeviceFlag("light_no_al") && this.hasAttribute("level") && this.hasAttribute("colorTemperature");
+        console.log("canUseAL", canUseAL);
         if (canUseAL && !this.accessory.adaptiveLightingController) {
             this.addAdaptiveLightingController(this.lightService);
         } else if (!canUseAL && this.accessory.adaptiveLightingController) {
@@ -146,7 +146,7 @@ export default class Light extends HubitatAccessory {
     }
 
     addAdaptiveLightingController(service) {
-        const offset = this.config.adaptive_lighting_offset || 0;
+        const offset = this.platform.config.adaptive_lighting_offset || 0;
         const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
         this.log.debug(`Adaptive Lighting Offset: ${offset}`);
         this.log.debug(`Adaptive Lighting Control Mode: ${controlMode}`);
