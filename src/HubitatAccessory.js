@@ -232,7 +232,6 @@ export default class HubitatAccessory {
 
     sendCommand(callback, dev, cmd, vals) {
         const id = `${cmd}`;
-        const tsNow = Date.now();
 
         const debounceConfig = {
             setLevel: { delay: 600, trailing: true },

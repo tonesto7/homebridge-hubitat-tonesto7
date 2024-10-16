@@ -146,7 +146,7 @@ export default class Platform {
         let accessory = new this.PlatformAccessory(deviceData.name, uuid);
         accessory.context.deviceData = deviceData;
         this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
-        console.log(`addDevice | Name: (${deviceData.name}) | UUID: ${uuid}`, deviceData);
+        // console.log(`addDevice | Name: (${deviceData.name}) | UUID: ${uuid}`);
 
         try {
             const initializedAccessory = await this.deviceManager.initializeHubitatAccessory(accessory, false, "addDevice");
