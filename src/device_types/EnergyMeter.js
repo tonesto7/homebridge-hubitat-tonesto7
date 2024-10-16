@@ -8,10 +8,10 @@ export default class EnergyMeter extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("Energy Meter") && !accessory.hasCapability("Switch");
+        return accessory.hasCapability("EnergyMeter") && !accessory.hasCapability("Switch");
     }
 
-    initializeService() {
+    async initializeService() {
         const serviceName = `${this.deviceData.deviceid}_EnergyMeter`;
         this.energySvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Energy Meter");
 
@@ -30,7 +30,7 @@ export default class EnergyMeter extends HubitatAccessory {
             this.log.warn(`${this.accessory.displayName} | CommunityTypes.KilowattHours not defined. Skipping KilowattHours characteristic.`);
         }
 
-        this.accessory.context.deviceGroups.push("energy_meter");
+        this.accessory.deviceGroups.push("energy_meter");
     }
 
     handleAttributeUpdate(change) {

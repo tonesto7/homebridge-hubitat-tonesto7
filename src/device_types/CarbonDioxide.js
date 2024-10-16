@@ -8,10 +8,10 @@ export default class CarbonDioxideSensor extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("CarbonDioxideMeasurement");
+        return accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxide");
     }
 
-    initializeService() {
+    async initializeService() {
         this.carbonDioxideSvc = this.getOrAddService(this.Service.CarbonDioxideSensor);
 
         // Carbon Dioxide Detected
@@ -52,7 +52,7 @@ export default class CarbonDioxideSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("carbon_dioxide");
+        this.accessory.deviceGroups.push("carbon_dioxide");
     }
 
     handleAttributeUpdate(change) {

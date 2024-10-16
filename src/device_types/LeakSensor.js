@@ -11,7 +11,7 @@ export default class LeakSensor extends HubitatAccessory {
         return accessory.hasCapability("WaterSensor");
     }
 
-    initializeService() {
+    async initializeService() {
         this.leakSensorSvc = this.getOrAddService(this.Service.LeakSensor);
 
         this.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.LeakDetected, {
@@ -40,7 +40,7 @@ export default class LeakSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("leak_sensor");
+        this.accessory.deviceGroups.push("leak_sensor");
     }
 
     handleAttributeUpdate(change) {

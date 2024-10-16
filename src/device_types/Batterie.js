@@ -11,7 +11,7 @@ export default class Battery extends HubitatAccessory {
         return accessory.hasCapability("Battery");
     }
 
-    initializeService() {
+    async initializeService() {
         this.batterySvc = this.getOrAddService(this.Service.Battery);
 
         // Battery Level
@@ -45,7 +45,7 @@ export default class Battery extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("battery");
+        this.accessory.deviceGroups.push("battery");
     }
 
     handleAttributeUpdate(change) {

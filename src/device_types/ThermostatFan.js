@@ -11,7 +11,7 @@ export default class ThermostatFan extends HubitatAccessory {
         return accessory.hasCapability("Thermostat") && accessory.hasAttribute("thermostatFanMode") && accessory.hasCommand("fanAuto") && accessory.hasCommand("fanOn");
     }
 
-    initializeService() {
+    async initializeService() {
         this.fanV2Svc = this.getOrAddService(this.Service.Fanv2);
 
         this.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.Active, {
@@ -51,7 +51,7 @@ export default class ThermostatFan extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("thermostat_fan");
+        this.accessory.deviceGroups.push("thermostat_fan");
     }
 
     handleAttributeUpdate(change) {

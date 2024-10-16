@@ -11,7 +11,7 @@ export default class IlluminanceSensor extends HubitatAccessory {
         return accessory.hasCapability("IlluminanceMeasurement");
     }
 
-    initializeService() {
+    async initializeService() {
         this.lightSensorSvc = this.getOrAddService(this.Service.LightSensor);
 
         this.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.CurrentAmbientLightLevel, {
@@ -47,7 +47,7 @@ export default class IlluminanceSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("illuminance_sensor");
+        this.accessory.deviceGroups.push("illuminance_sensor");
     }
 
     handleAttributeUpdate(change) {

@@ -11,7 +11,7 @@ export default class Thermostat extends HubitatAccessory {
         return accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState");
     }
 
-    initializeService() {
+    async initializeService() {
         this.thermostatSvc = this.getOrAddService(this.Service.Thermostat);
 
         this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentHeatingCoolingState, {
@@ -104,7 +104,7 @@ export default class Thermostat extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("thermostat");
+        this.accessory.deviceGroups.push("thermostat");
     }
 
     handleAttributeUpdate(change) {

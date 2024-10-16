@@ -8,10 +8,10 @@ export default class TemperatureSensor extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("TemperatureMeasurement") && !(accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState"));
+        return accessory.hasCapability("TemperatureMeasurement") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState");
     }
 
-    initializeService() {
+    async initializeService() {
         this.temperatureSvc = this.getOrAddService(this.Service.TemperatureSensor);
 
         this.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.CurrentTemperature, {
@@ -46,7 +46,7 @@ export default class TemperatureSensor extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("temperature_sensor");
+        this.accessory.deviceGroups.push("temperature_sensor");
     }
 
     handleAttributeUpdate(change) {

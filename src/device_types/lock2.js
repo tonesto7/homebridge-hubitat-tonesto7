@@ -157,8 +157,8 @@ export function initializeAccessory(accessory) {
     DeviceClass.updateCharacteristicValue(accessory, lockMgmtSvc, Characteristic.MotionDetected, accessory.context.deviceData.attributes.motionDetected || false);
 
     // Add services to the accessory's device groups
-    accessory.context.deviceGroups.push("lock");
-    accessory.context.deviceGroups.push("lockManagement");
+    accessory.deviceGroups.push("lock");
+    accessory.deviceGroups.push("lockManagement");
 }
 
 export function handleAttributeUpdate(accessory, change) {

@@ -11,7 +11,7 @@ export default class Valve extends HubitatAccessory {
         return accessory.hasCapability("Valve");
     }
 
-    initializeService() {
+    async initializeService() {
         this.valveSvc = this.getOrAddService(this.Service.Valve);
 
         this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.Active, {
@@ -39,7 +39,7 @@ export default class Valve extends HubitatAccessory {
             value: this.Characteristic.ValveType.GENERIC_VALVE,
         });
 
-        this.accessory.context.deviceGroups.push("valve");
+        this.accessory.deviceGroups.push("valve");
     }
 
     handleAttributeUpdate(change) {

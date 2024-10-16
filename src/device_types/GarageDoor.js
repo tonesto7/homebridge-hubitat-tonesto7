@@ -11,7 +11,7 @@ export default class GarageDoor extends HubitatAccessory {
         return accessory.hasCapability("GarageDoorControl");
     }
 
-    initializeService() {
+    async initializeService() {
         this.garageDoorSvc = this.getOrAddService(this.Service.GarageDoorOpener);
 
         this.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.CurrentDoorState, {
@@ -43,7 +43,7 @@ export default class GarageDoor extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("garage_door");
+        this.accessory.deviceGroups.push("garage_door");
     }
 
     handleAttributeUpdate(change) {

@@ -11,7 +11,7 @@ export default class PresenceSensor extends HubitatAccessory {
         return accessory.hasCapability("PresenceSensor");
     }
 
-    initializeService() {
+    async initializeService() {
         this.occupancySvc = this.getOrAddService(this.Service.OccupancySensor);
 
         this.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.OccupancyDetected, {
@@ -40,7 +40,7 @@ export default class PresenceSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("presence_sensor");
+        this.accessory.deviceGroups.push("presence_sensor");
     }
 
     handleAttributeUpdate(change) {

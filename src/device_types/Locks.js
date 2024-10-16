@@ -11,7 +11,7 @@ export default class Lock extends HubitatAccessory {
         return accessory.hasCapability("Lock");
     }
 
-    initializeService() {
+    async initializeService() {
         this.lockSvc = this.getOrAddService(this.Service.LockMechanism);
 
         this.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockCurrentState, {
@@ -35,7 +35,7 @@ export default class Lock extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("lock");
+        this.accessory.deviceGroups.push("lock");
     }
 
     handleAttributeUpdate(change) {

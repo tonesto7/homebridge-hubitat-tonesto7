@@ -11,7 +11,7 @@ export default class VirtualMode extends HubitatAccessory {
         return accessory.hasCapability("Mode");
     }
 
-    initializeService() {
+    async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
 
         this.addServiceToKeep(this.switchSvc);
@@ -30,7 +30,7 @@ export default class VirtualMode extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("virtual_mode");
+        this.accessory.deviceGroups.push("virtual_mode");
     }
 
     handleAttributeUpdate(change) {

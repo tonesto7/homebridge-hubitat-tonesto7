@@ -11,7 +11,7 @@ export default class ContactSensor extends HubitatAccessory {
         return accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl");
     }
 
-    initializeService() {
+    async initializeService() {
         this.contactSvc = this.getOrAddService(this.Service.ContactSensor);
 
         // Contact Sensor State
@@ -42,7 +42,7 @@ export default class ContactSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("contact_sensor");
+        this.accessory.deviceGroups.push("contact_sensor");
     }
 
     handleAttributeUpdate(change) {

@@ -1,10 +1,9 @@
 // HubitatAccessory.js
 
 export default class HubitatAccessory {
-    constructor(platform, accessory, deviceData) {
+    constructor(platform, accessory) {
         this.platform = platform;
         this.accessory = accessory;
-        this.deviceData = deviceData;
 
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
@@ -15,72 +14,61 @@ export default class HubitatAccessory {
 
         this.config = platform.configItems;
 
-        // Initialize common properties
-        this.accessory.context.deviceData = deviceData;
-        this.accessory.deviceid = deviceData.deviceid;
-        this.accessory.name = deviceData.name;
-
         // Initialize button map and command timers
         this.accessory._buttonMap = {};
         this.accessory.commandTimers = {};
         this.accessory.commandTimersTS = {};
+        this.accessory.deviceGroups = [];
 
         // Initialize services and characteristics to keep
         this.accessory.servicesToKeep = [];
         this.accessory.characteristicsToKeep = {};
 
+        // Bind functions to the accessory
+        accessory.hasCapability = this.hasCapability.bind(this);
+        accessory.getCapabilities = this.getCapabilities.bind(this);
+        accessory.hasAttribute = this.hasAttribute.bind(this);
+        accessory.hasCommand = this.hasCommand.bind(this);
+        accessory.hasService = this.hasService.bind(this);
+        accessory.hasCharacteristic = this.hasCharacteristic.bind(this);
+        accessory.hasDeviceFlag = this.hasDeviceFlag.bind(this);
+        accessory.getButtonSvcByName = this.getButtonSvcByName.bind(this);
+        accessory.sendCommand = this.sendCommand.bind(this);
+
         // Setup AccessoryInformation service
         this.setupAccessoryInformation();
-
-        // Sanitize accessory name
-        this.sanitizeName();
-
-        // Add to cache
-        this.platform.deviceManager.addAccessoryToCache(this.accessory);
-    }
-
-    sanitizeName() {
-        const originalName = this.deviceData.name;
-        let sanitized = originalName
-            .replace(/[^a-zA-Z0-9 ']/g, "")
-            .trim()
-            .replace(/^[^a-zA-Z0-9]+/, "")
-            .replace(/[^a-zA-Z0-9]+$/, "")
-            .replace(/\s{2,}/g, " ");
-
-        sanitized = sanitized.length === 0 ? "Unnamed Device" : sanitized;
-
-        if (originalName !== sanitized) {
-            this.log.warn(`Sanitized Name: "${originalName}" => "${sanitized}"`);
-            this.accessory.name = sanitized;
-
-            const accessoryInformation = this.accessory.getService(this.Service.AccessoryInformation);
-            if (accessoryInformation) {
-                accessoryInformation.getCharacteristic(this.Characteristic.Name).updateValue(sanitized);
-
-                const displayName = accessoryInformation.getCharacteristic(this.Characteristic.Name).value;
-                if (displayName !== sanitized) {
-                    this.log.warn(`Failed to update displayName for device ID: ${this.deviceData.deviceid}`);
-                } else {
-                    this.log.info(`AccessoryInformation service updated successfully for device ID: ${this.deviceData.deviceid} | Old Name: "${originalName}" | Display Name: "${displayName}"`);
-                    this.homebridge.updatePlatformAccessories([this.accessory]);
-                }
-            } else {
-                this.log.warn(`AccessoryInformation service not found for device ID: ${this.deviceData.deviceid}`);
-            }
-        }
     }
 
     setupAccessoryInformation() {
-        const accInfoSvc = this.accessory.getService(this.Service.AccessoryInformation) || this.accessory.addService(this.Service.AccessoryInformation);
+        if (!this.accessory.context.deviceData) {
+            this.log.error(`Missing deviceData in accessory context for ${this.accessory.displayName || "Unknown Device"}`);
+            return;
+        }
 
+        const originalName = this.accessory.context.deviceData.name;
+        const sanitizedName = this.platform.Utils.sanitizeName(originalName);
+        // console.log(`setupAccessoryInformation | Name: (${this.accessory.context.deviceData.name}) | Sanitized: [${sanitizedName}]`);
+        if (originalName !== sanitizedName) {
+            this.log.warn(`Sanitized Name: "${originalName}" => "${sanitizedName}"`);
+            this.accessory.name = sanitizedName;
+            this.accessory.displayName = sanitizedName;
+            this.accessory.context.deviceData.name = sanitizedName;
+        }
+
+        const accInfoSvc = this.getOrAddService(this.Service.AccessoryInformation);
         accInfoSvc
-            .setCharacteristic(this.Characteristic.FirmwareRevision, this.deviceData.firmwareVersion)
-            .setCharacteristic(this.Characteristic.Manufacturer, this.deviceData.manufacturerName)
-            .setCharacteristic(this.Characteristic.Model, this.deviceData.modelName ? this.toTitleCase(this.deviceData.modelName) : "Unknown")
+            .setCharacteristic(this.Characteristic.FirmwareRevision, this.accessory.context.deviceData.firmwareVersion || "Unknown")
+            .setCharacteristic(this.Characteristic.Manufacturer, this.accessory.context.deviceData.manufacturerName || "Unknown")
+            .setCharacteristic(this.Characteristic.Model, this.accessory.context.deviceData.modelName ? this.toTitleCase(this.accessory.context.deviceData.modelName) : "Unknown")
             .setCharacteristic(this.Characteristic.Name, this.accessory.name)
-            .setCharacteristic(this.Characteristic.HardwareRevision, this.platform.pluginVersion)
-            .setCharacteristic(this.Characteristic.SerialNumber, `he_deviceid_${this.deviceData.deviceid}`);
+            .setCharacteristic(this.Characteristic.HardwareRevision, this.platform.pluginVersion || "Unknown")
+            .setCharacteristic(this.Characteristic.SerialNumber, `he_deviceid_${this.accessory.context.deviceData.deviceid || "Unknown"}`);
+
+        // Verify the name has been Sanitized
+        const currentName = accInfoSvc.getCharacteristic(this.Characteristic.Name).value;
+        if (currentName !== sanitizedName) {
+            this.log.warn(`Failed to sanitize the accessory name (${originalName}) to [${sanitizedName}] for device ID: ${this.accessory.context.deviceData.deviceid}`);
+        }
 
         // Handle Identify event
         if (!accInfoSvc.listeners("identify").length) {
@@ -89,9 +77,10 @@ export default class HubitatAccessory {
                 callback();
             });
         }
+    }
 
-        // Mark AccessoryInformation service to keep
-        this.addServiceToKeep(accInfoSvc);
+    getAccessoryName() {
+        return this.accessory.displayName && this.accessory.displayName.length > 0 ? this.accessory.displayName : this.accessory.name;
     }
 
     getOrAddService(serviceType, serviceName = null) {
@@ -152,7 +141,7 @@ export default class HubitatAccessory {
             const serviceKey = `${service.UUID}:${service.subtype || ""}`;
             if (!servicesToKeep.has(serviceKey)) {
                 this.accessory.removeService(service);
-                this.log.info(`Removing Unused Service: ${service.displayName ? service.displayName : service.UUID} from ${this.accessory.displayName}`);
+                this.log.info(`Removing Unused Service: ${service.displayName ? service.displayName : service.UUID} from ${this.accessory.name}`);
             } else {
                 this.removeUnusedCharacteristics(service);
             }
@@ -183,20 +172,20 @@ export default class HubitatAccessory {
     }
 
     hasCapability(cap) {
-        const caps = Object.keys(this.deviceData.capabilities);
+        const caps = Object.keys(this.accessory.context.deviceData.capabilities);
         return caps.includes(cap) || caps.includes(cap.replace(/\s/g, ""));
     }
 
     getCapabilities() {
-        return Object.keys(this.deviceData.capabilities);
+        return Object.keys(this.accessory.context.deviceData.capabilities);
     }
 
     hasAttribute(attr) {
-        return this.deviceData.attributes.hasOwnProperty(attr);
+        return this.accessory.context.deviceData.attributes.hasOwnProperty(attr);
     }
 
     hasCommand(cmd) {
-        return this.deviceData.commands.hasOwnProperty(cmd);
+        return this.accessory.context.deviceData.commands.hasOwnProperty(cmd);
     }
 
     hasService(service) {
@@ -209,7 +198,7 @@ export default class HubitatAccessory {
     }
 
     hasDeviceFlag(flag) {
-        return this.deviceData.deviceflags?.hasOwnProperty(flag) || false;
+        return this.accessory.context.deviceData.deviceflags?.hasOwnProperty(flag) || false;
     }
 
     getButtonSvcByName(serviceType, displayName, subType) {
@@ -218,7 +207,7 @@ export default class HubitatAccessory {
         let svc = this.accessory.services.find((s) => s.UUID === serviceType.UUID && s.subtype === subType);
 
         if (!svc) {
-            const oldServiceName = `${this.deviceData.deviceid}_${subType}`;
+            const oldServiceName = `${this.accessory.context.deviceData.deviceid}_${subType}`;
             svc = this.accessory.services.find((s) => s.displayName === oldServiceName);
 
             if (svc) {

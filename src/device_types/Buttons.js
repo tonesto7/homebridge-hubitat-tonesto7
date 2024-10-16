@@ -9,7 +9,11 @@ export default class Button extends HubitatAccessory {
         this.relevantAttributes = ["button", "numberOfButtons"];
     }
 
-    initializeService() {
+    static isSupported(accessory) {
+        return ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton"].some((cap) => accessory.hasCapability(cap));
+    }
+
+    async initializeService() {
         const btnCnt = this.clamp(this.deviceData.attributes.numberOfButtons || 1, 1, 10);
 
         this.log.debug(`${this.accessory.displayName} | Initializing button accessory with ${btnCnt} buttons`);
@@ -36,7 +40,7 @@ export default class Button extends HubitatAccessory {
         }
 
         this.log.info(`${this.accessory.displayName} | Button accessory initialized with ${btnCnt} buttons`);
-        this.accessory.context.deviceGroups.push("button");
+        this.accessory.deviceGroups.push("button");
     }
 
     handleAttributeUpdate(change) {

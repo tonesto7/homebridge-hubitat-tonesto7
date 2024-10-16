@@ -8,10 +8,10 @@ export default class Switch extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("Switch") && !(accessory.hasCapability("LightBulb") || accessory.hasCapability("Outlet") || accessory.hasCapability("Bulb") || (accessory.platform.configItems.consider_light_by_name === true && accessory.context.deviceData.name.toLowerCase().includes("light")) || accessory.hasCapability("Button"));
+        return accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"));
     }
 
-    initializeService() {
+    async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
 
         this.getOrAddCharacteristic(this.switchSvc, this.Characteristic.On, {
@@ -27,7 +27,7 @@ export default class Switch extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("switch");
+        this.accessory.deviceGroups.push("switch");
     }
 
     handleAttributeUpdate(change) {

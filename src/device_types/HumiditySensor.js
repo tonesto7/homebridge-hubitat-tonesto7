@@ -8,10 +8,10 @@ export default class HumiditySensor extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("RelativeHumidityMeasurement") && accessory.hasAttribute("humidity") && !(accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasCapability("HumidityControl") || accessory.hasAttribute("thermostatOperatingState"));
+        return accessory.hasCapability("RelativeHumidityMeasurement") && accessory.hasAttribute("humidity") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState");
     }
 
-    initializeService() {
+    async initializeService() {
         this.humiditySvc = this.getOrAddService(this.Service.HumiditySensor);
 
         this.getOrAddCharacteristic(this.humiditySvc, this.Characteristic.CurrentRelativeHumidity, {
@@ -41,7 +41,7 @@ export default class HumiditySensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("humidity_sensor");
+        this.accessory.deviceGroups.push("humidity_sensor");
     }
 
     handleAttributeUpdate(change) {

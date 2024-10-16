@@ -121,7 +121,7 @@ export default class Platform {
                             const toUpdate = this.intersection(resp.deviceList);
                             const toRemove = this.diffRemove(resp.deviceList);
                             this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name).join(", "));
-                            this.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`);
+                            this.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})`);
                             this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name).join(", "));
 
                             toRemove.forEach(async (accessory) => await this.removeAccessory(accessory));
@@ -141,13 +141,27 @@ export default class Platform {
         });
     }
 
-    async addDevice(device) {
-        const uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
-        const accessory = new this.PlatformAccessory(device.name, uuid);
-        accessory.context.deviceData = device;
+    async addDevice(deviceData) {
+        const uuid = this.uuid.generate(`hubitat_v2_${deviceData.deviceid}`);
+        let accessory = new this.PlatformAccessory(deviceData.name, uuid);
+        accessory.context.deviceData = deviceData;
         this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
-        await this.deviceManager.initializeHubitatAccessory(accessory);
-        this.logInfo(`Added Device: (${accessory.displayName})`);
+        console.log(`addDevice | Name: (${deviceData.name}) | UUID: ${uuid}`, deviceData);
+
+        try {
+            const initializedAccessory = await this.deviceManager.initializeHubitatAccessory(accessory, false, "addDevice");
+            if (initializedAccessory) {
+                this.homebridge.updatePlatformAccessories([initializedAccessory]);
+                this.deviceManager.addAccessoryToCache(initializedAccessory);
+
+                this.logInfo(`Added Device: (${initializedAccessory.displayName})`);
+            } else {
+                this.logError(`Failed to initialize accessory for device: ${device.name}`);
+            }
+        } catch (err) {
+            this.logError(`Failed to initialize accessory for device: ${device.name}`);
+            console.error(err);
+        }
     }
 
     async updateDevice(device) {
@@ -157,22 +171,39 @@ export default class Platform {
             return;
         }
         cachedAccessory.context.deviceData = device;
-        await this.deviceManager.initializeHubitatAccessory(cachedAccessory);
+        await this.deviceManager.initializeHubitatAccessory(cachedAccessory, true, "updateDevice");
+        this.deviceManager.addAccessoryToCache(cachedAccessory);
         this.homebridge.updatePlatformAccessories([cachedAccessory]);
         this.logInfo(`Updated Device: (${cachedAccessory.displayName})`);
     }
 
     async removeAccessory(accessory) {
         if (this.deviceManager.removeAccessoryFromCache(accessory)) {
+            this.deviceManager.removeAccessoryFromCache(accessory);
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
             this.logInfo(`Removed Accessory: ${accessory.displayName}`);
         }
     }
 
+    // Homebridge Method that is called when a cached accessory is loaded
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
         this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
-        this.deviceManager.initializeHubitatAccessory(accessory, true);
+
+        // Add the existing accessory to the cache
+        this.deviceManager.addAccessoryToCache(accessory);
+
+        // Initialize the accessory asynchronously without awaiting
+        // this.deviceManager
+        //     .initializeHubitatAccessory(accessory, true, "configureAccessory")
+        //     .then((cachedAccessory) => {
+        //         this.logDebug(`Successfully initialized cached accessory: ${cachedAccessory.displayName}`);
+        //         this.deviceManager.addAccessoryToCache(cachedAccessory);
+        //     })
+        //     .catch((err) => {
+        //         this.logError(`Failed to initialize cached accessory: ${accessory.displayName} | Error: ${err}`);
+        //         console.error(err);
+        //     });
     }
 
     getLogConfig() {
@@ -236,23 +267,19 @@ export default class Platform {
         if (this.logConfig.debug === true) this.log.debug(chalk.gray(args));
     }
 
-    forEach(fn) {
-        return _.forEach(this._cachedAccessories, fn);
-    }
-
     // Utility methods for device comparison
     intersection(devices) {
-        const accessories = _.values(this.deviceManager.getAllAccessoriesFromCache());
+        const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
         return _.intersectionWith(devices, accessories, this.comparator);
     }
 
     diffAdd(devices) {
-        const accessories = _.values(this.deviceManager.getAllAccessoriesFromCache());
+        const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
         return _.differenceWith(devices, accessories, this.comparator);
     }
 
     diffRemove(devices) {
-        const accessories = _.values(this.deviceManager.getAllAccessoriesFromCache());
+        const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
         return _.differenceWith(accessories, devices, this.comparator);
     }
 
@@ -261,15 +288,6 @@ export default class Platform {
         const id2 = accessory2.deviceid || accessory2.context.deviceData.deviceid;
         return id1 === id2;
     }
-
-    // async processIncrementalUpdate(data) {
-    //     this.logDebug("new data: " + data);
-    //     if (data && data.attributes && data.attributes instanceof Array) {
-    //         for (let i = 0; i < data.attributes.length; i++) {
-    //             await this.processDeviceAttributeUpdate(data.attributes[i], this);
-    //         }
-    //     }
-    // }
 
     isValidRequestor(access_token, app_id, src) {
         if (this.configItems.validateTokenId !== true) {

@@ -9,7 +9,12 @@ export default class Light extends HubitatAccessory {
         this.relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
     }
 
-    initializeService() {
+    static isSupported(accessory) {
+        const match = accessory.hasCapability("SwitchLevel") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl"));
+        return match && accessory.deviceGroups.length > 0;
+    }
+
+    async initializeService() {
         this.lightService = this.getOrAddService(this.Service.Lightbulb);
 
         this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
@@ -96,7 +101,7 @@ export default class Light extends HubitatAccessory {
         }
 
         this.setupAdaptiveLighting();
-        this.accessory.context.deviceGroups.push("light");
+        this.accessory.deviceGroups.push("light");
     }
 
     handleAttributeUpdate(change) {

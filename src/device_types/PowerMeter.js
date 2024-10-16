@@ -8,10 +8,10 @@ export default class PowerMeter extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("Power Meter") && !accessory.hasCapability("Switch");
+        return accessory.hasCapability("PowerMeter") && !accessory.hasCapability("Switch");
     }
 
-    initializeService() {
+    async initializeService() {
         const serviceName = `${this.deviceData.deviceid}_PowerMeter`;
         this.powerSvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Power Meter");
 
@@ -30,7 +30,7 @@ export default class PowerMeter extends HubitatAccessory {
             this.log.warn(`${this.accessory.displayName} | CommunityTypes.Watts not defined. Skipping Watts characteristic.`);
         }
 
-        this.accessory.context.deviceGroups.push("power_meter");
+        this.accessory.deviceGroups.push("power_meter");
     }
 
     handleAttributeUpdate(change) {

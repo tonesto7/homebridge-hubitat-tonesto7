@@ -11,7 +11,7 @@ export default class AlarmSystem extends HubitatAccessory {
         return accessory.hasAttribute("alarmSystemStatus");
     }
 
-    initializeService() {
+    async initializeService() {
         this.securitySystemSvc = this.getOrAddService(this.Service.SecuritySystem);
 
         // Current State
@@ -39,7 +39,7 @@ export default class AlarmSystem extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("alarm_system");
+        this.accessory.deviceGroups.push("alarm_system");
     }
 
     handleAttributeUpdate(change) {

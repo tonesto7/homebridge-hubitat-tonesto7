@@ -11,7 +11,7 @@ export default class SmokeDetector extends HubitatAccessory {
         return accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke");
     }
 
-    initializeService() {
+    async initializeService() {
         this.smokeSensorSvc = this.getOrAddService(this.Service.SmokeSensor);
 
         this.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.SmokeDetected, {
@@ -40,7 +40,7 @@ export default class SmokeDetector extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("smoke_detector");
+        this.accessory.deviceGroups.push("smoke_detector");
     }
 
     handleAttributeUpdate(change) {

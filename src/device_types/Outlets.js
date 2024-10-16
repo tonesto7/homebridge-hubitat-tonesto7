@@ -11,7 +11,7 @@ export default class Outlet extends HubitatAccessory {
         return accessory.hasCapability("Outlet") && accessory.hasCapability("Switch");
     }
 
-    initializeService() {
+    async initializeService() {
         this.outletSvc = this.getOrAddService(this.Service.Outlet);
 
         this.getOrAddCharacteristic(this.outletSvc, this.Characteristic.On, {
@@ -35,7 +35,7 @@ export default class Outlet extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("outlet");
+        this.accessory.deviceGroups.push("outlet");
     }
 
     handleAttributeUpdate(change) {

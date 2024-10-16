@@ -219,7 +219,7 @@ export default class DeviceTypes {
             }
         });
 
-        accessory.context.deviceGroups = [];
+        accessory.deviceGroups = [];
         accessory.servicesToKeep = [];
         accessory.characteristicsToKeep = {};
         accessory.reachable = true;

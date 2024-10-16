@@ -11,7 +11,7 @@ export default class Fan extends HubitatAccessory {
         return accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (accessory.context.deviceData.name.toLowerCase().includes("fan") && accessory.platform.configItems.consider_fan_by_name !== false) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed");
     }
 
-    initializeService() {
+    async initializeService() {
         this.fanSvc = this.getOrAddService(this.Service.Fanv2);
 
         this.getOrAddCharacteristic(this.fanSvc, this.Characteristic.Active, {
@@ -65,7 +65,7 @@ export default class Fan extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("fan");
+        this.accessory.deviceGroups.push("fan");
     }
 
     handleAttributeUpdate(change) {

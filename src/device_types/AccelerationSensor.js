@@ -13,7 +13,7 @@ export default class AccelerationSensor extends HubitatAccessory {
         return accessory.hasCapability("AccelerationSensor");
     }
 
-    initializeService() {
+    async initializeService() {
         this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
 
         // Motion Detected Characteristic
@@ -45,7 +45,7 @@ export default class AccelerationSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("acceleration_sensor");
+        this.accessory.deviceGroups.push("acceleration_sensor");
     }
 
     handleAttributeUpdate(change) {

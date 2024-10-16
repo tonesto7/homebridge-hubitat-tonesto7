@@ -11,7 +11,7 @@ export default class FilterMaintenance extends HubitatAccessory {
         return accessory.hasCapability("FilterStatus") && accessory.hasAttribute("filterStatus");
     }
 
-    initializeService() {
+    async initializeService() {
         this.filterSvc = this.getOrAddService(this.Service.FilterMaintenance);
 
         this.getOrAddCharacteristic(this.filterSvc, this.Characteristic.FilterChangeIndication, {
@@ -22,7 +22,7 @@ export default class FilterMaintenance extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("filter_maintenance");
+        this.accessory.deviceGroups.push("filter_maintenance");
     }
 
     handleAttributeUpdate(change) {

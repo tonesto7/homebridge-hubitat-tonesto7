@@ -8,10 +8,10 @@ export default class WindowCovering extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("WindowShade") && !(accessory.hasCapability("Speaker") || accessory.hasCapability("Fan") || accessory.hasCapability("FanControl"));
+        return accessory.hasCapability("WindowShade") && accessory.deviceGroups.length > 0;
     }
 
-    initializeService() {
+    async initializeService() {
         this.windowCoverSvc = this.getOrAddService(this.Service.WindowCovering);
 
         // Determine position attribute
@@ -74,7 +74,7 @@ export default class WindowCovering extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("window_covering");
+        this.accessory.deviceGroups.push("window_covering");
     }
 
     handleAttributeUpdate(change) {

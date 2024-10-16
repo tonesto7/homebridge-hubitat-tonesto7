@@ -8,10 +8,10 @@ export default class AirQualitySensor extends HubitatAccessory {
     }
 
     static isSupported(accessory) {
-        return accessory.hasCapability("AirQuality");
+        return accessory.hasCapability("airQuality") || accessory.hasCapability("AirQuality");
     }
 
-    initializeService() {
+    async initializeService() {
         this.airQualitySvc = this.getOrAddService(this.Service.AirQualitySensor);
 
         // Status Fault
@@ -65,7 +65,7 @@ export default class AirQualitySensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("air_quality");
+        this.accessory.deviceGroups.push("air_quality");
     }
 
     handleAttributeUpdate(change) {

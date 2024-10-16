@@ -10,7 +10,11 @@ export default class Button extends HubitatAccessory {
         this.relevantAttributes = ["switch", "fanMode", "tamper"];
     }
 
-    initializeService() {
+    static isSupported(accessory) {
+        return accessory.hasCapability("custom.airPurifierOperationMode");
+    }
+
+    async initializeService() {
         // Ensure CommunityTypes.NewAirPurifierService exists
         if (!CommunityTypes || !CommunityTypes.NewAirPurifierService) {
             accessory.log.warn(`${this.accessory.name} | CommunityTypes.NewAirPurifierService is not defined.`);
@@ -74,7 +78,7 @@ export default class Button extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("air_purifier");
+        this.accessory.deviceGroups.push("air_purifier");
     }
 
     handleAttributeUpdate(change) {

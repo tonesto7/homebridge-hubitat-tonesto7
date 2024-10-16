@@ -11,7 +11,7 @@ export default class VirtualPiston extends HubitatAccessory {
         return accessory.hasCapability("Piston");
     }
 
-    initializeService() {
+    async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
 
         this.addServiceToKeep(this.switchSvc);
@@ -35,7 +35,7 @@ export default class VirtualPiston extends HubitatAccessory {
             },
         });
 
-        this.accessory.context.deviceGroups.push("virtual_piston");
+        this.accessory.deviceGroups.push("virtual_piston");
     }
 
     handleAttributeUpdate(change) {

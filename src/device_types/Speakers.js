@@ -11,7 +11,7 @@ export default class Speaker extends HubitatAccessory {
         return accessory.hasCapability("Speaker");
     }
 
-    initializeService() {
+    async initializeService() {
         this.speakerSvc = this.getOrAddService(this.Service.Speaker);
 
         const isSonos = this.deviceData.manufacturerName === "Sonos";
@@ -53,7 +53,7 @@ export default class Speaker extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.accessory.context.deviceGroups.push("speaker_device");
+        this.accessory.deviceGroups.push("speaker_device");
     }
 
     handleAttributeUpdate(change) {
