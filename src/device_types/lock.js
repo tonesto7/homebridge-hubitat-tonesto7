@@ -1,72 +1,66 @@
-// device_types/lock.js
+import HubitatAccessory from "../HubitatAccessory.js";
 
-let DeviceClass, Characteristic, Service, CommunityTypes;
-
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
-    DeviceClass = _deviceClass;
-    Characteristic = _Characteristic;
-    Service = _Service;
-    CommunityTypes = _CommunityTypes;
-}
-
-export function isSupported(accessory) {
-    return accessory.hasCapability("Lock");
-}
-
-export const relevantAttributes = ["lock"];
-
-export function initializeAccessory(accessory) {
-    const lockSvc = DeviceClass.getOrAddService(accessory, Service.LockMechanism);
-
-    DeviceClass.getOrAddCharacteristic(accessory, lockSvc, Characteristic.LockCurrentState, {
-        getHandler: function () {
-            const state = accessory.context.deviceData.attributes.lock;
-            const convertedState = convertLockState(state);
-            accessory.log.debug(`${accessory.name} | Lock Current State: ${state} => ${convertedState}`);
-            return convertedState;
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, lockSvc, Characteristic.LockTargetState, {
-        getHandler: function () {
-            const state = accessory.context.deviceData.attributes.lock;
-            return convertLockState(state, Characteristic);
-        },
-        setHandler: function (value) {
-            const command = value === Characteristic.LockTargetState.SECURED ? "lock" : "unlock";
-            accessory.log.info(`${accessory.name} | Setting lock state via command: ${command}`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, command);
-        },
-    });
-
-    accessory.context.deviceGroups.push("lock");
-}
-
-export function handleAttributeUpdate(accessory, change) {
-    const lockSvc = accessory.getService(Service.LockMechanism);
-
-    if (!lockSvc) {
-        accessory.log.warn(`${accessory.name} | Lock Mechanism service not found`);
-        return;
+export default class Lock extends HubitatAccessory {
+    constructor(platform, accessory) {
+        super(platform, accessory);
+        this.deviceData = accessory.context.deviceData;
+        this.relevantAttributes = ["lock"];
     }
 
-    if (change.attribute === "lock") {
-        const convertedState = convertLockState(change.value);
-        DeviceClass.updateCharacteristicValue(accessory, lockSvc, Characteristic.LockCurrentState, convertedState);
-        DeviceClass.updateCharacteristicValue(accessory, lockSvc, Characteristic.LockTargetState, convertedState);
-        // accessory.log.debug(`${accessory.name} | Updated Lock State: ${change.value} => ${convertedState}`);
-    } else {
-        accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+    static isSupported(accessory) {
+        return accessory.hasCapability("Lock");
     }
-}
 
-function convertLockState(state) {
-    switch (state) {
-        case "locked":
-            return Characteristic.LockCurrentState.SECURED;
-        case "unlocked":
-            return Characteristic.LockCurrentState.UNSECURED;
-        default:
-            return Characteristic.LockCurrentState.UNKNOWN;
+    initializeService() {
+        this.lockSvc = this.getOrAddService(this.Service.LockMechanism);
+
+        this.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockCurrentState, {
+            getHandler: () => {
+                const state = this.deviceData.attributes.lock;
+                const convertedState = this.convertLockState(state);
+                this.log.debug(`${this.accessory.displayName} | Lock Current State: ${state} => ${convertedState}`);
+                return convertedState;
+            },
+        });
+
+        this.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockTargetState, {
+            getHandler: () => {
+                const state = this.deviceData.attributes.lock;
+                return this.convertLockState(state);
+            },
+            setHandler: (value) => {
+                const command = value === this.Characteristic.LockTargetState.SECURED ? "lock" : "unlock";
+                this.log.info(`${this.accessory.displayName} | Setting lock state via command: ${command}`);
+                this.sendCommand(null, this.accessory, this.deviceData, command);
+            },
+        });
+
+        this.accessory.context.deviceGroups.push("lock");
+    }
+
+    handleAttributeUpdate(change) {
+        if (!this.lockSvc) {
+            this.log.warn(`${this.accessory.displayName} | Lock Mechanism service not found`);
+            return;
+        }
+
+        if (change.attribute === "lock") {
+            const convertedState = this.convertLockState(change.value);
+            this.updateCharacteristicValue(this.lockSvc, this.Characteristic.LockCurrentState, convertedState);
+            this.updateCharacteristicValue(this.lockSvc, this.Characteristic.LockTargetState, convertedState);
+        } else {
+            this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
+        }
+    }
+
+    convertLockState(state) {
+        switch (state) {
+            case "locked":
+                return this.Characteristic.LockCurrentState.SECURED;
+            case "unlocked":
+                return this.Characteristic.LockCurrentState.UNSECURED;
+            default:
+                return this.Characteristic.LockCurrentState.UNKNOWN;
+        }
     }
 }

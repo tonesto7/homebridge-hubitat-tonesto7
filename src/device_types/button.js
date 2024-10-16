@@ -1,4 +1,4 @@
-// device_types/button.js
+// device_types/Button.js
 
 import HubitatAccessory from "../HubitatAccessory.js";
 

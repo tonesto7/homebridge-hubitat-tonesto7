@@ -1,74 +1,68 @@
-// device_types/valve.js
+import HubitatAccessory from "../HubitatAccessory.js";
 
-let DeviceClass, Characteristic, Service, CommunityTypes;
-
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
-    DeviceClass = _deviceClass;
-    Characteristic = _Characteristic;
-    Service = _Service;
-    CommunityTypes = _CommunityTypes;
-}
-
-export function isSupported(accessory) {
-    return accessory.hasCapability("Valve");
-}
-
-export const relevantAttributes = ["valve"];
-
-export function initializeAccessory(accessory) {
-    const valveSvc = DeviceClass.getOrAddService(accessory, Service.Valve);
-
-    DeviceClass.getOrAddCharacteristic(accessory, valveSvc, Characteristic.Active, {
-        getHandler: function () {
-            const isActive = convertValveState(accessory.context.deviceData.attributes.valve, Characteristic);
-            accessory.log.debug(`${accessory.name} | Valve Active State Retrieved: ${isActive}`);
-            return isActive;
-        },
-        setHandler: function (value) {
-            const command = value === Characteristic.Active.ACTIVE ? "open" : "close";
-            accessory.log.info(`${accessory.name} | Setting valve state via command: ${command}`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, command);
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, valveSvc, Characteristic.InUse, {
-        getHandler: function () {
-            const inUse = convertInUseState(accessory.context.deviceData.attributes.valve, Characteristic);
-            accessory.log.debug(`${accessory.name} | Valve InUse State Retrieved: ${inUse}`);
-            return inUse;
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, valveSvc, Characteristic.ValveType, {
-        value: Characteristic.ValveType.GENERIC_VALVE,
-    });
-
-    accessory.context.deviceGroups.push("valve");
-}
-
-export function handleAttributeUpdate(accessory, change) {
-    const valveSvc = accessory.getService(Service.Valve);
-
-    if (!valveSvc) {
-        accessory.log.warn(`${accessory.name} | Valve service not found`);
-        return;
+export default class Valve extends HubitatAccessory {
+    constructor(platform, accessory) {
+        super(platform, accessory);
+        this.deviceData = accessory.context.deviceData;
+        this.relevantAttributes = ["valve"];
     }
 
-    if (change.attribute === "valve") {
-        const isActive = convertValveState(change.value, Characteristic);
-        const inUse = convertInUseState(change.value, Characteristic);
-        DeviceClass.updateCharacteristicValue(accessory, valveSvc, Characteristic.Active, isActive);
-        DeviceClass.updateCharacteristicValue(accessory, valveSvc, Characteristic.InUse, inUse);
-        // accessory.log.debug(`${accessory.name} | Updated Valve: Active: ${isActive}, InUse: ${inUse}`);
-    } else {
-        accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+    static isSupported(accessory) {
+        return accessory.hasCapability("Valve");
     }
-}
 
-function convertValveState(state) {
-    return state === "open" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE;
-}
+    initializeService() {
+        this.valveSvc = this.getOrAddService(this.Service.Valve);
 
-function convertInUseState(state) {
-    return state === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE;
+        this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.Active, {
+            getHandler: () => {
+                const isActive = this.convertValveState(this.deviceData.attributes.valve);
+                this.log.debug(`${this.accessory.displayName} | Valve Active State Retrieved: ${isActive}`);
+                return isActive;
+            },
+            setHandler: (value) => {
+                const command = value === this.Characteristic.Active.ACTIVE ? "open" : "close";
+                this.log.info(`${this.accessory.displayName} | Setting valve state via command: ${command}`);
+                this.sendCommand(null, this.accessory, this.deviceData, command);
+            },
+        });
+
+        this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.InUse, {
+            getHandler: () => {
+                const inUse = this.convertInUseState(this.deviceData.attributes.valve);
+                this.log.debug(`${this.accessory.displayName} | Valve InUse State Retrieved: ${inUse}`);
+                return inUse;
+            },
+        });
+
+        this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.ValveType, {
+            value: this.Characteristic.ValveType.GENERIC_VALVE,
+        });
+
+        this.accessory.context.deviceGroups.push("valve");
+    }
+
+    handleAttributeUpdate(change) {
+        if (!this.valveSvc) {
+            this.log.warn(`${this.accessory.displayName} | Valve service not found`);
+            return;
+        }
+
+        if (change.attribute === "valve") {
+            const isActive = this.convertValveState(change.value);
+            const inUse = this.convertInUseState(change.value);
+            this.updateCharacteristicValue(this.valveSvc, this.Characteristic.Active, isActive);
+            this.updateCharacteristicValue(this.valveSvc, this.Characteristic.InUse, inUse);
+        } else {
+            this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
+        }
+    }
+
+    convertValveState(state) {
+        return state === "open" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+    }
+
+    convertInUseState(state) {
+        return state === "open" ? this.Characteristic.InUse.IN_USE : this.Characteristic.InUse.NOT_IN_USE;
+    }
 }

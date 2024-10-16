@@ -1,61 +1,55 @@
-// device_types/outlet.js
+import HubitatAccessory from "../HubitatAccessory.js";
 
-let DeviceClass, Characteristic, Service, CommunityTypes;
-
-export function init(_deviceClass, _Characteristic, _Service, _CommunityTypes) {
-    DeviceClass = _deviceClass;
-    Characteristic = _Characteristic;
-    Service = _Service;
-    CommunityTypes = _CommunityTypes;
-}
-
-export function isSupported(accessory) {
-    return accessory.hasCapability("Outlet") && accessory.hasCapability("Switch");
-}
-
-export const relevantAttributes = ["switch"];
-
-export function initializeAccessory(accessory) {
-    const outletSvc = DeviceClass.getOrAddService(accessory, Service.Outlet);
-
-    DeviceClass.getOrAddCharacteristic(accessory, outletSvc, Characteristic.On, {
-        getHandler: function () {
-            const isOn = accessory.context.deviceData.attributes.switch === "on";
-            accessory.log.debug(`${accessory.name} | Outlet State Retrieved: ${isOn ? "ON" : "OFF"}`);
-            return isOn;
-        },
-        setHandler: function (value) {
-            const command = value ? "on" : "off";
-            accessory.log.info(`${accessory.name} | Setting outlet state to ${command}`);
-            accessory.sendCommand(null, accessory, accessory.context.deviceData, command);
-        },
-    });
-
-    DeviceClass.getOrAddCharacteristic(accessory, outletSvc, Characteristic.OutletInUse, {
-        getHandler: function () {
-            const inUse = accessory.context.deviceData.attributes.switch === "on";
-            accessory.log.debug(`${accessory.name} | Outlet In Use Retrieved: ${inUse}`);
-            return inUse;
-        },
-    });
-
-    accessory.context.deviceGroups.push("outlet");
-}
-
-export function handleAttributeUpdate(accessory, change) {
-    const outletSvc = accessory.getService(Service.Outlet);
-
-    if (!outletSvc) {
-        accessory.log.warn(`${accessory.name} | Outlet service not found`);
-        return;
+export default class Outlet extends HubitatAccessory {
+    constructor(platform, accessory) {
+        super(platform, accessory);
+        this.deviceData = accessory.context.deviceData;
+        this.relevantAttributes = ["switch"];
     }
 
-    if (change.attribute === "switch") {
-        const isOn = change.value === "on";
-        DeviceClass.updateCharacteristicValue(accessory, outletSvc, Characteristic.On, isOn);
-        DeviceClass.updateCharacteristicValue(accessory, outletSvc, Characteristic.OutletInUse, isOn);
-        // accessory.log.debug(`${accessory.name} | Updated Outlet State: ${isOn ? "ON" : "OFF"}`);
-    } else {
-        accessory.log.debug(`${accessory.name} | Unhandled attribute update: ${change.attribute}`);
+    static isSupported(accessory) {
+        return accessory.hasCapability("Outlet") && accessory.hasCapability("Switch");
+    }
+
+    initializeService() {
+        this.outletSvc = this.getOrAddService(this.Service.Outlet);
+
+        this.getOrAddCharacteristic(this.outletSvc, this.Characteristic.On, {
+            getHandler: () => {
+                const isOn = this.deviceData.attributes.switch === "on";
+                this.log.debug(`${this.accessory.displayName} | Outlet State Retrieved: ${isOn ? "ON" : "OFF"}`);
+                return isOn;
+            },
+            setHandler: (value) => {
+                const command = value ? "on" : "off";
+                this.log.info(`${this.accessory.displayName} | Setting outlet state to ${command}`);
+                this.sendCommand(null, this.accessory, this.deviceData, command);
+            },
+        });
+
+        this.getOrAddCharacteristic(this.outletSvc, this.Characteristic.OutletInUse, {
+            getHandler: () => {
+                const inUse = this.deviceData.attributes.switch === "on";
+                this.log.debug(`${this.accessory.displayName} | Outlet In Use Retrieved: ${inUse}`);
+                return inUse;
+            },
+        });
+
+        this.accessory.context.deviceGroups.push("outlet");
+    }
+
+    handleAttributeUpdate(change) {
+        if (!this.outletSvc) {
+            this.log.warn(`${this.accessory.displayName} | Outlet service not found`);
+            return;
+        }
+
+        if (change.attribute === "switch") {
+            const isOn = change.value === "on";
+            this.updateCharacteristicValue(this.outletSvc, this.Characteristic.On, isOn);
+            this.updateCharacteristicValue(this.outletSvc, this.Characteristic.OutletInUse, isOn);
+        } else {
+            this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
+        }
     }
 }

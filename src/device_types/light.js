@@ -1,4 +1,4 @@
-// device_types/light.js
+// device_types/Light.js
 
 import HubitatAccessory from "../HubitatAccessory.js";
 
@@ -96,6 +96,7 @@ export default class Light extends HubitatAccessory {
         }
 
         this.setupAdaptiveLighting();
+        this.accessory.context.deviceGroups.push("light");
     }
 
     handleAttributeUpdate(change) {

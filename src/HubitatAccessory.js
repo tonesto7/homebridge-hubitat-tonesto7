@@ -25,15 +25,15 @@ export default class HubitatAccessory {
         this.accessory.commandTimers = {};
         this.accessory.commandTimersTS = {};
 
+        // Initialize services and characteristics to keep
+        this.accessory.servicesToKeep = [];
+        this.accessory.characteristicsToKeep = {};
+
         // Setup AccessoryInformation service
         this.setupAccessoryInformation();
 
         // Sanitize accessory name
         this.sanitizeName();
-
-        // Initialize services and characteristics to keep
-        this.accessory.servicesToKeep = [];
-        this.accessory.characteristicsToKeep = {};
 
         // Add to cache
         this.platform.deviceManager.addAccessoryToCache(this.accessory);
