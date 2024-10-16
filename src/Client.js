@@ -121,7 +121,7 @@ export default class Client {
                     newVersion: res.newVersion,
                     version: pluginVersion,
                     isLocal: this.configItems.use_cloud ? "false" : "true",
-                    accCount: Object.keys(this.platform.deviceManager.getAllAccessoriesFromCache()).length || null,
+                    accCount: Array.from(this.platform.deviceManager.getAllAccessoriesFromCache().values()).length || null,
                 },
                 timeout: 10000,
             });
