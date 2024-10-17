@@ -4,12 +4,9 @@ export default class AlarmSystem extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["alarmSystemStatus"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasAttribute("alarmSystemStatus");
-    }
+    static relevantAttributes = ["alarmSystemStatus"];
 
     async initializeService() {
         this.securitySystemSvc = this.getOrAddService(this.Service.SecuritySystem);
@@ -35,7 +32,7 @@ export default class AlarmSystem extends HubitatAccessory {
             setHandler: (value) => {
                 const cmd = this.convertAlarmCmd(value);
                 this.log.info(`${this.accessory.displayName} | Setting alarm system state via command: ${cmd}`);
-                this.sendCommand(null, this.accessory, this.deviceData, cmd);
+                this.sendCommand(null, this.deviceData, cmd);
             },
         });
 

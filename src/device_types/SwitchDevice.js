@@ -4,12 +4,9 @@ export default class Switch extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"));
-    }
+    static relevantAttributes = ["switch"];
 
     async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
@@ -23,7 +20,7 @@ export default class Switch extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value ? "on" : "off";
                 this.log.info(`${this.accessory.displayName} | Setting switch state to ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
         });
 

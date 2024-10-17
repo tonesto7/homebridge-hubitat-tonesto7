@@ -5,11 +5,11 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const packageFile = require("../../package.json");
 
-import _ from "lodash";
+// import _ from "lodash";
 import fs from "fs/promises";
 import { exec } from "child_process";
 import os from "os";
-import compareVersions from "compare-versions";
+import { compare, validate } from "compare-versions";
 
 export default class Utils {
     constructor(platform) {
@@ -111,10 +111,10 @@ export default class Utils {
         const file = await fs.readFile(configPath, "utf8");
         const config = JSON.parse(file);
         const platConfig = config.platforms.find((x) => x.name === this.config.name);
-        _.extend(platConfig, newConfig);
+        Object.assign(platConfig, newConfig);
         const serializedConfig = JSON.stringify(config, null, "  ");
         await fs.writeFile(configPath, serializedConfig, "utf8");
-        _.extend(this.config, newConfig);
+        Object.assign(this.config, newConfig);
     };
 
     checkVersion = () => {
@@ -122,7 +122,7 @@ export default class Utils {
         return new Promise((resolve) => {
             exec(`npm view ${packageFile.name} version`, (error, stdout) => {
                 const newVer = stdout && stdout.trim();
-                if (newVer && compareVersions(stdout.trim(), packageFile.version) > 0) {
+                if (newVer && validate(newVer) && compare(stdout.trim(), packageFile.version, ">")) {
                     this.log.warn("---------------------------------------------------------------");
                     this.log.warn(`NOTICE: New version of ${packageFile.name} available: ${newVer}`);
                     this.log.warn("---------------------------------------------------------------");

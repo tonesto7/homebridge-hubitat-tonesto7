@@ -4,12 +4,9 @@ export default class VirtualPiston extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Piston");
-    }
+    static relevantAttributes = ["switch"];
 
     async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
@@ -25,7 +22,7 @@ export default class VirtualPiston extends HubitatAccessory {
             setHandler: (value) => {
                 if (value) {
                     this.log.info(`${this.accessory.displayName} | Activating Virtual Piston`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "piston");
+                    this.sendCommand(null, this.deviceData, "piston");
                     setTimeout(() => {
                         this.deviceData.attributes.switch = "off";
                         this.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, false);

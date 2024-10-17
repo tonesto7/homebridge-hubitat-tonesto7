@@ -277,6 +277,9 @@ export default class DeviceManager {
                 this.platform.logDebug(`Initializing Cached Device ${accessory.name} | ${accessory.context.deviceData.deviceid} | ${src ? `Source: ${src}` : ""}`);
             }
 
+            // Initialize a map to store device type instances and their relevant attributes
+            accessory.deviceTypeInstances = new Map();
+
             // Identify device types
             const deviceTypes = await this.getDeviceTypes(accessory);
             this.log.info(
@@ -288,6 +291,12 @@ export default class DeviceManager {
                 deviceTypes.forEach(async (deviceType) => {
                     const deviceInstance = new deviceType.class(this.platform, accessory);
                     await deviceInstance.initializeService();
+
+                    // Store the device instance and its relevant attributes
+                    accessory.deviceTypeInstances.set(deviceType.name, {
+                        instance: deviceInstance,
+                        relevantAttributes: deviceType.class.relevantAttributes || [],
+                    });
                 });
             } else {
                 this.log.warn(`No specific device type found for device | ${accessory.name} | deviceId: (${accessory.context.deviceData.deviceid})  | ${src ? `Source: ${src}` : ""}`);
@@ -311,16 +320,15 @@ export default class DeviceManager {
         accessory.context.deviceData.attributes[change.attribute] = change.value;
         accessory.context.lastUpdate = new Date().toLocaleString();
 
-        const deviceTypes = await this.getDeviceTypes(accessory);
-        if (deviceTypes.length > 0) {
-            deviceTypes.forEach((deviceType) => {
-                if (deviceType.class.prototype.relevantAttributes.includes(change.attribute)) {
-                    const deviceInstance = new deviceType.class(this.platform, accessory);
-                    deviceInstance.handleAttributeUpdate(change);
+        if (accessory.deviceTypeInstances && accessory.deviceTypeInstances.size > 0) {
+            for (const [deviceTypeName, { instance, relevantAttributes }] of accessory.deviceTypeInstances) {
+                if (relevantAttributes.includes(change.attribute)) {
+                    this.log.debug(`Updating ${deviceTypeName} for attribute: ${change.attribute}`);
+                    instance.handleAttributeUpdate(change);
                 }
-            });
+            }
         } else {
-            this.log.warn(`No device types found for accessory: ${accessory.name}`);
+            this.log.warn(`No device type instances found for accessory: ${accessory.name}`);
         }
 
         return true;

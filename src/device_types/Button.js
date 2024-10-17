@@ -6,12 +6,9 @@ export default class Button extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["button", "numberOfButtons"];
     }
 
-    static isSupported(accessory) {
-        return ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton"].some((cap) => accessory.hasCapability(cap));
-    }
+    static relevantAttributes = ["button", "numberOfButtons"];
 
     async initializeService() {
         const btnCnt = this.clamp(this.deviceData.attributes.numberOfButtons || 1, 1, 10);

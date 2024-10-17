@@ -4,12 +4,9 @@ export default class PresenceSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["presence", "status", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("PresenceSensor");
-    }
+    static relevantAttributes = ["presence", "status", "tamper"];
 
     async initializeService() {
         this.occupancySvc = this.getOrAddService(this.Service.OccupancySensor);

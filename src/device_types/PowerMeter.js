@@ -4,12 +4,9 @@ export default class PowerMeter extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["power"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("PowerMeter") && !accessory.hasCapability("Switch");
-    }
+    static relevantAttributes = ["power"];
 
     async initializeService() {
         const serviceName = `${this.deviceData.deviceid}_PowerMeter`;

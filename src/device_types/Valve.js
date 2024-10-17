@@ -4,12 +4,9 @@ export default class Valve extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["valve"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Valve");
-    }
+    static relevantAttributes = ["valve"];
 
     async initializeService() {
         this.valveSvc = this.getOrAddService(this.Service.Valve);
@@ -23,7 +20,7 @@ export default class Valve extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value === this.Characteristic.Active.ACTIVE ? "open" : "close";
                 this.log.info(`${this.accessory.displayName} | Setting valve state via command: ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
         });
 

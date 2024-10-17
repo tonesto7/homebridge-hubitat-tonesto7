@@ -34,6 +34,7 @@ export default class HubitatAccessory {
         accessory.hasDeviceFlag = this.hasDeviceFlag.bind(this);
         accessory.getButtonSvcByName = this.getButtonSvcByName.bind(this);
         accessory.sendCommand = this.sendCommand.bind(this);
+        accessory.isAdaptiveLightingSupported = (this.platform.homebridge.version >= 2.7 && this.platform.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.platform.homebridge.hap.AdaptiveLightingController;
 
         // Setup AccessoryInformation service
         this.setupAccessoryInformation();
@@ -230,7 +231,7 @@ export default class HubitatAccessory {
         return svc;
     }
 
-    sendCommand(callback, dev, cmd, vals) {
+    sendCommand(callback, devData, cmd, vals) {
         const id = `${cmd}`;
 
         const debounceConfig = {
@@ -249,23 +250,37 @@ export default class HubitatAccessory {
         if (debounceConfig[cmd]) {
             const { delay, trailing } = debounceConfig[cmd];
 
+            // if (this.accessory.commandTimers[id]) {
+            //     this.accessory.commandTimers[id].cancel();
+            //     this.accessory.commandTimers[id] = null;
+            // }
+
+            // this.accessory.commandTimers[id] = _.debounce(
+            //     () => {
+            //         this.accessory.commandTimersTS[id] = Date.now();
+            //         this.platform.appEvts.emit("event:device_command", devData, cmd, vals);
+            //     },
+            //     delay,
+            //     { trailing },
+            // );
+
+            // this.accessory.commandTimers[id]();
+
             if (this.accessory.commandTimers[id]) {
-                this.accessory.commandTimers[id].cancel();
+                clearTimeout(this.accessory.commandTimers[id]);
                 this.accessory.commandTimers[id] = null;
             }
 
-            this.accessory.commandTimers[id] = _.debounce(
-                () => {
-                    this.accessory.commandTimersTS[id] = Date.now();
-                    this.platform.appEvts.emit("event:device_command", dev, cmd, vals);
-                },
-                delay,
-                { trailing },
-            );
+            this.accessory.commandTimers[id] = setTimeout(() => {
+                this.accessory.commandTimersTS[id] = Date.now();
+                this.platform.appEvts.emit("event:device_command", devData, cmd, vals);
+            }, delay);
 
-            this.accessory.commandTimers[id]();
+            if (!trailing) {
+                this.platform.appEvts.emit("event:device_command", devData, cmd, vals);
+            }
         } else {
-            this.platform.appEvts.emit("event:device_command", dev, cmd, vals);
+            this.platform.appEvts.emit("event:device_command", devData, cmd, vals);
         }
 
         if (callback) callback();

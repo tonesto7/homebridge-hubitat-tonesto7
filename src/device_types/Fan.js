@@ -4,12 +4,9 @@ export default class Fan extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch", "speed", "level"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Fan") || accessory.hasCapability("FanControl") || (accessory.context.deviceData.name.toLowerCase().includes("fan") && accessory.platform.configItems.consider_fan_by_name !== false) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed");
-    }
+    static relevantAttributes = ["switch", "speed", "level"];
 
     async initializeService() {
         this.fanSvc = this.getOrAddService(this.Service.Fanv2);
@@ -24,7 +21,7 @@ export default class Fan extends HubitatAccessory {
             setHandler: (value) => {
                 const state = value ? "on" : "off";
                 this.log.info(`${this.accessory.displayName} | Setting fan state to ${state}`);
-                this.sendCommand(null, this.accessory, this.deviceData, state);
+                this.sendCommand(null, this.deviceData, state);
             },
             removeIfMissingPreReq: true,
         });
@@ -60,7 +57,7 @@ export default class Fan extends HubitatAccessory {
                 const clampedValue = this.clamp(value, 0, 100);
                 const speed = this.fanSpeedConversion(clampedValue);
                 this.log.info(`${this.accessory.displayName} | Setting fan speed to ${speed}`);
-                this.sendCommand(null, this.accessory, this.deviceData, `set${spdAttr.charAt(0).toUpperCase() + spdAttr.slice(1)}`, { value1: speed });
+                this.sendCommand(null, this.deviceData, `set${spdAttr.charAt(0).toUpperCase() + spdAttr.slice(1)}`, { value1: speed });
             },
             removeIfMissingPreReq: true,
         });

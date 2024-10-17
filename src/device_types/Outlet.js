@@ -4,12 +4,9 @@ export default class Outlet extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Outlet") && accessory.hasCapability("Switch");
-    }
+    static relevantAttributes = ["switch"];
 
     async initializeService() {
         this.outletSvc = this.getOrAddService(this.Service.Outlet);
@@ -23,7 +20,7 @@ export default class Outlet extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value ? "on" : "off";
                 this.log.info(`${this.accessory.displayName} | Setting outlet state to ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
         });
 

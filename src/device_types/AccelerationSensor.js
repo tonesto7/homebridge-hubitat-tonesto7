@@ -6,8 +6,9 @@ export default class AccelerationSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["acceleration", "tamper", "status"];
     }
+
+    static relevantAttributes = ["acceleration", "tamper", "status"];
 
     static isSupported(accessory) {
         return accessory.hasCapability("AccelerationSensor");

@@ -4,12 +4,9 @@ export default class VirtualMode extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Mode");
-    }
+    static relevantAttributes = ["switch"];
 
     async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
@@ -25,7 +22,7 @@ export default class VirtualMode extends HubitatAccessory {
             setHandler: (value) => {
                 if (value && this.deviceData.attributes.switch === "off") {
                     this.log.info(`${this.accessory.displayName} | Activating Virtual Mode`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "mode");
+                    this.sendCommand(null, this.deviceData, "mode");
                 }
             },
         });

@@ -4,12 +4,9 @@ export default class IlluminanceSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["illuminance", "status", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("IlluminanceMeasurement");
-    }
+    static relevantAttributes = ["illuminance", "status", "tamper"];
 
     async initializeService() {
         this.lightSensorSvc = this.getOrAddService(this.Service.LightSensor);

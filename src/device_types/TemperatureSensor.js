@@ -4,12 +4,9 @@ export default class TemperatureSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["temperature", "tamper", "status"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("TemperatureMeasurement") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState");
-    }
+    static relevantAttributes = ["temperature", "tamper", "status"];
 
     async initializeService() {
         this.temperatureSvc = this.getOrAddService(this.Service.TemperatureSensor);

@@ -154,7 +154,7 @@ export default class Platform {
                 this.homebridge.updatePlatformAccessories([initializedAccessory]);
                 this.deviceManager.addAccessoryToCache(initializedAccessory);
 
-                this.logInfo(`Added Device: (${initializedAccessory.displayName})`);
+                this.logDebug(`Added Device: (${initializedAccessory.displayName})`);
             } else {
                 this.logError(`Failed to initialize accessory for device: ${device.name}`);
             }
@@ -252,7 +252,7 @@ export default class Platform {
     }
 
     logWarn(args) {
-        this.log.warn(chalk.keyword("orange").bold(args));
+        this.log.warn(chalk.hex("#FFA500").bold(args));
     }
 
     logError(args) {
@@ -270,17 +270,17 @@ export default class Platform {
     // Utility methods for device comparison
     intersection(devices) {
         const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
-        return _.intersectionWith(devices, accessories, this.comparator);
+        return devices.filter((device) => accessories.some((accessory) => this.comparator(device, accessory)));
     }
 
     diffAdd(devices) {
         const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
-        return _.differenceWith(devices, accessories, this.comparator);
+        return devices.filter((device) => !accessories.some((accessory) => this.comparator(device, accessory)));
     }
 
     diffRemove(devices) {
         const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
-        return _.differenceWith(accessories, devices, this.comparator);
+        return accessories.filter((accessory) => !devices.some((device) => this.comparator(accessory, device)));
     }
 
     comparator(accessory1, accessory2) {
@@ -472,9 +472,9 @@ export default class Platform {
                                 data: body.change_data,
                                 date: body.change_date,
                             };
-                            await this.deviceTypes.processDeviceAttributeUpdate(newChange).then((resp) => {
+                            await this.deviceManager.processDeviceAttributeUpdate(newChange).then((resp) => {
                                 if (this.logConfig.showChanges) {
-                                    this.logInfo(chalk`[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
+                                    this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: (${chalk.blueBright(body.change_name)}) [${chalk.yellow.bold(body.change_attribute ? body.change_attribute.toUpperCase() : "unknown")}] is ${chalk.green(body.change_value)}`);
                                 }
                                 res.send({
                                     evtSource: `Homebridge_${platformName}_${this.configItems.app_id}`,

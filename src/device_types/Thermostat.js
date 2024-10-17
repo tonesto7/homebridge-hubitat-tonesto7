@@ -4,12 +4,9 @@ export default class Thermostat extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState");
-    }
+    static relevantAttributes = ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"];
 
     async initializeService() {
         this.thermostatSvc = this.getOrAddService(this.Service.Thermostat);
@@ -49,7 +46,7 @@ export default class Thermostat extends HubitatAccessory {
                         mode = "off";
                 }
                 this.log.info(`${this.accessory.displayName} | Setting thermostat mode to ${mode}`);
-                this.sendCommand(null, this.accessory, this.deviceData, "setThermostatMode", { value1: mode });
+                this.sendCommand(null, this.deviceData, "setThermostatMode", { value1: mode });
             },
         });
 
@@ -82,7 +79,7 @@ export default class Thermostat extends HubitatAccessory {
                     temp = this.thermostatTempConversion((value * 9) / 5 + 32, true);
                 }
                 this.log.info(`${this.accessory.displayName} | Setting thermostat setpoint to ${temp}°${this.platform.getTempUnit()} via command ${cmdName}`);
-                this.sendCommand(null, this.accessory, this.deviceData, cmdName, { value1: temp });
+                this.sendCommand(null, this.deviceData, cmdName, { value1: temp });
                 this.deviceData.attributes[attrName] = temp;
             },
         });

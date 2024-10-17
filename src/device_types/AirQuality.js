@@ -4,12 +4,9 @@ export default class AirQualitySensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["airQualityIndex", "battery", "pm25", "tamper", "status"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("airQuality") || accessory.hasCapability("AirQuality");
-    }
+    static relevantAttributes = ["airQualityIndex", "battery", "pm25", "tamper", "status"];
 
     async initializeService() {
         this.airQualitySvc = this.getOrAddService(this.Service.AirQualitySensor);

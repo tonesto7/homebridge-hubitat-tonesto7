@@ -4,12 +4,9 @@ export default class ContactSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["contact", "status", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl");
-    }
+    static relevantAttributes = ["contact", "status", "tamper"];
 
     async initializeService() {
         this.contactSvc = this.getOrAddService(this.Service.ContactSensor);

@@ -4,12 +4,9 @@ export default class Lock extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["lock"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Lock");
-    }
+    static relevantAttributes = ["lock"];
 
     async initializeService() {
         this.lockSvc = this.getOrAddService(this.Service.LockMechanism);
@@ -31,7 +28,7 @@ export default class Lock extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value === this.Characteristic.LockTargetState.SECURED ? "lock" : "unlock";
                 this.log.info(`${this.accessory.displayName} | Setting lock state via command: ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
         });
 

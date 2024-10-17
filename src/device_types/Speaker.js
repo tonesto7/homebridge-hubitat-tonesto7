@@ -4,12 +4,9 @@ export default class Speaker extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["volume", "level", "mute"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Speaker");
-    }
+    static relevantAttributes = ["volume", "level", "mute"];
 
     async initializeService() {
         this.speakerSvc = this.getOrAddService(this.Service.Speaker);
@@ -29,10 +26,10 @@ export default class Speaker extends HubitatAccessory {
                     const volume = this.volumeConversion(value);
                     this.log.info(`${this.accessory.displayName} | Setting speaker volume to ${volume}`);
                     if (isSonos && volume > 0) {
-                        this.sendCommand(null, this.accessory, this.deviceData, "setVolume", { value1: volume });
+                        this.sendCommand(null, this.deviceData, "setVolume", { value1: volume });
                     } else if (volume > 0) {
                         const command = `set${lvlAttr.charAt(0).toUpperCase() + lvlAttr.slice(1)}`;
-                        this.sendCommand(null, this.accessory, this.deviceData, command, { value1: volume });
+                        this.sendCommand(null, this.deviceData, command, { value1: volume });
                     }
                 },
             });
@@ -48,7 +45,7 @@ export default class Speaker extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value ? "mute" : "unmute";
                 this.log.info(`${this.accessory.displayName} | Setting speaker mute to ${value ? "Muted" : "Unmuted"}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
             removeIfMissingPreReq: true,
         });

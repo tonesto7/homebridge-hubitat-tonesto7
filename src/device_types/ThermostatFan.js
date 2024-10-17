@@ -4,12 +4,9 @@ export default class ThermostatFan extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["thermostatFanMode"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("Thermostat") && accessory.hasAttribute("thermostatFanMode") && accessory.hasCommand("fanAuto") && accessory.hasCommand("fanOn");
-    }
+    static relevantAttributes = ["thermostatFanMode"];
 
     async initializeService() {
         this.fanV2Svc = this.getOrAddService(this.Service.Fanv2);
@@ -24,7 +21,7 @@ export default class ThermostatFan extends HubitatAccessory {
             setHandler: (value) => {
                 const mode = value === this.Characteristic.Active.ACTIVE ? "on" : "auto";
                 this.log.info(`${this.accessory.displayName} | Setting thermostat fan mode to ${mode}`);
-                this.sendCommand(null, this.accessory, this.deviceData, mode === "on" ? "fanOn" : "fanAuto");
+                this.sendCommand(null, this.deviceData, mode === "on" ? "fanOn" : "fanAuto");
             },
         });
 
@@ -47,7 +44,7 @@ export default class ThermostatFan extends HubitatAccessory {
             setHandler: (value) => {
                 const mode = this.convertTargetFanState(value);
                 this.log.info(`${this.accessory.displayName} | Setting thermostat fan mode to ${mode}`);
-                this.sendCommand(null, this.accessory, this.deviceData, mode === "on" ? "fanOn" : "fanAuto");
+                this.sendCommand(null, this.deviceData, mode === "on" ? "fanOn" : "fanAuto");
             },
         });
 

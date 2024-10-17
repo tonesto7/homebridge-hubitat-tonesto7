@@ -4,12 +4,9 @@ export default class GarageDoor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["door", "obstruction"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("GarageDoorControl");
-    }
+    static relevantAttributes = ["door", "obstruction"];
 
     async initializeService() {
         this.garageDoorSvc = this.getOrAddService(this.Service.GarageDoorOpener);
@@ -31,7 +28,7 @@ export default class GarageDoor extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value === this.Characteristic.TargetDoorState.OPEN ? "open" : "close";
                 this.log.info(`${this.accessory.displayName} | Setting garage door state via command: ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
         });
 

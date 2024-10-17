@@ -4,12 +4,9 @@ export default class HumiditySensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["humidity", "status", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("RelativeHumidityMeasurement") && accessory.hasAttribute("humidity") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState");
-    }
+    static relevantAttributes = ["humidity", "status", "tamper"];
 
     async initializeService() {
         this.humiditySvc = this.getOrAddService(this.Service.HumiditySensor);

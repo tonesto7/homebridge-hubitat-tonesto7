@@ -4,12 +4,9 @@ export default class WindowCovering extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["position", "level", "windowShade"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("WindowShade") && accessory.deviceGroups.length > 0;
-    }
+    static relevantAttributes = ["position", "level", "windowShade"];
 
     async initializeService() {
         this.windowCoverSvc = this.getOrAddService(this.Service.WindowCovering);
@@ -41,7 +38,7 @@ export default class WindowCovering extends HubitatAccessory {
                 let target = this.clamp(value, 0, 100);
                 const command = this.hasCommand("setPosition") ? "setPosition" : "setLevel";
                 this.log.info(`${this.accessory.displayName} | Setting window shade target position to ${target}% via command: ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command, { value1: target });
+                this.sendCommand(null, this.deviceData, command, { value1: target });
             },
         });
 
@@ -65,7 +62,7 @@ export default class WindowCovering extends HubitatAccessory {
             setHandler: (value) => {
                 if (value) {
                     this.log.info(`${this.accessory.displayName} | Pausing window shade movement via command: pause`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "pause");
+                    this.sendCommand(null, this.deviceData, "pause");
                 }
             },
             getHandler: () => {

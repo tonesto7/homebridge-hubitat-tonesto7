@@ -4,12 +4,9 @@ export default class MotionSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["motion", "tamper", "status"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("MotionSensor");
-    }
+    static relevantAttributes = ["motion", "tamper", "status"];
 
     async initializeService() {
         this.motionSvc = this.getOrAddService(this.Service.MotionSensor);

@@ -4,12 +4,9 @@ export default class SmokeDetector extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["smoke", "status", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke");
-    }
+    static relevantAttributes = ["smoke", "status", "tamper"];
 
     async initializeService() {
         this.smokeSensorSvc = this.getOrAddService(this.Service.SmokeSensor);

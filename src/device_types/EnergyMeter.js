@@ -4,12 +4,9 @@ export default class EnergyMeter extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["energy"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("EnergyMeter") && !accessory.hasCapability("Switch");
-    }
+    static relevantAttributes = ["energy"];
 
     async initializeService() {
         const serviceName = `${this.deviceData.deviceid}_EnergyMeter`;

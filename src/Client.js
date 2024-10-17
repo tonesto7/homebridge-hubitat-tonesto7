@@ -8,7 +8,7 @@ export default class Client {
         this.platform = platform;
         this.log = platform.log;
         this.hubIp = platform.local_hub_ip;
-        this.configItems = platform.getConfigItems();
+        this.config = platform.getConfigItems();
         this.localErrCnt = 0;
         this.localDisabled = false;
         this.clientsLogSocket = [];
@@ -32,7 +32,7 @@ export default class Client {
     updateGlobals = (hubIp, use_cloud = false) => {
         this.platform.logNotice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
         this.hubIp = hubIp;
-        this.configItems.use_cloud = use_cloud === true;
+        this.config.use_cloud = use_cloud === true;
     };
 
     handleError = (src, err) => {
@@ -60,13 +60,13 @@ export default class Client {
         try {
             const response = await axios({
                 method: "get",
-                url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/devices`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/devices`,
                 params: {
-                    access_token: this.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    isLocal: this.configItems.use_cloud ? "false" : "true",
+                    isLocal: this.config.use_cloud ? "false" : "true",
                 },
                 timeout: 10000,
             });
@@ -78,19 +78,20 @@ export default class Client {
     };
 
     sendDeviceCommand = async (devData, cmd, vals) => {
+        // console.log("sendDeviceCommand", devData, cmd, vals);
         try {
-            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${this.configItems.use_cloud === true})`);
+            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${this.config.use_cloud === true})`);
             const response = await axios({
                 method: "post",
-                url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/${devData.deviceid}/command/${cmd}`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/${devData.deviceid}/command/${cmd}`,
                 params: {
-                    access_token: this.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
+                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
                     evttype: "hkCommand",
-                    isLocal: this.configItems.use_cloud ? "false" : "true",
+                    isLocal: this.config.use_cloud ? "false" : "true",
                 },
                 data: vals || null,
                 timeout: 5000,
@@ -109,9 +110,9 @@ export default class Client {
             this.platform.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
             const response = await axios({
                 method: "post",
-                url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/pluginStatus`,
                 params: {
-                    access_token: this.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
@@ -120,7 +121,7 @@ export default class Client {
                     hasUpdate: res.hasUpdate,
                     newVersion: res.newVersion,
                     version: pluginVersion,
-                    isLocal: this.configItems.use_cloud ? "false" : "true",
+                    isLocal: this.config.use_cloud ? "false" : "true",
                     accCount: Array.from(this.platform.deviceManager.getAllAccessoriesFromCache().values()).length || null,
                 },
                 timeout: 10000,
@@ -139,20 +140,20 @@ export default class Client {
 
     sendStartDirect = async () => {
         try {
-            this.platform.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.configItems.use_cloud === true})`);
+            this.platform.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.config.use_cloud === true})`);
             const response = await axios({
                 method: "post",
-                url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/startDirect/${this.configItems.direct_ip}/${this.configItems.direct_port}/${pluginVersion}`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/startDirect/${this.config.direct_ip}/${this.config.direct_port}/${pluginVersion}`,
                 params: {
-                    access_token: this.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    isLocal: this.configItems.use_cloud ? "false" : "true",
+                    isLocal: this.config.use_cloud ? "false" : "true",
                 },
                 data: {
-                    ip: this.configItems.direct_ip,
-                    port: this.configItems.direct_port,
+                    ip: this.config.direct_ip,
+                    port: this.config.direct_port,
                     version: pluginVersion,
                 },
                 timeout: 10000,

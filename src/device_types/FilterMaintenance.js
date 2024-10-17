@@ -4,12 +4,9 @@ export default class FilterMaintenance extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["filterStatus"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("FilterStatus") && accessory.hasAttribute("filterStatus");
-    }
+    static relevantAttributes = ["filterStatus"];
 
     async initializeService() {
         this.filterSvc = this.getOrAddService(this.Service.FilterMaintenance);

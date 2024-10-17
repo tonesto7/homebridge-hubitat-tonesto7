@@ -7,12 +7,9 @@ export default class Button extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch", "fanMode", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("custom.airPurifierOperationMode");
-    }
+    static relevantAttributes = ["switch", "fanMode", "tamper"];
 
     async initializeService() {
         // Ensure CommunityTypes.NewAirPurifierService exists

@@ -6,13 +6,9 @@ export default class Light extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
     }
 
-    static isSupported(accessory) {
-        const match = accessory.hasCapability("SwitchLevel") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.context.deviceData.name.toLowerCase().includes("light") || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl"));
-        return match && accessory.deviceGroups.length > 0;
-    }
+    static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature"];
 
     async initializeService() {
         this.lightService = this.getOrAddService(this.Service.Lightbulb);
@@ -22,7 +18,7 @@ export default class Light extends HubitatAccessory {
             setHandler: (value) => {
                 const command = value ? "on" : "off";
                 this.log.info(`${this.accessory.displayName} | Setting light state to ${command}`);
-                this.sendCommand(null, this.accessory, this.deviceData, command);
+                this.sendCommand(null, this.deviceData, command);
             },
         });
 
@@ -37,7 +33,7 @@ export default class Light extends HubitatAccessory {
                 setHandler: (value) => {
                     const brightness = this.clamp(value, 0, 100);
                     this.log.info(`${this.accessory.displayName} | Setting brightness to ${brightness}%`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "setLevel", { value1: brightness });
+                    this.sendCommand(null, this.deviceData, "setLevel", { value1: brightness });
                 },
             });
         }
@@ -58,7 +54,7 @@ export default class Light extends HubitatAccessory {
                 setHandler: (value) => {
                     const hue = this.clamp(Math.round(value), 0, 360);
                     this.log.info(`${this.accessory.displayName} | Setting hue to ${hue}`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "setHue", { value1: hue });
+                    this.sendCommand(null, this.deviceData, "setHue", { value1: hue });
                 },
             });
         }
@@ -74,7 +70,7 @@ export default class Light extends HubitatAccessory {
                 setHandler: (value) => {
                     const saturation = this.clamp(Math.round(value), 0, 100);
                     this.log.info(`${this.accessory.displayName} | Setting saturation to ${saturation}%`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "setSaturation", { value1: saturation });
+                    this.sendCommand(null, this.deviceData, "setSaturation", { value1: saturation });
                 },
             });
         }
@@ -95,12 +91,12 @@ export default class Light extends HubitatAccessory {
                     const mired = this.clamp(Math.round(value), 140, 500);
                     const kelvin = this.miredToKelvin(mired);
                     this.log.info(`${this.accessory.displayName} | Setting color temperature to ${kelvin}K (${mired} Mireds)`);
-                    this.sendCommand(null, this.accessory, this.deviceData, "setColorTemperature", { value1: kelvin });
+                    this.sendCommand(null, this.deviceData, "setColorTemperature", { value1: kelvin });
                 },
             });
         }
 
-        this.setupAdaptiveLighting();
+        await this.setupAdaptiveLighting();
         this.accessory.deviceGroups.push("light");
     }
 
@@ -135,7 +131,13 @@ export default class Light extends HubitatAccessory {
         }
     }
 
-    setupAdaptiveLighting() {
+    async setupAdaptiveLighting() {
+        console.log("Adaptive Lighting Config:", this.platform.config.adaptive_lighting);
+        console.log("Is Adaptive Lighting Supported:", this.accessory.isAdaptiveLightingSupported);
+        console.log("Has light_no_al flag:", this.hasDeviceFlag("light_no_al"));
+        console.log("Has level attribute:", this.hasAttribute("level"));
+        console.log("Has colorTemperature attribute:", this.hasAttribute("colorTemperature"));
+
         const canUseAL = this.platform.config.adaptive_lighting !== false && this.accessory.isAdaptiveLightingSupported && !this.hasDeviceFlag("light_no_al") && this.hasAttribute("level") && this.hasAttribute("colorTemperature");
         console.log("canUseAL", canUseAL);
         if (canUseAL && !this.accessory.adaptiveLightingController) {
@@ -147,7 +149,7 @@ export default class Light extends HubitatAccessory {
 
     addAdaptiveLightingController(service) {
         const offset = this.platform.config.adaptive_lighting_offset || 0;
-        const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+        const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.MANUAL;
         this.log.debug(`Adaptive Lighting Offset: ${offset}`);
         this.log.debug(`Adaptive Lighting Control Mode: ${controlMode}`);
 

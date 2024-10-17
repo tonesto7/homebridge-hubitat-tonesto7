@@ -4,12 +4,9 @@ export default class LeakSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.relevantAttributes = ["water", "status", "tamper"];
     }
 
-    static isSupported(accessory) {
-        return accessory.hasCapability("WaterSensor");
-    }
+    static relevantAttributes = ["water", "status", "tamper"];
 
     async initializeService() {
         this.leakSensorSvc = this.getOrAddService(this.Service.LeakSensor);
