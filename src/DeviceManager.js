@@ -123,7 +123,7 @@ export default class DeviceManager {
                 name: "outlet",
                 test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch") && !["LightBulb", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)),
                 class: Outlet,
-                onlyOnNoGrps: true,
+                // onlyOnNoGrps: true,
             },
             {
                 name: "switch_device",
@@ -247,7 +247,7 @@ export default class DeviceManager {
             }
         }
 
-        this.platform.logDebug(`${accessory.name} | Device types found: ${matchedTypes.map((t) => t.name)}`);
+        this.log.debug(`${accessory.name} | Device types found: ${matchedTypes.map((t) => t.name)}`);
         return matchedTypes;
     }
 
