@@ -132,14 +132,7 @@ export default class Light extends HubitatAccessory {
     }
 
     async setupAdaptiveLighting() {
-        console.log("Adaptive Lighting Config:", this.platform.config.adaptive_lighting);
-        console.log("Is Adaptive Lighting Supported:", this.accessory.isAdaptiveLightingSupported);
-        console.log("Has light_no_al flag:", this.hasDeviceFlag("light_no_al"));
-        console.log("Has level attribute:", this.hasAttribute("level"));
-        console.log("Has colorTemperature attribute:", this.hasAttribute("colorTemperature"));
-
         const canUseAL = this.platform.config.adaptive_lighting !== false && this.accessory.isAdaptiveLightingSupported && !this.hasDeviceFlag("light_no_al") && this.hasAttribute("level") && this.hasAttribute("colorTemperature");
-        console.log("canUseAL", canUseAL);
         if (canUseAL && !this.accessory.adaptiveLightingController) {
             this.addAdaptiveLightingController(this.lightService);
         } else if (!canUseAL && this.accessory.adaptiveLightingController) {
@@ -150,11 +143,11 @@ export default class Light extends HubitatAccessory {
     addAdaptiveLightingController(service) {
         const offset = this.platform.config.adaptive_lighting_offset || 0;
         const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.MANUAL;
-        this.log.debug(`Adaptive Lighting Offset: ${offset}`);
-        this.log.debug(`Adaptive Lighting Control Mode: ${controlMode}`);
+        // this.log.debug(`Adaptive Lighting Offset: ${offset}`);
+        // this.log.debug(`Adaptive Lighting Control Mode: ${controlMode}`);
 
         if (service) {
-            this.accessory.adaptiveLightingController = new this.homebridge.hap.AdaptiveLightingController(service);
+            this.accessory.adaptiveLightingController = new this.homebridge.hap.AdaptiveLightingController(service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
 
             this.accessory.adaptiveLightingController.on("update", (evt) => {
                 this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Controller Update Event: ${JSON.stringify(evt)}`);

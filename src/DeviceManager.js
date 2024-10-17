@@ -64,10 +64,9 @@ export default class DeviceManager {
             {
                 name: "light",
                 test: (accessory) =>
-                    accessory.hasCapability("SwitchLevel") &&
+                    accessory.hasCapability("Switch") &&
                     (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")) || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl")),
                 class: Light,
-                excludeDevTypes: ["outlet", "switch_device"],
             },
             {
                 name: "air_purifier",
@@ -122,7 +121,7 @@ export default class DeviceManager {
             },
             {
                 name: "outlet",
-                test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"),
+                test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch") && !["LightBulb", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)),
                 class: Outlet,
                 onlyOnNoGrps: true,
             },
@@ -248,7 +247,7 @@ export default class DeviceManager {
             }
         }
 
-        this.log.info(`${accessory.name || "Unknown Device"} | Device types found: ${matchedTypes.map((t) => t.name).join(", ")}`);
+        this.platform.logDebug(`${accessory.name} | Device types found: ${matchedTypes.map((t) => t.name)}`);
         return matchedTypes;
     }
 
@@ -282,11 +281,6 @@ export default class DeviceManager {
 
             // Identify device types
             const deviceTypes = await this.getDeviceTypes(accessory);
-            this.log.info(
-                "matched device types",
-                deviceTypes.map((t) => t.name),
-            );
-
             if (deviceTypes.length > 0) {
                 deviceTypes.forEach(async (deviceType) => {
                     const deviceInstance = new deviceType.class(this.platform, accessory);
@@ -299,7 +293,8 @@ export default class DeviceManager {
                     });
                 });
             } else {
-                this.log.warn(`No specific device type found for device | ${accessory.name} | deviceId: (${accessory.context.deviceData.deviceid})  | ${src ? `Source: ${src}` : ""}`);
+                this.log.warn(`No specific device type found for device | ${accessory.name} | deviceId: (${accessory.context.deviceData.deviceid}) | ${src ? `Source: ${src}` : ""}`);
+                console.log(JSON.stringify(accessory.context.deviceData, null, 4));
             }
 
             return accessory;

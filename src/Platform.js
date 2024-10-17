@@ -154,7 +154,7 @@ export default class Platform {
                 this.homebridge.updatePlatformAccessories([initializedAccessory]);
                 this.deviceManager.addAccessoryToCache(initializedAccessory);
 
-                this.logDebug(`Added Device: (${initializedAccessory.displayName})`);
+                this.logInfo(`Added Device: (${initializedAccessory.displayName})`);
             } else {
                 this.logError(`Failed to initialize accessory for device: ${device.name}`);
             }
@@ -174,7 +174,7 @@ export default class Platform {
         await this.deviceManager.initializeHubitatAccessory(cachedAccessory, true, "updateDevice");
         this.deviceManager.addAccessoryToCache(cachedAccessory);
         this.homebridge.updatePlatformAccessories([cachedAccessory]);
-        this.logInfo(`Updated Device: (${cachedAccessory.displayName})`);
+        // this.logInfo(`Updated Device: (${cachedAccessory.displayName})`);
     }
 
     async removeAccessory(accessory) {
