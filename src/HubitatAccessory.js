@@ -49,7 +49,7 @@ export default class HubitatAccessory {
         const originalName = this.accessory.context.deviceData.name;
         const sanitizedName = this.platform.Utils.sanitizeName(originalName);
         // console.log(`setupAccessoryInformation | Name: (${this.accessory.context.deviceData.name}) | Sanitized: [${sanitizedName}]`);
-        if (originalName !== sanitizedName) {
+        if (originalName !== sanitizedName || this.accessory.displayName !== sanitizedName || this.accessory.context.deviceData.name !== sanitizedName) {
             this.log.warn(`Sanitized Name: "${originalName}" => "${sanitizedName}"`);
             this.accessory.name = sanitizedName;
             this.accessory.displayName = sanitizedName;
@@ -69,6 +69,7 @@ export default class HubitatAccessory {
         const currentName = accInfoSvc.getCharacteristic(this.Characteristic.Name).value;
         if (currentName !== sanitizedName) {
             this.log.warn(`Failed to sanitize the accessory name (${originalName}) to [${sanitizedName}] for device ID: ${this.accessory.context.deviceData.deviceid}`);
+            accInfoSvc.getCharacteristic(this.Characteristic.Name).updateValue(sanitizedName);
         }
 
         // Handle Identify event
@@ -77,6 +78,33 @@ export default class HubitatAccessory {
                 this.log.info(`${this.accessory.name} - identify`);
                 callback();
             });
+        }
+    }
+
+    sanitizeAndUpdateAccessoryName() {
+        const originalName = this.accessory.context.deviceData.name;
+        const sanitizedName = this.platform.utils.sanitizeName(originalName);
+
+        if (sanitizedName !== originalName) {
+            // Update the name properties
+            this.accessory.name = sanitizedName;
+
+            // Update the AccessoryInformation service
+            const accessoryInformation = accessory.getService(this.Service.AccessoryInformation);
+            if (accessoryInformation) {
+                accessoryInformation.getCharacteristic(this.Characteristic.Name).updateValue(sanitizedName);
+
+                // Verify that the displayName was updated
+                const displayName = accessoryInformation.getCharacteristic(this.Characteristic.Name).value;
+                if (displayName !== sanitizedName) {
+                    this.logWarn(`Failed to update displayName for device ID: ${accessory.deviceid}`);
+                } else {
+                    this.logInfo(`AccessoryInformation service updated successfully for device ID: ${accessory.deviceid} | Old Name: "${originalName}" | Display Name: "${displayName}"`);
+                    this.homebridge.updatePlatformAccessories([accessory]);
+                }
+            } else {
+                this.logWarn(`AccessoryInformation service not found for device ID: ${accessory.deviceid}`);
+            }
         }
     }
 
