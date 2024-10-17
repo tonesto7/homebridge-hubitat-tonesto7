@@ -47,14 +47,16 @@ export default class Light extends HubitatAccessory {
                 },
                 getHandler: () => {
                     let hue = parseFloat(this.deviceData.attributes.hue);
+                    hue = Math.round((hue / 100) * 360); // Convert from 0-100 to 0-360
                     hue = this.clamp(hue, 0, 360);
                     this.log.debug(`${this.accessory.displayName} | Current Hue: ${hue}`);
-                    return isNaN(hue) ? 0 : Math.round(hue);
+                    return isNaN(hue) ? 0 : hue;
                 },
                 setHandler: (value) => {
                     const hue = this.clamp(Math.round(value), 0, 360);
-                    this.log.info(`${this.accessory.displayName} | Setting hue to ${hue}`);
-                    this.sendCommand(null, this.deviceData, "setHue", { value1: hue });
+                    const scaledHue = Math.round((hue / 360) * 100); // Convert from 0-360 to 0-100
+                    this.log.info(`${this.accessory.displayName} | Setting hue to ${scaledHue}`);
+                    this.sendCommand(null, this.deviceData, "setHue", { value1: scaledHue });
                 },
             });
         }
@@ -82,9 +84,10 @@ export default class Light extends HubitatAccessory {
                     maxValue: 500,
                 },
                 getHandler: () => {
-                    let mired = this.kelvinToMired(parseInt(this.deviceData.attributes.colorTemperature));
+                    let kelvin = parseInt(this.deviceData.attributes.colorTemperature);
+                    let mired = this.kelvinToMired(kelvin);
                     mired = this.clamp(mired, 140, 500);
-                    this.log.debug(`${this.accessory.displayName} | Current ColorTemperature: ${mired} Mireds`);
+                    this.log.debug(`${this.accessory.displayName} | Current ColorTemperature: ${mired} Mireds (${kelvin}K)`);
                     return isNaN(mired) ? 140 : mired;
                 },
                 setHandler: (value) => {
@@ -112,8 +115,8 @@ export default class Light extends HubitatAccessory {
                 break;
             case "hue":
                 if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
-                    const hue = this.clamp(Math.round(parseFloat(change.value)), 0, 360);
-                    this.updateCharacteristicValue(this.lightService, this.Characteristic.Hue, hue);
+                    const hue = Math.round((parseFloat(change.value) / 100) * 360); // Convert from 0-100 to 0-360
+                    this.updateCharacteristicValue(this.lightService, this.Characteristic.Hue, this.clamp(hue, 0, 360));
                 }
                 break;
             case "saturation":
@@ -124,7 +127,8 @@ export default class Light extends HubitatAccessory {
                 break;
             case "colorTemperature":
                 if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
-                    const mired = this.kelvinToMired(parseInt(change.value, 10));
+                    const kelvin = parseInt(change.value, 10);
+                    const mired = this.clamp(this.kelvinToMired(kelvin), 140, 500);
                     this.updateCharacteristicValue(this.lightService, this.Characteristic.ColorTemperature, mired);
                 }
                 break;
@@ -157,7 +161,7 @@ export default class Light extends HubitatAccessory {
             });
 
             this.accessory.configureController(this.accessory.adaptiveLightingController);
-            this.log.info(`Adaptive Lighting Supported... Assigned Adaptive Lighting Controller to [${this.accessory.displayName}]`);
+            this.log.info(`[${this.accessory.displayName}] | Adaptive Lighting Supported... Assigned Adaptive Lighting Controller`);
         } else {
             this.log.error(`${this.accessory.displayName} | Unable to add Adaptive Lighting Controller because the required service parameter was missing...`);
         }

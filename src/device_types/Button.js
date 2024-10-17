@@ -36,7 +36,7 @@ export default class Button extends HubitatAccessory {
             this.accessory._buttonMap[serviceName] = buttonSvc;
         }
 
-        this.log.info(`${this.accessory.displayName} | Button accessory initialized with ${btnCnt} buttons`);
+        // this.log.info(`${this.accessory.displayName} | Button accessory initialized with ${btnCnt} buttons`);
         this.accessory.deviceGroups.push("button");
     }
 
