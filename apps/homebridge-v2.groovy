@@ -115,32 +115,37 @@ preferences {
 
 @Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
-        'acceleration', 'airQualityIndex', 'alarmSystemStatus', 'battery', 'button', 'carbonDioxide', 'carbonMonoxide', 'colorTemperature', 'contact',
-        'coolingSetpoint', 'door', 'doubleTapped', 'energy', 'fanMode', 'fanState', 'fanTargetState', 'filterStatus', 'heatingSetpoint', 'held', 'hue', 'humidity',
-        'illuminance', 'level', 'level', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power', 'powerSource', 'presence', 'pushed',
-        'saturation', 'smoke', 'speed', 'switch', 'supportedThermostatModes', 'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState',
-        'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
+        'acceleration', 'airQualityIndex', 'alarmSystemStatus', 'battery', 'button', 'carbonDioxide', 'carbonMonoxide',
+        'colorTemperature', 'contact', 'coolingSetpoint', 'door', 'doubleTapped', 'effectName', 'energy', 'fanMode',
+        'fanState', 'fanTargetState', 'filterStatus', 'heatingSetpoint', 'held', 'hue', 'humidity', 'illuminance',
+        'level', 'lightEffects', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power',
+        'powerSource', 'presence', 'pushed', 'saturation', 'smoke', 'speed', 'switch', 'supportedThermostatModes',
+        'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 'thermostatSetPoint',
+        'valve', 'volume', 'water', 'windowShade',
     ],
     capabilities: [
         'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'AudioMute', 'Battery', 'Bulb', 'Button',
         'CarbonDioxideMeasurement', 'CarbonMonoxideDetector', 'ColorControl', 'ColorTemperature', 'ContactSensor', 'DoorControl',
-        'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'FilterStatus', 'GarageDoorControl', 'HoldableButton', 'IlluminanceMeasurement', 'Light',
-        'LightBulb', 'Lock', 'Lock2', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet', 'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton',
-        'RelativeHumidityMeasurement', 'Routine', 'Sensor', 'SmokeDetector', 'Speaker', 'Switch', 'SwitchLevel', 'TamperAlert', 'TemperatureMeasurement',
-        'Thermostat', 'ThermostatCoolingSetpoint', 'ThermostatFanMode', 'ThermostatHeatingSetpoint', 'ThermostatMode', 'ThermostatOperatingState',
-        'ThermostatSetpoint', 'Valve', 'WaterSensor', 'WindowBlind', 'WindowShade'
+        'DoubleTapableButton', 'EnergyMeter', 'Fan', 'FanControl', 'FanLight', 'FilterStatus', 'GarageDoorControl', 'HoldableButton',
+        'IlluminanceMeasurement', 'Light', 'LightBulb', 'LightEffects', 'Lock', 'Lock2', 'LockCodes', 'Mode', 'MotionSensor', 'Outlet',
+        'Piston', 'PowerMeter', 'PowerSource', 'PresenceSensor', 'PushableButton', 'RelativeHumidityMeasurement', 'Routine', 'Sensor',
+        'SmokeDetector', 'Speaker', 'Switch', 'SwitchLevel', 'TamperAlert', 'TemperatureMeasurement', 'Thermostat', 'ThermostatCoolingSetpoint',
+        'ThermostatFanMode', 'ThermostatHeatingSetpoint', 'ThermostatMode', 'ThermostatOperatingState', 'ThermostatSetpoint', 'Valve',
+        'WaterSensor', 'WindowBlind', 'WindowShade'
     ],
     commands: [
-        'armAway', 'armHome', 'disarm', 'auto','heat','cool', 'channelDown', 'channelUp', 'nextTrack', 'previousTrack', 'emergencyHeat', 'fanAuto',
-        'fanCirculate', 'fanOn', 'flip', 'mute', 'on', 'off', 'open', 'close', 'pause', 'push', 'hold', 'doubleTap', 'setColorTemperature', 'setHue',
-        'setSaturation', 'setCoolingSetpoint', 'setFanSpeed', 'setHeatingSetpoint', 'setLevel', 'setPosition', 'setSchedule', 'setSpeed',
-        'setThermostatFanMode', 'setThermostatMode','setThermostatSetpoint','setTiltLevel', 'setVolume', 'start', 'stop', 'unmute', 'volumeDown', 'volumeUp'
+        'armAway', 'armHome', 'disarm', 'auto','heat','cool', 'channelDown', 'channelUp', 'nextTrack', 'previousTrack', 'emergencyHeat',
+        'fanAuto', 'fanCirculate', 'fanOn', 'flip', 'mute', 'on', 'off', 'open', 'close', 'pause', 'push', 'hold', 'doubleTap',
+        'setColorTemperature', 'setHue', 'setSaturation', 'setCoolingSetpoint', 'setEffect', 'setNextEffect', 'setPreviousEffect',
+        'setFanSpeed', 'setHeatingSetpoint', 'setLevel', 'setPosition', 'setSchedule', 'setSpeed', 'setThermostatFanMode',
+        'setThermostatMode','setThermostatSetpoint','setTiltLevel', 'setVolume', 'start', 'stop', 'unmute', 'volumeDown', 'volumeUp'
     ],
 ]
 
 @Field static final Map<String, String> attMapFLD = [
-    'acceleration': 'Acceleration', 'battery': 'Battery', 'contact': 'Contact', 'energy': 'Energy', 'filterStatus': 'FilterStatus', 'humidity': 'Humidity', 'illuminance': 'Illuminance',
-    'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power', 'presence': 'Presence', 'securityKeypad' : 'SecurityKeypad', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
+    'acceleration': 'Acceleration', 'battery': 'Battery', 'contact': 'Contact', 'energy': 'Energy', 'filterStatus': 'FilterStatus',
+    'humidity': 'Humidity', 'illuminance': 'Illuminance', 'level': 'Level', 'lock': 'Lock', 'motion': 'Motion', 'power': 'Power',
+    'presence': 'Presence', 'securityKeypad' : 'SecurityKeypad', 'speed': 'FanSpeed', 'switch': 'Switch', 'tamper': 'Tamper',
     'temperature': 'Temp', 'valve': 'Valve', 'pushed': 'PushableButton', 'held': 'HoldableButton', 'doubleTapped': 'DoubleTapableButton'
 ]
 
@@ -1500,7 +1505,7 @@ private processCmd(String idevId, String cmd, value1, value2) {
     }
 
     String cmdS
-    cmdS = shw ? "Command Successful for Device | Name: ${devN} | Command: [${command}(".toString() : sBLANK
+    cmdS = shw ? "Command Successful for Device | Name: ${devN} | DeviceId: ${devId} | Command: [${command}(".toString() : sBLANK
     try {
         if (value2 != null) {
             device."$command"(value1, value2)
@@ -1515,7 +1520,7 @@ private processCmd(String idevId, String cmd, value1, value2) {
         if (shw) { logInfo(cmdS) }
         Long pt = execDt ? (wnow() - execDt) : 0L
         logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}()] | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}(${value1})] | Process Time: (${pt}ms)", 200)
     } catch (ex) {
         logError("Error Occurred for Device | Name: ${devN} | Command: [${command}()] ${ex}", ex)
         return CommandReply(shw, 'Failure', "Error Occurred For Device ${devN} | Command [${command}()]", 500)
