@@ -39,8 +39,6 @@ import PowerMeter from "./device_types/PowerMeter.js";
 
 // Load the CommunityTypes module
 import CommunityTypes from "./libs/CommunityTypes.js";
-import { PlatformAccessory } from "../node_modules/homebridge/dist/platformAccessory.js";
-import { Service } from "../node_modules/hap-nodejs/dist/index.js";
 
 /**
  * DeviceManager class is responsible for managing and initializing various types of devices
