@@ -56,7 +56,7 @@
         "start": "homebridge -P . -U .",
         "start-debug": "homebridge -D -P . -U .",
         "snyk-protect": "snyk-protect",
-        "prepare": "yarn run snyk-protect",
+        "prepare": "npm run snyk-protect",
         "hb_cleanup_win": "rmdir /Q /S accessories && rmdir /Q /S persist"
     },
     "type": "module",
