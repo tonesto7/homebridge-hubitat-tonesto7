@@ -8,6 +8,22 @@ export default class WindowCovering extends HubitatAccessory {
 
     static relevantAttributes = ["position", "level", "windowShade"];
 
+    /**
+     * Initializes the window covering service for the accessory.
+     *
+     * This method sets up the characteristics for the window covering service, including:
+     * - CurrentPosition: Retrieves the current position of the window shade.
+     * - TargetPosition: Retrieves and sets the target position of the window shade.
+     * - PositionState: Retrieves the current state of the window shade's position.
+     * - ObstructionDetected: Checks if there is any obstruction detected.
+     * - HoldPosition: Pauses the window shade movement.
+     *
+     * It also determines the appropriate position attribute based on available commands and attributes.
+     * If no valid position attribute or command is found, a warning is logged.
+     *
+     * @async
+     * @returns {Promise<void>} Resolves when the service is initialized.
+     */
     async initializeService() {
         this.windowCoverSvc = this.getOrAddService(this.Service.WindowCovering);
 
@@ -74,6 +90,15 @@ export default class WindowCovering extends HubitatAccessory {
         this.accessory.deviceGroups.push("window_covering");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     */
     handleAttributeUpdate(change) {
         if (!this.windowCoverSvc) {
             this.log.warn(`${this.accessory.displayName} | Window Covering service not found`);
@@ -98,6 +123,16 @@ export default class WindowCovering extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts a string representing the position state of a window covering
+     * to the corresponding HomeKit characteristic value.
+     *
+     * @param {string} state - The state of the window covering, which can be "opening", "closing", or any other value.
+     * @returns {number} - The corresponding HomeKit characteristic value for the position state.
+     *                     - INCREASING if the state is "opening".
+     *                     - DECREASING if the state is "closing".
+     *                     - STOPPED for any other state.
+     */
     convertPositionState(state) {
         switch (state) {
             case "opening":

@@ -8,6 +8,23 @@ export default class VirtualPiston extends HubitatAccessory {
 
     static relevantAttributes = ["switch"];
 
+    /**
+     * Initializes the virtual piston service for the accessory.
+     *
+     * This method sets up the Switch service and its On characteristic with handlers
+     * for getting and setting the state. When the switch is turned on, it triggers
+     * the virtual piston and then automatically turns off after a short delay.
+     *
+     * @async
+     * @function initializeService
+     * @memberof VirtualPiston
+     *
+     * @example
+     * // Example usage:
+     * await virtualPiston.initializeService();
+     *
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
 
@@ -35,6 +52,13 @@ export default class VirtualPiston extends HubitatAccessory {
         this.accessory.deviceGroups.push("virtual_piston");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.switchSvc) {
             this.log.warn(`${this.accessory.displayName} | Virtual Piston service not found`);

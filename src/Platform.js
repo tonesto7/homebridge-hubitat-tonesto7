@@ -12,8 +12,76 @@ import _ from "lodash";
 import portFinderSync from "portfinder-sync";
 import DeviceManager from "./DeviceManager.js";
 
+/**
+ * Initializes an Express application instance.
+ *
+ * @constant {express} webApp - The Express application instance.
+ */
 const webApp = express();
 
+/**
+ * Platform class for Homebridge-Hubitat-Tonesto7 plugin.
+ *
+ * @class Platform
+ * @classdesc This class represents the main platform for the Homebridge-Hubitat-Tonesto7 plugin. It handles configuration, device management, and communication with the Hubitat platform.
+ *
+ * @param {Function} log - Logging function provided by Homebridge.
+ * @param {Object} config - Configuration object for the platform.
+ * @param {Object} api - Homebridge API object.
+ *
+ * @property {Object} config - Configuration object for the platform.
+ * @property {Object} homebridge - Homebridge API object.
+ * @property {Object} Service - Homebridge HAP Service object.
+ * @property {Object} Characteristic - Homebridge HAP Characteristic object.
+ * @property {Object} Categories - Homebridge HAP Categories object.
+ * @property {Object} PlatformAccessory - Homebridge PlatformAccessory object.
+ * @property {Object} uuid - Homebridge HAP UUID object.
+ * @property {boolean} ok2Run - Flag indicating if the platform is properly configured and can run.
+ * @property {number} direct_port - Port number for direct communication.
+ * @property {Object} logConfig - Configuration object for logging.
+ * @property {EventEmitter} appEvts - Event emitter for application events.
+ * @property {Function} log - Logging function.
+ * @property {number} polling_seconds - Interval in seconds for polling devices.
+ * @property {Array} excludedAttributes - List of attributes to exclude.
+ * @property {Array} excludedCapabilities - List of capabilities to exclude.
+ * @property {string} update_method - Method for updating devices.
+ * @property {string} temperature_unit - Unit for temperature measurement.
+ * @property {string} local_hub_ip - Local IP address of the Hubitat hub.
+ * @property {Object} Utils - Utility functions.
+ * @property {Object} configItems - Configuration items for the platform.
+ * @property {Array} unknownCapabilities - List of unknown capabilities.
+ * @property {Object} deviceManager - Device manager instance.
+ * @property {Object} client - Client instance for communication with Hubitat.
+ *
+ * @fires Platform#event:plugin_upd_status
+ *
+ * @method loadConfig - Loads the platform configuration from the Homebridge config file.
+ * @method updateConfig - Updates the platform configuration in the Homebridge config file.
+ * @method updateTempUnit - Updates the temperature unit.
+ * @method getTempUnit - Gets the current temperature unit.
+ * @method didFinishLaunching - Called when Homebridge finishes launching.
+ * @method refreshDevices - Refreshes the list of devices from Hubitat.
+ * @method addDevice - Adds a new device to the platform.
+ * @method updateDevice - Updates an existing device on the platform.
+ * @method removeAccessory - Removes an accessory from the platform.
+ * @method configureAccessory - Configures a cached accessory.
+ * @method getLogConfig - Gets the logging configuration.
+ * @method findDirectPort - Finds an available port for direct communication.
+ * @method getConfigItems - Gets the configuration items for the platform.
+ * @method logAlert - Logs an alert message.
+ * @method logGreen - Logs a green message.
+ * @method logNotice - Logs a notice message.
+ * @method logWarn - Logs a warning message.
+ * @method logError - Logs an error message.
+ * @method logInfo - Logs an info message.
+ * @method logDebug - Logs a debug message.
+ * @method intersection - Finds the intersection of devices.
+ * @method diffAdd - Finds the devices to add.
+ * @method diffRemove - Finds the devices to remove.
+ * @method comparator - Compares two devices or accessories.
+ * @method isValidRequestor - Validates the requestor based on access token and app ID.
+ * @method WebServerInit - Initializes the web server for direct communication.
+ */
 export default class Platform {
     constructor(log, config, api) {
         this.config = config;
@@ -53,6 +121,14 @@ export default class Platform {
         this.appEvts.emit("event:plugin_upd_status");
     }
 
+    /**
+     * Loads the configuration for the platform.
+     *
+     * This method reads the Homebridge configuration file, parses it as JSON,
+     * and returns the configuration object for the platform with the matching name.
+     *
+     * @returns {Object} The configuration object for the platform.
+     */
     loadConfig() {
         const configPath = this.homebridge.user.configPath();
         const file = fs.readFileSync(configPath);
@@ -60,6 +136,12 @@ export default class Platform {
         return config.platforms.find((x) => x.name === this.config.name);
     }
 
+    /**
+     * Updates the platform configuration with new settings.
+     *
+     * @param {Object} newConfig - The new configuration settings to be applied.
+     * @throws {Error} If there is an issue reading or writing the configuration file.
+     */
     updateConfig(newConfig) {
         const configPath = this.homebridge.user.configPath();
         const file = fs.readFileSync(configPath);
@@ -71,15 +153,36 @@ export default class Platform {
         Object.assign(this.config, newConfig);
     }
 
+    /**
+     * Updates the temperature unit and logs the change.
+     *
+     * @param {string} unit - The new temperature unit to set.
+     */
     updateTempUnit(unit) {
         this.logNotice(`Temperature Unit is Now: (${unit})`);
         this.temperature_unit = unit;
     }
 
+    /**
+     * Retrieves the temperature unit.
+     *
+     * @returns {string} The temperature unit.
+     */
     getTempUnit() {
         return this.temperature_unit;
     }
 
+    /**
+     * Method called when the platform has finished launching.
+     *
+     * This method logs an informational message about fetching devices, sets up a periodic
+     * refresh of devices, and initializes the web server. If there is an error during the
+     * web server initialization, it logs the error. If the initialization is successful,
+     * it emits a plugin start event.
+     *
+     * @method didFinishLaunching
+     * @returns {void}
+     */
     didFinishLaunching() {
         this.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
         setInterval(this.refreshDevices.bind(this), this.polling_seconds * 1000);
@@ -96,6 +199,26 @@ export default class Platform {
             });
     }
 
+    /**
+     * Refreshes all device data from the client and updates the platform's device list.
+     *
+     * @param {string} [src=undefined] - Optional source identifier for the refresh operation.
+     * @returns {Promise<boolean>} - A promise that resolves to true if the refresh operation is successful.
+     *
+     * @throws {Error} - Throws an error if the refresh operation fails.
+     *
+     * @async
+     *
+     * @example
+     * // Refresh devices with an optional source identifier
+     * refreshDevices("Manual Trigger")
+     *   .then((result) => {
+     *     console.log("Devices refreshed successfully:", result);
+     *   })
+     *   .catch((error) => {
+     *     console.error("Error refreshing devices:", error);
+     *   });
+     */
     async refreshDevices(src = undefined) {
         let starttime = new Date();
         return new Promise((resolve, reject) => {
@@ -141,6 +264,15 @@ export default class Platform {
         });
     }
 
+    /**
+     * Adds a new device to the platform.
+     *
+     * @param {Object} deviceData - The data of the device to be added.
+     * @param {string} deviceData.deviceid - The unique identifier of the device.
+     * @param {string} deviceData.name - The name of the device.
+     * @returns {Promise<void>} A promise that resolves when the device has been added and initialized.
+     * @throws Will throw an error if the device initialization fails.
+     */
     async addDevice(deviceData) {
         const uuid = this.uuid.generate(`hubitat_v2_${deviceData.deviceid}`);
         let accessory = new this.PlatformAccessory(deviceData.name, uuid);
@@ -164,6 +296,14 @@ export default class Platform {
         }
     }
 
+    /**
+     * Updates the device information and refreshes the cached accessory.
+     *
+     * @param {Object} device - The device object containing updated information.
+     * @param {string} device.name - The name of the device.
+     * @param {string} device.deviceid - The unique identifier of the device.
+     * @returns {Promise<void>} - A promise that resolves when the device update is complete.
+     */
     async updateDevice(device) {
         const cachedAccessory = this.deviceManager.getAccessoryFromCache(device);
         if (!cachedAccessory) {
@@ -177,6 +317,12 @@ export default class Platform {
         // this.logInfo(`Updated Device: (${cachedAccessory.displayName})`);
     }
 
+    /**
+     * Removes an accessory from the platform.
+     *
+     * @param {PlatformAccessory} accessory - The accessory to be removed.
+     * @returns {Promise<void>} - A promise that resolves when the accessory is removed.
+     */
     async removeAccessory(accessory) {
         if (this.deviceManager.removeAccessoryFromCache(accessory)) {
             this.deviceManager.removeAccessoryFromCache(accessory);
@@ -186,6 +332,15 @@ export default class Platform {
     }
 
     // Homebridge Method that is called when a cached accessory is loaded
+    /**
+     * Configures a cached accessory.
+     *
+     * @param {PlatformAccessory} accessory - The accessory to configure.
+     * @param {string} accessory.displayName - The display name of the accessory.
+     * @param {string} accessory.UUID - The UUID of the accessory.
+     *
+     * @returns {void}
+     */
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
         this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
@@ -206,6 +361,13 @@ export default class Platform {
         //     });
     }
 
+    /**
+     * Retrieves the logging configuration.
+     *
+     * @returns {Object} An object containing the logging configuration.
+     * @returns {boolean} return.debug - Indicates if debug logging is enabled.
+     * @returns {boolean} return.showChanges - Indicates if change logging is enabled.
+     */
     getLogConfig() {
         return {
             debug: this.config.logConfig ? this.config.logConfig.debug === true : false,
@@ -213,12 +375,42 @@ export default class Platform {
         };
     }
 
+    /**
+     * Finds and returns an available direct port.
+     *
+     * This method checks the configuration for a specified direct port. If a port is specified,
+     * it attempts to find an available port starting from the specified port number using the
+     * `portFinderSync.getPort` method. If no port is specified in the configuration, it defaults
+     * to port 8000.
+     *
+     * @returns {number} The available direct port.
+     */
     findDirectPort() {
         let port = this.config.direct_port || 8000;
         if (port) port = portFinderSync.getPort(port);
         return (this.direct_port = port);
     }
 
+    /**
+     * Retrieves configuration items from the platform configuration.
+     *
+     * @returns {Object} An object containing the following configuration properties:
+     * - app_url_local {string}: The local URL of the app.
+     * - app_url_cloud {string}: The cloud URL of the app.
+     * - app_id {string}: The application ID.
+     * - access_token {string}: The access token for authentication.
+     * - use_cloud {boolean}: Indicates whether to use cloud services.
+     * - app_platform {string}: The platform of the application.
+     * - polling_seconds {number}: The polling interval in seconds (default is 3600).
+     * - round_levels {boolean}: Indicates whether to round levels (default is true).
+     * - direct_port {number}: The direct port number.
+     * - direct_ip {string}: The direct IP address (default is the IP address obtained from Utils).
+     * - validateTokenId {boolean}: Indicates whether to validate the token ID.
+     * - consider_fan_by_name {boolean}: Indicates whether to consider fans by name (default is true).
+     * - consider_light_by_name {boolean}: Indicates whether to consider lights by name.
+     * - adaptive_lighting {boolean}: Indicates whether adaptive lighting is enabled (default is true).
+     * - adaptive_lighting_offset {number|undefined}: The offset for adaptive lighting if enabled.
+     */
     getConfigItems() {
         return {
             app_url_local: this.config.app_url_local,
@@ -239,56 +431,132 @@ export default class Platform {
         };
     }
 
+    /**
+     * Logs an alert message with yellow color.
+     *
+     * @param {string} args - The message to be logged.
+     */
     logAlert(args) {
         this.log.info(chalk.yellow(args));
     }
 
+    /**
+     * Logs the provided arguments in green color.
+     *
+     * @param {string} args - The message or arguments to log.
+     */
     logGreen(args) {
         this.log.info(chalk.green(args));
     }
 
+    /**
+     * Logs a notice message with blue bright color.
+     *
+     * @param {string} args - The message to be logged.
+     */
     logNotice(args) {
         this.log.info(chalk.blueBright(args));
     }
 
+    /**
+     * Logs a warning message with a specific color and style.
+     *
+     * @param {string} args - The warning message to be logged.
+     */
     logWarn(args) {
         this.log.warn(chalk.hex("#FFA500").bold(args));
     }
 
+    /**
+     * Logs an error message with bold red formatting.
+     *
+     * @param {string} args - The error message to be logged.
+     */
     logError(args) {
         this.log.error(chalk.bold.red(args));
     }
 
+    /**
+     * Logs an informational message.
+     *
+     * @param {string} args - The message to log.
+     */
     logInfo(args) {
         this.log.info(chalk.white(args));
     }
 
+    /**
+     * Logs a debug message if debugging is enabled in the log configuration.
+     *
+     * @param {string} args - The message to be logged.
+     */
     logDebug(args) {
         if (this.logConfig.debug === true) this.log.debug(chalk.gray(args));
     }
 
     // Utility methods for device comparison
+    /**
+     * Filters the given devices to return only those that have a corresponding accessory in the cache.
+     *
+     * @param {Array} devices - The array of devices to be filtered.
+     * @returns {Array} - An array of devices that have corresponding accessories in the cache.
+     */
     intersection(devices) {
         const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
         return devices.filter((device) => accessories.some((accessory) => this.comparator(device, accessory)));
     }
 
+    /**
+     * Filters out devices that are already present in the accessories cache.
+     *
+     * @param {Array} devices - The list of devices to be filtered.
+     * @returns {Array} - The list of devices that are not present in the accessories cache.
+     */
     diffAdd(devices) {
         const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
         return devices.filter((device) => !accessories.some((accessory) => this.comparator(device, accessory)));
     }
 
+    /**
+     * Filters out accessories that are not present in the provided devices list.
+     *
+     * @param {Array} devices - The list of devices to compare against.
+     * @returns {Array} - An array of accessories that are not present in the devices list.
+     */
     diffRemove(devices) {
         const accessories = Array.from(this.deviceManager.getAllAccessoriesFromCache().values());
         return accessories.filter((accessory) => !devices.some((device) => this.comparator(accessory, device)));
     }
 
+    /**
+     * Compares two accessories to determine if they are the same based on their device IDs.
+     *
+     * @param {Object} accessory1 - The first accessory object to compare.
+     * @param {Object} accessory2 - The second accessory object to compare.
+     * @param {string} [accessory1.deviceid] - The device ID of the first accessory.
+     * @param {Object} [accessory1.context] - The context object of the first accessory.
+     * @param {Object} [accessory1.context.deviceData] - The device data object of the first accessory.
+     * @param {string} [accessory1.context.deviceData.deviceid] - The device ID within the context of the first accessory.
+     * @param {string} [accessory2.deviceid] - The device ID of the second accessory.
+     * @param {Object} [accessory2.context] - The context object of the second accessory.
+     * @param {Object} [accessory2.context.deviceData] - The device data object of the second accessory.
+     * @param {string} [accessory2.context.deviceData.deviceid] - The device ID within the context of the second accessory.
+     * @returns {boolean} - Returns true if the device IDs of both accessories are the same, otherwise false.
+     */
     comparator(accessory1, accessory2) {
         const id1 = accessory1.deviceid || accessory1.context.deviceData.deviceid;
         const id2 = accessory2.deviceid || accessory2.context.deviceData.deviceid;
         return id1 === id2;
     }
 
+    /**
+     * Validates the requestor based on the provided access token and app ID.
+     *
+     * @param {string} access_token - The access token to validate.
+     * @param {string} app_id - The application ID to validate.
+     * @param {string} src - The source of the request for logging purposes.
+     * @returns {boolean} - Returns true if the requestor is valid, otherwise false.
+     */
     isValidRequestor(access_token, app_id, src) {
         if (this.configItems.validateTokenId !== true) {
             return true;
@@ -298,6 +566,20 @@ export default class Platform {
         return false;
     }
 
+    /**
+     * Initializes the web server and sets up various routes and middleware.
+     *
+     * @returns {Promise<Object>} A promise that resolves with the status of the web server initialization.
+     *
+     * @throws {Error} If there is an exception during the initialization process.
+     *
+     * @example
+     * WebServerInit().then((status) => {
+     *   console.log(status);
+     * }).catch((error) => {
+     *   console.error(error);
+     * });
+     */
     WebServerInit() {
         // Get the IP address that we will send to the Hubitat App. This can be overridden in the config file.
         return new Promise((resolve) => {

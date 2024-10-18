@@ -9,8 +9,29 @@ export default class Button extends HubitatAccessory {
         this.deviceData = accessory.context.deviceData;
     }
 
+    /**
+     * @constant {string[]} relevantAttributes - An array of relevant attribute names for the Air Purifier device type.
+     * @default ["switch", "fanMode", "tamper"]
+     */
     static relevantAttributes = ["switch", "fanMode", "tamper"];
 
+    /**
+     * Initializes the Air Purifier service and its characteristics.
+     *
+     * This method ensures that the necessary community types and characteristics for the Air Purifier service are defined and added to the accessory.
+     * It sets up handlers for getting and setting the state of the air purifier, including its active state, current state, fan oscillation mode, and tamper status.
+     *
+     * Characteristics initialized:
+     * - Active
+     * - CurrentAirPurifierState
+     * - FanOscilationMode (if defined in CommunityTypes)
+     * - StatusTampered
+     *
+     * The method also adds the air purifier to the accessory's device groups.
+     *
+     * @async
+     * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
+     */
     async initializeService() {
         // Ensure CommunityTypes.NewAirPurifierService exists
         if (!CommunityTypes || !CommunityTypes.NewAirPurifierService) {
@@ -78,6 +99,15 @@ export default class Button extends HubitatAccessory {
         this.accessory.deviceGroups.push("air_purifier");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding characteristics of the Air Purifier service.
+     *
+     * @param {Object} change - The object containing the attribute change information.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     */
     handleAttributeUpdate(change) {
         if (!this.airPurifierSvc) {
             this.log.warn(`${this.accessory.name} | Air Purifier service not found`);
@@ -106,6 +136,13 @@ export default class Button extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts a given fan mode string to the corresponding CommunityTypes.FanOscilationMode.
+     *
+     * @param {string} mode - The fan mode to convert. Expected values are "low", "medium", "high", or "sleep".
+     * @returns {CommunityTypes.FanOscilationMode} - The corresponding FanOscilationMode for the given mode.
+     * If the mode is unsupported, logs a warning and returns the default mode (SLEEP).
+     */
     convertFanMode(mode) {
         switch (mode) {
             case "low":
@@ -122,6 +159,12 @@ export default class Button extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts a given fan mode to a device-specific mode string.
+     *
+     * @param {CommunityTypes.FanOscilationMode} mode - The fan mode to convert.
+     * @returns {string} The corresponding device-specific mode string.
+     */
     convertFanModeToDevice(mode) {
         switch (mode) {
             case CommunityTypes.FanOscilationMode.LOW:
@@ -136,6 +179,12 @@ export default class Button extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the air purifier state from a string to the corresponding HomeKit characteristic.
+     *
+     * @param {string} state - The current state of the air purifier. Possible values are "purifying", "idle", and "inactive".
+     * @returns {number} - The corresponding HomeKit characteristic for the air purifier state.
+     */
     convertAirPurifierState(state) {
         this.log.debug(`${this.accessory.name} | Air Purifier State: ${state}`);
         switch (state) {

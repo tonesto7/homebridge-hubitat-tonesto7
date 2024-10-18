@@ -8,6 +8,20 @@ export default class Valve extends HubitatAccessory {
 
     static relevantAttributes = ["valve"];
 
+    /**
+     * Initializes the valve service for the accessory.
+     *
+     * This method sets up the Valve service and its characteristics:
+     * - Active: Retrieves and sets the active state of the valve.
+     * - InUse: Retrieves the in-use state of the valve.
+     * - ValveType: Sets the valve type to a generic valve.
+     *
+     * It also adds the valve to the accessory's device groups.
+     *
+     * @async
+     * @function initializeService
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.valveSvc = this.getOrAddService(this.Service.Valve);
 
@@ -39,6 +53,13 @@ export default class Valve extends HubitatAccessory {
         this.accessory.deviceGroups.push("valve");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {any} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.valveSvc) {
             this.log.warn(`${this.accessory.displayName} | Valve service not found`);
@@ -55,10 +76,23 @@ export default class Valve extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the valve state to the corresponding HomeKit characteristic value.
+     *
+     * @param {string} state - The state of the valve, expected to be "open" or "closed".
+     * @returns {number} - Returns `this.Characteristic.Active.ACTIVE` if the state is "open",
+     *                     otherwise returns `this.Characteristic.Active.INACTIVE`.
+     */
     convertValveState(state) {
         return state === "open" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
     }
 
+    /**
+     * Converts the valve state to the corresponding InUse characteristic.
+     *
+     * @param {string} state - The current state of the valve, expected to be "open" or other.
+     * @returns {number} - Returns the InUse characteristic value: IN_USE if the state is "open", otherwise NOT_IN_USE.
+     */
     convertInUseState(state) {
         return state === "open" ? this.Characteristic.InUse.IN_USE : this.Characteristic.InUse.NOT_IN_USE;
     }

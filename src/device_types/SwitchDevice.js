@@ -8,6 +8,16 @@ export default class Switch extends HubitatAccessory {
 
     static relevantAttributes = ["switch"];
 
+    /**
+     * Initializes the switch service for the accessory.
+     *
+     * This method sets up the switch service and its characteristics, including handlers for getting and setting the switch state.
+     * It also adds the switch to the accessory's device groups.
+     *
+     * @async
+     * @function
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
 
@@ -27,6 +37,13 @@ export default class Switch extends HubitatAccessory {
         this.accessory.deviceGroups.push("switch");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristic.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.switchSvc) {
             this.log.warn(`${this.accessory.displayName} | Switch service not found`);

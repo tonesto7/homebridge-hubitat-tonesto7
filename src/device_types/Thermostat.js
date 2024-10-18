@@ -8,6 +8,22 @@ export default class Thermostat extends HubitatAccessory {
 
     static relevantAttributes = ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"];
 
+    /**
+     * Initializes the thermostat service and its characteristics.
+     *
+     * This method sets up the following characteristics for the thermostat service:
+     * - CurrentHeatingCoolingState: Retrieves the current operating state of the thermostat.
+     * - TargetHeatingCoolingState: Retrieves and sets the target operating state of the thermostat.
+     * - CurrentTemperature: Retrieves the current temperature from the thermostat.
+     * - TargetTemperature: Retrieves and sets the target temperature for the thermostat.
+     * - CurrentRelativeHumidity: Retrieves the current relative humidity if the device supports it.
+     * - TemperatureDisplayUnits: Retrieves the temperature display units (Celsius or Fahrenheit).
+     *
+     * Additionally, it adds the thermostat to the accessory's device groups.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.thermostatSvc = this.getOrAddService(this.Service.Thermostat);
 
@@ -104,6 +120,15 @@ export default class Thermostat extends HubitatAccessory {
         this.accessory.deviceGroups.push("thermostat");
     }
 
+    /**
+     * Handles updates to thermostat attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute and value.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {any} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     */
     handleAttributeUpdate(change) {
         if (!this.thermostatSvc) {
             this.log.warn(`${this.accessory.displayName} | Thermostat service not found`);
@@ -145,6 +170,16 @@ export default class Thermostat extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the thermostat's operating state to the corresponding HomeKit characteristic.
+     *
+     * @param {string} state - The current operating state of the thermostat.
+     *                         Possible values are "cooling", "heating", or any other string for "off".
+     * @returns {number} - The corresponding HomeKit characteristic for the current heating/cooling state.
+     *                     Returns `this.Characteristic.CurrentHeatingCoolingState.COOL` for "cooling",
+     *                     `this.Characteristic.CurrentHeatingCoolingState.HEAT` for "heating",
+     *                     and `this.Characteristic.CurrentHeatingCoolingState.OFF` for any other state.
+     */
     getCurrentOperatingState(state) {
         switch (state) {
             case "cooling":
@@ -156,6 +191,12 @@ export default class Thermostat extends HubitatAccessory {
         }
     }
 
+    /**
+     * Returns the target operating state based on the provided mode.
+     *
+     * @param {string} mode - The mode of the thermostat (e.g., "cool", "heat", "auto").
+     * @returns {number} - The corresponding TargetHeatingCoolingState constant.
+     */
     getTargetOperatingState(mode) {
         switch (mode) {
             case "cool":
@@ -169,6 +210,13 @@ export default class Thermostat extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the thermostat temperature based on the temperature unit.
+     *
+     * @param {number} temp - The temperature value to be converted.
+     * @param {boolean} [isSet=false] - Flag indicating if the temperature is being set or read.
+     * @returns {number} - The converted temperature value.
+     */
     thermostatTempConversion(temp, isSet = false) {
         if (isSet) {
             if (this.platform.getTempUnit() === "C") {
@@ -185,6 +233,25 @@ export default class Thermostat extends HubitatAccessory {
         }
     }
 
+    /**
+     * Calculates the target temperature for the thermostat based on its current mode and attributes.
+     *
+     * @returns {number} The calculated target temperature in Celsius, rounded to one decimal place.
+     *
+     * @property {Object} this.deviceData - The data object containing device attributes.
+     * @property {string} this.deviceData.attributes.thermostatMode - The current mode of the thermostat (e.g., "cool", "heat", "auto").
+     * @property {number} this.deviceData.attributes.temperature - The current temperature.
+     * @property {number} this.deviceData.attributes.coolingSetpoint - The cooling setpoint temperature.
+     * @property {number} this.deviceData.attributes.heatingSetpoint - The heating setpoint temperature.
+     * @property {number} [this.deviceData.attributes.thermostatSetpoint] - The general thermostat setpoint temperature.
+     * @property {Object} this.platform - The platform object containing utility methods.
+     * @property {Function} this.platform.getTempUnit - Method to get the temperature unit ("F" or "C").
+     * @property {Function} this.clamp - Method to clamp a value between a minimum and maximum range.
+     * @property {Object} this.log - The logging object.
+     * @property {Function} this.log.debug - Method to log debug messages.
+     * @property {Object} this.accessory - The accessory object containing display information.
+     * @property {string} this.accessory.displayName - The display name of the accessory.
+     */
     thermostatTargetTemp() {
         const mode = this.deviceData.attributes.thermostatMode;
         const currentTemp = this.deviceData.attributes.temperature;
@@ -215,6 +282,14 @@ export default class Thermostat extends HubitatAccessory {
         return Math.round(targetTemp * 10) / 10;
     }
 
+    /**
+     * Determines the appropriate command and attribute names for setting the thermostat target temperature
+     * based on the current thermostat mode and temperature attributes.
+     *
+     * @returns {Object} An object containing the command name (`cmdName`) and attribute name (`attrName`).
+     * @property {string} cmdName - The name of the command to set the thermostat target temperature.
+     * @property {string} attrName - The name of the attribute to set the thermostat target temperature.
+     */
     thermostatTargetTemp_set() {
         const mode = this.deviceData.attributes.thermostatMode;
         let cmdName, attrName;
@@ -244,6 +319,15 @@ export default class Thermostat extends HubitatAccessory {
         return { cmdName, attrName };
     }
 
+    /**
+     * Retrieves the supported thermostat modes for the device.
+     *
+     * This method checks the device's supported thermostat modes from its attributes.
+     * If the modes are provided as a string, it attempts to parse them as JSON or splits them by commas.
+     * It then maps the modes to the corresponding HomeKit characteristic values.
+     *
+     * @returns {Array} An array of supported thermostat modes mapped to HomeKit characteristic values.
+     */
     getSupportedThermostatModes() {
         let supportedModes = [];
         let modes = this.deviceData.attributes.supportedThermostatModes || ["off", "heat", "cool", "auto"];

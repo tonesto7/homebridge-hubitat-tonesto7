@@ -8,6 +8,21 @@ export default class Speaker extends HubitatAccessory {
 
     static relevantAttributes = ["volume", "level", "mute"];
 
+    /**
+     * Initializes the speaker service for the accessory.
+     *
+     * This method sets up the speaker service and its characteristics, including volume and mute.
+     * It handles the retrieval and setting of these characteristics based on the device's attributes.
+     *
+     * Characteristics:
+     * - Volume: Retrieves and sets the volume of the speaker. Supports Sonos and other devices with volume or level attributes.
+     * - Mute: Retrieves and sets the mute state of the speaker. Requires the "AudioMute" capability.
+     *
+     * The method also adds the speaker device group to the accessory.
+     *
+     * @async
+     * @method initializeService
+     */
     async initializeService() {
         this.speakerSvc = this.getOrAddService(this.Service.Speaker);
 
@@ -53,6 +68,18 @@ export default class Speaker extends HubitatAccessory {
         this.accessory.deviceGroups.push("speaker_device");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: 'volume', value: '50' });
+     */
     handleAttributeUpdate(change) {
         if (!this.speakerSvc) {
             this.log.warn(`${this.accessory.displayName} | Speaker service not found`);
@@ -81,10 +108,22 @@ export default class Speaker extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the given volume to a value within the range of 0 to 100.
+     *
+     * @param {number} volume - The volume level to be converted.
+     * @returns {number} - The volume level clamped between 0 and 100.
+     */
     volumeConversion(volume) {
         return this.clamp(volume, 0, 100);
     }
 
+    /**
+     * Converts the given volume to a HomeKit-compatible volume level.
+     *
+     * @param {number} volume - The volume level to convert.
+     * @returns {number} - The volume level clamped between 0 and 100.
+     */
     volumeToHomeKit(volume) {
         return this.clamp(volume, 0, 100);
     }

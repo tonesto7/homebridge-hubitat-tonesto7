@@ -8,6 +8,23 @@ export default class SmokeDetector extends HubitatAccessory {
 
     static relevantAttributes = ["smoke", "status", "tamper"];
 
+    /**
+     * Initializes the smoke detector service and its characteristics.
+     *
+     * This method sets up the smoke sensor service and adds the necessary characteristics
+     * for smoke detection, status active, and status tampered. It also includes handlers
+     * for retrieving the current state of these characteristics and logs the retrieved values.
+     *
+     * Characteristics initialized:
+     * - SmokeDetected: Retrieves the smoke detection status.
+     * - StatusActive: Retrieves the active status of the smoke detector.
+     * - StatusTampered: Retrieves the tampered status of the smoke detector (if the device has the TamperAlert capability).
+     *
+     * Additionally, this method adds the smoke detector to the accessory's device groups.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.smokeSensorSvc = this.getOrAddService(this.Service.SmokeSensor);
 
@@ -40,6 +57,24 @@ export default class SmokeDetector extends HubitatAccessory {
         this.accessory.deviceGroups.push("smoke_detector");
     }
 
+    /**
+     * Handles updates to the attributes of the smoke detector device.
+     *
+     * @param {Object} change - The object containing the attribute change details.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     *
+     * @description
+     * This method updates the characteristics of the smoke detector service based on the attribute changes.
+     * It handles the following attributes:
+     * - "smoke": Updates the smoke detection status.
+     * - "status": Updates the active status of the device.
+     * - "tamper": Updates the tamper status if the device has the TamperAlert capability.
+     *
+     * If the attribute is not handled, a debug log is generated.
+     */
     handleAttributeUpdate(change) {
         if (!this.smokeSensorSvc) {
             this.log.warn(`${this.accessory.displayName} | Smoke Sensor service not found`);
@@ -69,6 +104,12 @@ export default class SmokeDetector extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the smoke status from a string to a corresponding HomeKit characteristic value.
+     *
+     * @param {string} smokeStatus - The smoke status, expected to be either "clear" or another value indicating smoke detected.
+     * @returns {number} - Returns the HomeKit characteristic value for smoke detection status.
+     */
     convertSmokeStatus(smokeStatus) {
         return smokeStatus === "clear" ? this.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : this.Characteristic.SmokeDetected.SMOKE_DETECTED;
     }

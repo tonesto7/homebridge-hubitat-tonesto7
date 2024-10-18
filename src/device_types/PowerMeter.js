@@ -8,6 +8,21 @@ export default class PowerMeter extends HubitatAccessory {
 
     static relevantAttributes = ["power"];
 
+    /**
+     * Initializes the power meter service for the accessory.
+     *
+     * This method sets up the power meter service using the device's ID and adds it to the accessory.
+     * It also ensures that the service is kept and adds the Watts characteristic if available.
+     *
+     * @async
+     * @method initializeService
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     *
+     * @example
+     * await this.initializeService();
+     *
+     * @throws {Error} Throws an error if the service cannot be initialized.
+     */
     async initializeService() {
         const serviceName = `${this.deviceData.deviceid}_PowerMeter`;
         this.powerSvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Power Meter");
@@ -30,6 +45,13 @@ export default class PowerMeter extends HubitatAccessory {
         this.accessory.deviceGroups.push("power_meter");
     }
 
+    /**
+     * Handles the attribute update for the power meter.
+     *
+     * @param {Object} change - The change object containing attribute and value.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.powerSvc) {
             this.log.warn(`${this.accessory.displayName} | Power Meter service not found`);

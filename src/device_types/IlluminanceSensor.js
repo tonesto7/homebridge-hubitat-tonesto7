@@ -8,6 +8,19 @@ export default class IlluminanceSensor extends HubitatAccessory {
 
     static relevantAttributes = ["illuminance", "status", "tamper"];
 
+    /**
+     * Initializes the light sensor service and its characteristics.
+     *
+     * This method sets up the light sensor service and adds the following characteristics:
+     * - CurrentAmbientLightLevel: Represents the current ambient light level in lux.
+     * - StatusActive: Indicates whether the device is active.
+     * - StatusTampered: Indicates whether the device has been tampered with.
+     *
+     * The method also adds the device to the "illuminance_sensor" group.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.lightSensorSvc = this.getOrAddService(this.Service.LightSensor);
 
@@ -47,6 +60,13 @@ export default class IlluminanceSensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("illuminance_sensor");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The object containing the attribute change details.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.lightSensorSvc) {
             this.log.warn(`${this.accessory.displayName} | Light Sensor service not found`);

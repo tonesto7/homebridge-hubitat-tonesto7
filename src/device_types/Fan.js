@@ -8,6 +8,22 @@ export default class Fan extends HubitatAccessory {
 
     static relevantAttributes = ["switch", "speed", "level"];
 
+    /**
+     * Initializes the fan service and its characteristics.
+     *
+     * This method sets up the fan service (`Fanv2`) and adds the following characteristics:
+     * - `Active`: Indicates whether the fan is active or inactive.
+     * - `CurrentFanState`: Indicates the current state of the fan (blowing air or idle).
+     * - `RotationSpeed`: Controls and reports the rotation speed of the fan.
+     *
+     * The method also determines the appropriate speed steps based on device flags (`fan_3_spd`, `fan_4_spd`, `fan_5_spd`)
+     * and sets up the characteristics accordingly.
+     *
+     * @async
+     * @function
+     * @memberof Fan
+     * @returns {Promise<void>} A promise that resolves when the service and characteristics are initialized.
+     */
     async initializeService() {
         this.fanSvc = this.getOrAddService(this.Service.Fanv2);
 
@@ -65,6 +81,13 @@ export default class Fan extends HubitatAccessory {
         this.accessory.deviceGroups.push("fan");
     }
 
+    /**
+     * Handles updates to the fan's attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing the attribute and its new value.
+     * @param {string} change.attribute - The name of the attribute that has changed (e.g., "switch", "speed", "level").
+     * @param {string|number} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.fanSvc) {
             this.log.warn(`${this.accessory.displayName} | Fan service not found`);
@@ -87,6 +110,18 @@ export default class Fan extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts a numerical fan speed value to a corresponding string representation.
+     *
+     * @param {number} speedVal - The numerical value of the fan speed.
+     * @returns {string} The string representation of the fan speed.
+     * - "off" for speed values 0 or less.
+     * - "low" for speed values between 1 and 20.
+     * - "medium-low" for speed values between 21 and 40.
+     * - "medium" for speed values between 41 and 60.
+     * - "medium-high" for speed values between 61 and 80.
+     * - "high" for speed values above 80.
+     */
     fanSpeedConversion(speedVal) {
         if (speedVal <= 0) return "off";
         if (speedVal <= 20) return "low";
@@ -96,6 +131,12 @@ export default class Fan extends HubitatAccessory {
         return "high";
     }
 
+    /**
+     * Converts a fan speed setting to a corresponding level value.
+     *
+     * @param {string} speedVal - The fan speed setting. Possible values are "off", "low", "medium-low", "medium", "medium-high", and "high".
+     * @returns {number} The corresponding level value for the given fan speed setting. Returns 0 if the speed setting is "off" or unrecognized.
+     */
     fanSpeedToLevel(speedVal) {
         switch (speedVal) {
             case "off":

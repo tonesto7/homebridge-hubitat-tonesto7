@@ -6,8 +6,33 @@ export default class AirQualitySensor extends HubitatAccessory {
         this.deviceData = accessory.context.deviceData;
     }
 
+    /**
+     * @constant {string[]} relevantAttributes - An array of relevant attribute names for the AirQuality device type.
+     * @property {string} airQualityIndex - The air quality index attribute.
+     * @property {string} battery - The battery level attribute.
+     * @property {string} pm25 - The PM2.5 particle concentration attribute.
+     * @property {string} tamper - The tamper status attribute.
+     * @property {string} status - The general status attribute.
+     */
     static relevantAttributes = ["airQualityIndex", "battery", "pm25", "tamper", "status"];
 
+    /**
+     * Initializes the air quality service for the accessory.
+     *
+     * This method sets up various characteristics for the air quality sensor, including:
+     * - Status Fault
+     * - Status Active
+     * - Air Quality
+     * - Status Low Battery
+     * - PM2.5 Density (if available)
+     * - Status Tampered (if supported)
+     *
+     * It also adds the air quality service to the accessory's device groups.
+     *
+     * @async
+     * @method initializeService
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.airQualitySvc = this.getOrAddService(this.Service.AirQualitySensor);
 
@@ -65,6 +90,23 @@ export default class AirQualitySensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("air_quality");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {any} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: "airQualityIndex", value: 42 });
+     *
+     * @description
+     * This method updates the HomeKit characteristics based on the attribute changes received.
+     * It handles various attributes such as airQualityIndex, battery, pm25, tamper, and status.
+     * If the attribute is not recognized, it logs a debug message.
+     */
     handleAttributeUpdate(change) {
         if (!this.airQualitySvc) {
             this.log.warn(`${this.accessory.displayName} | AirQualitySensor service not found`);
@@ -104,6 +146,18 @@ export default class AirQualitySensor extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts an Air Quality Index (AQI) value to a corresponding PM2.5 air quality characteristic.
+     *
+     * @param {number} aqi - The Air Quality Index value to be converted. Should be between 0 and 500.
+     * @returns {number} - The corresponding air quality characteristic based on the AQI value.
+     *                     Returns `this.Characteristic.AirQuality.UNKNOWN` if the AQI is undefined, greater than 500, or less than 0.
+     *                     Returns `this.Characteristic.AirQuality.EXCELLENT` if the AQI is between 0 and 50.
+     *                     Returns `this.Characteristic.AirQuality.GOOD` if the AQI is between 51 and 100.
+     *                     Returns `this.Characteristic.AirQuality.FAIR` if the AQI is between 101 and 150.
+     *                     Returns `this.Characteristic.AirQuality.INFERIOR` if the AQI is between 151 and 200.
+     *                     Returns `this.Characteristic.AirQuality.POOR` if the AQI is greater than 200.
+     */
     aqiToPm25(aqi) {
         if (aqi === undefined || aqi > 500 || aqi < 0) return this.Characteristic.AirQuality.UNKNOWN;
         if (aqi <= 50) return this.Characteristic.AirQuality.EXCELLENT;

@@ -39,7 +39,39 @@ import PowerMeter from "./device_types/PowerMeter.js";
 
 // Load the CommunityTypes module
 import CommunityTypes from "./libs/CommunityTypes.js";
+import { PlatformAccessory } from "../node_modules/homebridge/dist/platformAccessory.js";
+import { Service } from "../node_modules/hap-nodejs/dist/index.js";
 
+/**
+ * DeviceManager class is responsible for managing and initializing various types of devices
+ * within the platform. It handles device type identification, initialization, and updates.
+ *
+ * @class DeviceManager
+ * @param {Object} platform - The platform object containing configuration, logging, and other utilities.
+ *
+ * @property {Object} platform - The platform object.
+ * @property {Object} config - The configuration object from the platform.
+ * @property {Function} log - The logging function from the platform.
+ * @property {Service} Service - The service object from the platform.
+ * @property {Characteristic} Characteristic - The characteristic object from the platform.
+ * @property {Categories} Categories - The categories object from the platform.
+ * @property {Object} CommunityTypes - The community types object initialized with Service and Characteristic.
+ * @property {Map} cachedAccessories - A map to store cached accessories.
+ * @property {Array} deviceTypeTests - An array of device type test objects.
+ *
+ * @method initializeDeviceTypeTests - Initializes the device type tests array.
+ * @method getDeviceTypes - Identifies and returns the types of a given accessory.
+ * @method initializeHubitatAccessory - Initializes a Hubitat accessory with its relevant device types.
+ * @method processDeviceAttributeUpdate - Processes updates to device attributes.
+ * @method getAccessoryFromCache - Retrieves an accessory from the cache.
+ * @method getAllAccessoriesFromCache - Retrieves all accessories from the cache.
+ * @method clearAccessoryCache - Clears the accessory cache.
+ * @method addAccessoryToCache - Adds an accessory to the cache.
+ * @method removeAccessoryFromCache - Removes an accessory from the cache.
+ * @method getAccessoryId - Retrieves the ID of an accessory.
+ * @method removeUnusedServices - Removes unused services from an accessory.
+ * @method removeUnusedCharacteristics - Removes unused characteristics from a service of an accessory.
+ */
 export default class DeviceManager {
     constructor(platform) {
         this.platform = platform;
@@ -54,6 +86,18 @@ export default class DeviceManager {
         this.initializeDeviceTypeTests();
     }
 
+    /**
+     * Initializes the device type tests for various accessories.
+     *
+     * This method sets up an array of device type tests, each containing:
+     * - `name`: The name of the device type.
+     * - `test`: A function that takes an accessory and returns a boolean indicating if the accessory matches the device type.
+     * - `class`: The class associated with the device type.
+     * - `disable` (optional): A boolean indicating if the device type is disabled.
+     * - `onlyOnNoGrps` (optional): A boolean indicating if the device type should only be considered when no groups are present.
+     *
+     * The device type tests are sorted such that entries with `onlyOnNoGrps: true` are moved to the end of the array.
+     */
     initializeDeviceTypeTests() {
         this.deviceTypeTests = [
             {
@@ -232,6 +276,15 @@ export default class DeviceManager {
         });
     }
 
+    /**
+     * Asynchronously retrieves the types of a given accessory by testing it against a series of device type tests.
+     *
+     * @param {PlatformAccessory} accessory - The accessory object to be tested.
+     * @param {string} accessory.name - The name of the accessory.
+     * @returns {Promise<Array<Object>>} A promise that resolves to an array of matched device types.
+     * @returns {string} return[].name - The name of the matched device type.
+     * @returns {string} return[].class - The class of the matched device type.
+     */
     async getDeviceTypes(accessory) {
         const matchedTypes = [];
 
@@ -251,6 +304,15 @@ export default class DeviceManager {
         return matchedTypes;
     }
 
+    /**
+     * Initializes a Hubitat accessory.
+     *
+     * @param {PlatformAccessory} accessory - The accessory to initialize.
+     * @param {boolean} [fromCache=false] - Indicates if the accessory is being initialized from cache.
+     * @param {string|null} [src=null] - The source of the initialization request.
+     * @returns {Promise<Object>} The initialized accessory.
+     * @throws Will log an error and return the accessory if initialization fails.
+     */
     async initializeHubitatAccessory(accessory, fromCache = false, src = null) {
         try {
             if (!accessory.context || !accessory.context.deviceData) {
@@ -305,6 +367,16 @@ export default class DeviceManager {
         }
     }
 
+    /**
+     * Processes an update to a device attribute.
+     *
+     * @async
+     * @param {Object} change - The change object containing the update details.
+     * @param {string} change.deviceid - The ID of the device being updated.
+     * @param {string} change.attribute - The attribute of the device that is being updated.
+     * @param {any} change.value - The new value of the attribute.
+     * @returns {Promise<boolean>} - Returns true if the update was processed successfully, otherwise false.
+     */
     async processDeviceAttributeUpdate(change) {
         const accessory = this.getAccessoryFromCache({ deviceid: change.deviceid });
         if (!accessory) {
@@ -329,26 +401,54 @@ export default class DeviceManager {
         return true;
     }
 
+    /**
+     * Retrieves an accessory from the cache based on the provided device.
+     *
+     * @param {PlatformAccessory} device - The device object used to generate the accessory ID.
+     * @returns {PlatformAccessory|undefined} - The cached accessory object if found, otherwise undefined.
+     */
     getAccessoryFromCache(device) {
         const key = this.getAccessoryId(device);
         return this.cachedAccessories.get(key);
     }
 
+    /**
+     * Retrieves all accessories from the cache.
+     *
+     * @returns {PlatformAccessory[]} An array of cached accessories.
+     */
     getAllAccessoriesFromCache() {
         return this.cachedAccessories;
     }
 
+    /**
+     * Clears the accessory cache and forces a device reload.
+     * This method logs an alert message indicating the cache is being cleared
+     * and then resets the cachedAccessories object to an empty state.
+     */
     clearAccessoryCache() {
         this.log.alert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
         this.cachedAccessories = {};
     }
 
+    /**
+     * Adds an accessory to the cache.
+     *
+     * @param {PlatformAccessory} accessory - The accessory object to be added to the cache.
+     * @returns {boolean} - Returns true if the accessory was successfully added to the cache.
+     */
     addAccessoryToCache(accessory) {
         const key = this.getAccessoryId(accessory);
         this.cachedAccessories.set(key, accessory);
         return true;
     }
 
+    /**
+     * Removes an accessory from the cache.
+     *
+     * @param {PlatformAccessory} accessory - The accessory to be removed from the cache.
+     * @returns {PlatformAccessory|undefined} The removed accessory if it existed in the cache, otherwise undefined.
+     */
     removeAccessoryFromCache(accessory) {
         const key = this.getAccessoryId(accessory);
         const removed = this.cachedAccessories.get(key);
@@ -356,10 +456,26 @@ export default class DeviceManager {
         return removed;
     }
 
+    /**
+     * Retrieves the accessory ID from the given accessory object.
+     *
+     * @param {PlatformAccessory} accessory - The accessory object.
+     * @returns {string} The accessory ID.
+     */
     getAccessoryId(accessory) {
         return accessory.deviceid || accessory.context.deviceData.deviceid;
     }
 
+    /**
+     * Removes unused services from the given accessory.
+     *
+     * This method iterates over the services of the accessory and removes those
+     * that are not present in the `servicesToKeep` set. If a service is kept, it
+     * also checks and removes unused characteristics from that service.
+     *
+     * @param {PlatformAccessory} accessory - The accessory object containing services.
+     * @returns {Object} The updated accessory with unused services removed.
+     */
     removeUnusedServices(accessory) {
         const servicesToKeep = new Set(accessory.servicesToKeep);
         accessory.services.forEach((service) => {
@@ -374,6 +490,13 @@ export default class DeviceManager {
         return accessory;
     }
 
+    /**
+     * Removes unused characteristics from a given service in an accessory.
+     *
+     * @param {PlatformAccessory} accessory - The accessory object containing the service.
+     * @param {Service} service - The service object from which unused characteristics will be removed.
+     * @returns {void}
+     */
     removeUnusedCharacteristics(accessory, service) {
         if (service.UUID === this.Service.AccessoryInformation.UUID) {
             return;

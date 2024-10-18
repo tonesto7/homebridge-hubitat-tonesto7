@@ -10,10 +10,29 @@ export default class AccelerationSensor extends HubitatAccessory {
 
     static relevantAttributes = ["acceleration", "tamper", "status"];
 
+    /**
+     * Checks if the accessory supports the AccelerationSensor capability.
+     *
+     * @param {Object} accessory - The accessory to check.
+     * @returns {boolean} True if the accessory has the AccelerationSensor capability, otherwise false.
+     */
     static isSupported(accessory) {
         return accessory.hasCapability("AccelerationSensor");
     }
 
+    /**
+     * Initializes the motion service for the acceleration sensor device.
+     *
+     * This method sets up the following characteristics for the motion service:
+     * - Motion Detected: Indicates if motion is detected based on the device's acceleration attribute.
+     * - Status Active: Indicates if the device is active based on the device's status.
+     * - Status Tampered: Indicates if the device has been tampered with, if the device supports the TamperAlert capability.
+     *
+     * Additionally, it adds the device to the "acceleration_sensor" device group.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
 
@@ -49,6 +68,13 @@ export default class AccelerationSensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("acceleration_sensor");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.motionSvc) {
             this.log.warn(`${this.accessory.displayName} | Motion Sensor service not found`);

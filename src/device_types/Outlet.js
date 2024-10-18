@@ -8,6 +8,19 @@ export default class Outlet extends HubitatAccessory {
 
     static relevantAttributes = ["switch"];
 
+    /**
+     * Initializes the outlet service for the accessory.
+     *
+     * This method sets up the outlet service and its characteristics, including:
+     * - `On` characteristic: Handles getting and setting the outlet's on/off state.
+     * - `OutletInUse` characteristic: Handles getting the outlet's in-use state.
+     *
+     * The method also adds the outlet to the accessory's device groups.
+     *
+     * @async
+     * @function initializeService
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.outletSvc = this.getOrAddService(this.Service.Outlet);
 
@@ -35,6 +48,13 @@ export default class Outlet extends HubitatAccessory {
         this.accessory.deviceGroups.push("outlet");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.outletSvc) {
             this.log.warn(`${this.accessory.displayName} | Outlet service not found`);

@@ -8,6 +8,19 @@ export default class HumiditySensor extends HubitatAccessory {
 
     static relevantAttributes = ["humidity", "status", "tamper"];
 
+    /**
+     * Initializes the humidity sensor service and its characteristics.
+     *
+     * This method sets up the humidity sensor service and adds the necessary characteristics:
+     * - CurrentRelativeHumidity: Retrieves and logs the current humidity, clamped between 0 and 100.
+     * - StatusActive: Checks and logs if the device status is active.
+     * - StatusTampered: Checks and logs if the device has been tampered with, if the device has the "TamperAlert" capability.
+     *
+     * Additionally, it adds the device to the "humidity_sensor" group.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.humiditySvc = this.getOrAddService(this.Service.HumiditySensor);
 
@@ -41,6 +54,15 @@ export default class HumiditySensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("humidity_sensor");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     */
     handleAttributeUpdate(change) {
         if (!this.humiditySvc) {
             this.log.warn(`${this.accessory.displayName} | Humidity Sensor service not found`);

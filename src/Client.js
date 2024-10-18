@@ -3,6 +3,46 @@
 import { platformName, platformDesc, pluginVersion } from "./Constants.js";
 import axios from "axios";
 
+/**
+ * Client class for interacting with the Hubitat platform.
+ *
+ * @class Client
+ * @param {Object} platform - The platform object containing configuration and logging methods.
+ *
+ * @property {Object} platform - The platform object.
+ * @property {Function} log - Logging method from the platform.
+ * @property {string} hubIp - The IP address of the local hub.
+ * @property {Object} config - Configuration items from the platform.
+ * @property {number} localErrCnt - Counter for local errors.
+ * @property {boolean} localDisabled - Flag indicating if local communication is disabled.
+ * @property {Array} clientsLogSocket - Array of log socket clients.
+ * @property {Array} clientsEventSocket - Array of event socket clients.
+ * @property {string} communciationBreakCommand - Command to break communication.
+ *
+ * @method registerEvtListeners - Registers event listeners for device commands, plugin update status, and plugin start direct events.
+ * @method updateGlobals - Updates global values such as hub IP and cloud usage.
+ * @param {string} hubIp - The IP address of the hub.
+ * @param {boolean} [use_cloud=false] - Flag indicating if cloud communication should be used.
+ *
+ * @method handleError - Handles errors based on their status codes and logs appropriate messages.
+ * @param {string} src - The source of the error.
+ * @param {Object} err - The error object.
+ *
+ * @method getDevices - Fetches the list of devices from the Hubitat platform.
+ * @returns {Promise<Object|undefined>} - The response data or undefined if an error occurs.
+ *
+ * @method sendDeviceCommand - Sends a command to a specific device.
+ * @param {Object} devData - The device data.
+ * @param {string} cmd - The command to send.
+ * @param {Object} [vals] - Optional values for the command.
+ * @returns {Promise<boolean>} - True if the command was sent successfully, false otherwise.
+ *
+ * @method sendUpdateStatus - Sends the plugin update status to the Hubitat platform.
+ * @returns {Promise<Object|null|undefined>} - The response data, null if no data, or undefined if an error occurs.
+ *
+ * @method sendStartDirect - Sends a start direct request to the Hubitat platform.
+ * @returns {Promise<Object|null|undefined>} - The response data, null if no data, or undefined if an error occurs.
+ */
 export default class Client {
     constructor(platform) {
         this.platform = platform;
@@ -17,6 +57,17 @@ export default class Client {
         this.registerEvtListeners();
     }
 
+    /**
+     * Registers event listeners for various platform events.
+     *
+     * Listens for the following events:
+     * - "event:device_command": Triggers when a device command is received. Calls `sendDeviceCommand` with the device data, command, and values.
+     * - "event:plugin_upd_status": Triggers when the plugin update status changes. Calls `sendUpdateStatus`.
+     * - "event:plugin_start_direct": Triggers when the plugin starts directly. Calls `sendStartDirect`.
+     *
+     * @async
+     * @function registerEvtListeners
+     */
     registerEvtListeners = () => {
         this.platform.appEvts.on("event:device_command", async (devData, cmd, vals) => {
             await this.sendDeviceCommand(devData, cmd, vals);
@@ -29,12 +80,27 @@ export default class Client {
         });
     };
 
+    /**
+     * Updates the global values for the hub IP and cloud usage.
+     *
+     * @param {string} hubIp - The IP address of the hub.
+     * @param {boolean} [use_cloud=false] - Flag indicating whether to use cloud services.
+     */
     updateGlobals = (hubIp, use_cloud = false) => {
         this.platform.logNotice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
         this.hubIp = hubIp;
         this.config.use_cloud = use_cloud === true;
     };
 
+    /**
+     * Handles errors by logging appropriate messages based on the error status.
+     *
+     * @param {string} src - The source of the error.
+     * @param {Object} err - The error object.
+     * @param {number} err.status - The HTTP status code of the error.
+     * @param {string} err.message - The error message.
+     * @param {Object} [err.response] - The response object associated with the error.
+     */
     handleError = (src, err) => {
         switch (err.status) {
             case 401:
@@ -56,6 +122,17 @@ export default class Client {
         }
     };
 
+    /**
+     * Fetches the list of devices from the configured URL.
+     *
+     * This function makes an asynchronous HTTP GET request to retrieve device data.
+     * The URL is determined based on whether the cloud or local configuration is used.
+     *
+     * @async
+     * @function getDevices
+     * @returns {Promise<Object|undefined>} A promise that resolves to the device data, or undefined if an error occurs.
+     * @throws Will handle and log errors internally using the handleError method.
+     */
     getDevices = async () => {
         try {
             const response = await axios({
@@ -77,6 +154,17 @@ export default class Client {
         }
     };
 
+    /**
+     * Sends a command to a specified device.
+     *
+     * @async
+     * @param {Object} devData - The device data.
+     * @param {string} devData.name - The name of the device.
+     * @param {string} devData.deviceid - The ID of the device.
+     * @param {string} cmd - The command to send to the device.
+     * @param {Object} [vals] - Optional values to send with the command.
+     * @returns {Promise<boolean>} - Returns true if the command was sent successfully, otherwise false.
+     */
     sendDeviceCommand = async (devData, cmd, vals) => {
         // console.log("sendDeviceCommand", devData, cmd, vals);
         try {
@@ -104,6 +192,18 @@ export default class Client {
         }
     };
 
+    /**
+     * Sends the plugin status to Hubitat.
+     *
+     * This function checks the current version of the plugin and sends the status to Hubitat,
+     * indicating whether there is an update available and other relevant information.
+     *
+     * @async
+     * @function sendUpdateStatus
+     * @returns {Promise<Object|null|undefined>} The response data from the server if available,
+     *                                           null if no data is returned, or undefined if an error occurs.
+     * @throws Will handle and log any errors that occur during the process.
+     */
     sendUpdateStatus = async () => {
         try {
             const res = await this.platform.Utils.checkVersion();
@@ -138,6 +238,17 @@ export default class Client {
         }
     };
 
+    /**
+     * Sends a StartDirect request to the configured URL.
+     *
+     * This function constructs a POST request to either the cloud or local URL based on the configuration.
+     * It includes necessary parameters and headers, and handles the response or any errors that occur.
+     *
+     * @async
+     * @function sendStartDirect
+     * @returns {Promise<Object|null|undefined>} The response data if successful, null if no data, or undefined if an error occurs.
+     * @throws Will handle and log any errors that occur during the request.
+     */
     sendStartDirect = async () => {
         try {
             this.platform.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.config.use_cloud === true})`);

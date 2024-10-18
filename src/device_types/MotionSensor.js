@@ -8,6 +8,19 @@ export default class MotionSensor extends HubitatAccessory {
 
     static relevantAttributes = ["motion", "tamper", "status"];
 
+    /**
+     * Initializes the motion sensor service and its characteristics.
+     *
+     * This method sets up the motion sensor service (`motionSvc`) and adds the following characteristics:
+     * - `MotionDetected`: Indicates if motion is detected.
+     * - `StatusActive`: Indicates if the device status is active.
+     * - `StatusTampered`: Indicates if the device has been tampered with (only if the device has the `TamperAlert` capability).
+     *
+     * It also adds the device to the `motion_sensor` group.
+     *
+     * @async
+     * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
+     */
     async initializeService() {
         this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
 
@@ -40,6 +53,15 @@ export default class MotionSensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("motion_sensor");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     */
     handleAttributeUpdate(change) {
         if (!this.motionSvc) {
             this.log.warn(`${this.accessory.displayName} | Motion Sensor service not found`);

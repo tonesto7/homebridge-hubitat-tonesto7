@@ -8,6 +8,20 @@ export default class CarbonDioxideSensor extends HubitatAccessory {
 
     static relevantAttributes = ["carbonDioxide", "status", "tamper"];
 
+    /**
+     * Initializes the Carbon Dioxide service for the accessory.
+     *
+     * This method sets up the Carbon Dioxide Sensor service and its characteristics:
+     * - Carbon Dioxide Detected: Indicates if the CO2 levels are normal or abnormal.
+     * - Carbon Dioxide Level: Reports the current CO2 level in parts per million (ppm).
+     * - Status Active: Indicates if the device is currently active.
+     * - Status Tampered: Indicates if the device has been tampered with (if supported).
+     *
+     * The method also adds the accessory to the "carbon_dioxide" device group.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.carbonDioxideSvc = this.getOrAddService(this.Service.CarbonDioxideSensor);
 
@@ -52,6 +66,24 @@ export default class CarbonDioxideSensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("carbon_dioxide");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: "carbonDioxide", value: "1500" });
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: "status", value: "ACTIVE" });
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: "tamper", value: "detected" });
+     */
     handleAttributeUpdate(change) {
         if (!this.carbonDioxideSvc) {
             this.log.warn(`${this.accessory.displayName} | Carbon Dioxide Sensor service not found`);

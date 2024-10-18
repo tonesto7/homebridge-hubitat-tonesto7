@@ -8,6 +8,18 @@ export default class VirtualMode extends HubitatAccessory {
 
     static relevantAttributes = ["switch"];
 
+    /**
+     * Initializes the virtual mode service for the accessory.
+     *
+     * This method sets up the switch service and its characteristics, including
+     * handlers for getting and setting the switch state. It also adds the service
+     * to the list of services to keep and assigns the accessory to the "virtual_mode"
+     * device group.
+     *
+     * @async
+     * @function initializeService
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.switchSvc = this.getOrAddService(this.Service.Switch);
 
@@ -30,6 +42,13 @@ export default class VirtualMode extends HubitatAccessory {
         this.accessory.deviceGroups.push("virtual_mode");
     }
 
+    /**
+     * Handles the attribute update for the virtual mode.
+     *
+     * @param {Object} change - The change object containing attribute and value.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.switchSvc) {
             this.log.warn(`${this.accessory.displayName} | Virtual Mode service not found`);

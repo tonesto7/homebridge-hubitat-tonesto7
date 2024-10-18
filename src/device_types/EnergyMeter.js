@@ -8,6 +8,17 @@ export default class EnergyMeter extends HubitatAccessory {
 
     static relevantAttributes = ["energy"];
 
+    /**
+     * Initializes the energy meter service for the accessory.
+     *
+     * This method sets up the energy meter service, adds it to the accessory, and
+     * configures the Kilowatt Hours characteristic if available. It also ensures
+     * the service is kept and logs relevant information.
+     *
+     * @async
+     * @method initializeService
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         const serviceName = `${this.deviceData.deviceid}_EnergyMeter`;
         this.energySvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Energy Meter");
@@ -30,6 +41,15 @@ export default class EnergyMeter extends HubitatAccessory {
         this.accessory.deviceGroups.push("energy_meter");
     }
 
+    /**
+     * Handles the update of an attribute for the energy meter.
+     *
+     * @param {Object} change - The change object containing attribute and value.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     */
     handleAttributeUpdate(change) {
         if (!this.energySvc) {
             this.log.warn(`${this.accessory.displayName} | Energy Meter service not found`);

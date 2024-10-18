@@ -6,8 +6,22 @@ export default class AlarmSystem extends HubitatAccessory {
         this.deviceData = accessory.context.deviceData;
     }
 
+    /**
+     * @constant {string[]} relevantAttributes - An array of relevant attribute names for the AlarmSystem.
+     */
     static relevantAttributes = ["alarmSystemStatus"];
 
+    /**
+     * Initializes the security system service and its characteristics.
+     *
+     * This method sets up the security system service and adds the necessary characteristics
+     * for the current state and target state of the alarm system. It also defines handlers
+     * for getting and setting these states.
+     *
+     * @async
+     * @method initializeService
+     * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
+     */
     async initializeService() {
         this.securitySystemSvc = this.getOrAddService(this.Service.SecuritySystem);
 
@@ -39,6 +53,13 @@ export default class AlarmSystem extends HubitatAccessory {
         this.accessory.deviceGroups.push("alarm_system");
     }
 
+    /**
+     * Handles updates to device attributes and updates the security system service accordingly.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {any} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         if (!this.securitySystemSvc) {
             this.log.warn(`${this.accessory.displayName} | SecuritySystem service not found`);
@@ -57,6 +78,25 @@ export default class AlarmSystem extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts the given alarm state value to the corresponding HomeKit security system state.
+     *
+     * @param {string} value - The alarm state value to convert. Possible values are:
+     *   - "armedHome"
+     *   - "armedNight"
+     *   - "armedAway"
+     *   - "disarmed"
+     *   - "intrusion"
+     *   - "intrusion-home"
+     *   - "intrusion-away"
+     *   - "intrusion-night"
+     * @returns {number} - The corresponding HomeKit security system state. Possible return values are:
+     *   - this.Characteristic.SecuritySystemCurrentState.STAY_ARM
+     *   - this.Characteristic.SecuritySystemCurrentState.NIGHT_ARM
+     *   - this.Characteristic.SecuritySystemCurrentState.AWAY_ARM
+     *   - this.Characteristic.SecuritySystemCurrentState.DISARMED
+     *   - this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED
+     */
     convertAlarmState(value) {
         switch (value) {
             case "armedHome":
@@ -77,6 +117,19 @@ export default class AlarmSystem extends HubitatAccessory {
         }
     }
 
+    /**
+     * Converts a security system target state to a corresponding alarm command.
+     *
+     * @param {number} value - The target state value from the security system.
+     * @returns {string} The corresponding alarm command.
+     *
+     * Possible values for `value`:
+     * - `this.Characteristic.SecuritySystemTargetState.STAY_ARM` - Returns "armHome".
+     * - `this.Characteristic.SecuritySystemTargetState.AWAY_ARM` - Returns "armAway".
+     * - `this.Characteristic.SecuritySystemTargetState.NIGHT_ARM` - Returns "armNight".
+     * - `this.Characteristic.SecuritySystemTargetState.DISARM` - Returns "disarm".
+     * - Any other value - Returns "disarm".
+     */
     convertAlarmCmd(value) {
         switch (value) {
             case this.Characteristic.SecuritySystemTargetState.STAY_ARM:

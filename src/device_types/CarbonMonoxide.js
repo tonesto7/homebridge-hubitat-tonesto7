@@ -8,6 +8,19 @@ export default class CarbonMonoxideSensor extends HubitatAccessory {
 
     static relevantAttributes = ["carbonMonoxide", "status", "tamper"];
 
+    /**
+     * Initializes the Carbon Monoxide service for the accessory.
+     *
+     * This method sets up the Carbon Monoxide Sensor service and its characteristics:
+     * - Carbon Monoxide Detected: Indicates whether carbon monoxide is detected.
+     * - Status Active: Indicates whether the device is active.
+     * - Status Tampered: Indicates whether the device has been tampered with (if supported).
+     *
+     * It also adds the accessory to the "carbon_monoxide" device group.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.carbonMonoxideSvc = this.getOrAddService(this.Service.CarbonMonoxideSensor);
 
@@ -43,6 +56,18 @@ export default class CarbonMonoxideSensor extends HubitatAccessory {
         this.accessory.deviceGroups.push("carbon_monoxide");
     }
 
+    /**
+     * Handles updates to the attributes of the Carbon Monoxide sensor.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: 'carbonMonoxide', value: 'clear' });
+     */
     handleAttributeUpdate(change) {
         if (!this.carbonMonoxideSvc) {
             this.log.warn(`${this.accessory.displayName} | Carbon Monoxide Sensor service not found`);

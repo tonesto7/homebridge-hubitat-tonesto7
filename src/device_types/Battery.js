@@ -6,8 +6,25 @@ export default class Battery extends HubitatAccessory {
         this.deviceData = accessory.context.deviceData;
     }
 
+    /**
+     * @constant {string[]} relevantAttributes - An array of relevant attribute names for the device.
+     * @default ["battery", "powerSource"]
+     */
     static relevantAttributes = ["battery", "powerSource"];
 
+    /**
+     * Initializes the battery service for the accessory.
+     *
+     * This method sets up the Battery service and its characteristics:
+     * - Battery Level: Retrieves and logs the battery level, clamped between 0 and 100.
+     * - Status Low Battery: Determines and logs if the battery level is low (below 20%).
+     * - Charging State: Retrieves and logs the charging state based on the power source.
+     *
+     * The method also adds the "battery" group to the accessory's device groups.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the service is initialized.
+     */
     async initializeService() {
         this.batterySvc = this.getOrAddService(this.Service.Battery);
 
@@ -45,6 +62,19 @@ export default class Battery extends HubitatAccessory {
         this.accessory.deviceGroups.push("battery");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding characteristics.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     *
+     * @returns {void}
+     *
+     * @example
+     * handleAttributeUpdate({ attribute: 'battery', value: '75' });
+     * handleAttributeUpdate({ attribute: 'powerSource', value: 'mains' });
+     */
     handleAttributeUpdate(change) {
         if (!this.batterySvc) {
             this.log.warn(`${this.accessory.displayName} | Battery service not found`);
@@ -67,6 +97,15 @@ export default class Battery extends HubitatAccessory {
         }
     }
 
+    /**
+     * Determines the charging state based on the provided power source.
+     *
+     * @param {string} powerSource - The type of power source (e.g., "mains", "dc", "USB Cable", "battery").
+     * @returns {number} - The charging state corresponding to the power source.
+     *                      - ChargingState.CHARGING for "mains", "dc", or "USB Cable".
+     *                      - ChargingState.NOT_CHARGING for "battery".
+     *                      - ChargingState.NOT_CHARGEABLE for any other power source.
+     */
     getChargeState(powerSource) {
         switch (powerSource) {
             case "mains":

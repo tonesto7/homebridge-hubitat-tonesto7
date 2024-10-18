@@ -275,7 +275,6 @@ def pluginConfigPage() {
             }
         }
 
-
         section(sectHead('Generated HomeBridge Plugin Platform Config')) {
             paragraph divSm("<textarea rows=23 class='mdl-textfield' style='font-size: medium !important;' readonly='true'>${renderConfig()}</textarea>")
         }
@@ -468,8 +467,10 @@ private String getCapFilterDesc() {
     if (remKeys?.size()) {
         remKeys.sort().each { String k ->
             String capName = k.replaceAll('remove', sBLANK)
-            Integer capSize = settings[k]?.size()
-            desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
+            if (settings[k] && settings[k].size()) {
+                Integer capSize = settings[k]?.size()
+                desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
+            }
         }
     }
     if (desc.size() > 0) {
@@ -516,13 +517,13 @@ private String getCustAttrFilterDesc() {
 
     if (perDev && perDev.keySet()?.size()) {
         desc += spanSmBr("Per-Device Attributes: (${perDev.keySet().size()})", sCLR4D9)
-        // perDev.each { String dev, Object attrsObj ->
-        //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
-        //     desc += spanSmBr("${dev}:", sCLR4D9)
-        //     attrs.each { String attr ->
-        //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
-        //     }
-        // }
+    // perDev.each { String dev, Object attrsObj ->
+    //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
+    //     desc += spanSmBr("${dev}:", sCLR4D9)
+    //     attrs.each { String attr ->
+    //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
+    //     }
+    // }
     }
 
     if (global && global.size()) {
@@ -658,11 +659,19 @@ private static String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
 def capFilterPage() {
     return dynamicPage(name: 'capFilterPage', title: 'Capability Filtering', install: false, uninstall: false) {
         section(sectHead('Restrict Temp Device Creation')) {
-            input 'noTemp', sBOOL, title: inTS1('Remove Temperature from All Contacts and Water Sensors?', 'temperature'), required: false, defaultValue: false, submitOnChange: true
-            if (getBoolSetting('noTemp')) {
+            if (settings.noTemp != null) { settings.noTempFromContactWater = settings.noTemp == true }
+
+            input 'noTempFromContactWater', sBOOL, title: inTS1('Remove Temperature from All Contacts and Water Sensors?', 'temperature'), required: false, defaultValue: false, submitOnChange: true
+            if (getBoolSetting('noTempFromContactWater')) {
                 input 'sensorAllowTemp', 'capability.sensor', title: inTS1('Allow Temps on these sensors', 'temperature'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             }
         }
+
+        section(sectHead('Remove Light/Switch Capabilities')) {
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
+            input 'removeLightEffects', 'capability.lightEffects', title: inTS1('Remove Light Effects from these Devices', 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
+
         section(sectHead('Remove Sensor Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
             input 'removeAcceleration', 'capability.accelerationSensor', title: inTS1('Remove Acceleration from these Devices', 'acceleration'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -871,9 +880,9 @@ private String viewDeviceDebugPretty() {
                 desc += spanSmBr(" ${sBULLET} " + evt, sCLRGRY)
             }
         } else { desc += spanSmBldBr('No Events Found', sCLRRED) }
-    }
+        }
     return desc
-}
+        }
 
 private String viewDeviceDebugAsJson() {
     def sDev; sDev = null
@@ -954,13 +963,13 @@ private Integer getDeviceCnt(Boolean phyOnly=false) {
                 String aa = item.replaceAll('List', sBLANK)
                 devices = devices + si.collect { "${aa}_${it}".toString() }
             }
-        }
     }
+}
     Integer dSize; dSize = devices.unique().size()
     dSize = dSize ?: 0
     if (getBoolSetting('addSecurityDevice')) { dSize = dSize + 1 }
     return dSize
-}
+        }
 
 def installed() {
     logDebug("${(String)app.name} | installed() has been called...")
@@ -987,7 +996,7 @@ def initialize() {
         if (getBoolSetting('showEventLogs') && getLastTsValSecs(sEVTLOGEN, 0) == 0) { updTsVal(sEVTLOGEN) }
         if (getBoolSetting('showDebugLogs') && getLastTsValSecs(sDBGLOGEN, 0) == 0) { updTsVal(sDBGLOGEN) }
     } else { logError('initialize error: Unable to get or generate app access token') }
-}
+    }
 
 Boolean getAccessToken(Boolean disableRetry=false) {
     try {
@@ -1017,7 +1026,7 @@ private void enableOauth() {
     ]
     try {
         httpPost(params) { resp ->
-            //LogTrace("response data: ${resp.data}")
+        //LogTrace("response data: ${resp.data}")
         }
     } catch (ex) {
         logError("enableOauth something went wrong: ${ex}", ex)
@@ -1088,7 +1097,7 @@ private void appCleanup() {
         removeItems.push('directPort')
     }
     removeItems.each { String it -> if (state?.containsKey(it)) { state.remove(it) } }
-    List<String> removeSettings = ['removeColorTemp', 'hubitatQueryString']
+    List<String> removeSettings = ['removeColorTemp', 'hubitatQueryString', 'noTemp']
     removeSettings.each { String it -> if (settings.containsKey(it)) { settingRemove(it) } }
 }
 
@@ -1450,9 +1459,9 @@ static Map getHttpHeaders(String headers) {
 }
 
 def deviceCommand() {
-    // log.info("Command Request: $params")
-    def val1 = request?.JSON?.value1 ?: null
-    def val2 = request?.JSON?.value2 ?: null
+    // log.info("Command Request | params: $params | Request: ${request.JSON}")
+    def val1 = request?.JSON?.value1 != null ? request?.JSON?.value1 : null
+    def val2 = request?.JSON?.value2 != null ? request?.JSON?.value2 : null
     return processCmd((String)params?.id, (String)params?.command, val1, val2)
 }
 
@@ -1535,8 +1544,8 @@ private void changeMode(String modeId, Boolean shw) {
             /* groovylint-disable-next-line UnnecessarySetter */
             setLocationMode(mode.name)
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
+        }
     }
-}
 
 private runPiston(String rtId, Boolean shw) {
     if (rtId) {
@@ -1608,11 +1617,13 @@ Map<String,Integer> deviceCapabilityList(device) {
     // if (isDeviceInInput('lockTestList', devid)) { capItems['Lock2'] = 1 }
     //switchList, deviceList
 
-    if (getBoolSetting('noTemp') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
+    if (getBoolSetting('noTempFromContactWater') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
         Boolean remTemp; remTemp = true
         if (getListSetting('sensorAllowTemp') && isDeviceInInput('sensorAllowTemp', devid)) { remTemp = false }
         if (remTemp) { capItems.remove('TemperatureMeasurement') }
     }
+
+    if (isDeviceInInput('removeLightEffects', devid)) { capItems.remove('LightEffects') }
 
     //This will filter out selected capabilities from the devices selected in filtering inputs.
     List<String> remKeys
@@ -1669,6 +1680,7 @@ Map<String,Integer> deviceCommandList(device) {
     if (isDeviceInInput('tstatHeatList', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
     if (isDeviceInInput('removeColorControl', devid)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
     if (isDeviceInInput('removeColorTemperature', devid)) { cmds.remove('setColorTemperature') }
+    if (isDeviceInInput('removeLightEffects', devid)) { cmds.remove('setEffect'); cmds.remove('setNextEffect'); cmds.remove('setPreviousEffect') }
     if (isDeviceInInput('removeThermostatFanMode', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('setSupportedThermostatFanModes'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
     if (isDeviceInInput('removeThermostatMode', devid)) { cmds.remove('setThermostatMode'); cmds.remove('setSupportedThermostatModes'); cmds.remove('auto'); cmds.remove('cool'); cmds.remove('emergencyHeat'); cmds.remove('heat') }
     if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
@@ -1751,6 +1763,7 @@ Map<String,Object> deviceAttributeList(device) {
     if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['heat', 'off'] }
     if (isDeviceInInput('removeColorControl', devid)) { atts.remove('RGB'); atts.remove('color'); atts.remove('colorName'); atts.remove('hue'); atts.remove('saturation') }
     if (isDeviceInInput('removeColorTemperature', devid)) { atts.remove('colorTemperature') }
+    if (isDeviceInInput('removeLightEffects', devid)) { atts.remove('effectName'); atts.remove('lightEffects') }
     if (isDeviceInInput('removeThermostatFanMode', devid)) { atts.remove('thermostatFanMode'); atts.remove('supportedThermostatFanModes') }
     if (isDeviceInInput('removeThermostatMode', devid)) { atts.remove('thermostatMode'); atts.remove('supportedThermostatModes') }
     if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { atts.remove('thermostatCoolingSetpoint'); atts.remove('coolingSetpoint') }
@@ -1824,7 +1837,7 @@ void registerChangeHandler(List devices, Boolean showlog=false) {
         if (showlog) { log.debug "atts: ${theAtts}" }
         theAtts?.each { String att ->
             if (allowedListFLD.attributes.contains(att)) {
-                if (getBoolSetting('noTemp') && att == 'temperature' && (device.hasAttribute('contact') || device.hasAttribute('water'))) {
+                if (getBoolSetting('noTempFromContactWater') && att == 'temperature' && (device.hasAttribute('contact') || device.hasAttribute('water'))) {
                     Boolean skipAtt; skipAtt = true
                     if (getListSetting('sensorAllowTemp')) {
                         skipAtt = isDeviceInInput('sensorAllowTemp', devid)
@@ -1962,7 +1975,7 @@ def changeHandler(evt) {
         default:
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
             break
-    }
+            }
 
     if (sendEvt && sendItems.size() > 0) {
         // Boolean deviceUnavailable = markDeviceUnavailable(findDevice(deviceid))
@@ -2393,7 +2406,7 @@ private void updTsVal(String key, String dt=sNULL) {
     Map data = tsDtMapFLD[appId] ?: [:]
     if (key) { data[key] = dt ?: getDtNow() }
     tsDtMapFLD[appId] = data
-    // tsDtMapFLD = tsDtMapFLD
+// tsDtMapFLD = tsDtMapFLD
 }
 
 private void remTsVal(key) {
@@ -2408,7 +2421,7 @@ private void remTsVal(key) {
             if (ks && data.containsKey(ks)) { data.remove(ks) }
         }
         tsDtMapFLD[appId] = data
-        // tsDtMapFLD = tsDtMapFLD
+    // tsDtMapFLD = tsDtMapFLD
     }
 }
 

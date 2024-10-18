@@ -8,8 +8,33 @@ export default class Button extends HubitatAccessory {
         this.deviceData = accessory.context.deviceData;
     }
 
+    /**
+     * @constant {string[]} relevantAttributes - An array of relevant attribute names for the Button device type.
+     * @default ["button", "numberOfButtons"]
+     */
     static relevantAttributes = ["button", "numberOfButtons"];
 
+    /**
+     * Initializes the button accessory service.
+     *
+     * This method sets up the button accessory with the appropriate number of buttons,
+     * initializes each button service, and adds the necessary characteristics.
+     *
+     * @async
+     * @function initializeService
+     * @returns {Promise<void>} A promise that resolves when the initialization is complete.
+     *
+     * @example
+     * await initializeService();
+     *
+     * @description
+     * The method performs the following steps:
+     * 1. Determines the number of buttons from the device data attributes, clamping the value between 1 and 10.
+     * 2. Logs the initialization process.
+     * 3. Iterates over the number of buttons, initializing each button service with the appropriate characteristics.
+     * 4. Adds the button service to the accessory's button map.
+     * 5. Adds the "button" group to the accessory's device groups.
+     */
     async initializeService() {
         const btnCnt = this.clamp(this.deviceData.attributes.numberOfButtons || 1, 1, 10);
 
@@ -40,6 +65,15 @@ export default class Button extends HubitatAccessory {
         this.accessory.deviceGroups.push("button");
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding button service.
+     *
+     * @param {Object} change - The change object containing attribute updates.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     * @param {Object} [change.data] - Additional data related to the attribute change.
+     * @param {number} [change.data.buttonNumber=1] - The button number associated with the change.
+     */
     handleAttributeUpdate(change) {
         if (change.attribute === "button") {
             const btnVal = change.value;
@@ -61,6 +95,14 @@ export default class Button extends HubitatAccessory {
         }
     }
 
+    /**
+     * Retrieves or adds a button service to the accessory.
+     *
+     * @param {Object} serviceType - The type of the service to be retrieved or added.
+     * @param {string} displayName - The display name of the service.
+     * @param {string} subType - The subtype of the service.
+     * @returns {Object} The retrieved or newly added service.
+     */
     getButtonService(serviceType, displayName, subType) {
         this.log.debug(`${this.accessory.displayName} | Getting or adding button service: ${displayName} (subType: ${subType})`);
 
@@ -90,6 +132,23 @@ export default class Button extends HubitatAccessory {
         return svc;
     }
 
+    /**
+     * Retrieves the supported button values based on the device's capabilities.
+     *
+     * This method checks for the following capabilities:
+     * - PushableButton
+     * - DoubleTapableButton
+     * - HoldableButton
+     *
+     * Depending on the capabilities, it adds the corresponding programmable switch events to the list of valid values:
+     * - SINGLE_PRESS for PushableButton
+     * - DOUBLE_PRESS for DoubleTapableButton
+     * - LONG_PRESS for HoldableButton
+     *
+     * If no capabilities are found, it defaults to adding SINGLE_PRESS and LONG_PRESS to the list.
+     *
+     * @returns {Array} An array of supported button values.
+     */
     getSupportedBtnValues() {
         let validValues = [];
         if (this.hasCapability("PushableButton")) {
@@ -108,6 +167,14 @@ export default class Button extends HubitatAccessory {
         return validValues;
     }
 
+    /**
+     * Retrieves the button state based on the provided button value.
+     *
+     * @param {string} btnVal - The value representing the button state.
+     *                          Expected values are "pushed", "doubleTapped", or "held".
+     * @returns {number} - Returns a corresponding constant from `this.Characteristic.ProgrammableSwitchEvent`
+     *                     for recognized button states, or -1 for unknown values.
+     */
     getButtonState(btnVal) {
         switch (btnVal) {
             case "pushed":

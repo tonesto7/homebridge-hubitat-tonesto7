@@ -2,15 +2,58 @@
 
 import HubitatAccessory from "../HubitatAccessory.js";
 
+/**
+ * Represents a Light accessory for the Hubitat platform.
+ * Extends the HubitatAccessory class to provide specific functionalities for light devices.
+ *
+ * @class Light
+ * @extends {HubitatAccessory}
+ *
+ * @param {Object} platform - The platform instance.
+ * @param {Object} accessory - The accessory instance.
+ *
+ * @property {Object} deviceData - The data related to the device.
+ * @property {Object} effectsMap - A map of light effects.
+ *
+ * @static
+ * @property {Array<string>} relevantAttributes - List of relevant attributes for the light accessory.
+ *
+ * @method initializeService - Initializes the light service and its characteristics.
+ * @method setupLightEffectsService - Sets up the light effects service if supported by the device.
+ * @method updateLightEffects - Updates the light effects based on the device's attributes.
+ * @method updateEffectState - Updates the current state of the light effects.
+ * @method handleAttributeUpdate - Handles updates to the device's attributes.
+ * @method setupAdaptiveLighting - Sets up adaptive lighting if supported by the device.
+ *
+ * @method kelvinToMired - Converts Kelvin to Mired.
+ * @method miredToKelvin - Converts Mired to Kelvin.
+ * @method hueToHomeKit - Converts device hue to HomeKit hue.
+ * @method homeKitToHue - Converts HomeKit hue to device hue.
+ */
 export default class Light extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-        this.accessory.effectsMap = {};
+        this.effectsMap = {};
     }
 
     static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];
 
+    /**
+     * Initializes the light service and its characteristics for the accessory.
+     *
+     * This method sets up the following characteristics:
+     * - On/Off
+     * - Brightness (if supported)
+     * - Hue (if supported)
+     * - Saturation (if supported)
+     * - Color Temperature (if supported)
+     *
+     * Additionally, it sets up LightEffects and Adaptive Lighting if the device supports them.
+     *
+     * @async
+     * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
+     */
     async initializeService() {
         this.lightService = this.getOrAddService(this.Service.Lightbulb);
 
@@ -66,6 +109,10 @@ export default class Light extends HubitatAccessory {
         // Saturation characteristic
         if (this.hasAttribute("saturation") && this.hasCommand("setSaturation")) {
             this.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
+                props: {
+                    minValue: 0,
+                    maxValue: 100,
+                },
                 getHandler: () => {
                     let saturation = parseFloat(this.deviceData.attributes.saturation);
                     saturation = this.clamp(saturation, 0, 100);
@@ -112,6 +159,17 @@ export default class Light extends HubitatAccessory {
         this.accessory.deviceGroups.push("light");
     }
 
+    /**
+     * Sets up the Light Effects Service for the accessory.
+     *
+     * This method initializes the Television service and configures the characteristics
+     * for handling light effects. It sets up handlers for getting and setting the
+     * active state and active identifier of the light effects.
+     *
+     * @async
+     * @function setupLightEffectsService
+     * @returns {Promise<void>} Resolves when the light effects service is set up.
+     */
     async setupLightEffectsService() {
         this.televisionService = this.getOrAddService(this.Service.Television);
 
@@ -128,6 +186,7 @@ export default class Light extends HubitatAccessory {
                     // If turning on, we'll set it to the first available effect
                     const firstEffectNumber = Object.keys(this.effectsMap)[0];
                     if (firstEffectNumber) {
+                        // console.log("Setting effect to", firstEffectNumber);
                         this.sendCommand(null, this.deviceData, "setEffect", { value1: parseInt(firstEffectNumber) });
                     }
                 }
@@ -137,7 +196,7 @@ export default class Light extends HubitatAccessory {
         this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ActiveIdentifier, {
             getHandler: () => {
                 const currentEffect = this.deviceData.attributes.effectName;
-                return this.effectsMap[currentEffect] || 0;
+                return isNaN(this.effectsMap[currentEffect]) ? 0 : this.effectsMap[currentEffect];
             },
             setHandler: (value) => {
                 this.sendCommand(null, this.deviceData, "setEffect", { value1: value });
@@ -147,6 +206,19 @@ export default class Light extends HubitatAccessory {
         await this.updateLightEffects();
     }
 
+    /**
+     * Updates the light effects for the device.
+     *
+     * This method performs the following steps:
+     * 1. Parses the light effects from the device data.
+     * 2. Removes old input services from the accessory.
+     * 3. Adds new input services based on the parsed light effects.
+     * 4. Updates the valid values for the ActiveIdentifier characteristic.
+     * 5. Updates the current state of the effect.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the light effects have been updated.
+     */
     async updateLightEffects() {
         const effects = JSON.parse(this.deviceData.attributes.lightEffects || "{}");
         this.effectsMap = {};
@@ -181,6 +253,17 @@ export default class Light extends HubitatAccessory {
         this.updateEffectState();
     }
 
+    /**
+     * Updates the effect state of the device.
+     *
+     * This method checks the current effect state of the device and updates the
+     * television service's characteristics accordingly. If an effect is active,
+     * it sets the Active characteristic to ACTIVE and updates the ActiveIdentifier
+     * characteristic with the corresponding effect number. If no effect is active,
+     * it sets the Active characteristic to INACTIVE.
+     *
+     * @method updateEffectState
+     */
     updateEffectState() {
         const currentEffect = this.deviceData.attributes.effectName;
         const isActive = currentEffect !== undefined && currentEffect !== "None";
@@ -193,6 +276,13 @@ export default class Light extends HubitatAccessory {
         }
     }
 
+    /**
+     * Handles updates to device attributes and updates the corresponding HomeKit characteristics.
+     *
+     * @param {Object} change - The change object containing attribute and value.
+     * @param {string} change.attribute - The name of the attribute that has changed.
+     * @param {string|number} change.value - The new value of the attribute.
+     */
     handleAttributeUpdate(change) {
         switch (change.attribute) {
             case "switch":
@@ -234,6 +324,19 @@ export default class Light extends HubitatAccessory {
         }
     }
 
+    /**
+     * Sets up the adaptive lighting controller for the accessory if supported.
+     *
+     * This method checks if adaptive lighting can be used based on the platform configuration,
+     * accessory capabilities, and device attributes. If adaptive lighting is supported and not
+     * already configured, it initializes the adaptive lighting controller with the specified
+     * settings and attaches event listeners for update and disable events. If adaptive lighting
+     * is not supported but a controller is already configured, it removes the controller.
+     *
+     * @async
+     * @function setupAdaptiveLighting
+     * @returns {Promise<void>} A promise that resolves when the setup is complete.
+     */
     async setupAdaptiveLighting() {
         const canUseAL = this.platform.config.adaptive_lighting !== false && this.accessory.isAdaptiveLightingSupported && !this.hasDeviceFlag("light_no_al") && this.hasAttribute("level") && this.hasAttribute("colorTemperature");
         if (canUseAL && !this.accessory.adaptiveLightingController) {
@@ -259,19 +362,45 @@ export default class Light extends HubitatAccessory {
     }
 
     // Transformation Functions
+    /**
+     * Converts a color temperature from Kelvin to Mired.
+     *
+     * @param {number} kelvin - The color temperature in Kelvin.
+     * @returns {number} The color temperature in Mired.
+     */
     kelvinToMired(kelvin) {
         return Math.floor(1000000 / kelvin);
     }
 
+    /**
+     * Converts a color temperature from mireds to kelvins.
+     *
+     * @param {number} mired - The color temperature in mireds.
+     * @returns {number} The color temperature in kelvins.
+     */
     miredToKelvin(mired) {
         return Math.floor(1000000 / mired);
     }
 
+    /**
+     * Converts a hue value from the device's range (0-100) to HomeKit's range (0-360).
+     *
+     * @param {number} hue - The hue value from the device, ranging from 0 to 100.
+     * @returns {number} - The converted hue value in HomeKit's range, from 0 to 360.
+     */
     hueToHomeKit(hue) {
         // Device Hue: 0-100 --> HomeKit Hue: 0-360
         return Math.round(hue * 3.6);
     }
 
+    /**
+     * Converts a HomeKit hue value to a device-specific hue value.
+     *
+     * HomeKit hue values range from 0 to 360, while device hue values range from 0 to 100.
+     *
+     * @param {number} homeKitHue - The hue value from HomeKit (0-360).
+     * @returns {number} - The converted hue value for the device (0-100).
+     */
     homeKitToHue(homeKitHue) {
         // HomeKit Hue: 0-360 --> Device Hue: 0-100
         return Math.round(homeKitHue / 3.6);
