@@ -3,46 +3,6 @@
 import { platformName, platformDesc, pluginVersion } from "./Constants.js";
 import axios from "axios";
 
-/**
- * Client class for interacting with the Hubitat platform.
- *
- * @class Client
- * @param {Object} platform - The platform object containing configuration and logging methods.
- *
- * @property {Object} platform - The platform object.
- * @property {Function} log - Logging method from the platform.
- * @property {string} hubIp - The IP address of the local hub.
- * @property {Object} config - Configuration items from the platform.
- * @property {number} localErrCnt - Counter for local errors.
- * @property {boolean} localDisabled - Flag indicating if local communication is disabled.
- * @property {Array} clientsLogSocket - Array of log socket clients.
- * @property {Array} clientsEventSocket - Array of event socket clients.
- * @property {string} communciationBreakCommand - Command to break communication.
- *
- * @method registerEvtListeners - Registers event listeners for device commands, plugin update status, and plugin start direct events.
- * @method updateGlobals - Updates global values such as hub IP and cloud usage.
- * @param {string} hubIp - The IP address of the hub.
- * @param {boolean} [use_cloud=false] - Flag indicating if cloud communication should be used.
- *
- * @method handleError - Handles errors based on their status codes and logs appropriate messages.
- * @param {string} src - The source of the error.
- * @param {Object} err - The error object.
- *
- * @method getDevices - Fetches the list of devices from the Hubitat platform.
- * @returns {Promise<Object|undefined>} - The response data or undefined if an error occurs.
- *
- * @method sendDeviceCommand - Sends a command to a specific device.
- * @param {Object} devData - The device data.
- * @param {string} cmd - The command to send.
- * @param {Object} [vals] - Optional values for the command.
- * @returns {Promise<boolean>} - True if the command was sent successfully, false otherwise.
- *
- * @method sendUpdateStatus - Sends the plugin update status to the Hubitat platform.
- * @returns {Promise<Object|null|undefined>} - The response data, null if no data, or undefined if an error occurs.
- *
- * @method sendStartDirect - Sends a start direct request to the Hubitat platform.
- * @returns {Promise<Object|null|undefined>} - The response data, null if no data, or undefined if an error occurs.
- */
 export default class Client {
     constructor(platform) {
         this.platform = platform;
