@@ -39,8 +39,8 @@ preferences {
     page(name: 'mainPage')
     page(name: 'deviceSelectPage')
     page(name: 'changeLogPage')
-    page(name: 'deviceFilterManagementPage')
-    page(name: 'deviceFilterEditPage')
+    page(name: 'deviceFiltersPage')
+    page(name: 'deviceFiltersActionPage')
     page(name: 'capFilterPage')
     page(name: 'attrFilterPage')
     page(name: 'developmentPage')
@@ -201,10 +201,10 @@ def mainPage() {
         inputDupeValidation()
 
         section(sectHead('Attribute/Capability Filtering:')) {
-            String dFilterDesc = '' //getDevFilterDesc() || ''
+            String dFilterDesc = getDeviceFiltersDesc()
             String aFilterDesc = getCustAttrFilterDesc()
             String cFilterDesc = getCapFilterDesc()
-            href 'deviceFilterManagementPage', title: inTS1('Filter out attributes/capabilities from your devices', 'filter'), description: dFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+            href 'deviceFiltersPage', title: inTS1('UI to Filter ATTs/CAPs/CMDs from your devices', 'filter'), description: dFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
             href 'attrFilterPage', title: inTS1('Filter out attributes from your devices', 'filter'), description: aFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
             href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: cFilterDesc + (capFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
         }
@@ -468,34 +468,92 @@ private Boolean capFiltersSelected() {
     return (((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value }.collect { (String)it.key })?.size() > 0
 }
 
+private void setupTempDeviceSetting(List<String> deviceIds) {
+    app.updateSetting('tempDeviceList', [type: 'capability.*', value: deviceIds])
+}
+
 private String getCapFilterDesc() {
-    String desc; desc = sBLANK
+    String desc = ''
+
+    // Handle noTempFromContactWater
+    if (getBoolSetting('noTempFromContactWater')) {
+        desc += spanSmBld('Hide Temp from Sensors: ', sCLR4D9) + spanSmBr('True', sCLR4D9) + (!settings.sensorAllowTemp ? lineBr() : sBLANK)
+        if (settings.sensorAllowTemp) {
+            desc += spanSmBldBr('Exclude These Sensors:', sCLR4D9)
+            settings.sensorAllowTemp.sort { it.displayName }.each { dev ->
+                desc += spanSmBr("${sBULLET} ${dev.displayName}", sCLR4D9)
+            }
+            desc += lineBr()
+        }
+    }
+
+    // Handle other capability removals
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-    if (remKeys?.size()) {
-        remKeys.sort().each { String k ->
-            String capName = k.replaceAll('remove', sBLANK)
-            if (settings[k] && settings[k].size()) {
-                Integer capSize = settings[k]?.size()
-                desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
+    remKeys.sort().each { String k ->
+        String capName = k.replaceAll('remove', sBLANK)
+        if (settings[k] && settings[k].size()) {
+            desc += spanSmBldBr("${capName}:", sCLR4D9)
+            settings[k].sort { it.displayName }.each { dev ->
+                desc += spanSmBr("${sBULLET} ${dev.displayName}", sCLR4D9)
             }
         }
     }
-    if (desc.size() > 0) {
-        desc += spanSmBr('', sCLR4D9)
+
+    // Handle custom capability filters
+    Map cFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
+    Map perDev = cFilters?.perDevice ?: [:]
+    List<String> global = cFilters?.global ?: []
+
+    if (perDev && perDev.keySet()?.size()) {
+        setupTempDeviceSetting(perDev.keySet() as List<String>)
+        desc += spanSmBldBr('Per-Device Custom Capabilities:', sCLR4D9)
+        perDev.each { String devId, caps ->
+            def dev = settings.tempDeviceList?.find { it.id == devId }
+            if (dev) {
+                desc += spanSmBr("${sBULLET} ${dev.displayName}: [${caps.join(', ')}]", sCLR4D9)
+            }
+        }
+        app.removeSetting('tempDeviceList')
     }
-    List<String> capItems
-    String s = getStrSetting('customCapFilters')
-    // capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
-    capItems = s ? s.split(',')*.trim() : []
-    if (capItems?.size()) {
-        capItems = capItems.unique().sort()
-        desc += spanSmBr("Custom Capabilities: (${capItems.size()})", sCLR4D9)
-        capItems.each { String cap ->
-            desc += spanSmBr(" ${sBULLET} ${cap}", sCLR4D9)
+
+    if (global && global.size()) {
+        desc += spanSmBldBr('Global Custom Capabilities:', sCLR4D9)
+        global.sort().each { String cap ->
+            desc += spanSmBr("${sBULLET} ${cap}", sCLR4D9)
         }
     }
+
     return desc
 }
+
+// private String getCapFilterDesc() {
+//     String desc; desc = sBLANK
+//     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
+//     if (remKeys?.size()) {
+//         remKeys.sort().each { String k ->
+//             String capName = k.replaceAll('remove', sBLANK)
+//             if (settings[k] && settings[k].size()) {
+//                 Integer capSize = settings[k]?.size()
+//                 desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
+//             }
+//         }
+//     }
+//     if (desc.size() > 0) {
+//         desc += spanSmBr('', sCLR4D9)
+//     }
+//     List<String> capItems
+//     String s = getStrSetting('customCapFilters')
+//     // capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
+//     capItems = s ? s.split(',')*.trim() : []
+//     if (capItems?.size()) {
+//         capItems = capItems.unique().sort()
+//         desc += spanSmBr("Custom Capabilities: (${capItems.size()})", sCLR4D9)
+//         capItems.each { String cap ->
+//             desc += spanSmBr(" ${sBULLET} ${cap}", sCLR4D9)
+//         }
+//     }
+//     return desc
+// }
 
 // private List<String> getCustCapFilters() {
 //     List<String> capItems
@@ -516,33 +574,61 @@ private Boolean attrFiltersSelected() {
 }
 
 private String getCustAttrFilterDesc() {
-    String desc; desc = sBLANK
+    String desc = ''
     Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
-    // log.debug "getCustAttrFilterDesc | customFilters: ${cFilters}"
     Map perDev = cFilters?.perDevice ?: [:]
     List<String> global = cFilters?.global ?: []
 
     if (perDev && perDev.keySet()?.size()) {
-        desc += spanSmBr("Per-Device Attributes: (${perDev.keySet().size()})", sCLR4D9)
-    // perDev.each { String dev, Object attrsObj ->
-    //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
-    //     desc += spanSmBr("${dev}:", sCLR4D9)
-    //     attrs.each { String attr ->
-    //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
-    //     }
-    // }
+        setupTempDeviceSetting(perDev.keySet() as List<String>)
+        desc += spanSmBldBr('Per-Device:', sCLR4D9)
+        perDev.each { String devId, attrs ->
+            def dev = settings.tempDeviceList?.find { it.id == devId }
+            if (dev) {
+                desc += spanSmBr("${sBULLET} ${dev.displayName}: [${attrs.join(', ')}]", sCLR4D9)
+            }
+        }
+        app.removeSetting('tempDeviceList')
     }
 
     if (global && global.size()) {
-        List<String> attrItems = global.toSet().toList().sort()
-        desc += spanSmBr("Global Attributes: (${attrItems.size()})", sCLR4D9)
-        attrItems.each { String attr ->
-            desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
+        desc += spanSmBldBr('Global:', sCLR4D9)
+        global.sort().each { String attr ->
+            desc += spanSmBr("${sBULLET} ${attr}", sCLR4D9)
         }
     }
 
     return desc
 }
+
+// private String getCustAttrFilterDesc() {
+//     String desc; desc = sBLANK
+//     Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
+//     // log.debug "getCustAttrFilterDesc | customFilters: ${cFilters}"
+//     Map perDev = cFilters?.perDevice ?: [:]
+//     List<String> global = cFilters?.global ?: []
+
+//     if (perDev && perDev.keySet()?.size()) {
+//         desc += spanSmBr("Per-Device Attributes: (${perDev.keySet().size()})", sCLR4D9)
+//     // perDev.each { String dev, Object attrsObj ->
+//     //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
+//     //     desc += spanSmBr("${dev}:", sCLR4D9)
+//     //     attrs.each { String attr ->
+//     //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
+//     //     }
+//     // }
+//     }
+
+//     if (global && global.size()) {
+//         List<String> attrItems = global.toSet().toList().sort()
+//         desc += spanSmBr("Global Attributes: (${attrItems.size()})", sCLR4D9)
+//         attrItems.each { String attr ->
+//             desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
+//         }
+//     }
+
+//     return desc
+// }
 
 private void inputDupeValidation() {
     Map<String,Map<String,List>> clnUp = ['d': [:], 'o': [:]]
@@ -663,26 +749,23 @@ private static String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
     return str
 }
 
-def deviceFilterManagementPage() {
+def deviceFiltersPage() {
     // Initialize deviceFilters in state if not already present
-    state.deviceFilters = state.deviceFilters ?: [:]
+    state.deviceFiltersMap = state.deviceFiltersMap ?: [:]
 
-    state.remove('deviceFilterSaved')
-    state.remove('deviceFilterRemoved')
+    log.debug "deviceFilters: ${state.deviceFiltersMap}"
 
-    log.debug "deviceFilters: ${state.deviceFilters}"
-
-    return dynamicPage(name: 'deviceFilterManagementPage', title: 'Device Filter Management', install: false, uninstall: false) {
+    return dynamicPage(name: 'deviceFiltersPage', title: 'Device Filter Management', install: false, uninstall: false) {
         section('', hidden: true) {
             // Create a temp device settings object with the deviceIds of all of the deviceFilters so we can query the device data
-            app.updateSetting('allFilterDevices', [type: 'capability', value: state.deviceFilters.keySet() ?: []])
+            app.updateSetting('allFilterDevices', [type: 'capability', value: state.deviceFiltersMap.keySet() ?: []])
         // log.debug "allFilterDevices: ${settings.allFilterDevices}"
         }
 
         section(sectHead('Configured Device Filters')) {
-            if (state.deviceFilters.size() > 0) {
+            if (state.deviceFiltersMap.size() > 0) {
                 // List existing device filters
-                state.deviceFilters.each { String devId, filterData ->
+                state.deviceFiltersMap.each { String devId, filterData ->
                     def dev = settings.allFilterDevices.find { it.id == devId }
                     log.debug "dev(${devId}): ${dev}"
                     if (dev) {
@@ -692,7 +775,7 @@ def deviceFilterManagementPage() {
                         String desc = attrCount > 0 ? spanSm("Attributes: ${filterData.attributes}") : sBLANK
                         desc += capCount > 0 ? (attrCount > 0 ? lineBr() : sBLANK) + spanSm("Capabilities: ${filterData.capabilities}") : sBLANK
                         desc += cmdCount > 0 ? (capCount > 0 || attrCount > 0 ? lineBr() : sBLANK) + spanSm("Commands: ${filterData.commands}") : sBLANK
-                        href(name: "deviceFilter${devId}", page: 'deviceFilterEditPage', title: inTS1("${dev.displayName}"), description: desc + inputFooter(sTTM, sCLRGRY), state: 'complete', params: [deviceId: devId])
+                        href(name: "deviceFilterEdit${devId}", page: 'deviceFiltersActionPage', title: inTS1("${dev.displayName}"), description: desc + inputFooter(sTTM, sCLRGRY), state: 'complete', params: [deviceId: devId, action: 'edit'])
                     } else {
                         paragraph "Device with ID ${devId} not found."
                     }
@@ -703,7 +786,81 @@ def deviceFilterManagementPage() {
         }
 
         section(sectHead('Add New Device Filters')) {
-            href 'deviceFilterEditPage', title: inTS1('Add New Device Filter'), description: 'Tap to add a new device filter', params: [deviceId: sNULL]
+            href(name: 'deviceFiltersActionPage', page: 'deviceFiltersActionPage', title: inTS1('Add New Device Filter'), description: 'Tap to add a new device filter', params: [deviceId: sNULL, action: 'add'])
+        }
+
+        section(sectHead('Reset Filters:'), hideable: true, hidden: true) {
+            input 'deviceFilterReset', sBOOL, title: inTS1('Clear All Device Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
+            if (getBoolSetting('deviceFilterReset')) { settingUpdate('deviceFilterReset', sFALSE, sBOOL); state.deviceFiltersMap = [:]; }
+        }
+    }
+}
+
+def deviceFiltersActionPage(params) {
+    log.debug "deviceFilterEditPage | params: ${params}"
+    String deviceId = params?.deviceId
+    String action = params?.action
+
+    Map actionMap = [
+        add: [title: 'Add Device Filter', desc: 'Select a device and configure its filters', header: 'Add Filters to'],
+        edit: [title: 'Edit Device Filter', desc: 'Modify existing device filters', header: 'Edit Filters for'],
+        remove: [title: 'Remove Device Filter', desc: 'Confirm filter removal']
+    ]
+
+    if (!actionMap.containsKey(action)) {
+        return deviceFiltersPage()
+    }
+
+    return dynamicPage(name: 'deviceFiltersActionPage', title: actionMap[action].title, install: false, uninstall: false) {
+        if (action == 'add' || (action == 'edit' && !deviceId)) {
+            section(sectHead('Select Device')) {
+                input name: 'selectedFilterDev', type: 'capability.*', title: inTS1('Select Device'), multiple: false, submitOnChange: true, required: true
+            }
+            deviceId = settings.selectedFilterDev?.id
+        }
+
+        if (deviceId) {
+            def device = action == 'add' ? settings.selectedFilterDev : settings.allFilterDevices.find { it.id == deviceId }
+            if (device) {
+                // Get existing filter data if editing
+                Map filterData = state.deviceFiltersMap[deviceId] ?: [:]
+
+                if (action == 'remove') {
+                    section(sectHead('Confirm Removal')) {
+                        paragraph spanSmBldBr("Are you sure you want to remove the filters for ${device.displayName}?", sCLRRED)
+                        input name: 'confirmRemove', type: sBOOL, title: inTS1('Confirm Removal', 'reset'), defaultValue: false, submitOnChange: false
+
+                        if (getBoolSetting('confirmRemove')) {
+                            state.deviceFiltersMap.remove(deviceId)
+                            app.removeSetting('confirmRemove')
+                            return deviceFiltersPage()
+                        }
+                    }
+                } else {
+                    section(sectHead("${actionMap[action].header} ${device.displayName}")) {
+                        // paragraph spanSmBr(actionMap[action].desc, sCLR4D9)
+
+                        // Attribute selection
+                        input name: 'filteredAttributes', type: sENUM, title: inTS1('Select Attributes to Filter'), options: device.supportedAttributes*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.attributes, submitOnChange: true
+
+                        // Capability selection
+                        input name: 'filteredCapabilities', type: sENUM, title: inTS1('Select Capabilities to Filter'), options: device.capabilities*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.capabilities, submitOnChange: true
+
+                        // Command selection
+                        input name: 'filteredCommands', type: sENUM, title: inTS1('Select Commands to Filter'), options: device.supportedCommands*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.commands, submitOnChange: true
+
+                        // Save filter data
+                        state.deviceFiltersMap[deviceId] = [attributes: settings.filteredAttributes, capabilities: settings.filteredCapabilities, commands: settings.filteredCommands, name: device.displayName]
+                    }
+
+                    // Only show removal option when editing
+                    if (action == 'edit') {
+                        section(sectHead('Remove Filter')) {
+                            href(name: "deviceFilterRemove${deviceId}", page: 'deviceFiltersActionPage', title: inTS1('Remove This Device Filter', 'reset'), description: inputFooter('Tap to remove this device filter', sCLRGRY), params: [deviceId: deviceId, action: 'remove'])
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -715,77 +872,81 @@ def deviceFilterEditPage(params) {
     log.debug "deviceId: ${deviceId}"
 
     return dynamicPage(name: 'deviceFilterEditPage', title: 'Add or Edit Device Filter', install: false, uninstall: false) {
-        if (state.deviceFilterSaved || state.deviceFilterRemoved) {
-            String actionDesc = state.deviceFilterSaved ? 'saved' : 'removed'
-            paragraph spanSmBldBr('Action Completed:', sCLR4D9) + spanSm("The device filter has been ${actionDesc}.", sCLR4D9)
-        } else {
-            section(sectHead('Select Device')) {
-                // Create a temp device settings object to access devices
-                if (deviceId) { app.updateSetting('selectedFilterDev', [type: 'capability', value: deviceId]) }
-                input name: 'selectedFilterDev', type: 'capability.*', title: inTS1('Select Device'), multiple: false, submitOnChange: true, required: false
-                log.debug "selectedFilterDev: ${deviceId} | ${settings.selectedFilterDev}"
-            }
+        section(sectHead('Select Device')) {
+            // Create a temp device settings object to access devices
+            if (deviceId) { app.updateSetting('selectedFilterDev', [type: 'capability', value: deviceId]) }
+            input name: 'selectedFilterDev', type: 'capability.*', title: inTS1('Select Device'), multiple: false, submitOnChange: true, required: false
+            log.debug "selectedFilterDev: ${deviceId} | ${settings.selectedFilterDev}"
+        }
 
-            if (settings.selectedFilterDev) {
-                def device = settings.selectedFilterDev
-                String devId = device.id
+        if (settings.selectedFilterDev != null) {
+            def device = settings.selectedFilterDev
+            String devId = device.id
 
-                // Retrieve existing filter data if any
-                Map filterData = state.deviceFilters[devId] ?: [attributes: [], capabilities: [], commands: [], name: device.displayName]
+            // Retrieve existing filter data if any
+            Map filterData = state.deviceFiltersMap[devId] ?: [attributes: [], capabilities: [], commands: [], name: device.displayName]
 
-                section(sectHead("Configure Filters for ${device.displayName}")) {
-                    // Attribute selection
-                    input name: 'filteredAttributes', type: 'enum', title: inTS1('Select Attributes to Filter'), options: device.supportedAttributes*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.attributes, submitOnChange: true
+            section(sectHead("Configure Filters for ${device.displayName}")) {
+                // Attribute selection
+                input name: 'filteredAttributes', type: 'enum', title: inTS1('Select Attributes to Filter'), options: device.supportedAttributes*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.attributes, submitOnChange: true
 
-                    // Capability selection
-                    input name: 'filteredCapabilities', type: 'enum', title: inTS1('Select Capabilities to Filter'), options: device.capabilities*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.capabilities, submitOnChange: true
+                // Capability selection
+                input name: 'filteredCapabilities', type: 'enum', title: inTS1('Select Capabilities to Filter'), options: device.capabilities*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.capabilities, submitOnChange: true
 
-                    // Command selection
-                    input name: 'filteredCommands', type: 'enum', title: inTS1('Select Commands to Filter'), options: device.supportedCommands*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.commands, submitOnChange: true
+                // Command selection
+                input name: 'filteredCommands', type: 'enum', title: inTS1('Select Commands to Filter'), options: device.supportedCommands*.name.unique().sort(), multiple: true, required: false, defaultValue: filterData.commands, submitOnChange: true
 
-                    // Save or Remove options
-                    input name: 'saveDeviceFilter', type: 'bool', title: inTS1('Save Filter'), defaultValue: false, submitOnChange: true
-                    if (state.deviceFilters.containsKey(devId)) {
-                        input name: 'removeDeviceFilter', type: 'bool', title: inTS1('Remove Device Filter'), defaultValue: false, submitOnChange: true
-                    }
+                // Save or Remove options
+                input name: 'saveDeviceFilter', type: 'bool', title: inTS1('Save Filter'), defaultValue: false, submitOnChange: true
+                if (state.deviceFiltersMap.containsKey(devId)) {
+                    input name: 'removeDeviceFilter', type: 'bool', title: inTS1('Remove Device Filter'), defaultValue: false, submitOnChange: true
+                }
 
-                    if (saveDeviceFilter) {
-                        // Save the filter data
-                        filterData.attributes = settings.filteredAttributes ?: []
-                        filterData.capabilities = settings.filteredCapabilities ?: []
-                        filterData.commands = settings.filteredCommands ?: []
-                        filterData.name = device.displayName
-                        state.deviceFilters[devId] = filterData
+                if (saveDeviceFilter) {
+                    // Save the filter data
+                    filterData.attributes = settings.filteredAttributes ?: []
+                    filterData.capabilities = settings.filteredCapabilities ?: []
+                    filterData.commands = settings.filteredCommands ?: []
+                    filterData.name = device.displayName
+                    state.deviceFiltersMap[devId] = filterData
 
-                        // Clear temporary settings
-                        clearDeviceFilterSettings()
-                        state.deviceFilterSaved = true
-                        deviceFilterEditPage(params)
-                    }
+                    // Clear temporary settings
+                    clearDeviceFilterSettings()
+                }
 
-                    if (removeDeviceFilter) {
-                        // Remove the device filter
-                        state.deviceFilters.remove(devId)
+                if (removeDeviceFilter) {
+                    // Remove the device filter
+                    state.deviceFiltersMap.remove(devId)
 
-                        // Clear temporary settings
-                        clearDeviceFilterSettings()
-                        state.deviceFilterRemoved = true
-                        deviceFilterEditPage(params)
-                    }
+                    // Clear temporary settings
+                    clearDeviceFilterSettings()
                 }
             }
         }
     }
 }
 
+private String getDeviceFiltersDesc() {
+    String desc = ''
+    state.deviceFiltersMap.each { String devId, Map filterData ->
+        String devName = filterData.name
+        int attrCount = filterData.attributes?.size() ?: 0
+        int capCount = filterData.capabilities?.size() ?: 0
+        int cmdCount = filterData.commands?.size() ?: 0
+
+        List<String> counts = []
+        if (attrCount > 0) { counts.add("ATTR: ${attrCount}") }
+        if (capCount > 0) { counts.add("CAP: ${capCount}") }
+        if (cmdCount > 0) { counts.add("CMD: ${cmdCount}") }
+        if (counts.size() > 0) {
+            desc += spanSmBr("${devName}: [${counts.join(', ')}]", sCLR4D9)
+        }
+    }
+    return desc
+}
+
 // Helper method to clear temporary settings
 private void clearDeviceFilterSettings() {
-    // app.updateSetting('selectedFilterDev', sNULL)
-    // app.updateSetting('saveDeviceFilter', false)
-    // app.updateSetting('removeDeviceFilter', false)
-    // app.updateSetting('filteredAttributes', [])
-    // app.updateSetting('filteredCapabilities', [])
-    // app.updateSetting('filteredCommands', [])
     app.removeSetting('saveDeviceFilter')
     app.removeSetting('removeDeviceFilter')
     app.removeSetting('filteredAttributes')
@@ -805,11 +966,6 @@ def capFilterPage() {
             }
         }
 
-        section(sectHead('Remove Light/Switch Capabilities')) {
-            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
-            input 'removeLightEffects', 'capability.lightEffects', title: inTS1('Remove Light Effects from these Devices', 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        }
-
         section(sectHead('Remove Sensor Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
             input 'removeAcceleration', 'capability.accelerationSensor', title: inTS1('Remove Acceleration from these Devices', 'acceleration'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -826,10 +982,11 @@ def capFilterPage() {
             input 'removeWater', 'capability.waterSensor', title: inTS1('Remove Water from these Devices', 'water'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Remove Actuator Capabilities')) {
+        section(sectHead('Remove Actuator/Light Capabilities')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('These inputs will remove specific capabilities from a device preventing the addition of unwanted characteristics in devices under HomeKit', sCLRGRY)
             input 'removeColorControl', 'capability.colorControl', title: inTS1('Remove ColorControl from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeColorTemperature', 'capability.colorTemperature', title: inTS1('Remove ColorTemperature from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'removeLightEffects', 'capability.lightEffects', title: inTS1('Remove Light Effects from these Devices', 'color'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeLevel', 'capability.switchLevel', title: inTS1('Remove Level from these Devices', 'speed_knob'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeLock', 'capability.lock', title: inTS1('Remove Lock from these Devices', 'lock'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'removeSwitch', sCAP_SW, title: inTS1('Remove Switch from these Devices', sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
