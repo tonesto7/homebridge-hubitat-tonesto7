@@ -43,8 +43,10 @@ preferences {
     page(name: 'deviceFiltersActionPage')
     page(name: 'capFilterPage')
     page(name: 'attrFilterPage')
+    page(name: 'filterConfigPage')
     page(name: 'developmentPage')
     page(name: 'pluginConfigPage')
+    page(name: 'pluginGenerateConfigPage')
     page(name: 'donationPage')
     page(name: 'historyPage')
     page(name: 'deviceDebugPage')
@@ -114,6 +116,7 @@ preferences {
 @Field static final Integer i1            = 1
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
+@Field static List<String> ListVars
 
 @Field static final Map<String,List<String>> allowedListFLD = [
     attributes: [
@@ -174,8 +177,6 @@ def startPage() {
     }
 }
 
-@Field static List<String> ListVars
-
 static void fillListVars() {
     if (!ListVars) {
         List<String> items
@@ -193,37 +194,43 @@ def mainPage() {
     // return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
     return dynamicPage(name: 'mainPage', nextPage: sBLANK, install: true, uninstall: true) {
         appInfoSect()
+        // section("restart plugin") {
+        //     input name: 'restartPluginButton', type: 'button', title: 'Restart Homebridge Plugin'
+        // }
+        section(sectHead('HomeBridge Plugin:')) {
+            href 'pluginConfigPage', style: 'embedded', required: false, title: inTS1('Generate/Manage Plugin Config', sINFO), description: inputFooter(sTTV, sCLRGRY, true)
+        }
+
         section(sectHead('Device Configuration:')) {
             String deviceDesc = getSelectedDeviceDescs()
             href 'deviceSelectPage', title: inTS1('Device Selection', 'devices2'), required: false, description: (deviceDesc ? spanSm(deviceDesc, sCLR4D9) : inputFooter('Tap to select devices...', sCLRGRY, true))
+            input 'addSecurityDevice', sBOOL, title: inTS1("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
         }
 
         inputDupeValidation()
 
-        section(sectHead('Attribute/Capability Filtering:')) {
+        section(sectHead('Attribute, Capability, Command Filtering:')) {
             String dFilterDesc = getDeviceFiltersDesc()
             String aFilterDesc = getCustAttrFilterDesc()
             String cFilterDesc = getCapFilterDesc()
-            href 'deviceFiltersPage', title: inTS1('UI to Filter ATTs/CAPs/CMDs from your devices', 'filter'), description: dFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
-            href 'attrFilterPage', title: inTS1('Filter out attributes from your devices', 'filter'), description: aFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
-            href 'capFilterPage', title: inTS1('Filter out capabilities from your devices', 'filter'), description: cFilterDesc + (capFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+            href 'deviceFiltersPage', title: inTS1('Device Filter Management', 'filter'), description: dFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+            href 'attrFilterPage', title: inTS1('Filter out device attributes', 'filter'), description: aFilterDesc + (attrFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
+            href 'capFilterPage', title: inTS1('Filter out device capabilities', 'filter'), description: cFilterDesc + (capFiltersSelected() ? inputFooter(sTTM, sCLR4D9) : inputFooter(sTTC, sCLRGRY, true)), required: false
         }
 
         app.removeSetting('allFilterDevices')
         clearDeviceFilterSettings()
 
-        section(sectHead('Location Options:')) {
-            input 'addSecurityDevice', sBOOL, title: inTS1("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
-        }
-
-        section(sectHead('HomeBridge Plugin:')) {
-            String pluginStatus = getPluginStatusDesc()
-            href 'pluginConfigPage', style: 'embedded', required: false, title: inTS1('Generate Config for HomeBridge', sINFO), description: pluginStatus + inputFooter(sTTV, sCLRGRY, true)
-        }
-
-        section(sectHead('History Data & Device Debug:')) {
-            href 'historyPage', title: inTS1('View Command and Event History', 'backup'), description: inputFooter(sTTV, sCLRGRY, true)
+        section(sectHead('Diagnostics & History:')) {
             href 'deviceDebugPage', title: inTS1('View Device Debug Data', sDBG), description: inputFooter(sTTV, sCLRGRY, true)
+            href 'historyPage', title: inTS1('View Command and Event History', 'backup'), description: inputFooter(sTTV, sCLRGRY, true)
+        }
+
+        section(sectHead('App Preferences:')) {
+            String sDesc = getSetDesc()
+            href 'settingsPage', title: inTS1('App Settings', 'settings'), description: sDesc
+            href 'changeLogPage', title: inTS1('View Changelog', 'change_log'), description: inputFooter(sTTV, sCLRGRY, true)
+            label title: inTS1('Label this Instance (optional)', 'name_tag'), description: 'Rename this App', defaultValue: app?.name, required: false
         }
 
         section(sectHead('Feature Requests/Issue Reporting'), hideable: true, hidden: true) {
@@ -233,13 +240,6 @@ def mainPage() {
             href url: featUrl, style: sEXTNRL, required: false, title: inTS1('New Feature Request', 'info'), description: inputFooter('Tap to open browser', sCLRGRY, true)
             href url: devUrl, style: sEXTNRL, required: false, title: inTS1('Device Support', 'info'), description: inputFooter('Tap to open browser', sCLRGRY, true)
             href url: issueUrl, style: sEXTNRL, required: false, title: inTS1('Report an Issue', 'info'), description: inputFooter('Tap to open browser', sCLRGRY, true)
-        }
-
-        section(sectHead('App Preferences:')) {
-            String sDesc = getSetDesc()
-            href 'settingsPage', title: inTS1('App Settings', 'settings'), description: sDesc
-            href 'changeLogPage', title: inTS1('View Changelog', 'change_log'), description: inputFooter(sTTV, sCLRGRY, true)
-            label title: inTS1('Label this Instance (optional)', 'name_tag'), description: 'Rename this App', defaultValue: app?.name, required: false
         }
 
         if (devMode()) {
@@ -259,18 +259,27 @@ def mainPage() {
         }
         clearTestDeviceItems()
     }
+}
+
+def appButtonHandler(String buttonName) {
+    switch (buttonName) {
+        case 'restart plugin':
+            logWarn('appButtonHandler | Restarting Homebridge Plugin...')
+            attemptServiceRestart()
+            break
     }
+}
 
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('Plugin Configuration Options:')) {
-            input 'polling_seconds',        sNUM,  title: inTS1('Plugin Polls Hubitat for Updates (in Seconds)?', sCMD), required: false, defaultValue: 900, submitOnChange: true
             input 'consider_fan_by_name',   sBOOL, title: inTS1('Use the word Fan in device name to determine if device is a Fan?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'consider_light_by_name', sBOOL, title: inTS1('Use the word Light in device name to determine if device is a Light?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'use_cloud_endpoint',     sBOOL, title: inTS1('Communicate with Plugin Using Cloud Endpoint?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'validate_token',         sBOOL, title: inTS1('Validate AppID & Token for All Communications?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'round_levels',           sBOOL, title: inTS1('Round Levels <5% to 0% and >95% to 100%?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'temp_unit',              sENUM, title: inTS1('Temperature Unit?', 'temp_unit'), required: true, defaultValue: location?.temperatureScale, options: ['F':'Fahrenheit', 'C':'Celcius'], submitOnChange: true
+            input 'polling_seconds',        sNUM,  title: inTS1('Plugin Polls Hubitat for Updates (in Seconds)?', sCMD), required: false, defaultValue: 900, submitOnChange: true
         }
 
         section(sectHead('HomeKit Adaptive Lighting')) {
@@ -293,37 +302,14 @@ def pluginConfigPage() {
     }
 }
 
-static Map deviceValidationErrors() {
-    /*
-        NOTE: Define what we require to determine the thermostat is a thermostat so we can support devices like Flair which are custom heat-only thermostats.
-    */
-    Map reqs = [
-        tstat: [ c:['Thermostat Operating State'], a: [r: ['thermostatOperatingState'], o: ['heatingSetpoint', 'coolingSetpoint']] ],
-        tstat_heat: [
-            c: ['Thermostat Operating State'],
-            a: [
-                r: ['thermostatOperatingState', 'heatingSetpoint'],
-                o: []
-            ]
-        ],
-        tstat_cool: [
-            c: ['Thermostat Operating State'],
-            a: [
-                r: ['thermostatOperatingState', 'coolingSetpoint'],
-                o: []
-            ]
-        ],
-    ]
-
-    // if(tstatHeatList || tstatCoolList || tstatList || tstatFanList) {}
-    return reqs
-}
-
 def deviceSelectPage() {
     return dynamicPage(name: 'deviceSelectPage', title: sBLANK, install: false, uninstall: false) {
         section(sectHead('Define Specific Categories:')) {
-            paragraph spanSmBldBr('Description:', sCLR4D9) + spanSm('Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit', sCLR4D9)
-            paragraph spanSmBldBr('NOTE: ') + spanSmBldBr('Please do not select a device more than once in the inputs below')
+            // paragraph spanSmBldBr('Description:', sCLR4D9) + 
+
+            String paraDesc = spanSmBldBr('NOTE: ') + spanSmBldBr(" ${sBULLET} Please do not select a device more than once in the inputs below")
+            paraDesc += spanSmBldBr(" ${sBULLET} Each category below will adjust the device attributes to make sure they are recognized as the desired device type under HomeKit")
+            paragraph paraDesc
 
             input 'lightList', sCAP_SW, title: inTS1("Lights: (${lightList ? lightList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'lightNoAlList', sCAP_SW, title: inTS1("Lights (No Adaptive Lighting): (${lightNoAlList ? lightNoAlList.size() : 0} Selected)", 'light_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -345,18 +331,16 @@ def deviceSelectPage() {
             input 'doubleTapableButtonList', 'capability.doubleTapableButton', title: inTS1("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Fans:')) {
-            input 'fanList', sCAP_SW, title: inTS1("Fans: (${fanList ? fanList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'fan3SpdList', sCAP_SW, title: inTS1("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'fan4SpdList', sCAP_SW, title: inTS1("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'fan5SpdList', sCAP_SW, title: inTS1("Fans (5 Speeds): (${fan5SpdList ? fan5SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        }
-
-        section(sectHead('Thermostats:')) {
+        section(sectHead('Thermostats and Climate Control:')) {
             input 'tstatList', 'capability.thermostat', title: inTS1("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatFanList', 'capability.thermostat', title: inTS1("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatCoolList', 'capability.thermostat', title: inTS1("Cool Only Thermostats: (${tstatCoolList ? tstatCoolList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatHeatList', 'capability.thermostat', title: inTS1("Heat Only Thermostats: (${tstatHeatList ? tstatHeatList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+
+            input 'fanList', sCAP_SW, title: inTS1("Fans: (${fanList ? fanList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'fan3SpdList', sCAP_SW, title: inTS1("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'fan4SpdList', sCAP_SW, title: inTS1("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'fan5SpdList', sCAP_SW, title: inTS1("Fans (5 Speeds): (${fan5SpdList ? fan5SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectHead('All Other Devices:')) {
@@ -477,7 +461,7 @@ private String getCapFilterDesc() {
 
     // Handle noTempFromContactWater
     if (getBoolSetting('noTempFromContactWater')) {
-        desc += spanSmBld('Hide Temp from Sensors: ', sCLR4D9) + spanSmBr('True', sCLR4D9) + (!settings.sensorAllowTemp ? lineBr() : sBLANK)
+        desc += spanSmBld('Hide Temp from Sensors: ', sCLR4D9) + spanSmBr('True', sCLR4D9) + (settings.sensorAllowTemp ? sBLANK : lineBr())
         if (settings.sensorAllowTemp) {
             desc += spanSmBldBr('Exclude These Sensors:', sCLR4D9)
             settings.sensorAllowTemp.sort { it.displayName }.each { dev ->
@@ -526,42 +510,6 @@ private String getCapFilterDesc() {
     return desc
 }
 
-// private String getCapFilterDesc() {
-//     String desc; desc = sBLANK
-//     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-//     if (remKeys?.size()) {
-//         remKeys.sort().each { String k ->
-//             String capName = k.replaceAll('remove', sBLANK)
-//             if (settings[k] && settings[k].size()) {
-//                 Integer capSize = settings[k]?.size()
-//                 desc += spanSmBr("${capName}: (${capSize}) Device(s)", sCLR4D9)
-//             }
-//         }
-//     }
-//     if (desc.size() > 0) {
-//         desc += spanSmBr('', sCLR4D9)
-//     }
-//     List<String> capItems
-//     String s = getStrSetting('customCapFilters')
-//     // capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
-//     capItems = s ? s.split(',')*.trim() : []
-//     if (capItems?.size()) {
-//         capItems = capItems.unique().sort()
-//         desc += spanSmBr("Custom Capabilities: (${capItems.size()})", sCLR4D9)
-//         capItems.each { String cap ->
-//             desc += spanSmBr(" ${sBULLET} ${cap}", sCLR4D9)
-//         }
-//     }
-//     return desc
-// }
-
-// private List<String> getCustCapFilters() {
-//     List<String> capItems
-//     String s = getStrSetting('customCapFilters')
-//     capItems = s ? s.split(',').collect { String it ->  it.trim() } : []
-//     return capItems?.size() ? capItems.unique().sort() : []
-// }
-
 private void resetAttrFilters() {
     settingRemove('customAttrFilters')
 }
@@ -600,35 +548,6 @@ private String getCustAttrFilterDesc() {
 
     return desc
 }
-
-// private String getCustAttrFilterDesc() {
-//     String desc; desc = sBLANK
-//     Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
-//     // log.debug "getCustAttrFilterDesc | customFilters: ${cFilters}"
-//     Map perDev = cFilters?.perDevice ?: [:]
-//     List<String> global = cFilters?.global ?: []
-
-//     if (perDev && perDev.keySet()?.size()) {
-//         desc += spanSmBr("Per-Device Attributes: (${perDev.keySet().size()})", sCLR4D9)
-//     // perDev.each { String dev, Object attrsObj ->
-//     //     List attrs = attrsObj instanceof List ? attrsObj : attrsObj.toList()
-//     //     desc += spanSmBr("${dev}:", sCLR4D9)
-//     //     attrs.each { String attr ->
-//     //         desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
-//     //     }
-//     // }
-//     }
-
-//     if (global && global.size()) {
-//         List<String> attrItems = global.toSet().toList().sort()
-//         desc += spanSmBr("Global Attributes: (${attrItems.size()})", sCLR4D9)
-//         attrItems.each { String attr ->
-//             desc += spanSmBr(" ${sBULLET} ${attr}", sCLR4D9)
-//         }
-//     }
-
-//     return desc
-// }
 
 private void inputDupeValidation() {
     Map<String,Map<String,List>> clnUp = ['d': [:], 'o': [:]]
@@ -1104,6 +1023,33 @@ def deviceDebugPage() {
                 paragraph divSm("<textarea rows='30' class='mdl-textfield' style='font-size: medium !important;' readonly='true'>${viewDeviceDebugAsJson()}</textarea>", sCLRGRY)
             }
         }
+    }
+}
+
+def appInfoSect() {
+    Boolean isNote; isNote = false
+    String tStr
+    tStr = spanSmBld('App Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
+    tStr += getPluginStatusDesc() ?: sBLANK
+    section(sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), 'orange')) {
+        Map minUpdMap = getMinVerUpdsRequired()
+        List codeUpdItems = codeUpdateItems(true)
+        if (bIs(minUpdMap, 'updRequired') && ((List)minUpdMap.updItems).size() > 0) {
+            isNote = true
+            String str3
+            str3 = spanSmBldBr('Updates Required:', sCLRRED)
+            ((List)minUpdMap.updItems).each { item -> str3 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
+            str3 += lineBr() + spanSmBld('If you just updated the code please press Done/Next to let the app process the changes.', sCLRRED)
+            paragraph str3
+        } else if (codeUpdItems?.size()) {
+            isNote = true
+            String str2
+            str2 = spanSmBldBr('Code Updates Available:', sCLRRED)
+            codeUpdItems?.each { item -> str2 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
+            paragraph str2
+        }
+        if (!isNote) { paragraph spanSm('No Issues to Report', sCLRGRY) }
+        paragraph htmlLine(sCLRGRY)
     }
 }
 
@@ -1588,27 +1534,6 @@ static String getAlarmSystemName(Boolean abbr=false) {
 
 String getSecurityStatus() {
     String cur = (String)location.hsmStatus
-    /*if (retInt) {
-        switch (cur) {
-            case 'armedHome':
-            case 'stay':
-                return 0
-            case 'armedAway':
-            case 'away':
-                return 1
-            case 'armedNight':
-            case 'night':
-                return 2
-            case 'disarmed':
-            case 'off':
-                return 3
-            case 'intrusion-home':
-            case 'intrusion-away':
-            case 'intrusion-night':
-                return 4
-        }
-    //} else { return cur ?: 'disarmed' }
-    }*/
     return cur ?: 'disarmed'
 }
 
@@ -2094,6 +2019,32 @@ static Map<String,String> fanSettingKeys() {
 
 static Map<String,String> virtSettingKeys() { return ['modeList': 'Mode Devices', 'pistonList': 'Piston Devices'] }
 
+static Map deviceValidationErrors() {
+    /*
+        NOTE: Define what we require to determine the thermostat is a thermostat so we can support devices like Flair which are custom heat-only thermostats.
+    */
+    Map reqs = [
+        tstat: [ c:['Thermostat Operating State'], a: [r: ['thermostatOperatingState'], o: ['heatingSetpoint', 'coolingSetpoint']] ],
+        tstat_heat: [
+            c: ['Thermostat Operating State'],
+            a: [
+                r: ['thermostatOperatingState', 'heatingSetpoint'],
+                o: []
+            ]
+        ],
+        tstat_cool: [
+            c: ['Thermostat Operating State'],
+            a: [
+                r: ['thermostatOperatingState', 'coolingSetpoint'],
+                o: []
+            ]
+        ],
+    ]
+
+    // if(tstatHeatList || tstatCoolList || tstatList || tstatFanList) {}
+    return reqs
+}
+
 void registerDevices() {
     //This has to be done at startup because it takes too long for a normal command.
     Boolean shw
@@ -2253,20 +2204,6 @@ def changeHandler(evt) {
             Map evtData = [buttonNumber: value]
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: 'button', evtValue: attr, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: evtData])
             break
-
-        // case 'speed':
-        //     if (isDeviceInInput('fanList', deviceid) || isDeviceInInput('fan3SpdList', deviceid) || isDeviceInInput('fan4SpdList', deviceid) || isDeviceInInput('fan5SpdList', deviceid)) {
-        //         // Convert the speed to a number for Homebridge based on it's speed 3,4,5 speed type
-        //         Integer fanSpd = 1
-        //         if (isDeviceInInput('fan3SpdList', deviceid)) fanSpd = 3
-        //         if (isDeviceInInput('fan4SpdList', deviceid)) fanSpd = 4
-        //         if (isDeviceInInput('fan5SpdList', deviceid)) fanSpd = 5
-        //         Integer newSpdVal = getFanSpeedInteger(value, fanSpd)
-
-        //         log.debug "Fan Speed: ${value} | New Speed: ${newSpdVal}"
-        //         sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: newSpdVal, evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
-        //     }
-        //     break
         default:
             sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: value, evtUnit: evt?.unit ?: sBLANK, evtDate: dt, evtData: null])
             break
@@ -2318,37 +2255,13 @@ def changeHandler(evt) {
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: wnow() - execDt])
         }
     }
-    }
-
-// private static Integer getFanSpeedInteger(String speed, Integer numberOfSpeeds = 3) {
-//     Map<String, Integer> speedMappings = [
-//         'low': 0,
-//         'medium-low': 25,
-//         'medium': 50,
-//         'medium-high': 75,
-//         'high': 100,
-//         'on': 100,
-//         'off': 0,
-//         'auto': 50  // You can adjust this based on your needs
-//     ]
-
-//     Integer speedPercentage
-//     speedPercentage = speedMappings[speed] ?: 0
-//     // Adjust percentage based on the number of speeds
-//     //  -1 because index is 0-based
-//     speedPercentage = Math.round(((speedPercentage / 100.0) * (numberOfSpeeds - 1)) * 100).toInteger()
-//     return speedPercentage
-// }
+}
 
 void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, String contentType = sAPPJSON) {
     String server = getServerAddress()
-    Boolean sendVia = getBoolSetting('sendViaNgrok')
-    String url = sendVia ? getStrSetting('ngrokHttpUrl') : sBLANK
-    if (!devMode() || !(sendVia && url)) {
-        if (server == sCLN || server == sNLCLN) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
-    }
+    if (server == sCLN || server == sNLCLN) { logError("sendHttpPost: no plugin server configured src: $src   path: $path   $body"); return }
     Map params = [
-        uri: (devMode() && sendVia && url) ? "https://${url}.ngrok.io/${path}".toString() : "http://${server}/${path}".toString(),
+        uri: "http://${server}/${path}".toString(),
         requestContentType: contentType,
         contentType: contentType,
         body: body,
@@ -2382,13 +2295,41 @@ String getServerAddress() {
 }
 
 String getPluginStatusDesc() {
-    String out; out = sBLANK
+    String out = sBLANK
     Map pluginDetails = state.pluginDetails ?: [:]
+
     if (pluginDetails && pluginDetails.keySet().size() > 0) {
-        out += pluginDetails?.directIP && pluginDetails?.directPort ? spanSmBld('Plugin Server:', sCLRGRY) + spanSmBr(" ${pluginDetails?.directIP}:${pluginDetails?.directPort}", sCLRGRY) : sBLANK
-        out += state?.pluginDetails?.version ? spanSmBld('Plugin Version:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
-        out += spanBr(' ')
+        out += spanSmBld('Plugin:', sCLRGRY) + spanSmBr(' (Online)', sCLRGRN) 
+        out += state?.pluginDetails?.version ? spanSmBld(" ${sBULLET} Version:", sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
+        out += pluginDetails?.directIP && pluginDetails?.directPort ? spanSmBld(" ${sBULLET} Server IP:", sCLRGRY) + spanSmBr(" ${pluginDetails?.directIP}:${pluginDetails?.directPort}", sCLRGRY) : sBLANK
+
+        // Include the lastCheckin Timestamp to local date/time
+        Long lastCheckin = state?.pluginDetails?.lastCheckin ?: 0
+        out += spanSmBld(" ${sBULLET} Last Checkin:", sCLRGRY) + spanSmBr(" ${lastCheckin ? new Date(lastCheckin).format('MM/dd/yyyy hh:mm:ss a', location?.timeZone) : 'Never'}", sCLRGRY)
+
+        // Include Polling Interval
+        Integer pollingInterval = settings.polling_seconds ?: 900
+        out += spanSmBld(" ${sBULLET} Polling Interval:", sCLRGRY) + spanSmBr(" ${pollingInterval} seconds", sCLRGRY)
+
+        // Include Cloud Endpoint Usage
+        Boolean useCloud = getBoolSetting('use_cloud_endpoint')
+        out += spanSmBld(" ${sBULLET} Cloud Endpoint:", sCLRGRY) + spanSmBr(" ${useCloud ? 'Enabled' : 'Disabled'}", sCLRGRY)
+
+        // Include Temperature Unit
+        String tempUnit = getStrSetting('temp_unit') ?: location?.temperatureScale
+        out += spanSmBld(" ${sBULLET} Temperature Unit:", sCLRGRY) + spanSmBr(" ${tempUnit}", sCLRGRY)
+
+        // Include Light/Fan Detection by Name
+        Boolean considerFanByName = getBoolSetting('consider_fan_by_name')
+        Boolean considerLightByName = getBoolSetting('consider_light_by_name')
+        out += spanSmBld(" ${sBULLET} Consider Fan by Name:", sCLRGRY) + spanSmBr(" ${considerFanByName ? 'Yes' : 'No'}", sCLRGRY)
+        out += spanSmBld(" ${sBULLET} Consider Light by Name:", sCLRGRY) + spanSmBr(" ${considerLightByName ? 'Yes' : 'No'}", sCLRGRY)
+
+        // Include Rounding Levels Information
+        Boolean roundLevels = getBoolSetting('round_levels')
+        out += spanSmBld(" ${sBULLET} Round Levels:", sCLRGRY) + spanSmBr(" ${roundLevels ? 'Enabled' : 'Disabled'}", sCLRGRY)
     }
+
     return out
 }
 
@@ -2509,7 +2450,8 @@ def enableDirectUpdates() {
     state.pluginDetails = [
         directIP: params?.ip,
         directPort: params?.port,
-        version: params?.version ?: null
+        version: params?.version ?: null,
+        lastCheckin: wnow()
     ]
     remTsVal(sSVR)
     updCodeVerMap('plugin', (String)params?.version ?: sNULL)
@@ -2530,32 +2472,7 @@ mappings {
     path('/startDirect/:ip/:port/:version') { action: [POST: 'enableDirectUpdates'] }
 }
 
-def appInfoSect() {
-    Boolean isNote; isNote = false
-    String tStr
-    tStr = spanSmBld('Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
-    tStr += state?.pluginDetails?.version ? spanSmBld('Plugin:', sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
-    section(sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), 'orange')) {
-        Map minUpdMap = getMinVerUpdsRequired()
-        List codeUpdItems = codeUpdateItems(true)
-        if (bIs(minUpdMap, 'updRequired') && ((List)minUpdMap.updItems).size() > 0) {
-            isNote = true
-            String str3
-            str3 = spanSmBldBr('Updates Required:', sCLRRED)
-            ((List)minUpdMap.updItems).each { item -> str3 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
-            str3 += lineBr() + spanSmBld('If you just updated the code please press Done/Next to let the app process the changes.', sCLRRED)
-            paragraph str3
-        } else if (codeUpdItems?.size()) {
-            isNote = true
-            String str2
-            str2 = spanSmBldBr('Code Updates Available:', sCLRRED)
-            codeUpdItems?.each { item -> str2 += spanSmBr("  ${sBULLET} ${item}", sCLRRED) }
-            paragraph str2
-        }
-        if (!isNote) { paragraph spanSm('No Issues to Report', sCLRGRY) }
-        paragraph htmlLine(sCLRGRY)
-    }
-}
+
 
 /**********************************************
         APP HELPER FUNCTIONS
