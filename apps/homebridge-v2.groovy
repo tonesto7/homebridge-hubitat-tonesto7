@@ -67,10 +67,6 @@ preferences {
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
 @Field static final String sBULLET        = '\u2022'
-//@Field static final String sFRNFACE       = '\u2639'
-//@Field static final String okSymFLD       = '\u2713'
-//@Field static final String notOkSymFLD    = '\u2715'
-//@Field static final String sPAUSESymFLD   = '\u275A\u275A'
 @Field static final String sEXTNRL        = 'external'
 @Field static final String sLINEBR        = '<br>'
 @Field static final String sFALSE         = 'false'
@@ -116,6 +112,11 @@ preferences {
 @Field static final String sSW            = 'switch'
 @Field static final Integer i0            = 0
 @Field static final Integer i1            = 1
+@Field static final String sAE            = 'Accept-encoding'
+@Field static final String sCE            = 'Content-Encoding'
+@Field static final String sGZIP          = 'gzip'
+@Field static final String sDATA          = 'data'
+@Field static final String sUTF8          = 'UTF-8'
 
 // IN-MEMORY VARIABLES (Cleared only on HUB REBOOT)
 @Field static List<String> ListVars
@@ -200,18 +201,18 @@ def mainPage() {
         // section("restart plugin") {
         //     input name: 'restartPluginButton', type: 'button', title: 'Restart Homebridge Plugin'
         // }
-        section(sectHead('Homebridge Plugin:')) {
+        section(sectHead('Homebridge Plugin')) {
             href 'pluginConfigPage', style: 'embedded', required: false, title: inTS('Generate/Manage Plugin Config', sINFO), description: inputFooter(sTTV, sCLRGRY, true)
         }
 
-        section(sectHead('Device Management:')) {
+        section(sectHead('Device Management')) {
             String deviceDesc = getSelectedDeviceDescs()
             href 'deviceSelectPage', title: inTS('Device Selection', 'devices2'), required: false, description: (deviceDesc ? spanSm(deviceDesc, sCLR4D9) : inputFooter('Tap to select devices...', sCLRGRY, true))
         }
 
         inputDupeValidation()
 
-        section(sectHead('Attribute, Capability, Command Filtering:')) {
+        section(sectHead('Attribute, Capability, Command Filtering')) {
             String dFilterDesc = getDeviceFiltersDesc()
             String aFilterDesc = getCustAttrFilterDesc()
             String cFilterDesc = getCapFilterDesc()
@@ -223,16 +224,16 @@ def mainPage() {
         app.removeSetting('allFilterDevices')
         clearDeviceFilterSettings()
 
-        section(sectHead('Diagnostics & History:')) {
+        section(sectHead('Diagnostics & History')) {
             href 'deviceDebugPage', title: inTS('View Device Debug Data', sDBG), description: inputFooter(sTTV, sCLRGRY, true)
             href 'historyPage', title: inTS('View Command and Event History', 'backup'), description: inputFooter(sTTV, sCLRGRY, true)
         }
 
         section(sectHead('App Preferences/Support')) {
-            String sDesc = getSetDesc()
+            String sDesc = getAppSettingDesc()
             href 'settingsPage', title: inTS('App Settings', 'settings'), description: sDesc
             href 'changeLogPage', title: inTS('View Changelog', 'change_log'), description: inputFooter(sTTV, sCLRGRY, true)
-            href 'supportPage', title: inTS('Support', 'info'), description: inputFooter(sTTV, sCLRGRY), required: false
+            href 'supportPage', title: inTS('Support Links', 'info'), description: inputFooter(sTTV, sCLRGRY, true)
         }
 
         section() {
@@ -277,7 +278,7 @@ def appButtonHandler(String buttonName) {
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         appCssOverrideUI()
-        section(sectHead('Plugin Configuration Options:')) {
+        section(sectHead('Plugin Configuration Options')) {
             input 'consider_fan_by_name',   sBOOL, title: inTS('Use the word Fan in device name to determine if device is a Fan?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'consider_light_by_name', sBOOL, title: inTS('Use the word Light in device name to determine if device is a Light?', sCMD), required: false, defaultValue: false, submitOnChange: true
             input 'use_cloud_endpoint',     sBOOL, title: inTS('Communicate with Plugin Using Cloud Endpoint?', sCMD), required: false, defaultValue: false, submitOnChange: true
@@ -310,11 +311,17 @@ def pluginConfigPage() {
 def deviceSelectPage() {
     return dynamicPage(name: 'deviceSelectPage', title: sBLANK, install: false, uninstall: false) {
         appCssOverrideUI()
-        section(sectHead("Security Device")) {
+        section(sectHead('Security Device')) {
             input 'addSecurityDevice', sBOOL, title: inTS("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
         }
 
-        section(sectHead('Define Specific Categories:')) {
+        section(sectHead('All Other Devices')) {
+            input 'sensorList', 'capability.sensor', title: inTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", 'sensors'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'switchList', sCAP_SW, title: inTS("Switches: (${switchList ? switchList.size() : 0} Selected)", sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'deviceList', 'capability.*', title: inTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
+
+        section(sectHead('Define Specific Categories')) {
             // paragraph spanSmBldBr('Description:', sCLR4D9) + 
 
             String paraDesc = spanSmBldBr('NOTE: ') + spanSmBldBr(" ${sBULLET} Please do not select a device more than once in the inputs below")
@@ -330,7 +337,7 @@ def deviceSelectPage() {
             input 'shadesList', 'capability.windowShade', title: inTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'securityKeypadsList', 'capability.securityKeypad', title: inTS("Security Keypads: (${securityKeypadsList ? securityKeypadsList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
-        section(sectHead('Buttons:')) {
+        section(sectHead('Buttons')) {
             if (pushableButtonList || holdableButtonList || doubleTapableButtonList) {
                 paragraph spanSmBldBr('NOTICE:', sCLRRED) +
                         spanSmBr("Buttons are a weird device under HomeKit and don't allow any inbound action under Hubitat. They only allow you to execute actions/automations under HomeKit per button you've configured", sCLRRED) +
@@ -341,7 +348,7 @@ def deviceSelectPage() {
             input 'doubleTapableButtonList', 'capability.doubleTapableButton', title: inTS("Double Tapable Buttons: (${doubleTapableButtonList ? doubleTapableButtonList.size() : 0} Selected)", 'button'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
-        section(sectHead('Thermostats and Climate Control:')) {
+        section(sectHead('Thermostats and Climate Control')) {
             input 'tstatList', 'capability.thermostat', title: inTS("Thermostats: (${tstatList ? tstatList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatFanList', 'capability.thermostat', title: inTS("Thermostats + Fan: (${tstatFanList ? tstatFanList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'tstatCoolList', 'capability.thermostat', title: inTS("Cool Only Thermostats: (${tstatCoolList ? tstatCoolList.size() : 0} Selected)", 'thermostat'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
@@ -351,12 +358,6 @@ def deviceSelectPage() {
             input 'fan3SpdList', sCAP_SW, title: inTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'fan4SpdList', sCAP_SW, title: inTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'fan5SpdList', sCAP_SW, title: inTS("Fans (5 Speeds): (${fan5SpdList ? fan5SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        }
-
-        section(sectHead('All Other Devices:')) {
-            input 'sensorList', 'capability.sensor', title: inTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", 'sensors'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'switchList', sCAP_SW, title: inTS("Switches: (${switchList ? switchList.size() : 0} Selected)", sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'deviceList', 'capability.*', title: inTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectHead('Create Devices for Modes in HomeKit?')) {
@@ -381,12 +382,12 @@ def deviceSelectPage() {
 def settingsPage() {
     return dynamicPage(name: 'settingsPage', title: sBLANK, install: false, uninstall: false) {
         appCssOverrideUI()
-        section(sectHead('Logging:')) {
+        section(sectHead('Logging')) {
             input 'showCmdLogs', sBOOL, title: inTS('Show Command Events?', sDBG), required: false, defaultValue: true, submitOnChange: true
             input 'showEventLogs', sBOOL, title: inTS('Show Device/Location Events? (Turns Off After 2 hours)', sDBG), required: false, defaultValue: true, submitOnChange: true
             input 'showDebugLogs', sBOOL, title: inTS('Show Detailed Logging? (Turns Off After 2 hours)', sDBG), required: false, defaultValue: false, submitOnChange: true
         }
-        section(sectHead('Security:')) {
+        section(sectHead('Security')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This will allow you to clear you existing app accessToken and force a new one to be created.<br>You will need to update the homebridge config with the new token in order to continue using hubitat with HomeKit', sCLRGRY)
             input 'resetAppToken', sBOOL, title: inTS('Revoke and Recreate App Access Token?', 'reset'), defaultValue: false, submitOnChange: true
             if (getBoolSetting('resetAppToken')) { settingUpdate('resetAppToken', sFALSE, sBOOL); resetAppToken() }
@@ -623,13 +624,13 @@ private void inputDupeValidation() {
         }
     }
     if (show && out) {
-        section(sectHead('Duplicate Device Validation:')) {
+        section(sectHead('Duplicate Device Validation')) {
             paragraph spanBldBr('These Inputs Contain the Same Devices:', sCLRRED) + spanSmBr(out, sCLRRED) + spanSmBld('Please remove these duplicate items!', sCLRRED)
         }
     }
 }
 
-String getSetDesc() {
+String getAppSettingDesc() {
     List s = []
     if (getBoolSetting('showEventLogs') || getBoolDefSetting('showEventLogs', true)) { s.push("${sBULLET} Device Event Logging") }
     if (getBoolSetting('showCmdLogs') || getBoolDefSetting('showCmdLogs', true)) { s.push("${sBULLET} Command Event Logging") }
@@ -645,7 +646,7 @@ def historyPage() {
         section() {
             paragraph spanSmBldBr('Notice:', sCLRGRY, sINFO) + spanSm('This history is only stored in memory.  It is erased after every code update and Hub reboot.', sCLRGRY)
         }
-        section(sectHead("Last (${cHist.size()}) Commands Received From HomeKit:")) {
+        section(sectHead("Last (${cHist.size()}) Commands Received From HomeKit")) {
             if (cHist.size() > 0) {
                 cHist.each { Map c ->
                     List hList = []
@@ -659,7 +660,7 @@ def historyPage() {
                 }
             } else { paragraph spanSm('No Command History Found...', sCLRGRY) }
             }
-        section(sectHead("Last (${eHist.size()}) Events Sent to HomeKit:")) {
+        section(sectHead("Last (${eHist.size()}) Events Sent to HomeKit")) {
             if (eHist.size() > 0) {
                 eHist.each { Map h ->
                     List hList = []
@@ -727,7 +728,7 @@ def deviceFiltersPage() {
             href(name: 'deviceFiltersActionPage', page: 'deviceFiltersActionPage', title: inTS('Add New Device Filter'), description: 'Tap to add a new device filter', params: [deviceId: sNULL, action: 'add'])
         }
 
-        section(sectHead('Reset Filters:')) {
+        section(sectHead('Reset Filters')) {
             input 'deviceFilterReset', sBOOL, title: inTS('Clear All Device Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             if (getBoolSetting('deviceFilterReset')) { settingUpdate('deviceFilterReset', sFALSE, sBOOL); state.deviceFiltersMap = [:]; }
         }
@@ -960,7 +961,7 @@ def capFilterPage() {
             input 'customCapFilters', 'textarea', title: inTS('Enter custom capabilities', 'filter'), description: 'Enter the filters using the format mentioned above...',  submitOnChange: true, required: false
         }
 
-        section(sectHead('Reset Filters:')) {
+        section(sectHead('Reset Filters')) {
             input 'resetCapFilters', sBOOL, title: inTS('Clear All Capability Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
             if (getBoolSetting('resetCapFilters')) { settingUpdate('resetCapFilters', sFALSE, sBOOL); resetCapFilters() }
         }
@@ -1019,23 +1020,23 @@ def confirmPage() {
 def deviceDebugPage() {
     return dynamicPage(name: 'deviceDebugPage', title: sBLANK, install: false, uninstall: false) {
         appCssOverrideUI()
-        section(sectHead('View All Device Data Sent to HomeBridge:')) {
+        section(sectHead('View All Device Data Sent to HomeBridge')) {
             href url: getAppEndpointUrl('alldevices'), style: sEXTNRL, required: false, title: inTS('View Device Data Sent to Homebridge...', sINFO), description: sBLANK, disabled: true
         }
 
         if (devMode()) {
-            section(sectHead('TimeStamp Debug Data:')) {
+            section(sectHead('TimeStamp Debug Data')) {
                 Map tsMap = tsDtMapFLD[gtAppId()] ?: [:]
                 paragraph "${tsMap}"
             }
         }
 
-        section(sectHead('View Individual Device Data:')) {
+        section(sectHead('View Individual Device Data')) {
             paragraph spanSmBldBr('NOTICE:', sCLRGRY) + spanSm("Do you have a device that's not working under homekit like you want?<br> ${sBULLET} Select a device from one of the inputs below and it will show you all data about the device.", sCLRGRY)
-            input 'debug_device', 'capability.*', title: inTS('All Devices:', 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
+            input 'debug_device', 'capability.*', title: inTS('Select a Device to View Data', 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: false, submitOnChange: true, required: false
         }
         if (debug_device) {
-            section(sectHead('Device Data:'), hideable: false, hidden: false) {
+            section(sectHead('Device Data'), hideable: false, hidden: false) {
                 String desc; desc = viewDeviceDebugPretty()
                 if (desc) {
                     // paragraph spanSmBld('Device Data:', sCLR4D9)
@@ -1044,7 +1045,7 @@ def deviceDebugPage() {
                     paragraph spanSmBld('No Device Data Received', sCLRRED)
                 }
             }
-            section(sectHead('Device Data (JSON):'), hideable: false, hidden: false) {
+            section(sectHead('Device Data (JSON)'), hideable: false, hidden: false) {
                 // paragraph spanSmBld('Device Data:', sCLR4D9)
                 paragraph divSm("<textarea rows='30' class='mdl-textfield' style='font-size: medium !important;' readonly='true'>${viewDeviceDebugAsJson()}</textarea>", sCLRGRY)
             }
@@ -1054,9 +1055,8 @@ def deviceDebugPage() {
 
 def appInfoSect() {
     Boolean isNote; isNote = false
-    String tStr = spanSmBld('App Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
-    tStr += getPluginStatusDesc() ?: sBLANK
-    section(sectH3TS((String)app.name, "<div style='padding-left: 20px;'" + tStr + '</div>', getAppImg('hb_tonesto7'), '#76AF04')) {
+    String tStr = getPluginStatusDesc() ?: sBLANK
+    section(sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), '#76AF04')) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
         if (bIs(minUpdMap, 'updRequired') && ((List)minUpdMap.updItems).size() > 0) {
@@ -1103,7 +1103,7 @@ private String viewDeviceDebugPretty() {
         Map<String,Object> tmp = (Map<String,Object>)devData.attributes
         if (tmp.size()) {
             tmp.keySet().sort().each { String att ->
-                Boolean ck = ((List<String>)devData.attributes_filtered).contains(att)
+                Boolean ck = ((List<String>)devData.attributes_filtered)?.contains(att)
                 def val = tmp[att]
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
@@ -1119,7 +1119,7 @@ private String viewDeviceDebugPretty() {
         tmp1 = (List<String>)devData.capabilities
         if (tmp1?.size()) {
             tmp1.sort().each { String cap ->
-                Boolean ck = ((List<String>)devData.capabilities_filtered).contains(cap)
+                Boolean ck = ((List<String>)devData.capabilities_filtered)?.contains(cap)
                 String clr = (ck ? sCLRGRY : sCLRGRN)
                 String status = (ck ? 'Filtered' : 'Allowed')
                 desc += spanSm(" ${sBULLET} ") + (ck ? spanSmBr(cap + " (${status})", clr) : spanSmBldBr(cap + " (${status})", clr))
@@ -1159,9 +1159,8 @@ private String viewDeviceDebugAsJson() {
 }
 
 private Map getDeviceDebugMap(dev) {
-    Map r; r = [result: 'No Data Returned']
+    Map r = [result: 'No Data Returned']
     if (dev) {
-        def aa
         try {
             r = [:]
             r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK)
@@ -1171,24 +1170,22 @@ private Map getDeviceDebugMap(dev) {
             r.manufacturer = dev.manufacturerName ?: 'Unknown'
             r.model = dev?.modelName ?: dev?.getTypeName()
             r.deviceNetworkId = dev.getDeviceNetworkId()
-            aa = dev.getLastActivity()
-            r.lastActivity = aa ?: null
+            r.lastActivity = dev.getLastActivity() ?: null
             r.isUnavailable = markDeviceUnavailable(dev)
+            // Get all device capabilities
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
-            aa = deviceCapabilityList(dev)
-            r.capabilities_processed = aa ?: [:]
-            r.capabilities_filtered = filteredOutCaps(dev) ?: []
+            r.capabilities_processed = deviceCapabilityList(dev) ?: [:]
+            // Calculate filtered capabilities
+            r.capabilities_filtered = r.capabilities - r.capabilities_processed.keySet().toList() ?: []
+            // Get all device commands
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
-            aa = deviceCommandList(dev).sort { it?.key }
-            r.commands_processed = aa ?: [:]
-            r.commands_filtered = filteredOutCommands(dev) ?: []
-            aa = getDeviceFlags(dev)
-            r.customflags = aa ?: [:]
+            r.commands_processed = deviceCommandList(dev).sort { it?.key } ?: [:]
+            r.commands_filtered = r.commands - r.commands_processed.keySet().toList() ?: []
+            r.customflags = getDeviceFlags(dev) ?: [:]
             r.attributes = [:]
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
-            aa = deviceAttributeList(dev).sort { it?.key }
-            r.attributes_processed = aa ?: [:]
-            r.attributes_filtered = filteredOutAttrs(dev) ?: []
+            r.attributes_processed = deviceAttributeList(dev).sort { it?.key } ?: [:]
+            r.attributes_filtered = r.attributes.keySet().toList() - r.attributes_processed.keySet().toList() ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLANK})" }
         } catch (ex) {
             logError("Error while generating device data: ${ex}", ex)
@@ -1392,21 +1389,6 @@ private List renderDevices() {
     return devList
 }
 
-// private Map performPluginTest() {
-//     Map params = [
-//         uri: "http://localhost:8080/app/edit/update?_action_update=Update&oauthEnabled=true&id=${app.appTypeId}".toString(),
-//         headers: ['Content-Type':'text/html;charset=utf-8']
-//     ]
-//     try {
-//         httpPost(params) { resp ->
-//         //LogTrace("response data: ${resp.data}")
-//         }
-//     } catch (ex) {
-//         logError("enableOauth something went wrong: ${ex}", ex)
-//         null
-//     }
-// }
-
 private String sanitizeName(String name) {
     // Remove all characters except alphanumerics, spaces, and apostrophes
     String sanitized = name
@@ -1482,7 +1464,7 @@ private Map<String,Object> getDeviceData(String type, sItem) {
                 firmwareVersion: firmware ?: '1.0.0',
                 lastTime: sItem?.getLastActivity() ?: null,
                 isUnavailable: isVirtual ? false : markDeviceUnavailable(sItem),
-                capabilities: ['Alarm System Status': 1, 'Alarm': 1],
+                capabilities: ['AlarmSystemStatus': 1, 'Alarm': 1],
                 commands: [],
                 attributes: ['alarmSystemStatus': getSecurityKeypadMode((String)sItem.currentValue('securityKeypad')?.toString())]
             ] : [
@@ -1520,7 +1502,7 @@ def getSecurityDevice() {
         serialNumber: getAlarmSystemName(true),
         firmwareVersion: '1.0.0',
         lastTime: null,
-        capabilities: ['Alarm System Status': 1, 'Alarm': 1],
+        capabilities: ['AlarmSystemStatus': 1, 'Alarm': 1],
         commands: [],
         attributes: ['alarmSystemStatus': getSecurityStatus()]
     ]
@@ -1836,17 +1818,16 @@ static Map findVirtPistonDevice(id) {
 Map<String,Integer> deviceCapabilityList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Integer> capItems = ((List)device.getCapabilities())?.findAll { (String)it.name in allowedListFLD.capabilities }?.collectEntries { capability -> [ ((String)capability.name) :1 ] }
 
+    // Start with all capabilities that are in the allowedListFLD
+    Map<String,Integer> capItems = device.getCapabilities()
+        ?.findAll { allowedListFLD.capabilities.contains(it.name) }
+        ?.collectEntries { capability -> [ (capability.name): 1 ] }
+
+    // Add specific capabilities based on device lists
     if (isDeviceInInput('pushableButtonList', devid)) { capItems['Button'] = 1; capItems['PushableButton'] = 1 }
-    else { capItems.remove('PushableButton') }
-
     if (isDeviceInInput('holdableButtonList', devid)) { capItems['Button'] = 1; capItems['HoldableButton'] = 1 }
-    else { capItems.remove('HoldableButton') }
-
     if (isDeviceInInput('doubleTapableButtonList', devid)) { capItems['Button'] = 1; capItems['DoubleTapableButton'] = 1 }
-    else { capItems.remove('DoubleTapableButton') }
-
     if (isDeviceInInput('lightList', devid)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('outletList', devid)) { capItems['Outlet'] = 1 }
     if (isDeviceInInput('lightNoAlList', devid)) { capItems['LightBulb'] = 1 }
@@ -1855,93 +1836,68 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (isDeviceInInput('shadesList', devid)) { capItems['WindowShade'] = 1 }
     if (isDeviceInInput('securityKeypadsList', devid)) { capItems['SecurityKeypad'] = 1 }
     if (isDeviceInInput('garageList', devid)) { capItems['GarageDoorControl'] = 1 }
-    if (isDeviceInInput('tstatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode') }
-    if (isDeviceInInput('tstatFanList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
-    if (isDeviceInInput('tstatCoolList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatHeatingSetpoint') }
-    if (isDeviceInInput('tstatHeatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
-    // if (isDeviceInInput('lockTestList', devid)) { capItems['Lock2'] = 1 }
-    //switchList, deviceList
+    if (isDeviceInInput('tstatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
+    if (isDeviceInInput('tstatFanList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems['ThermostatFanMode'] = 1 }
+    if (isDeviceInInput('tstatCoolList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems['ThermostatCoolingSetpoint'] = 1 }
+    if (isDeviceInInput('tstatHeatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems['ThermostatHeatingSetpoint'] = 1 }
 
-    if (getBoolSetting('noTempFromContactWater') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
-        Boolean remTemp; remTemp = true
-        if (getListSetting('sensorAllowTemp') && isDeviceInInput('sensorAllowTemp', devid)) { remTemp = false }
-        if (remTemp) { capItems.remove('TemperatureMeasurement') }
-    }
-
-    if (isDeviceInInput('removeLightEffects', devid)) { capItems.remove('LightEffects') }
-
-    //This will filter out selected capabilities from the devices selected in filtering inputs.
-    List<String> remKeys
-    remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-    remKeys = remKeys ?: []
-    Boolean sdl = getBoolSetting('showDebugLogs')
-    remKeys.each { String k ->
-        String capName = k.replaceAll('remove', sBLANK)
-        String theCap = (String)capFilterFLD[capName]
-        if (theCap && capItems[theCap] && isDeviceInInput(k, devid)) {
-            capItems?.remove(theCap)
-            if (sdl) { logDebug("Filtering ${capName}") }
+    // Apply remove* settings
+    settings.findAll { it.key.startsWith('remove') && it.value != null }.each { k, v ->
+        String capName = k.replaceAll('remove', '')
+        String theCap = capFilterFLD[capName]
+        if (theCap && isDeviceInInput(k, devid)) {
+            capItems.remove(theCap)
         }
     }
-    return capItems?.sort { (String)it.key }
-}
 
-private List<String> filteredOutCaps(device) {
-    List<String> capsFiltered; capsFiltered = []
-    List<String> remKeys
-    remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-    remKeys = remKeys ?: []
-    remKeys.each { String k ->
-        String capName = k.replaceAll('remove', sBLANK)
-        String theCap = capFilterFLD[capName]
-        if (theCap && isDeviceInInput(k, gtDevId(device))) { capsFiltered.push(theCap) }
+    // Apply noTempFromContactWater setting
+    if (getBoolSetting('noTempFromContactWater') && (capItems.containsKey('TemperatureMeasurement') || capItems.containsKey('ContactSensor') || capItems.containsKey('WaterSensor'))) {
+        if (!(getListSetting('sensorAllowTemp') && isDeviceInInput('sensorAllowTemp', devid))) {
+            capItems.remove('TemperatureMeasurement')
+        }
     }
-    // List custCaps = getCustCapFilters()
-    capsFiltered = capsFiltered + device.capabilities?.findAll { ignoreCapability(device, (String)it.name, true) }?.collect { (String)it.name }
-    return capsFiltered
-}
 
-private Boolean ignoreCapability(device, String icap, Boolean inclIgnoreFld=false) {
-    String cap; cap = icap.toLowerCase()
-    // if (inclIgnoreFld && !(cap in allowedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
-    if (inclIgnoreFld && !(cap in allowedListFLD.capabilities*.toLowerCase())) { return true }
+    // Apply custom capability filters
+    Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: '')
+    customFilters.global?.each { cap -> capItems.remove(cap) }
+    customFilters.perDevice?.get(devid)?.each { cap -> capItems.remove(cap) }
 
-    Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
-    List<String> globalFilters = customFilters.global ?: []
-    Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
-    if (globalFilters.contains(cap)) { return true }
-    String devid = gtDevId(device)
-    // if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(cap)) ) { return true }
-    return perDeviceFilters[devid] && ((List<String>)perDeviceFilters[devid]*.toLowerCase()?.contains(cap))
-// return false
+    // Apply state.deviceFiltersMap
+    state.deviceFiltersMap?.get(devid)?.capabilities?.each { cap -> capItems.remove(cap) }
+
+    return capItems.sort { it.key }
 }
 
 Map<String,Integer> deviceCommandList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Integer> cmds = device.supportedCommands?.findAll { !ignoreCommand((String)it.name) }?.collectEntries { c -> [ ((String)c.name) : 1 ] }
-    if (isDeviceInInput('tstatList', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
-    if (isDeviceInInput('tstatCoolList', devid)) { cmds.remove('setHeatingSetpoint'); cmds.remove('auto'); cmds.remove('heat') }
-    if (isDeviceInInput('tstatHeatList', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
-    if (isDeviceInInput('removeColorControl', devid)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
+
+    // Start with all commands that are in the allowedListFLD
+    Map<String,Integer> cmds = device.supportedCommands
+        ?.findAll { allowedListFLD.commands.contains(it.name) }
+        ?.collectEntries { command -> [ (command.name): 1 ] }
+
+    // Apply remove* settings
+    if (isDeviceInInput('tstatList', devid)) { ['setThermostatFanMode', 'fanAuto', 'fanOn', 'fanCirculate'].each { cmds.remove(it) } }
+    if (isDeviceInInput('tstatCoolList', devid)) { ['setHeatingSetpoint', 'auto', 'heat'].each { cmds.remove(it) } }
+    if (isDeviceInInput('tstatHeatList', devid)) { ['setCoolingSetpoint', 'auto', 'cool'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeColorControl', devid)) { ['setColor', 'setHue', 'setSaturation'].each { cmds.remove(it) } }
     if (isDeviceInInput('removeColorTemperature', devid)) { cmds.remove('setColorTemperature') }
-    if (isDeviceInInput('removeLightEffects', devid)) { cmds.remove('setEffect'); cmds.remove('setNextEffect'); cmds.remove('setPreviousEffect') }
-    if (isDeviceInInput('removeThermostatFanMode', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('setSupportedThermostatFanModes'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
-    if (isDeviceInInput('removeThermostatMode', devid)) { cmds.remove('setThermostatMode'); cmds.remove('setSupportedThermostatModes'); cmds.remove('auto'); cmds.remove('cool'); cmds.remove('emergencyHeat'); cmds.remove('heat') }
-    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
-    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { cmds.remove('setHeatingSetpoint'); cmds.remove('heat'); cmds.remove('emergencyHeat'); cmds.remove('auto') }
-    return cmds
-}
+    if (isDeviceInInput('removeLightEffects', devid)) { ['setEffect', 'setNextEffect', 'setPreviousEffect'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatFanMode', devid)) { ['setThermostatFanMode', 'setSupportedThermostatFanModes', 'fanAuto', 'fanOn', 'fanCirculate'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatMode', devid)) { ['setThermostatMode', 'setSupportedThermostatModes', 'auto', 'cool', 'emergencyHeat', 'heat'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { ['setCoolingSetpoint', 'auto', 'cool'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { ['setHeatingSetpoint', 'heat', 'emergencyHeat', 'auto'].each { cmds.remove(it) } }
 
-private static Boolean ignoreCommand(String cmd) {
-    return cmd && !(cmd in allowedListFLD.commands)
-}
+    // Apply custom command filters
+    Map customFilters = parseCustomFilterStr(getStrSetting('customCmdFilters') ?: '')
+    customFilters.global?.each { cmd -> cmds.remove(cmd) }
+    customFilters.perDevice?.get(devid)?.each { cmd -> cmds.remove(cmd) }
 
-private List<String> filteredOutCommands(device) {
-    List<String> filtered = device.supportedCommands
-        ?.findAll { ignoreCommand((String)it.name) }
-        ?.collect { c -> (String)c.name } ?: []
-    return filtered
+    // Apply state.deviceFiltersMap
+    state.deviceFiltersMap?.get(devid)?.commands?.each { cmd -> cmds.remove(cmd) }
+
+    return cmds.sort { it.key }
 }
 
 private Map parseCustomFilterStr(String text) {
@@ -1972,48 +1928,37 @@ private Map parseCustomFilterStr(String text) {
     return result
 }
 
-private Boolean ignoreAttribute(device, String iattr, Boolean inclIgnoreFld=true) {
-    String attr; attr = iattr.toLowerCase()
-    if (inclIgnoreFld && !(attr in allowedListFLD.attributes*.toLowerCase())) { return true }
-    Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
-    List<String> globalFilters = customFilters.global ?: []
-    Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
-    if (globalFilters.contains(attr)) { return true }
-    String devid = gtDevId(device)
-    return perDeviceFilters[devid] && ((List<String>)perDeviceFilters[devid]*.toLowerCase()?.contains(attr))
-}
-
-private List<String> filteredOutAttrs(device) {
-    List<String> filtered; filtered = []
-    filtered = device.supportedAttributes?.findAll { ignoreAttribute(device, (String)it.name) }?.collect { (String)it.name }
-    return filtered
-}
-
 Map<String,Object> deviceAttributeList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Object> atts = ((List)device.getSupportedAttributes())?.findAll { (String)it.name in allowedListFLD.attributes }?.collectEntries { attribute ->
-        String attr = (String) attribute.name
-        try {
-            // if(attr == "speed") {
-            //     [(attr): getFanSpeedInteger(device.currentValue(attr))]
-            // } else {
-            [(attr): device.currentValue(attr)]
-        // }
-        } catch (ignored) {
-            [(attr): null]
+
+    // Start with all attributes that are in the allowedListFLD
+    Map<String,Object> atts = device.getSupportedAttributes()
+        ?.findAll { allowedListFLD.attributes.contains(it.name) }
+        ?.collectEntries { attribute ->
+            try { [(attribute.name): device.currentValue(attr)] } catch (ignored) { [(attribute.name): null] }
         }
-}
+
+    // Apply remove* settings
     if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['cool', 'off'] }
     if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['heat', 'off'] }
-    if (isDeviceInInput('removeColorControl', devid)) { atts.remove('RGB'); atts.remove('color'); atts.remove('colorName'); atts.remove('hue'); atts.remove('saturation') }
+    if (isDeviceInInput('removeColorControl', devid)) { ['RGB', 'color', 'colorName', 'hue', 'saturation'].each { atts.remove(it) } }
     if (isDeviceInInput('removeColorTemperature', devid)) { atts.remove('colorTemperature') }
-    if (isDeviceInInput('removeLightEffects', devid)) { atts.remove('effectName'); atts.remove('lightEffects') }
-    if (isDeviceInInput('removeThermostatFanMode', devid)) { atts.remove('thermostatFanMode'); atts.remove('supportedThermostatFanModes') }
-    if (isDeviceInInput('removeThermostatMode', devid)) { atts.remove('thermostatMode'); atts.remove('supportedThermostatModes') }
-    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { atts.remove('thermostatCoolingSetpoint'); atts.remove('coolingSetpoint') }
-    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { atts.remove('thermostatHeatingSetpoint'); atts.remove('heatingSetpoint') }
-    return atts
+    if (isDeviceInInput('removeLightEffects', devid)) { ['effectName', 'lightEffects'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatFanMode', devid)) { ['thermostatFanMode', 'supportedThermostatFanModes'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatMode', devid)) { ['thermostatMode', 'supportedThermostatModes'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { ['thermostatCoolingSetpoint', 'coolingSetpoint'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { ['thermostatHeatingSetpoint', 'heatingSetpoint'].each { atts.remove(it) } }
+
+    // Apply custom attribute filters
+    Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: '')
+    customFilters.global?.each { attr -> atts.remove(attr) }
+    customFilters.perDevice?.get(devid)?.each { attr -> atts.remove(attr) }
+
+    // Apply state.deviceFiltersMap
+    state.deviceFiltersMap?.get(devid)?.attributes?.each { attr -> atts.remove(attr) }
+
+    return atts.sort { it.key }
 }
 
 def getAllData() {
@@ -2051,14 +1996,14 @@ static Map deviceValidationErrors() {
     Map reqs = [
         tstat: [ c:['Thermostat Operating State'], a: [r: ['thermostatOperatingState'], o: ['heatingSetpoint', 'coolingSetpoint']] ],
         tstat_heat: [
-            c: ['Thermostat Operating State'],
+            c: ['ThermostatOperatingState'],
             a: [
                 r: ['thermostatOperatingState', 'heatingSetpoint'],
                 o: []
             ]
         ],
         tstat_cool: [
-            c: ['Thermostat Operating State'],
+            c: ['ThermostatOperatingState'],
             a: [
                 r: ['thermostatOperatingState', 'coolingSetpoint'],
                 o: []
@@ -2320,9 +2265,8 @@ String getServerAddress() {
 }
 
 String getPluginStatusDesc() {
-    String out = sBLANK
     Map pluginDetails = state.pluginDetails ?: [:]
-
+    String out = spanSmBld('App Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
     if (pluginDetails && pluginDetails.keySet().size() > 0) {
         out += spanSmBld('Plugin:', sCLRGRY) + spanSmBr(' (Online)', sCLRGRN) 
         out += state?.pluginDetails?.version ? spanSmBld(" ${sBULLET} Version:", sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
@@ -2355,7 +2299,7 @@ String getPluginStatusDesc() {
         out += spanSmBld(" ${sBULLET} Round Levels:", sCLRGRY) + spanSmBr(" ${roundLevels ? 'Enabled' : 'Disabled'}", sCLRGRY)
     }
 
-    return out
+    return divSmMar20(out)
 }
 
 private Map<String,String> fndMode(String m) {
@@ -2504,10 +2448,8 @@ mappings {
 ***********************************************/
 
 static String getAppImg(String imgName, String ext='.png') { return "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/${branchFLD}/images/${imgName}${ext}" }
-
 static String getPublicImg(String imgName) { return "https://raw.githubusercontent.com/tonesto7/SmartThings-tonesto7-public/master/resources/icons/${imgName}.png" }
-
-static String sectH3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold'>${i ? "<img src='${i}' width='48'> " : sBLANK} ${t?.replaceAll('\\n', '<br>')}</h3>${st ?: sBLANK}" }
+static String sectH3TS(String t, String st, String i = sNULL, String c=sCLR4D9) { return "<h3 style='color:${c};font-weight: bold; margin-top: 0;'>${i ? "<img src='${i}' width='48'> " : sBLANK} ${t?.replaceAll('\\n', '<br>')}</h3>${st ?: sBLANK}" }
 static String paraTS(String t, String i = sNULL, Boolean bold=true, String color=sNULL) { return "${color ? "<div style='color: $color;'>" : sBLANK}${bold ? '<b>' : sBLANK}${i ? "<img src='${i}' width='48'> " : sBLANK}${t?.replaceAll('\\n', '<br>')}${bold ? '</b>' : sBLANK}${color ? '</div>' : sBLANK}".toString() }
 static String sectHeadOld(String str, String img = sNULL) { return str ? "<h3 style='margin-top:0;margin-bottom:0;'>${spanImgStr(img)}${span(str, sCLR4D9, sNULL, true)}</h3><hr style='background-color:${sCLRGRY};font-style:italic;height:1px;border:0;margin-top:0;margin-bottom:0;'>" : sBLANK }
 static String sectHead(String str, String img = sNULL) {
@@ -2523,6 +2465,7 @@ static String inTS(String str, String img = sNULL, String clr=sNULL) { return sp
 static String span(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<span ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? 'font-weight: bold;' : sBLANK}'" : sBLANK}>${str}</span>${br ? sLINEBR : sBLANK}" : sBLANK }
 static String div(String str, String clr=sNULL, String sz=sNULL, Boolean bld=false, Boolean br=false) { return str ? "<div ${(clr || sz || bld) ? "style='${clr ? "color: ${clr};" : sBLANK}${sz ? "font-size: ${sz};" : sBLANK}${bld ? 'font-weight: bold;' : sBLANK}'" : sBLANK}>${str}</div>${br ? sLINEBR : sBLANK}" : sBLANK }
 static String spanImgStr(String img=sNULL) { return img ? span("<img src='${(!img.startsWith('http://') && !img.startsWith('https://')) ? getAppImg(img) : img}' width='36'> ") : sBLANK }
+static String divSmMar20(String str, clr=sNULL) { return str ? "<div style='margin-left: 20px; font-size: small; ${clr ? "color: ${clr};" : sBLANK}${str}</div>" : sBLANK }
 static String codeBlkSm(String str) { return str ? "<code style='font-size: small;'>${str}</code>" : sBLANK }
 static String codeBlk(String str) { return str ? "<code>${str}</code>" : sBLANK }
 //static String divImgStr(String str, String img=sNULL) { return ((str) ? div(img ? spanImg(img) + span(str) : str) : sBLANK) }
@@ -2917,11 +2860,6 @@ static void mb(String meth=sNULL) {
 static Integer getSemaNum(String name) {
     //log.warn 'unrecognized lock name...'
     return (name == sHMLF) ? 0 : 0
-// Integer stripes=22
-// if(name.isNumber()) return name.toInteger()%stripes
-// Integer hash=smear(name.hashCode())
-// return Math.abs(hash)%stripes
-// log.info "sema $name # $sema"
 }
 
 @CompileStatic
@@ -3022,6 +2960,8 @@ def appCssOverrideUI() {
                 .btn-default { border-radius: 10px !important; width: 94% !important; margin-left: 20px; max-width: 575px; }
                 .mdl-cell.mdl-cell--12-col.mdl-textfield.mdl-js-textfield label.control-label { margin-left: 20px; padding: 0 !important }
                 .mdl-cell.mdl-cell--12-col.mdl-textfield.mdl-js-textfield .SumoSelect { max-width: 575px; margin-left: 20px; }
+                .mdl-cell.mdl-cell--12-col.mdl-textfield.mdl-js-textfield.has-placeholder label.control-label { margin-left: 0; }
+                .mdl-cell.mdl-cell--12-col.mdl-textfield.mdl-js-textfield.has-placeholder .mdl-textfield__input { margin-left: 5px !important; max-width: 550px !important; }
                 .mdl-textfield__input { max-width: 575px !important; margin-left: 20px !important; }
                 .device-list { margin-left: 20px; max-width: 575px !important; }
                 .mdl-cell .mdl-cell--12-col { width: unset !important; }
@@ -3035,33 +2975,14 @@ def appCssOverrideUI() {
 private List getListSetting(String name) { return (List)settings.get(name) ?: [] }
 
 static String getObjType(obj) {
-    if (obj.is(String)) { return 'String' }
-    else if (obj.is(Map)) { return 'Map' }
-    else if (obj.is(List)) { return 'List' }
-    else if (obj.is(ArrayList)) { return 'ArrayList' }
-    else if (obj.is(BigInteger)) { return 'BigInt' }
-    else if (obj.is(Long)) { return 'Long' }
-    else if (obj.is(Integer)) { return 'Int' }
-    else if (obj.is(Boolean)) { return 'Bool' }
-    else if (obj.is(BigDecimal)) { return 'BigDec' }
-    else if (obj.is(Double)) { return 'Double' }
-    else if (obj.is(Float)) { return 'Float' }
-    else if (obj.is(Byte)) { return 'Byte' }
-    else if (obj.is(com.hubitat.app.DeviceWrapper)) { return 'Device' }
-
-    //      if(eric()) log.error "object: ${describeObject(obj)}"
-    return 'unknown'
+    return getObjectClassName(obj) 
 }
-
-@Field static final String sAE = 'Accept-encoding'
-@Field static final String sCE = 'Content-Encoding'
-@Field static final String sGZIP = 'gzip'
-@Field static final String sDATA = 'data'
-@Field static final String sUTF8 = 'UTF-8'
 
 private Map compressedRender(Map options=[:]) {
     //debug "compressedRender: options:: ${options} "
     //debug "request: ${request} "
+    ByteArrayOutputStream baos = new ByteArrayOutputStream()
+    GZIPOutputStream zipStream = new GZIPOutputStream(baos)
     Map h = (Map)request?.headers
     if (h && sMs(h, sAE)?.contains(sGZIP)) {
         //              debug "will accept gzip"
@@ -3069,7 +2990,11 @@ private Map compressedRender(Map options=[:]) {
         Integer sz = s?.length()
         if (sz > 256) {
             try {
-                String a = string2gzip(s)
+                zipStream.write(s.getBytes(sUTF8))
+                zipStream.close()
+                byte[] result = baos.toByteArray()
+                baos.close()
+                String a = result.encodeBase64()
                 Integer nsz = a.size()
                 if (devMode()) { logDebug "options.data is $sz after compression $nsz  saving ${Math.round((1.0D - (nsz / sz)) * 1000.0D)/10.0D}%" }
             //                              options[sDATA]=a
@@ -3082,12 +3007,12 @@ private Map compressedRender(Map options=[:]) {
     render(options)
 }
 
-static String string2gzip(String s) {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream()
-    GZIPOutputStream zipStream = new GZIPOutputStream(baos)
-    zipStream.write(s.getBytes(sUTF8))
-    zipStream.close()
-    byte[] result = baos.toByteArray()
-    baos.close()
-    return result.encodeBase64()
-}
+// static String string2gzip(String s) {
+//     ByteArrayOutputStream baos = new ByteArrayOutputStream()
+//     GZIPOutputStream zipStream = new GZIPOutputStream(baos)
+//     zipStream.write(s.getBytes(sUTF8))
+//     zipStream.close()
+//     byte[] result = baos.toByteArray()
+//     baos.close()
+//     return result.encodeBase64()
+// }
