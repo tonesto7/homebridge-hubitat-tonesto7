@@ -13,9 +13,9 @@
     },
     "devDependencies": {
         "@snyk/protect": "^1.1293.1",
-        "@types/node": "^22.7.6",
+        "@types/node": "^22.7.7",
         "cheerio": "1.0.0",
-        "eslint": "^9.12.0",
+        "eslint": "^9.13.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.2.1",
         "hap-nodejs": "^1.1.0",
