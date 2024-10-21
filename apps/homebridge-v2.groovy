@@ -1159,9 +1159,8 @@ private String viewDeviceDebugAsJson() {
 }
 
 private Map getDeviceDebugMap(dev) {
-    Map r; r = [result: 'No Data Returned']
+    Map r = [result: 'No Data Returned']
     if (dev) {
-        def aa
         try {
             r = [:]
             r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK)
@@ -1171,24 +1170,22 @@ private Map getDeviceDebugMap(dev) {
             r.manufacturer = dev.manufacturerName ?: 'Unknown'
             r.model = dev?.modelName ?: dev?.getTypeName()
             r.deviceNetworkId = dev.getDeviceNetworkId()
-            aa = dev.getLastActivity()
-            r.lastActivity = aa ?: null
+            r.lastActivity = dev.getLastActivity() ?: null
             r.isUnavailable = markDeviceUnavailable(dev)
+            // Get all device capabilities
             r.capabilities = dev.capabilities?.collect { (String)it.name }?.unique()?.sort() ?: []
-            aa = deviceCapabilityList(dev)
-            r.capabilities_processed = aa ?: [:]
-            r.capabilities_filtered = filteredOutCaps(dev) ?: []
+            r.capabilities_processed = deviceCapabilityList(dev) ?: [:]
+            // Calculate filtered capabilities
+            r.capabilities_filtered = r.capabilities - r.capabilities_processed.keySet().toList() ?: []
+            // Get all device commands
             r.commands = dev.supportedCommands?.collect { (String)it.name }?.unique()?.sort() ?: []
-            aa = deviceCommandList(dev).sort { it?.key }
-            r.commands_processed = aa ?: [:]
-            r.commands_filtered = filteredOutCommands(dev) ?: []
-            aa = getDeviceFlags(dev)
-            r.customflags = aa ?: [:]
+            r.commands_processed = deviceCommandList(dev).sort { it?.key } ?: [:]
+            r.commands_filtered = r.commands - r.commands_processed.keySet().toList() ?: []
+            r.customflags = getDeviceFlags(dev) ?: [:]
             r.attributes = [:]
             dev.supportedAttributes?.collect { (String)it.name }?.unique()?.sort()?.each { String it -> r.attributes[it] = dev.currentValue(it) }
-            aa = deviceAttributeList(dev).sort { it?.key }
-            r.attributes_processed = aa ?: [:]
-            r.attributes_filtered = filteredOutAttrs(dev) ?: []
+            r.attributes_processed = deviceAttributeList(dev).sort { it?.key } ?: [:]
+            r.attributes_filtered = r.attributes.keySet().toList() - r.attributes_processed.keySet().toList() ?: []
             r.eventHistory = dev.eventsSince(new Date() - 1, [max: 20])?.collect { "${it?.date} | [${it?.name}] | (${it?.value}${it?.unit ? " ${it.unit}" : sBLANK})" }
         } catch (ex) {
             logError("Error while generating device data: ${ex}", ex)
@@ -1824,13 +1821,13 @@ Map<String,Integer> deviceCapabilityList(device) {
     Map<String,Integer> capItems = ((List)device.getCapabilities())?.findAll { (String)it.name in allowedListFLD.capabilities }?.collectEntries { capability -> [ ((String)capability.name) :1 ] }
 
     if (isDeviceInInput('pushableButtonList', devid)) { capItems['Button'] = 1; capItems['PushableButton'] = 1 }
-    else { capItems.remove('PushableButton') }
+    // else { capItems.remove('PushableButton') }
 
     if (isDeviceInInput('holdableButtonList', devid)) { capItems['Button'] = 1; capItems['HoldableButton'] = 1 }
-    else { capItems.remove('HoldableButton') }
+    // else { capItems.remove('HoldableButton') }
 
     if (isDeviceInInput('doubleTapableButtonList', devid)) { capItems['Button'] = 1; capItems['DoubleTapableButton'] = 1 }
-    else { capItems.remove('DoubleTapableButton') }
+    // else { capItems.remove('DoubleTapableButton') }
 
     if (isDeviceInInput('lightList', devid)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('outletList', devid)) { capItems['Outlet'] = 1 }
@@ -1868,65 +1865,48 @@ Map<String,Integer> deviceCapabilityList(device) {
             if (sdl) { logDebug("Filtering ${capName}") }
         }
     }
+
+    // Apply custom capability filters
+    Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: '')
+    customFilters.global?.each { cap -> capItems.remove(cap) }
+    customFilters.perDevice?.get(devid)?.each { cap -> capItems.remove(cap) }
+
+    // Apply state.deviceFiltersMap
+    state.deviceFiltersMap?.get(devid)?.capabilities?.each { cap -> capItems.remove(cap) }
+
     return capItems?.sort { (String)it.key }
-}
-
-private List<String> filteredOutCaps(device) {
-    List<String> capsFiltered; capsFiltered = []
-    List<String> remKeys
-    remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
-    remKeys = remKeys ?: []
-    remKeys.each { String k ->
-        String capName = k.replaceAll('remove', sBLANK)
-        String theCap = capFilterFLD[capName]
-        if (theCap && isDeviceInInput(k, gtDevId(device))) { capsFiltered.push(theCap) }
-    }
-    // List custCaps = getCustCapFilters()
-    capsFiltered = capsFiltered + device.capabilities?.findAll { ignoreCapability(device, (String)it.name, true) }?.collect { (String)it.name }
-    return capsFiltered
-}
-
-private Boolean ignoreCapability(device, String icap, Boolean inclIgnoreFld=false) {
-    String cap; cap = icap.toLowerCase()
-    // if (inclIgnoreFld && !(cap in allowedListFLD.capabilities.collect { it.toLowerCase() })) { return true }
-    if (inclIgnoreFld && !(cap in allowedListFLD.capabilities*.toLowerCase())) { return true }
-
-    Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
-    List<String> globalFilters = customFilters.global ?: []
-    Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
-    if (globalFilters.contains(cap)) { return true }
-    String devid = gtDevId(device)
-    // if (perDeviceFilters[devid] && (((List<String>)perDeviceFilters[devid]).collect { it.toLowerCase() }?.contains(cap)) ) { return true }
-    return perDeviceFilters[devid] && ((List<String>)perDeviceFilters[devid]*.toLowerCase()?.contains(cap))
-// return false
 }
 
 Map<String,Integer> deviceCommandList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
-    Map<String,Integer> cmds = device.supportedCommands?.findAll { !ignoreCommand((String)it.name) }?.collectEntries { c -> [ ((String)c.name) : 1 ] }
-    if (isDeviceInInput('tstatList', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
-    if (isDeviceInInput('tstatCoolList', devid)) { cmds.remove('setHeatingSetpoint'); cmds.remove('auto'); cmds.remove('heat') }
-    if (isDeviceInInput('tstatHeatList', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
-    if (isDeviceInInput('removeColorControl', devid)) { cmds.remove('setColor'); cmds.remove('setHue'); cmds.remove('setSaturation') }
+
+    // Start with all commands that are in the allowedListFLD
+    Map<String,Integer> cmds = device.supportedCommands
+        ?.findAll { allowedListFLD.commands.contains(it.name) }
+        ?.collectEntries { command -> [ (command.name): 1 ] }
+
+     // Apply remove* settings
+    if (isDeviceInInput('tstatList', devid)) { ['setThermostatFanMode', 'fanAuto', 'fanOn', 'fanCirculate'].each { cmds.remove(it) } }
+    if (isDeviceInInput('tstatCoolList', devid)) { ['setHeatingSetpoint', 'auto', 'heat'].each { cmds.remove(it) } }
+    if (isDeviceInInput('tstatHeatList', devid)) { ['setCoolingSetpoint', 'auto', 'cool'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeColorControl', devid)) { ['setColor', 'setHue', 'setSaturation'].each { cmds.remove(it) } }
     if (isDeviceInInput('removeColorTemperature', devid)) { cmds.remove('setColorTemperature') }
-    if (isDeviceInInput('removeLightEffects', devid)) { cmds.remove('setEffect'); cmds.remove('setNextEffect'); cmds.remove('setPreviousEffect') }
-    if (isDeviceInInput('removeThermostatFanMode', devid)) { cmds.remove('setThermostatFanMode'); cmds.remove('setSupportedThermostatFanModes'); cmds.remove('fanAuto'); cmds.remove('fanOn'); cmds.remove('fanCirculate') }
-    if (isDeviceInInput('removeThermostatMode', devid)) { cmds.remove('setThermostatMode'); cmds.remove('setSupportedThermostatModes'); cmds.remove('auto'); cmds.remove('cool'); cmds.remove('emergencyHeat'); cmds.remove('heat') }
-    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { cmds.remove('setCoolingSetpoint'); cmds.remove('auto'); cmds.remove('cool') }
-    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { cmds.remove('setHeatingSetpoint'); cmds.remove('heat'); cmds.remove('emergencyHeat'); cmds.remove('auto') }
+    if (isDeviceInInput('removeLightEffects', devid)) { ['setEffect', 'setNextEffect', 'setPreviousEffect'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatFanMode', devid)) { ['setThermostatFanMode', 'setSupportedThermostatFanModes', 'fanAuto', 'fanOn', 'fanCirculate'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatMode', devid)) { ['setThermostatMode', 'setSupportedThermostatModes', 'auto', 'cool', 'emergencyHeat', 'heat'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { ['setCoolingSetpoint', 'auto', 'cool'].each { cmds.remove(it) } }
+    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { ['setHeatingSetpoint', 'heat', 'emergencyHeat', 'auto'].each { cmds.remove(it) } }
+
+    // Apply custom command filters
+    Map customFilters = parseCustomFilterStr(getStrSetting('customCmdFilters') ?: '')
+    customFilters.global?.each { cmd -> cmds.remove(cmd) }
+    customFilters.perDevice?.get(devid)?.each { cmd -> cmds.remove(cmd) }
+
+    // Apply state.deviceFiltersMap
+    state.deviceFiltersMap?.get(devid)?.commands?.each { cmd -> cmds.remove(cmd) }
+    
     return cmds
-}
-
-private static Boolean ignoreCommand(String cmd) {
-    return cmd && !(cmd in allowedListFLD.commands)
-}
-
-private List<String> filteredOutCommands(device) {
-    List<String> filtered = device.supportedCommands
-        ?.findAll { ignoreCommand((String)it.name) }
-        ?.collect { c -> (String)c.name } ?: []
-    return filtered
 }
 
 private Map parseCustomFilterStr(String text) {
@@ -1957,47 +1937,37 @@ private Map parseCustomFilterStr(String text) {
     return result
 }
 
-private Boolean ignoreAttribute(device, String iattr, Boolean inclIgnoreFld=true) {
-    String attr; attr = iattr.toLowerCase()
-    if (inclIgnoreFld && !(attr in allowedListFLD.attributes*.toLowerCase())) { return true }
-    Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
-    List<String> globalFilters = customFilters.global ?: []
-    Map<String, List<String>> perDeviceFilters = customFilters.perDevice ?: [:]
-    if (globalFilters.contains(attr)) { return true }
-    String devid = gtDevId(device)
-    return perDeviceFilters[devid] && ((List<String>)perDeviceFilters[devid]*.toLowerCase()?.contains(attr))
-}
-
-private List<String> filteredOutAttrs(device) {
-    List<String> filtered; filtered = []
-    filtered = device.supportedAttributes?.findAll { ignoreAttribute(device, (String)it.name) }?.collect { (String)it.name }
-    return filtered
-}
-
 Map<String,Object> deviceAttributeList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
+
+    // Start with all attributes that are in the allowedListFLD
     Map<String,Object> atts = ((List)device.getSupportedAttributes())?.findAll { (String)it.name in allowedListFLD.attributes }?.collectEntries { attribute ->
         String attr = (String) attribute.name
         try {
-            // if(attr == "speed") {
-            //     [(attr): getFanSpeedInteger(device.currentValue(attr))]
-            // } else {
             [(attr): device.currentValue(attr)]
-        // }
         } catch (ignored) {
             [(attr): null]
         }
-}
+    }
     if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['cool', 'off'] }
     if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['heat', 'off'] }
-    if (isDeviceInInput('removeColorControl', devid)) { atts.remove('RGB'); atts.remove('color'); atts.remove('colorName'); atts.remove('hue'); atts.remove('saturation') }
+    if (isDeviceInInput('removeColorControl', devid)) { ['RGB', 'color', 'colorName', 'hue', 'saturation'].each { atts.remove(it) } }
     if (isDeviceInInput('removeColorTemperature', devid)) { atts.remove('colorTemperature') }
-    if (isDeviceInInput('removeLightEffects', devid)) { atts.remove('effectName'); atts.remove('lightEffects') }
-    if (isDeviceInInput('removeThermostatFanMode', devid)) { atts.remove('thermostatFanMode'); atts.remove('supportedThermostatFanModes') }
-    if (isDeviceInInput('removeThermostatMode', devid)) { atts.remove('thermostatMode'); atts.remove('supportedThermostatModes') }
-    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { atts.remove('thermostatCoolingSetpoint'); atts.remove('coolingSetpoint') }
-    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { atts.remove('thermostatHeatingSetpoint'); atts.remove('heatingSetpoint') }
+    if (isDeviceInInput('removeLightEffects', devid)) { ['effectName', 'lightEffects'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatFanMode', devid)) { ['thermostatFanMode', 'supportedThermostatFanModes'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatMode', devid)) { ['thermostatMode', 'supportedThermostatModes'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatCoolingSetpoint', devid)) { ['thermostatCoolingSetpoint', 'coolingSetpoint'].each { atts.remove(it) } }
+    if (isDeviceInInput('removeThermostatHeatingSetpoint', devid)) { ['thermostatHeatingSetpoint', 'heatingSetpoint'].each { atts.remove(it) } }
+
+    // Apply custom attribute filters
+    Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: '')
+    customFilters.global?.each { attr -> atts.remove(attr) }
+    customFilters.perDevice?.get(devid)?.each { attr -> atts.remove(attr) }
+
+    // Apply state.deviceFiltersMap
+    state.deviceFiltersMap?.get(devid)?.attributes?.each { attr -> atts.remove(attr) }
+
     return atts
 }
 
