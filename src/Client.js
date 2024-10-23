@@ -128,7 +128,7 @@ export default class Client {
     sendDeviceCommand = async (devData, cmd, vals) => {
         // console.log("sendDeviceCommand", devData, cmd, vals);
         try {
-            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${this.config.use_cloud === true})`);
+            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
             const response = await axios({
                 method: "post",
                 url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/${devData.deviceid}/command/${cmd}`,
