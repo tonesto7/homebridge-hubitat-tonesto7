@@ -1,4 +1,4 @@
-/* groovylint-disable DuplicateMapLiteral, MethodParameterTypeRequired, UnnecessaryObjectReferences, VariableTypeRequired */
+/* groovylint-disable DuplicateListLiteral, DuplicateMapLiteral, MethodParameterTypeRequired, UnnecessaryObjectReferences, VariableTypeRequired */
 /**
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
@@ -1820,14 +1820,9 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (!device || !devid) { return [:] }
     Map<String,Integer> capItems = ((List)device.getCapabilities())?.findAll { (String)it.name in allowedListFLD.capabilities }?.collectEntries { capability -> [ ((String)capability.name) :1 ] }
 
-    if (isDeviceInInput('pushableButtonList', devid)) { capItems['Button'] = 1; capItems['PushableButton'] = 1 }
-    // else { capItems.remove('PushableButton') }
-
-    if (isDeviceInInput('holdableButtonList', devid)) { capItems['Button'] = 1; capItems['HoldableButton'] = 1 }
-    // else { capItems.remove('HoldableButton') }
-
-    if (isDeviceInInput('doubleTapableButtonList', devid)) { capItems['Button'] = 1; capItems['DoubleTapableButton'] = 1 }
-    // else { capItems.remove('DoubleTapableButton') }
+    if (isDeviceInInput('pushableButtonList', devid)) { capItems['Button'] = 1; capItems['PushableButton'] = 1 } else { capItems.remove('PushableButton') }
+    if (isDeviceInInput('holdableButtonList', devid)) { capItems['Button'] = 1; capItems['HoldableButton'] = 1 } else { capItems.remove('HoldableButton') }
+    if (isDeviceInInput('doubleTapableButtonList', devid)) { capItems['Button'] = 1; capItems['DoubleTapableButton'] = 1 } else { capItems.remove('DoubleTapableButton') }
 
     if (isDeviceInInput('lightList', devid)) { capItems['LightBulb'] = 1 }
     if (isDeviceInInput('outletList', devid)) { capItems['Outlet'] = 1 }
@@ -1837,12 +1832,10 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (isDeviceInInput('shadesList', devid)) { capItems['WindowShade'] = 1 }
     if (isDeviceInInput('securityKeypadsList', devid)) { capItems['SecurityKeypad'] = 1 }
     if (isDeviceInInput('garageList', devid)) { capItems['GarageDoorControl'] = 1 }
-    if (isDeviceInInput('tstatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems?.remove('ThermostatFanMode') }
-    if (isDeviceInInput('tstatFanList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1 }
-    if (isDeviceInInput('tstatCoolList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatHeatingSetpoint') }
-    if (isDeviceInInput('tstatHeatList', devid)) { capItems['Thermostat'] = 1; capItems['ThermostatOperatingState'] = 1; capItems.remove('ThermostatCoolingSetpoint') }
-    // if (isDeviceInInput('lockTestList', devid)) { capItems['Lock2'] = 1 }
-    //switchList, deviceList
+    if (isDeviceInInput('tstatList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 }; capItems?.remove('ThermostatFanMode') }
+    if (isDeviceInInput('tstatFanList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 } }
+    if (isDeviceInInput('tstatCoolList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 }; capItems.remove('ThermostatHeatingSetpoint') }
+    if (isDeviceInInput('tstatHeatList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 };; capItems.remove('ThermostatCoolingSetpoint') }
 
     if (getBoolSetting('noTempFromContactWater') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
         Boolean remTemp; remTemp = true
@@ -1885,6 +1878,10 @@ Map<String,Integer> deviceCommandList(device) {
     Map<String,Integer> cmds = device.supportedCommands
         ?.findAll { allowedListFLD.commands.contains(it.name) }
         ?.collectEntries { command -> [ (command.name): 1 ] }
+
+    if (!isDeviceInInput('pushableButtonList', devid)) { cmds.remove('push') }
+    if (!isDeviceInInput('holdableButtonList', devid)) { cmds.remove('hold') }
+    if (!isDeviceInInput('doubleTapableButtonList', devid)) { cmds.remove('doubleTap') }
 
      // Apply remove* settings
     if (isDeviceInInput('tstatList', devid)) { ['setThermostatFanMode', 'fanAuto', 'fanOn', 'fanCirculate'].each { cmds.remove(it) } }
@@ -1950,6 +1947,12 @@ Map<String,Object> deviceAttributeList(device) {
             [(attr): null]
         }
     }
+
+    // Remove attributes that are not supported by the device
+    if (!isDeviceInInput('pushableButtonList', devid)) { atts.remove('pushed') }
+    if (!isDeviceInInput('holdableButtonList', devid)) { atts.remove('held') }
+    if (!isDeviceInInput('doubleTapableButtonList', devid)) { atts.remove('doubleTapped') }
+
     if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['cool', 'off'] }
     if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['heat', 'off'] }
     if (isDeviceInInput('removeColorControl', devid)) { ['RGB', 'color', 'colorName', 'hue', 'saturation'].each { atts.remove(it) } }
