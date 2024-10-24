@@ -303,7 +303,7 @@ export default class HubitatAccessory {
         for (const characteristic of characteristics) {
             if (!characteristicsToKeep.has(characteristic.UUID)) {
                 service.removeCharacteristic(characteristic);
-                this.platform.logWarn(`Removing Unused Characteristic: ${characteristic.displayName} from ${service.displayName} from ${this.accessory.name}`);
+                this.platform.logWarn(`${this.accessory.name} | Removing Unused Characteristic: ${characteristic.displayName} from ${this.getServiceName(service)}`);
             }
         }
     }
@@ -397,42 +397,34 @@ export default class HubitatAccessory {
         return this.accessory.context.deviceData.deviceflags?.hasOwnProperty(flag) || false;
     }
 
-    /**
-     * Retrieves or adds a button service to the accessory based on the provided service type, display name, and subtype.
-     *
-     * @param {object} serviceType - The type of the service to retrieve or add.
-     * @param {string} displayName - The display name of the service.
-     * @param {string} subType - The subtype of the service.
-     * @returns {object} The retrieved or newly added service.
-     */
-    getButtonSvcByName(serviceType, displayName, subType) {
-        this.log.debug(`${this.accessory.name} | Getting or adding button service: ${displayName} (subType: ${subType})`);
+    // getButtonSvcByName(serviceType, displayName, subType) {
+    //     this.log.debug(`${this.accessory.name} | Getting or adding button service: ${displayName} (subType: ${subType})`);
 
-        let svc = this.accessory.services.find((s) => s.UUID === serviceType.UUID && s.subtype === subType);
+    //     let svc = this.accessory.services.find((s) => s.UUID === serviceType.UUID && s.subtype === subType);
 
-        if (!svc) {
-            const oldServiceName = `${this.accessory.context.deviceData.deviceid}_${subType}`;
-            svc = this.accessory.services.find((s) => s.displayName === oldServiceName);
+    //     if (!svc) {
+    //         const oldServiceName = `${this.accessory.context.deviceData.deviceid}_${subType}`;
+    //         svc = this.accessory.services.find((s) => s.displayName === oldServiceName);
 
-            if (svc) {
-                this.log.debug(`${this.accessory.name} | Found existing service with old naming scheme: ${oldServiceName}. Updating to new naming.`);
-                svc.displayName = displayName;
-                svc.subtype = subType;
-            }
-        }
+    //         if (svc) {
+    //             this.log.debug(`${this.accessory.name} | Found existing service with old naming scheme: ${oldServiceName}. Updating to new naming.`);
+    //             svc.displayName = displayName;
+    //             svc.subtype = subType;
+    //         }
+    //     }
 
-        if (!svc) {
-            this.log.debug(`${this.accessory.name} | Adding new service for: ${displayName} (subType: ${subType})`);
-            svc = new serviceType(displayName, subType);
-            this.accessory.addService(svc);
-        } else {
-            this.log.debug(`${this.accessory.name} | Reusing existing service for: ${displayName} (subType: ${subType})`);
-        }
+    //     if (!svc) {
+    //         this.log.debug(`${this.accessory.name} | Adding new service for: ${displayName} (subType: ${subType})`);
+    //         svc = new serviceType(displayName, subType);
+    //         this.accessory.addService(svc);
+    //     } else {
+    //         this.log.debug(`${this.accessory.name} | Reusing existing service for: ${displayName} (subType: ${subType})`);
+    //     }
 
-        this.addServiceToKeep(svc);
+    //     this.addServiceToKeep(svc);
 
-        return svc;
-    }
+    //     return svc;
+    // }
 
     getServiceName(service) {
         // console.log(service.UUID);
