@@ -4,9 +4,6 @@ export default class AlarmSystem extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.securitySystemSvc = this.getOrAddService(this.Service.SecuritySystem);
-        this.initializedSvcs = [this.securitySystemSvc];
     }
 
     /**

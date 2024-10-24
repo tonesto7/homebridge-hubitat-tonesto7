@@ -4,9 +4,6 @@ export default class Speaker extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.speakerSvc = this.getOrAddService(this.Service.Speaker);
-        this.initializedSvcs = [this.speakerSvc];
     }
 
     static relevantAttributes = ["volume", "level", "mute"];
@@ -27,6 +24,8 @@ export default class Speaker extends HubitatAccessory {
      * @method initializeService
      */
     async initializeService() {
+        this.speakerSvc = this.getOrAddService(this.Service.Speaker);
+
         const isSonos = this.deviceData.manufacturerName === "Sonos";
         const lvlAttr = isSonos || this.hasAttribute("volume") ? "volume" : this.hasAttribute("level") ? "level" : undefined;
 

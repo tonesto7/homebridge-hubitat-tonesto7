@@ -4,9 +4,6 @@ export default class Thermostat extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.thermostatSvc = this.getOrAddService(this.Service.Thermostat);
-        this.initializedSvcs = [this.thermostatSvc];
     }
 
     static relevantAttributes = ["thermostatOperatingState", "thermostatMode", "temperature", "coolingSetpoint", "heatingSetpoint", "thermostatSetpoint", "humidity"];
@@ -28,6 +25,8 @@ export default class Thermostat extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.thermostatSvc = this.getOrAddService(this.Service.Thermostat);
+
         this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentHeatingCoolingState, {
             getHandler: () => {
                 const operatingState = this.getCurrentOperatingState(this.deviceData.attributes.thermostatOperatingState);

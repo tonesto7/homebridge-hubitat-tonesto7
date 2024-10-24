@@ -4,9 +4,6 @@ export default class MotionSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
-        this.initializedSvcs = [this.motionSvc];
     }
 
     static relevantAttributes = ["motion", "tamper", "status"];
@@ -25,6 +22,8 @@ export default class MotionSensor extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
      */
     async initializeService() {
+        this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
+
         this.getOrAddCharacteristic(this.motionSvc, this.Characteristic.MotionDetected, {
             getHandler: () => {
                 const motionDetected = this.deviceData.attributes.motion === "active";

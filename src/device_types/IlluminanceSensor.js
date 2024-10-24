@@ -4,9 +4,6 @@ export default class IlluminanceSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.lightSensorSvc = this.getOrAddService(this.Service.LightSensor);
-        this.initializedSvcs = [this.lightSensorSvc];
     }
 
     static relevantAttributes = ["illuminance", "status", "tamper"];
@@ -25,6 +22,8 @@ export default class IlluminanceSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.lightSensorSvc = this.getOrAddService(this.Service.LightSensor);
+
         this.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.CurrentAmbientLightLevel, {
             props: {
                 minValue: 0,

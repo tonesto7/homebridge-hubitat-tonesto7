@@ -4,9 +4,6 @@ export default class GarageDoor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.garageDoorSvc = this.getOrAddService(this.Service.GarageDoorOpener);
-        this.initializedSvcs = [this.garageDoorSvc];
     }
 
     static relevantAttributes = ["door", "obstruction"];
@@ -26,6 +23,8 @@ export default class GarageDoor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.garageDoorSvc = this.getOrAddService(this.Service.GarageDoorOpener);
+
         this.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.CurrentDoorState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.door;

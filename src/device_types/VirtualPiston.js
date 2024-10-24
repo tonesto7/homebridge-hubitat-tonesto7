@@ -4,9 +4,6 @@ export default class VirtualPiston extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.switchSvc = this.getOrAddService(this.Service.Switch);
-        this.initializedSvcs = [this.switchSvc];
     }
 
     static relevantAttributes = ["switch"];
@@ -29,6 +26,10 @@ export default class VirtualPiston extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.switchSvc = this.getOrAddService(this.Service.Switch);
+
+        this.addServiceToKeep(this.switchSvc);
+
         this.getOrAddCharacteristic(this.switchSvc, this.Characteristic.On, {
             getHandler: () => {
                 const isOn = this.deviceData.attributes.switch === "on";

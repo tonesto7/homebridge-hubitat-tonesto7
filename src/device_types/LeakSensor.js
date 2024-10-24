@@ -4,9 +4,6 @@ export default class LeakSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.leakSensorSvc = this.getOrAddService(this.Service.LeakSensor);
-        this.initializedSvcs = [this.leakSensorSvc];
     }
 
     static relevantAttributes = ["water", "status", "tamper"];
@@ -26,6 +23,8 @@ export default class LeakSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.leakSensorSvc = this.getOrAddService(this.Service.LeakSensor);
+
         this.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.LeakDetected, {
             getHandler: () => {
                 const leak = this.convertWaterStatus(this.deviceData.attributes.water);

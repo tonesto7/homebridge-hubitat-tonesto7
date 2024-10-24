@@ -4,9 +4,6 @@ export default class Battery extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.batterySvc = this.getOrAddService(this.Service.Battery);
-        this.initializedSvcs = [this.batterySvc];
     }
 
     /**

@@ -4,9 +4,6 @@ export default class ContactSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.contactSvc = this.getOrAddService(this.Service.ContactSensor);
-        this.initializedSvcs = [this.contactSvc];
     }
 
     static relevantAttributes = ["contact", "status", "tamper"];
@@ -26,6 +23,8 @@ export default class ContactSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.contactSvc = this.getOrAddService(this.Service.ContactSensor);
+
         // Contact Sensor State
         this.getOrAddCharacteristic(this.contactSvc, this.Characteristic.ContactSensorState, {
             getHandler: () => {

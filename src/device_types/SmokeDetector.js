@@ -4,9 +4,6 @@ export default class SmokeDetector extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.smokeSensorSvc = this.getOrAddService(this.Service.SmokeSensor);
-        this.initializedSvcs = [this.smokeSensorSvc];
     }
 
     static relevantAttributes = ["smoke", "status", "tamper"];
@@ -29,6 +26,8 @@ export default class SmokeDetector extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.smokeSensorSvc = this.getOrAddService(this.Service.SmokeSensor);
+
         this.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.SmokeDetected, {
             getHandler: () => {
                 const smoke = this.convertSmokeStatus(this.deviceData.attributes.smoke);

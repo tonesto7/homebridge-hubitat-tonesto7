@@ -4,9 +4,6 @@ export default class Fan extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.fanSvc = this.getOrAddService(this.Service.Fanv2);
-        this.initializedSvcs = [this.fanSvc];
     }
 
     static relevantAttributes = ["switch", "speed", "level"];
@@ -28,6 +25,8 @@ export default class Fan extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service and characteristics are initialized.
      */
     async initializeService() {
+        this.fanSvc = this.getOrAddService(this.Service.Fanv2);
+
         this.getOrAddCharacteristic(this.fanSvc, this.Characteristic.Active, {
             preReqChk: () => this.hasAttribute("switch"),
             getHandler: () => {

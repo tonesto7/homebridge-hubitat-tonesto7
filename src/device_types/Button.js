@@ -6,34 +6,6 @@ export default class Button extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        // Initialize an array to track our services
-        this.initializedSvcs = [];
-
-        // Check if device has any button capabilities
-        if (!this.hasButtonCapabilities()) {
-            this.log.debug(`${this.accessory.displayName} | No button capabilities found, skipping button service initialization`);
-            return;
-        }
-
-        // Initialize button map if it doesn't exist
-        if (!this.accessory._buttonMap) {
-            this.accessory._buttonMap = {};
-        }
-
-        // Get number of buttons and create services
-        const btnCnt = this.clamp(this.deviceData.attributes.numberOfButtons || 1, 1, 10);
-
-        for (let btnNum = 1; btnNum <= btnCnt; btnNum++) {
-            const serviceName = `${this.deviceData.deviceid} Button ${btnNum}`;
-            const buttonSvc = this.getButtonService(this.Service.StatelessProgrammableSwitch, serviceName, btnNum);
-
-            // Add to initialized services array
-            this.initializedSvcs.push(buttonSvc);
-
-            // Add to button map
-            this.accessory._buttonMap[serviceName] = buttonSvc;
-        }
     }
 
     /**
@@ -41,10 +13,6 @@ export default class Button extends HubitatAccessory {
      * @default ["button", "numberOfButtons"]
      */
     static relevantAttributes = ["button", "numberOfButtons"];
-
-    hasButtonCapabilities() {
-        return ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton"].some((cap) => this.hasCapability(cap));
-    }
 
     /**
      * Initializes the button accessory service.
@@ -67,17 +35,16 @@ export default class Button extends HubitatAccessory {
      * 4. Adds the button service to the accessory's button map.
      * 5. Adds the "button" group to the accessory's device groups.
      */
-
     async initializeService() {
-        // Check if device has any button capabilities
-        if (!this.hasButtonCapabilities()) {
-            this.log.debug(`${this.accessory.displayName} | No button capabilities found, skipping button service initialization`);
-            return;
-        }
+        const btnCnt = this.clamp(this.deviceData.attributes.numberOfButtons || 1, 1, 10);
 
-        // Configure each button service with its characteristics
-        for (const buttonSvc of this.initializedSvcs) {
-            const btnNum = buttonSvc.subtype ? parseInt(buttonSvc.subtype) : 1;
+        this.log.debug(`${this.accessory.displayName} | Initializing button accessory with ${btnCnt} buttons`);
+
+        for (let btnNum = 1; btnNum <= btnCnt; btnNum++) {
+            const serviceName = `${this.deviceData.deviceid} Button ${btnNum}`;
+            this.log.debug(`${this.accessory.displayName} | Initializing button service: ${serviceName}`);
+
+            const buttonSvc = this.getButtonService(this.Service.StatelessProgrammableSwitch, serviceName, btnNum);
             const validValues = this.getSupportedBtnValues();
 
             this.getOrAddCharacteristic(buttonSvc, this.Characteristic.ProgrammableSwitchEvent, {
@@ -89,8 +56,12 @@ export default class Button extends HubitatAccessory {
             this.getOrAddCharacteristic(buttonSvc, this.Characteristic.ServiceLabelIndex, {
                 getHandler: () => btnNum,
             });
+
+            this.log.debug(`${this.accessory.displayName} | Button ${btnNum} service initialized`);
+            this.accessory._buttonMap[serviceName] = buttonSvc;
         }
 
+        // this.log.info(`${this.accessory.displayName} | Button accessory initialized with ${btnCnt} buttons`);
         this.accessory.deviceGroups.push("button");
     }
 

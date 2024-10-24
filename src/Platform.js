@@ -221,45 +221,47 @@ export default class Platform {
      */
     async refreshDevices(src = undefined) {
         let starttime = new Date();
-        try {
-            this.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
-            const resp = await this.client.getDevices();
+        return new Promise((resolve, reject) => {
+            try {
+                this.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
+                this.client
+                    .getDevices()
+                    .catch((err) => {
+                        this.logError("getDevices Exception: " + err);
+                        reject(err.message);
+                    })
+                    .then((resp) => {
+                        if (resp && resp.location) {
+                            this.updateTempUnit(resp.location.temperature_scale);
+                            if (resp.location.hubIP) {
+                                this.local_hub_ip = resp.location.hubIP;
+                                this.configItems.use_cloud = resp.location.use_cloud === true;
+                                this.client.updateGlobals(this.local_hub_ip, this.configItems.use_cloud);
+                            }
+                        }
+                        if (resp && resp.deviceList && resp.deviceList instanceof Array) {
+                            const toCreate = this.diffAdd(resp.deviceList);
+                            const toUpdate = this.intersection(resp.deviceList);
+                            const toRemove = this.diffRemove(resp.deviceList);
+                            this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name).join(", "));
+                            this.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})`);
+                            this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name).join(", "));
 
-            if (resp && resp.location) {
-                this.updateTempUnit(resp.location.temperature_scale);
-                if (resp.location.hubIP) {
-                    this.local_hub_ip = resp.location.hubIP;
-                    this.configItems.use_cloud = resp.location.use_cloud === true;
-                    this.client.updateGlobals(this.local_hub_ip, this.configItems.use_cloud);
-                }
+                            toRemove.forEach(async (accessory) => await this.removeAccessory(accessory));
+                            toUpdate.forEach(async (device) => await this.updateDevice(device));
+                            toCreate.forEach(async (device) => await this.addDevice(device));
+                        }
+                        this.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
+                        this.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
+                        this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.deviceManager.getAllAccessoriesFromCache()).length})`);
+                        if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
+                        resolve(true);
+                    });
+            } catch (ex) {
+                this.logError(`didFinishLaunching | refreshDevices Exception: ${ex.message}`, ex.stack);
+                reject(ex);
             }
-            if (resp && resp.deviceList && resp.deviceList instanceof Array) {
-                const toCreate = this.diffAdd(resp.deviceList);
-                const toUpdate = this.intersection(resp.deviceList);
-                const toRemove = this.diffRemove(resp.deviceList);
-                this.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name).join(", "));
-                this.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})`);
-                this.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name).join(", "));
-
-                // Wait for all remove operations to complete
-                await Promise.all(toRemove.map((accessory) => this.removeAccessory(accessory)));
-                await Promise.all(toUpdate.map((device) => this.updateDevice(device)));
-                await Promise.all(toCreate.map((device) => this.addDevice(device)));
-            }
-
-            this.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
-            this.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
-            this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.deviceManager.getAllAccessoriesFromCache()).length})`);
-
-            if (src !== "First Launch") {
-                this.appEvts.emit("event:plugin_upd_status");
-            }
-
-            return true;
-        } catch (ex) {
-            this.logError(`didFinishLaunching | refreshDevices Exception: ${ex.message}`, ex.stack);
-            reject(ex);
-        }
+        });
     }
 
     /**
@@ -325,7 +327,7 @@ export default class Platform {
         if (this.deviceManager.removeAccessoryFromCache(accessory)) {
             this.deviceManager.removeAccessoryFromCache(accessory);
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-            this.logWarn(`Removed Accessory: ${accessory.displayName}`);
+            this.logInfo(`Removed Accessory: ${accessory.displayName}`);
         }
     }
 

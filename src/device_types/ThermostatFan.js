@@ -4,9 +4,6 @@ export default class ThermostatFan extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
-
-        this.fanV2Svc = this.getOrAddService(this.Service.Fanv2);
-        this.initializedSvcs = [this.fanV2Svc];
     }
 
     static relevantAttributes = ["thermostatFanMode"];
@@ -26,6 +23,8 @@ export default class ThermostatFan extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
+        this.fanV2Svc = this.getOrAddService(this.Service.Fanv2);
+
         this.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.Active, {
             getHandler: () => {
                 const mode = this.deviceData.attributes.thermostatFanMode;
