@@ -4,6 +4,9 @@ export default class FilterMaintenance extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.filterSvc = this.getOrAddService(this.Service.FilterMaintenance);
+        this.initializedSvcs = [this.filterSvc];
     }
 
     static relevantAttributes = ["filterStatus"];
@@ -20,8 +23,6 @@ export default class FilterMaintenance extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service is initialized.
      */
     async initializeService() {
-        this.filterSvc = this.getOrAddService(this.Service.FilterMaintenance);
-
         this.getOrAddCharacteristic(this.filterSvc, this.Characteristic.FilterChangeIndication, {
             getHandler: () => {
                 const doReplace = this.deviceData.attributes.switch === "replace";

@@ -4,6 +4,9 @@ export default class PresenceSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.occupancySvc = this.getOrAddService(this.Service.OccupancySensor);
+        this.initializedSvcs = [this.occupancySvc];
     }
 
     static relevantAttributes = ["presence", "status", "tamper"];
@@ -22,8 +25,6 @@ export default class PresenceSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.occupancySvc = this.getOrAddService(this.Service.OccupancySensor);
-
         this.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.OccupancyDetected, {
             getHandler: () => {
                 const occupancy = this.convertPresence(this.deviceData.attributes.presence);

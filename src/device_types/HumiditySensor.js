@@ -4,6 +4,8 @@ export default class HumiditySensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+        this.humiditySvc = this.getOrAddService(this.Service.HumiditySensor);
+        this.initializedSvcs = [this.humiditySvc];
     }
 
     static relevantAttributes = ["humidity", "status", "tamper"];
@@ -22,8 +24,6 @@ export default class HumiditySensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.humiditySvc = this.getOrAddService(this.Service.HumiditySensor);
-
         this.getOrAddCharacteristic(this.humiditySvc, this.Characteristic.CurrentRelativeHumidity, {
             getHandler: () => {
                 let humidity = parseFloat(this.deviceData.attributes.humidity);

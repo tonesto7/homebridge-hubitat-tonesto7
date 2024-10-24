@@ -4,6 +4,9 @@ export default class Lock extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.lockSvc = this.getOrAddService(this.Service.LockMechanism);
+        this.initializedSvcs = [this.lockSvc];
     }
 
     static relevantAttributes = ["lock"];
@@ -20,8 +23,6 @@ export default class Lock extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service has been initialized.
      */
     async initializeService() {
-        this.lockSvc = this.getOrAddService(this.Service.LockMechanism);
-
         this.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockCurrentState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.lock;

@@ -67,8 +67,6 @@ import CommunityTypes from "./libs/CommunityTypes.js";
  * @method addAccessoryToCache - Adds an accessory to the cache.
  * @method removeAccessoryFromCache - Removes an accessory from the cache.
  * @method getAccessoryId - Retrieves the ID of an accessory.
- * @method removeUnusedServices - Removes unused services from an accessory.
- * @method removeUnusedCharacteristics - Removes unused characteristics from a service of an accessory.
  */
 export default class DeviceManager {
     constructor(platform) {
@@ -308,7 +306,7 @@ export default class DeviceManager {
      * @param {PlatformAccessory} accessory - The accessory to initialize.
      * @param {boolean} [fromCache=false] - Indicates if the accessory is being initialized from cache.
      * @param {string|null} [src=null] - The source of the initialization request.
-     * @returns {Promise<Object>} The initialized accessory.
+     * @returns {Promise<PlatformAccessory>} The initialized accessory.
      * @throws Will log an error and return the accessory if initialization fails.
      */
     async initializeHubitatAccessory(accessory, fromCache = false, src = null) {
@@ -319,7 +317,6 @@ export default class DeviceManager {
             }
             accessory.deviceid = accessory.context.deviceData.deviceid;
             accessory.name = accessory.context.deviceData.name;
-            // this.platform.logDebug(`initializeHubitatAccessory: ${accessory.context.deviceData.name}, fromCache: ${fromCache} | ${src ? `Source: ${src}` : ""}`);
 
             // Initialize the base HubitatAccessory
             new HubitatAccessory(this.platform, accessory);
@@ -336,31 +333,63 @@ export default class DeviceManager {
                 this.platform.logDebug(`Initializing Cached Device ${accessory.name} | ${accessory.context.deviceData.deviceid} | ${src ? `Source: ${src}` : ""}`);
             }
 
-            // Initialize a map to store device type instances and their relevant attributes
+            // Initialize tracking sets/maps
+            accessory.characteristicsToKeep = {};
+            accessory._buttonMap = {};
+            accessory.deviceGroups = [];
             accessory.deviceTypeInstances = new Map();
 
-            // Identify device types
-            const deviceTypes = await this.getDeviceTypes(accessory);
-            if (deviceTypes.length > 0) {
-                deviceTypes.forEach(async (deviceType) => {
-                    const deviceInstance = new deviceType.class(this.platform, accessory);
-                    await deviceInstance.initializeService();
+            const initializedServices = new Set();
 
-                    // Store the device instance and its relevant attributes
-                    accessory.deviceTypeInstances.set(deviceType.name, {
-                        instance: deviceInstance,
-                        relevantAttributes: deviceType.class.relevantAttributes || [],
-                    });
+            // Add AccessoryInformation service first
+            const accInfoService = accessory.getService(this.platform.Service.AccessoryInformation);
+            if (accInfoService) {
+                initializedServices.add(`${accInfoService.UUID}:${accInfoService.subtype || ""}`);
+            }
+
+            const deviceTypes = await this.getDeviceTypes(accessory);
+
+            if (deviceTypes.length > 0) {
+                await Promise.all(
+                    deviceTypes.map(async (deviceType) => {
+                        try {
+                            const deviceInstance = new deviceType.class(this.platform, accessory);
+                            await deviceInstance.initializeService();
+
+                            // Add all initialized services, including dynamic button services
+                            deviceInstance.initializedSvcs.forEach((service) => {
+                                const serviceKey = `${service.UUID}:${service.subtype || ""}`;
+                                if (this.logConfig.debug) {
+                                    this.log.debug(`Adding service to keep: ${this.getServiceName(service)} (${serviceKey})`);
+                                }
+                                initializedServices.add(serviceKey);
+                            });
+
+                            accessory.deviceTypeInstances.set(deviceType.name, {
+                                instance: deviceInstance,
+                                relevantAttributes: deviceType.class.relevantAttributes || [],
+                            });
+                        } catch (err) {
+                            this.platform.logError(`Error initializing ${deviceType.name} for ${accessory.name}: ${err}`);
+                        }
+                    }),
+                );
+
+                accessory.servicesToKeep = Array.from(initializedServices);
+
+                this.platform.logDebug(`\n${accessory.name} | Final Services to Keep:`);
+                accessory.services.forEach((service) => {
+                    const serviceKey = `${service.UUID}:${service.subtype || ""}`;
+                    const status = initializedServices.has(serviceKey) ? "KEEP" : "REMOVE";
+                    this.log.debug(`  - ${this.getServiceName(service)}${service.subtype ? ` (${service.subtype})` : ""} [${status}]`);
                 });
-            } else {
-                this.log.warn(`No specific device type found for device | ${accessory.name} | deviceId: (${accessory.context.deviceData.deviceid}) | ${src ? `Source: ${src}` : ""}`);
-                console.log(JSON.stringify(accessory.context.deviceData, null, 4));
+
+                await accessory.removeUnusedServices();
             }
 
             return accessory;
         } catch (err) {
-            this.log.error(`initializeHubitatAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | ${src ? `Source: ${src}` : ""} | Error: ${err}`);
-            console.error(err);
+            this.platform.logError(`initializeHubitatAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | ${src ? `Source: ${src}` : ""} | Error: ${err}`);
             return accessory;
         }
     }
@@ -462,50 +491,5 @@ export default class DeviceManager {
      */
     getAccessoryId(accessory) {
         return accessory.deviceid || accessory.context.deviceData.deviceid;
-    }
-
-    /**
-     * Removes unused services from the given accessory.
-     *
-     * This method iterates over the services of the accessory and removes those
-     * that are not present in the `servicesToKeep` set. If a service is kept, it
-     * also checks and removes unused characteristics from that service.
-     *
-     * @param {PlatformAccessory} accessory - The accessory object containing services.
-     * @returns {Object} The updated accessory with unused services removed.
-     */
-    removeUnusedServices(accessory) {
-        const servicesToKeep = new Set(accessory.servicesToKeep);
-        accessory.services.forEach((service) => {
-            const serviceKey = `${service.UUID}:${service.subtype || ""}`;
-            if (!servicesToKeep.has(serviceKey)) {
-                accessory.removeService(service);
-                this.log.info(`Removing Unused Service: ${service.displayName ? service.displayName : service.UUID} from ${accessory.name}`);
-            } else {
-                this.removeUnusedCharacteristics(accessory, service);
-            }
-        });
-        return accessory;
-    }
-
-    /**
-     * Removes unused characteristics from a given service in an accessory.
-     *
-     * @param {PlatformAccessory} accessory - The accessory object containing the service.
-     * @param {Service} service - The service object from which unused characteristics will be removed.
-     * @returns {void}
-     */
-    removeUnusedCharacteristics(accessory, service) {
-        if (service.UUID === this.Service.AccessoryInformation.UUID) {
-            return;
-        }
-
-        const characteristicsToKeep = accessory.characteristicsToKeep[service.UUID] || [];
-        service.characteristics.forEach((characteristic) => {
-            if (!characteristicsToKeep.includes(characteristic.UUID)) {
-                service.removeCharacteristic(characteristic);
-                this.log.info(`Removing Unused Characteristic: ${characteristic.displayName} from ${service.displayName} from ${accessory.name}`);
-            }
-        });
     }
 }

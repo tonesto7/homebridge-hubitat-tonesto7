@@ -4,6 +4,9 @@ export default class Valve extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.valveSvc = this.getOrAddService(this.Service.Valve);
+        this.initializedSvcs = [this.valveSvc];
     }
 
     static relevantAttributes = ["valve"];
@@ -23,8 +26,6 @@ export default class Valve extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.valveSvc = this.getOrAddService(this.Service.Valve);
-
         this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.Active, {
             getHandler: () => {
                 const isActive = this.convertValveState(this.deviceData.attributes.valve);

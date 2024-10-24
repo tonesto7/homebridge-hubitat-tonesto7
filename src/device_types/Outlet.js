@@ -4,6 +4,9 @@ export default class Outlet extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.outletSvc = this.getOrAddService(this.Service.Outlet);
+        this.initializedSvcs = [this.outletSvc];
     }
 
     static relevantAttributes = ["switch"];
@@ -22,8 +25,6 @@ export default class Outlet extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.outletSvc = this.getOrAddService(this.Service.Outlet);
-
         this.getOrAddCharacteristic(this.outletSvc, this.Characteristic.On, {
             getHandler: () => {
                 const isOn = this.deviceData.attributes.switch === "on";

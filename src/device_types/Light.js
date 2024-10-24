@@ -34,6 +34,9 @@ export default class Light extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.lightService = this.getOrAddService(this.Service.Lightbulb);
+        this.initializedSvcs = [this.lightService];
         this.effectsMap = {};
     }
 
@@ -55,8 +58,6 @@ export default class Light extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
      */
     async initializeService() {
-        this.lightService = this.getOrAddService(this.Service.Lightbulb);
-
         // On/Off characteristic (no changes needed)
         this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
             getHandler: () => this.deviceData.attributes.switch === "on",

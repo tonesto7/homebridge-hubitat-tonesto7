@@ -6,19 +6,11 @@ export default class AccelerationSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+        this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
+        this.initializedSvcs = [this.motionSvc];
     }
 
     static relevantAttributes = ["acceleration", "tamper", "status"];
-
-    /**
-     * Checks if the accessory supports the AccelerationSensor capability.
-     *
-     * @param {Object} accessory - The accessory to check.
-     * @returns {boolean} True if the accessory has the AccelerationSensor capability, otherwise false.
-     */
-    static isSupported(accessory) {
-        return accessory.hasCapability("AccelerationSensor");
-    }
 
     /**
      * Initializes the motion service for the acceleration sensor device.
@@ -34,8 +26,6 @@ export default class AccelerationSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.motionSvc = this.getOrAddService(this.Service.MotionSensor);
-
         // Motion Detected Characteristic
         this.getOrAddCharacteristic(this.motionSvc, this.Characteristic.MotionDetected, {
             getHandler: () => {

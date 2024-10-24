@@ -7,6 +7,9 @@ export default class Button extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.airPurifierSvc = this.getOrAddService(CommunityTypes.NewAirPurifierService);
+        this.initializedSvcs = [this.airPurifierSvc];
     }
 
     /**
@@ -38,8 +41,6 @@ export default class Button extends HubitatAccessory {
             accessory.log.warn(`${this.accessory.name} | CommunityTypes.NewAirPurifierService is not defined.`);
             return;
         }
-
-        this.airPurifierSvc = this.getOrAddService(CommunityTypes.NewAirPurifierService);
 
         this.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.Active, {
             getHandler: function () {

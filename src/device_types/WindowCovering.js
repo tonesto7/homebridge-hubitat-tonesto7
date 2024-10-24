@@ -4,6 +4,9 @@ export default class WindowCovering extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.windowCoverSvc = this.getOrAddService(this.Service.WindowCovering);
+        this.initializedSvcs = [this.windowCoverSvc];
     }
 
     static relevantAttributes = ["position", "level", "windowShade"];
@@ -25,8 +28,6 @@ export default class WindowCovering extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service is initialized.
      */
     async initializeService() {
-        this.windowCoverSvc = this.getOrAddService(this.Service.WindowCovering);
-
         // Determine position attribute
         this.positionAttr = this.hasCommand("setPosition") ? "position" : this.hasAttribute("level") ? "level" : undefined;
         if (!this.positionAttr) {

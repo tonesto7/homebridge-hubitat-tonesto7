@@ -4,6 +4,10 @@ export default class EnergyMeter extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        const serviceName = `${this.deviceData.deviceid}_EnergyMeter`;
+        this.energySvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Energy Meter");
+        this.initializedSvcs = [this.energySvc];
     }
 
     static relevantAttributes = ["energy"];
@@ -20,11 +24,6 @@ export default class EnergyMeter extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        const serviceName = `${this.deviceData.deviceid}_EnergyMeter`;
-        this.energySvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Energy Meter");
-
-        this.addServiceToKeep(this.energySvc);
-
         // Kilowatt Hours Characteristic
         if (this.CommunityTypes.KilowattHours) {
             this.getOrAddCharacteristic(this.energySvc, this.CommunityTypes.KilowattHours, {

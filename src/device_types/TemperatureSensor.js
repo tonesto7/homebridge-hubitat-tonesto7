@@ -4,6 +4,9 @@ export default class TemperatureSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.temperatureSvc = this.getOrAddService(this.Service.TemperatureSensor);
+        this.initializedSvcs = [this.temperatureSvc];
     }
 
     static relevantAttributes = ["temperature", "tamper", "status"];
@@ -23,8 +26,6 @@ export default class TemperatureSensor extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
      */
     async initializeService() {
-        this.temperatureSvc = this.getOrAddService(this.Service.TemperatureSensor);
-
         this.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.CurrentTemperature, {
             props: {
                 minValue: -100,

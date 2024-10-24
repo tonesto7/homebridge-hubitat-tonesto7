@@ -4,6 +4,9 @@ export default class CarbonDioxideSensor extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        this.carbonDioxideSvc = this.getOrAddService(this.Service.CarbonDioxideSensor);
+        this.initializedSvcs = [this.carbonDioxideSvc];
     }
 
     static relevantAttributes = ["carbonDioxide", "status", "tamper"];

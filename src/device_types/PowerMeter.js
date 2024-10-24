@@ -4,6 +4,10 @@ export default class PowerMeter extends HubitatAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.deviceData = accessory.context.deviceData;
+
+        const serviceName = `${this.deviceData.deviceid}_PowerMeter`;
+        this.powerSvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Power Meter");
+        this.initializedSvcs = [this.powerSvc];
     }
 
     static relevantAttributes = ["power"];
@@ -24,11 +28,6 @@ export default class PowerMeter extends HubitatAccessory {
      * @throws {Error} Throws an error if the service cannot be initialized.
      */
     async initializeService() {
-        const serviceName = `${this.deviceData.deviceid}_PowerMeter`;
-        this.powerSvc = this.accessory.getServiceByName(this.Service.Switch, serviceName) || this.accessory.addService(this.Service.Switch, serviceName, "Power Meter");
-
-        this.addServiceToKeep(this.powerSvc);
-
         if (this.CommunityTypes && this.CommunityTypes.Watts) {
             this.getOrAddCharacteristic(this.powerSvc, this.CommunityTypes.Watts, {
                 getHandler: () => {
