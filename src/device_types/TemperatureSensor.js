@@ -23,9 +23,9 @@ export default class TemperatureSensor extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
      */
     async initializeService() {
-        this.temperatureSvc = this.getOrAddService(this.Service.TemperatureSensor);
+        this.temperatureSvc = this.accessory.getOrAddService(this.Service.TemperatureSensor);
 
-        this.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.CurrentTemperature, {
+        this.accessory.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.CurrentTemperature, {
             props: {
                 minValue: -100,
                 maxValue: 200,
@@ -39,7 +39,7 @@ export default class TemperatureSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -49,7 +49,7 @@ export default class TemperatureSensor extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.temperatureSvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | Temperature Sensor StatusActive Retrieved: ${isActive}`);
@@ -79,19 +79,19 @@ export default class TemperatureSensor extends HubitatAccessory {
             case "temperature": {
                 let temp = parseFloat(change.value);
                 temp = isNaN(temp) ? 0 : this.convertTemperature(temp);
-                this.updateCharacteristicValue(this.temperatureSvc, this.Characteristic.CurrentTemperature, temp);
+                this.accessory.updateCharacteristicValue(this.temperatureSvc, this.Characteristic.CurrentTemperature, temp);
                 break;
             }
             case "tamper": {
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.temperatureSvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.temperatureSvc, this.Characteristic.StatusTampered, isTampered);
                 }
                 break;
             }
             case "status": {
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.temperatureSvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.temperatureSvc, this.Characteristic.StatusActive, isActive);
                 break;
             }
             default:

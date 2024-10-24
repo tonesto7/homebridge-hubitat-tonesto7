@@ -23,9 +23,9 @@ export default class GarageDoor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.garageDoorSvc = this.getOrAddService(this.Service.GarageDoorOpener);
+        this.garageDoorSvc = this.accessory.getOrAddService(this.Service.GarageDoorOpener);
 
-        this.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.CurrentDoorState, {
+        this.accessory.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.CurrentDoorState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.door;
                 const convertedState = this.convertDoorState(state);
@@ -34,7 +34,7 @@ export default class GarageDoor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.TargetDoorState, {
+        this.accessory.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.TargetDoorState, {
             getHandler: () => {
                 const currentState = this.deviceData.attributes.door;
                 return currentState === "open" || currentState === "opening" ? this.Characteristic.TargetDoorState.OPEN : this.Characteristic.TargetDoorState.CLOSED;
@@ -46,7 +46,7 @@ export default class GarageDoor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.ObstructionDetected, {
+        this.accessory.getOrAddCharacteristic(this.garageDoorSvc, this.Characteristic.ObstructionDetected, {
             getHandler: () => {
                 const obstruction = this.deviceData.attributes.obstruction === "detected";
                 this.log.debug(`${this.accessory.displayName} | Obstruction Detected: ${obstruction}`);
@@ -85,14 +85,14 @@ export default class GarageDoor extends HubitatAccessory {
             case "door": {
                 const currentState = this.convertDoorState(change.value);
                 const targetState = change.value === "open" || change.value === "opening" ? this.Characteristic.TargetDoorState.OPEN : this.Characteristic.TargetDoorState.CLOSED;
-                this.updateCharacteristicValue(this.garageDoorSvc, this.Characteristic.CurrentDoorState, currentState);
-                this.updateCharacteristicValue(this.garageDoorSvc, this.Characteristic.TargetDoorState, targetState);
+                this.accessory.updateCharacteristicValue(this.garageDoorSvc, this.Characteristic.CurrentDoorState, currentState);
+                this.accessory.updateCharacteristicValue(this.garageDoorSvc, this.Characteristic.TargetDoorState, targetState);
                 this.log.debug(`${this.accessory.displayName} | Updated Door State: ${change.value} => Current: ${currentState}, Target: ${targetState}`);
                 break;
             }
             case "obstruction": {
                 const obstruction = change.value === "detected";
-                this.updateCharacteristicValue(this.garageDoorSvc, this.Characteristic.ObstructionDetected, obstruction);
+                this.accessory.updateCharacteristicValue(this.garageDoorSvc, this.Characteristic.ObstructionDetected, obstruction);
                 break;
             }
             default:

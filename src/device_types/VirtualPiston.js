@@ -26,11 +26,11 @@ export default class VirtualPiston extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.switchSvc = this.getOrAddService(this.Service.Switch);
+        this.switchSvc = this.accessory.getOrAddService(this.Service.Switch);
 
         this.addServiceToKeep(this.switchSvc);
 
-        this.getOrAddCharacteristic(this.switchSvc, this.Characteristic.On, {
+        this.accessory.getOrAddCharacteristic(this.switchSvc, this.Characteristic.On, {
             getHandler: () => {
                 const isOn = this.deviceData.attributes.switch === "on";
                 this.log.debug(`${this.accessory.displayName} | Virtual Piston State Retrieved: ${isOn ? "ON" : "OFF"}`);
@@ -42,7 +42,7 @@ export default class VirtualPiston extends HubitatAccessory {
                     this.sendCommand(null, this.deviceData, "piston");
                     setTimeout(() => {
                         this.deviceData.attributes.switch = "off";
-                        this.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, false);
+                        this.accessory.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, false);
                         this.log.debug(`${this.accessory.displayName} | Virtual Piston deactivated after trigger`);
                     }, 1000); // Adjust timeout as needed based on piston action duration
                 }
@@ -68,11 +68,11 @@ export default class VirtualPiston extends HubitatAccessory {
         switch (change.attribute) {
             case "switch":
                 const isOn = change.value === "on";
-                this.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, isOn);
+                this.accessory.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, isOn);
                 break;
             case "status":
                 const isActive = change.value === "online";
-                this.updateCharacteristicValue(this.switchSvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.switchSvc, this.Characteristic.StatusActive, isActive);
                 break;
             default:
                 this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);

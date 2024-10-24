@@ -22,9 +22,9 @@ export default class IlluminanceSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.lightSensorSvc = this.getOrAddService(this.Service.LightSensor);
+        this.lightSensorSvc = this.accessory.getOrAddService(this.Service.LightSensor);
 
-        this.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.CurrentAmbientLightLevel, {
+        this.accessory.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.CurrentAmbientLightLevel, {
             props: {
                 minValue: 0,
                 maxValue: 100000,
@@ -39,7 +39,7 @@ export default class IlluminanceSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | Status Active: ${isActive}`);
@@ -47,7 +47,7 @@ export default class IlluminanceSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.lightSensorSvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -76,14 +76,14 @@ export default class IlluminanceSensor extends HubitatAccessory {
         switch (change.attribute) {
             case "illuminance":
                 const illuminance = this.clamp(parseFloat(change.value), 0, 100000);
-                this.updateCharacteristicValue(this.lightSensorSvc, this.Characteristic.CurrentAmbientLightLevel, Math.round(Math.ceil(illuminance)));
+                this.accessory.updateCharacteristicValue(this.lightSensorSvc, this.Characteristic.CurrentAmbientLightLevel, Math.round(Math.ceil(illuminance)));
                 break;
             case "status":
-                this.updateCharacteristicValue(this.lightSensorSvc, this.Characteristic.StatusActive, change.value === "ACTIVE");
+                this.accessory.updateCharacteristicValue(this.lightSensorSvc, this.Characteristic.StatusActive, change.value === "ACTIVE");
                 break;
             case "tamper":
                 if (this.hasCapability("TamperAlert")) {
-                    this.updateCharacteristicValue(this.lightSensorSvc, this.Characteristic.StatusTampered, change.value === "detected");
+                    this.accessory.updateCharacteristicValue(this.lightSensorSvc, this.Characteristic.StatusTampered, change.value === "detected");
                 }
                 break;
             default:

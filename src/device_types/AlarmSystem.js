@@ -23,10 +23,10 @@ export default class AlarmSystem extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
      */
     async initializeService() {
-        this.securitySystemSvc = this.getOrAddService(this.Service.SecuritySystem);
+        this.securitySystemSvc = this.accessory.getOrAddService(this.Service.SecuritySystem);
 
         // Current State
-        this.getOrAddCharacteristic(this.securitySystemSvc, this.Characteristic.SecuritySystemCurrentState, {
+        this.accessory.getOrAddCharacteristic(this.securitySystemSvc, this.Characteristic.SecuritySystemCurrentState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.alarmSystemStatus;
                 const currentState = this.convertAlarmState(state);
@@ -36,7 +36,7 @@ export default class AlarmSystem extends HubitatAccessory {
         });
 
         // Target State
-        this.getOrAddCharacteristic(this.securitySystemSvc, this.Characteristic.SecuritySystemTargetState, {
+        this.accessory.getOrAddCharacteristic(this.securitySystemSvc, this.Characteristic.SecuritySystemTargetState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.alarmSystemStatus;
                 const targetState = this.convertAlarmState(state);
@@ -69,8 +69,8 @@ export default class AlarmSystem extends HubitatAccessory {
         switch (change.attribute) {
             case "alarmSystemStatus":
                 const currentState = this.convertAlarmState(change.value);
-                this.updateCharacteristicValue(this.securitySystemSvc, this.Characteristic.SecuritySystemCurrentState, currentState);
-                this.updateCharacteristicValue(this.securitySystemSvc, this.Characteristic.SecuritySystemTargetState, currentState);
+                this.accessory.updateCharacteristicValue(this.securitySystemSvc, this.Characteristic.SecuritySystemCurrentState, currentState);
+                this.accessory.updateCharacteristicValue(this.securitySystemSvc, this.Characteristic.SecuritySystemTargetState, currentState);
                 break;
             default:
                 this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);

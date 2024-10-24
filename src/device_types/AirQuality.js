@@ -34,20 +34,20 @@ export default class AirQualitySensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.airQualitySvc = this.getOrAddService(this.Service.AirQualitySensor);
+        this.airQualitySvc = this.accessory.getOrAddService(this.Service.AirQualitySensor);
 
         // Status Fault
-        this.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusFault, {
+        this.accessory.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusFault, {
             getHandler: () => this.Characteristic.StatusFault.NO_FAULT,
         });
 
         // Status Active
-        this.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusActive, {
             getHandler: () => this.deviceData.status === "ACTIVE",
         });
 
         // Air Quality
-        this.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.AirQuality, {
+        this.accessory.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.AirQuality, {
             getHandler: () => {
                 const aqi = this.deviceData.attributes.airQualityIndex;
                 const airQuality = this.aqiToPm25(aqi);
@@ -57,7 +57,7 @@ export default class AirQualitySensor extends HubitatAccessory {
         });
 
         // Status Low Battery
-        this.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusLowBattery, {
+        this.accessory.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusLowBattery, {
             getHandler: () => {
                 const battery = this.clamp(this.deviceData.attributes.battery, 0, 100);
                 this.log.debug(`${this.accessory.displayName} | Battery Level: ${battery}`);
@@ -67,7 +67,7 @@ export default class AirQualitySensor extends HubitatAccessory {
         });
 
         // PM2.5 Density (if available)
-        this.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.PM2_5Density, {
+        this.accessory.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.PM2_5Density, {
             getHandler: () => {
                 const pm25 = this.clamp(this.deviceData.attributes.pm25, 0, 1000);
                 this.log.debug(`${this.accessory.displayName} | PM2.5 Density: ${pm25}`);
@@ -77,7 +77,7 @@ export default class AirQualitySensor extends HubitatAccessory {
         });
 
         // Status Tampered (if supported)
-        this.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.airQualitySvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -116,30 +116,30 @@ export default class AirQualitySensor extends HubitatAccessory {
         switch (change.attribute) {
             case "airQualityIndex":
                 const airQuality = this.aqiToPm25(change.value);
-                this.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.AirQuality, airQuality);
+                this.accessory.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.AirQuality, airQuality);
                 break;
             case "battery":
                 if (this.hasAttribute("Battery")) {
                     const battery = this.clamp(change.value, 0, 100);
                     const lowBattery = battery < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-                    this.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.StatusLowBattery, lowBattery);
+                    this.accessory.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.StatusLowBattery, lowBattery);
                 }
                 break;
             case "pm25":
                 if (this.hasAttribute("pm25")) {
                     const pm25 = this.clamp(change.value, 0, 1000);
-                    this.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.PM2_5Density, pm25);
+                    this.accessory.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.PM2_5Density, pm25);
                 }
                 break;
             case "tamper":
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.StatusTampered, isTampered);
                 }
                 break;
             case "status":
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.airQualitySvc, this.Characteristic.StatusActive, isActive);
                 break;
             default:
                 this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);

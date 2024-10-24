@@ -22,9 +22,9 @@ export default class Outlet extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.outletSvc = this.getOrAddService(this.Service.Outlet);
+        this.outletSvc = this.accessory.getOrAddService(this.Service.Outlet);
 
-        this.getOrAddCharacteristic(this.outletSvc, this.Characteristic.On, {
+        this.accessory.getOrAddCharacteristic(this.outletSvc, this.Characteristic.On, {
             getHandler: () => {
                 const isOn = this.deviceData.attributes.switch === "on";
                 this.log.debug(`${this.accessory.displayName} | Outlet State Retrieved: ${isOn ? "ON" : "OFF"}`);
@@ -37,7 +37,7 @@ export default class Outlet extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.outletSvc, this.Characteristic.OutletInUse, {
+        this.accessory.getOrAddCharacteristic(this.outletSvc, this.Characteristic.OutletInUse, {
             getHandler: () => {
                 const inUse = this.deviceData.attributes.switch === "on";
                 this.log.debug(`${this.accessory.displayName} | Outlet In Use Retrieved: ${inUse}`);
@@ -63,8 +63,8 @@ export default class Outlet extends HubitatAccessory {
 
         if (change.attribute === "switch") {
             const isOn = change.value === "on";
-            this.updateCharacteristicValue(this.outletSvc, this.Characteristic.On, isOn);
-            this.updateCharacteristicValue(this.outletSvc, this.Characteristic.OutletInUse, isOn);
+            this.accessory.updateCharacteristicValue(this.outletSvc, this.Characteristic.On, isOn);
+            this.accessory.updateCharacteristicValue(this.outletSvc, this.Characteristic.OutletInUse, isOn);
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

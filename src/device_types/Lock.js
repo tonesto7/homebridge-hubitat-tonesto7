@@ -20,9 +20,9 @@ export default class Lock extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service has been initialized.
      */
     async initializeService() {
-        this.lockSvc = this.getOrAddService(this.Service.LockMechanism);
+        this.lockSvc = this.accessory.getOrAddService(this.Service.LockMechanism);
 
-        this.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockCurrentState, {
+        this.accessory.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockCurrentState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.lock;
                 const convertedState = this.convertLockState(state);
@@ -31,7 +31,7 @@ export default class Lock extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockTargetState, {
+        this.accessory.getOrAddCharacteristic(this.lockSvc, this.Characteristic.LockTargetState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.lock;
                 return this.convertLockState(state);
@@ -61,8 +61,8 @@ export default class Lock extends HubitatAccessory {
 
         if (change.attribute === "lock") {
             const convertedState = this.convertLockState(change.value);
-            this.updateCharacteristicValue(this.lockSvc, this.Characteristic.LockCurrentState, convertedState);
-            this.updateCharacteristicValue(this.lockSvc, this.Characteristic.LockTargetState, convertedState);
+            this.accessory.updateCharacteristicValue(this.lockSvc, this.Characteristic.LockCurrentState, convertedState);
+            this.accessory.updateCharacteristicValue(this.lockSvc, this.Characteristic.LockTargetState, convertedState);
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

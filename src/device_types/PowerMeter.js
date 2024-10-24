@@ -30,7 +30,7 @@ export default class PowerMeter extends HubitatAccessory {
         this.addServiceToKeep(this.powerSvc);
 
         if (this.CommunityTypes && this.CommunityTypes.Watts) {
-            this.getOrAddCharacteristic(this.powerSvc, this.CommunityTypes.Watts, {
+            this.accessory.getOrAddCharacteristic(this.powerSvc, this.CommunityTypes.Watts, {
                 getHandler: () => {
                     let power = parseFloat(this.deviceData.attributes.power);
                     power = this.clamp(power, 0, 100000);
@@ -60,7 +60,7 @@ export default class PowerMeter extends HubitatAccessory {
 
         if (change.attribute === "power" && this.CommunityTypes && this.CommunityTypes.Watts) {
             const power = this.clamp(parseFloat(change.value), 0, 100000);
-            this.updateCharacteristicValue(this.powerSvc, this.CommunityTypes.Watts, Math.round(power));
+            this.accessory.updateCharacteristicValue(this.powerSvc, this.CommunityTypes.Watts, Math.round(power));
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

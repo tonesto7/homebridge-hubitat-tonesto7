@@ -21,11 +21,11 @@ export default class VirtualMode extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.switchSvc = this.getOrAddService(this.Service.Switch);
+        this.switchSvc = this.accessory.getOrAddService(this.Service.Switch);
 
         this.addServiceToKeep(this.switchSvc);
 
-        this.getOrAddCharacteristic(this.switchSvc, this.Characteristic.On, {
+        this.accessory.getOrAddCharacteristic(this.switchSvc, this.Characteristic.On, {
             getHandler: () => {
                 const isOn = this.deviceData.attributes.switch === "on";
                 this.log.debug(`${this.accessory.displayName} | Virtual Mode State Retrieved: ${isOn ? "ON" : "OFF"}`);
@@ -57,7 +57,7 @@ export default class VirtualMode extends HubitatAccessory {
 
         if (change.attribute === "switch") {
             const isOn = change.value === "on";
-            this.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, isOn);
+            this.accessory.updateCharacteristicValue(this.switchSvc, this.Characteristic.On, isOn);
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

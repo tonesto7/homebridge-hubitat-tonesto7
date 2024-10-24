@@ -22,10 +22,10 @@ export default class CarbonMonoxideSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.carbonMonoxideSvc = this.getOrAddService(this.Service.CarbonMonoxideSensor);
+        this.carbonMonoxideSvc = this.accessory.getOrAddService(this.Service.CarbonMonoxideSensor);
 
         // Carbon Monoxide Detected
-        this.getOrAddCharacteristic(this.carbonMonoxideSvc, this.Characteristic.CarbonMonoxideDetected, {
+        this.accessory.getOrAddCharacteristic(this.carbonMonoxideSvc, this.Characteristic.CarbonMonoxideDetected, {
             getHandler: () => {
                 const coStatus = this.deviceData.attributes.carbonMonoxide;
                 this.log.debug(`${this.accessory.displayName} | Carbon Monoxide Status: ${coStatus}`);
@@ -34,7 +34,7 @@ export default class CarbonMonoxideSensor extends HubitatAccessory {
         });
 
         // Status Active
-        this.getOrAddCharacteristic(this.carbonMonoxideSvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.carbonMonoxideSvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | Status Active: ${isActive}`);
@@ -43,7 +43,7 @@ export default class CarbonMonoxideSensor extends HubitatAccessory {
         });
 
         // Status Tampered (if supported)
-        this.getOrAddCharacteristic(this.carbonMonoxideSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.carbonMonoxideSvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -77,18 +77,18 @@ export default class CarbonMonoxideSensor extends HubitatAccessory {
         switch (change.attribute) {
             case "carbonMonoxide": {
                 const coStatus = change.value === "clear" ? this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-                this.updateCharacteristicValue(this.carbonMonoxideSvc, this.Characteristic.CarbonMonoxideDetected, coStatus);
+                this.accessory.updateCharacteristicValue(this.carbonMonoxideSvc, this.Characteristic.CarbonMonoxideDetected, coStatus);
                 break;
             }
             case "status": {
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.carbonMonoxideSvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.carbonMonoxideSvc, this.Characteristic.StatusActive, isActive);
                 break;
             }
             case "tamper": {
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.carbonMonoxideSvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.carbonMonoxideSvc, this.Characteristic.StatusTampered, isTampered);
                 }
                 break;
             }

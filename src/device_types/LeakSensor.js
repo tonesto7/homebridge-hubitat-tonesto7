@@ -23,9 +23,9 @@ export default class LeakSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.leakSensorSvc = this.getOrAddService(this.Service.LeakSensor);
+        this.leakSensorSvc = this.accessory.getOrAddService(this.Service.LeakSensor);
 
-        this.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.LeakDetected, {
+        this.accessory.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.LeakDetected, {
             getHandler: () => {
                 const leak = this.convertWaterStatus(this.deviceData.attributes.water);
                 this.log.debug(`${this.accessory.displayName} | Leak Detected Retrieved: ${leak}`);
@@ -33,7 +33,7 @@ export default class LeakSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | Water Sensor Status Active Retrieved: ${isActive}`);
@@ -41,7 +41,7 @@ export default class LeakSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.leakSensorSvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -70,18 +70,18 @@ export default class LeakSensor extends HubitatAccessory {
         switch (change.attribute) {
             case "water":
                 const leakDetected = this.convertWaterStatus(change.value);
-                this.updateCharacteristicValue(this.leakSensorSvc, this.Characteristic.LeakDetected, leakDetected);
+                this.accessory.updateCharacteristicValue(this.leakSensorSvc, this.Characteristic.LeakDetected, leakDetected);
                 this.log.debug(`${this.accessory.displayName} | Updated Leak Detected: ${leakDetected}`);
                 break;
             case "status":
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.leakSensorSvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.leakSensorSvc, this.Characteristic.StatusActive, isActive);
                 this.log.debug(`${this.accessory.displayName} | Updated Status Active: ${isActive}`);
                 break;
             case "tamper":
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.leakSensorSvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.leakSensorSvc, this.Characteristic.StatusTampered, isTampered);
                     this.log.debug(`${this.accessory.displayName} | Updated Status Tampered: ${isTampered}`);
                 }
                 break;

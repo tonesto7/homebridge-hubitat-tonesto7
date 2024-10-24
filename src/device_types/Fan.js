@@ -25,9 +25,9 @@ export default class Fan extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service and characteristics are initialized.
      */
     async initializeService() {
-        this.fanSvc = this.getOrAddService(this.Service.Fanv2);
+        this.fanSvc = this.accessory.getOrAddService(this.Service.Fanv2);
 
-        this.getOrAddCharacteristic(this.fanSvc, this.Characteristic.Active, {
+        this.accessory.getOrAddCharacteristic(this.fanSvc, this.Characteristic.Active, {
             preReqChk: () => this.hasAttribute("switch"),
             getHandler: () => {
                 const isActive = this.deviceData.attributes.switch === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
@@ -42,7 +42,7 @@ export default class Fan extends HubitatAccessory {
             removeIfMissingPreReq: true,
         });
 
-        this.getOrAddCharacteristic(this.fanSvc, this.Characteristic.CurrentFanState, {
+        this.accessory.getOrAddCharacteristic(this.fanSvc, this.Characteristic.CurrentFanState, {
             preReqChk: () => this.hasAttribute("switch"),
             getHandler: () => {
                 const currentState = this.deviceData.attributes.switch === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE;
@@ -60,7 +60,7 @@ export default class Fan extends HubitatAccessory {
 
         const spdAttr = this.hasAttribute("speed") && this.hasCommand("setSpeed") ? "speed" : this.hasAttribute("level") ? "level" : undefined;
 
-        this.getOrAddCharacteristic(this.fanSvc, this.Characteristic.RotationSpeed, {
+        this.accessory.getOrAddCharacteristic(this.fanSvc, this.Characteristic.RotationSpeed, {
             preReqChk: () => spdAttr !== undefined,
             props: { minStep: spdSteps, maxValue: 100, minValue: 0 },
             getHandler: () => {
@@ -97,13 +97,13 @@ export default class Fan extends HubitatAccessory {
         switch (change.attribute) {
             case "switch":
                 const isActive = change.value === "on";
-                this.updateCharacteristicValue(this.fanSvc, this.Characteristic.Active, isActive ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE);
-                this.updateCharacteristicValue(this.fanSvc, this.Characteristic.CurrentFanState, isActive ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE);
+                this.accessory.updateCharacteristicValue(this.fanSvc, this.Characteristic.Active, isActive ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE);
+                this.accessory.updateCharacteristicValue(this.fanSvc, this.Characteristic.CurrentFanState, isActive ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE);
                 break;
             case "speed":
             case "level":
                 const rotationSpeed = this.fanSpeedToLevel(change.value);
-                this.updateCharacteristicValue(this.fanSvc, this.Characteristic.RotationSpeed, rotationSpeed);
+                this.accessory.updateCharacteristicValue(this.fanSvc, this.Characteristic.RotationSpeed, rotationSpeed);
                 break;
             default:
                 this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);

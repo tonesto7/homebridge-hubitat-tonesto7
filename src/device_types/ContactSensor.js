@@ -23,10 +23,10 @@ export default class ContactSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.contactSvc = this.getOrAddService(this.Service.ContactSensor);
+        this.contactSvc = this.accessory.getOrAddService(this.Service.ContactSensor);
 
         // Contact Sensor State
-        this.getOrAddCharacteristic(this.contactSvc, this.Characteristic.ContactSensorState, {
+        this.accessory.getOrAddCharacteristic(this.contactSvc, this.Characteristic.ContactSensorState, {
             getHandler: () => {
                 const status = this.deviceData.attributes.contact;
                 return this.convertContactStatus(status);
@@ -34,7 +34,7 @@ export default class ContactSensor extends HubitatAccessory {
         });
 
         // Status Active
-        this.getOrAddCharacteristic(this.contactSvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.contactSvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | StatusActive: ${isActive}`);
@@ -43,7 +43,7 @@ export default class ContactSensor extends HubitatAccessory {
         });
 
         // Status Tampered (if supported)
-        this.getOrAddCharacteristic(this.contactSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.contactSvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -72,18 +72,18 @@ export default class ContactSensor extends HubitatAccessory {
         switch (change.attribute) {
             case "contact": {
                 const contactState = this.convertContactStatus(change.value);
-                this.updateCharacteristicValue(this.contactSvc, this.Characteristic.ContactSensorState, contactState);
+                this.accessory.updateCharacteristicValue(this.contactSvc, this.Characteristic.ContactSensorState, contactState);
                 break;
             }
             case "status": {
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.contactSvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.contactSvc, this.Characteristic.StatusActive, isActive);
                 break;
             }
             case "tamper": {
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.contactSvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.contactSvc, this.Characteristic.StatusTampered, isTampered);
                 }
                 break;
             }

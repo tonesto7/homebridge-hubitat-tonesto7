@@ -27,7 +27,7 @@ export default class EnergyMeter extends HubitatAccessory {
 
         // Kilowatt Hours Characteristic
         if (this.CommunityTypes.KilowattHours) {
-            this.getOrAddCharacteristic(this.energySvc, this.CommunityTypes.KilowattHours, {
+            this.accessory.getOrAddCharacteristic(this.energySvc, this.CommunityTypes.KilowattHours, {
                 getHandler: () => {
                     const energy = this.clamp(this.deviceData.attributes.energy, 0, 100000);
                     this.log.debug(`${this.accessory.displayName} | Energy Consumption: ${energy} kWh`);
@@ -58,7 +58,7 @@ export default class EnergyMeter extends HubitatAccessory {
 
         if (change.attribute === "energy" && this.CommunityTypes && this.CommunityTypes.KilowattHours) {
             const energy = this.clamp(parseFloat(change.value), 0, 100000);
-            this.updateCharacteristicValue(this.energySvc, this.CommunityTypes.KilowattHours, Math.round(energy));
+            this.accessory.updateCharacteristicValue(this.energySvc, this.CommunityTypes.KilowattHours, Math.round(energy));
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

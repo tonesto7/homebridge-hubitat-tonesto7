@@ -55,10 +55,10 @@ export default class Light extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service and characteristics are initialized.
      */
     async initializeService() {
-        this.lightService = this.getOrAddService(this.Service.Lightbulb);
+        this.lightService = this.accessory.getOrAddService(this.Service.Lightbulb);
 
         // On/Off characteristic (no changes needed)
-        this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
+        this.accessory.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
             getHandler: () => this.deviceData.attributes.switch === "on",
             setHandler: (value) => {
                 const command = value ? "on" : "off";
@@ -69,7 +69,7 @@ export default class Light extends HubitatAccessory {
 
         // Brightness characteristic (no changes needed)
         if (this.hasAttribute("level") && this.hasCommand("setLevel")) {
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Brightness, {
+            this.accessory.getOrAddCharacteristic(this.lightService, this.Characteristic.Brightness, {
                 getHandler: () => {
                     let brightness = parseInt(this.deviceData.attributes.level, 10);
                     brightness = this.clamp(brightness, 0, 100);
@@ -86,7 +86,7 @@ export default class Light extends HubitatAccessory {
 
         // Hue characteristic
         if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Hue, {
+            this.accessory.getOrAddCharacteristic(this.lightService, this.Characteristic.Hue, {
                 props: {
                     minValue: 0,
                     maxValue: 360,
@@ -108,7 +108,7 @@ export default class Light extends HubitatAccessory {
 
         // Saturation characteristic
         if (this.hasAttribute("saturation") && this.hasCommand("setSaturation")) {
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
+            this.accessory.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
                 props: {
                     minValue: 0,
                     maxValue: 100,
@@ -129,7 +129,7 @@ export default class Light extends HubitatAccessory {
 
         // Color Temperature characteristic
         if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.ColorTemperature, {
+            this.accessory.getOrAddCharacteristic(this.lightService, this.Characteristic.ColorTemperature, {
                 props: {
                     minValue: 140,
                     maxValue: 500,
@@ -171,11 +171,11 @@ export default class Light extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the light effects service is set up.
      */
     async setupLightEffectsService() {
-        this.televisionService = this.getOrAddService(this.Service.Television);
+        this.televisionService = this.accessory.getOrAddService(this.Service.Television);
 
         this.televisionService.setCharacteristic(this.Characteristic.ConfiguredName, `${this.accessory.displayName} Effects`).setCharacteristic(this.Characteristic.SleepDiscoveryMode, this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.Active, {
+        this.accessory.getOrAddCharacteristic(this.televisionService, this.Characteristic.Active, {
             getHandler: () => {
                 return this.deviceData.attributes.effectName !== undefined && this.deviceData.attributes.effectName !== "None" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
             },
@@ -193,7 +193,7 @@ export default class Light extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ActiveIdentifier, {
+        this.accessory.getOrAddCharacteristic(this.televisionService, this.Characteristic.ActiveIdentifier, {
             getHandler: () => {
                 const currentEffect = this.deviceData.attributes.effectName;
                 return isNaN(this.effectsMap[currentEffect]) ? 0 : this.effectsMap[currentEffect];
@@ -287,29 +287,29 @@ export default class Light extends HubitatAccessory {
         switch (change.attribute) {
             case "switch":
                 const isOn = change.value === "on";
-                this.updateCharacteristicValue(this.lightService, this.Characteristic.On, isOn);
+                this.accessory.updateCharacteristicValue(this.lightService, this.Characteristic.On, isOn);
                 break;
             case "level":
                 const brightness = this.clamp(parseInt(change.value, 10), 0, 100);
-                this.updateCharacteristicValue(this.lightService, this.Characteristic.Brightness, brightness);
+                this.accessory.updateCharacteristicValue(this.lightService, this.Characteristic.Brightness, brightness);
                 break;
             case "hue":
                 if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
                     const hue = this.clamp(parseFloat(change.value), 0, 100) * 3.6; // Convert 0-100 to 0-360
-                    this.updateCharacteristicValue(this.lightService, this.Characteristic.Hue, hue);
+                    this.accessory.updateCharacteristicValue(this.lightService, this.Characteristic.Hue, hue);
                 }
                 break;
             case "saturation":
                 if (this.hasAttribute("saturation") && this.hasCommand("setSaturation")) {
                     const saturation = this.clamp(parseFloat(change.value), 0, 100);
-                    this.updateCharacteristicValue(this.lightService, this.Characteristic.Saturation, saturation);
+                    this.accessory.updateCharacteristicValue(this.lightService, this.Characteristic.Saturation, saturation);
                 }
                 break;
             case "colorTemperature":
                 if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
                     const kelvin = parseInt(change.value, 10);
                     const mired = this.clamp(this.kelvinToMired(kelvin), 140, 500);
-                    this.updateCharacteristicValue(this.lightService, this.Characteristic.ColorTemperature, mired);
+                    this.accessory.updateCharacteristicValue(this.lightService, this.Characteristic.ColorTemperature, mired);
                 }
                 break;
             case "effectName":

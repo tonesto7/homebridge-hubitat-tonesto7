@@ -39,9 +39,9 @@ export default class Button extends HubitatAccessory {
             return;
         }
 
-        this.airPurifierSvc = this.getOrAddService(CommunityTypes.NewAirPurifierService);
+        this.airPurifierSvc = this.accessory.getOrAddService(CommunityTypes.NewAirPurifierService);
 
-        this.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.Active, {
+        this.accessory.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.Active, {
             getHandler: function () {
                 const isActive = this.deviceData.attributes.switch === "on";
                 accessory.log.debug(`${this.accessory.name} | Active State Retrieved: ${isActive ? "ACTIVE" : "INACTIVE"}`);
@@ -55,7 +55,7 @@ export default class Button extends HubitatAccessory {
         });
 
         // Current Air Purifier State Characteristic
-        this.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.CurrentAirPurifierState, {
+        this.accessory.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.CurrentAirPurifierState, {
             getHandler: function () {
                 const state = this.deviceData.attributes.switch === "on" ? "purifying" : "inactive";
                 const currentState = convertAirPurifierState(state);
@@ -69,7 +69,7 @@ export default class Button extends HubitatAccessory {
 
         // Fan Oscillation Mode Characteristic
         if (CommunityTypes && CommunityTypes.FanOscilationMode) {
-            this.getOrAddCharacteristic(this.airPurifierSvc, CommunityTypes.FanOscilationMode, {
+            this.accessory.getOrAddCharacteristic(this.airPurifierSvc, CommunityTypes.FanOscilationMode, {
                 getHandler: function () {
                     const fanMode = this.deviceData.attributes.fanMode || "sleep";
                     const convertedMode = convertFanMode(fanMode);
@@ -86,7 +86,7 @@ export default class Button extends HubitatAccessory {
             this.log.warn(`${this.accessory.name} | CommunityTypes.FanOscilationMode is not defined.`);
         }
 
-        this.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.airPurifierSvc, this.Characteristic.StatusTampered, {
             preReqChk: (acc) => acc.hasCapability("TamperAlert"),
             getHandler: function () {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -117,18 +117,18 @@ export default class Button extends HubitatAccessory {
         switch (change.attribute) {
             case "switch":
                 const isActive = change.value === "on";
-                this.updateCharacteristicValue(this.airPurifierSvc, this.Characteristic.Active, isActive ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE);
-                this.updateCharacteristicValue(this.airPurifierSvc, this.Characteristic.CurrentAirPurifierState, isActive ? this.Characteristic.CurrentAirPurifierState.PURIFYING_AIR : this.Characteristic.CurrentAirPurifierState.INACTIVE);
+                this.accessory.updateCharacteristicValue(this.airPurifierSvc, this.Characteristic.Active, isActive ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE);
+                this.accessory.updateCharacteristicValue(this.airPurifierSvc, this.Characteristic.CurrentAirPurifierState, isActive ? this.Characteristic.CurrentAirPurifierState.PURIFYING_AIR : this.Characteristic.CurrentAirPurifierState.INACTIVE);
                 // accessory.log.debug(`${accessory.name} | Updated Active: ${isActive} and CurrentAirPurifierState: ${isActive ? "PURIFYING_AIR" : "INACTIVE"}`);
                 break;
             case "fanMode":
                 if (CommunityTypes && CommunityTypes.FanOscilationMode) {
-                    this.updateCharacteristicValue(this.airPurifierSvc, CommunityTypes.FanOscilationMode, this.convertFanMode(change.value));
+                    this.accessory.updateCharacteristicValue(this.airPurifierSvc, CommunityTypes.FanOscilationMode, this.convertFanMode(change.value));
                 }
                 break;
             case "tamper":
                 if (this.accessory.hasCapability("TamperAlert")) {
-                    this.updateCharacteristicValue(this.airPurifierSvc, this.Characteristic.StatusTampered, change.value === "detected");
+                    this.accessory.updateCharacteristicValue(this.airPurifierSvc, this.Characteristic.StatusTampered, change.value === "detected");
                 }
                 break;
             default:

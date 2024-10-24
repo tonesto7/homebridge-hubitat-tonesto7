@@ -23,9 +23,9 @@ export default class Valve extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.valveSvc = this.getOrAddService(this.Service.Valve);
+        this.valveSvc = this.accessory.getOrAddService(this.Service.Valve);
 
-        this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.Active, {
+        this.accessory.getOrAddCharacteristic(this.valveSvc, this.Characteristic.Active, {
             getHandler: () => {
                 const isActive = this.convertValveState(this.deviceData.attributes.valve);
                 this.log.debug(`${this.accessory.displayName} | Valve Active State Retrieved: ${isActive}`);
@@ -38,7 +38,7 @@ export default class Valve extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.InUse, {
+        this.accessory.getOrAddCharacteristic(this.valveSvc, this.Characteristic.InUse, {
             getHandler: () => {
                 const inUse = this.convertInUseState(this.deviceData.attributes.valve);
                 this.log.debug(`${this.accessory.displayName} | Valve InUse State Retrieved: ${inUse}`);
@@ -46,7 +46,7 @@ export default class Valve extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.valveSvc, this.Characteristic.ValveType, {
+        this.accessory.getOrAddCharacteristic(this.valveSvc, this.Characteristic.ValveType, {
             value: this.Characteristic.ValveType.GENERIC_VALVE,
         });
 
@@ -69,8 +69,8 @@ export default class Valve extends HubitatAccessory {
         if (change.attribute === "valve") {
             const isActive = this.convertValveState(change.value);
             const inUse = this.convertInUseState(change.value);
-            this.updateCharacteristicValue(this.valveSvc, this.Characteristic.Active, isActive);
-            this.updateCharacteristicValue(this.valveSvc, this.Characteristic.InUse, inUse);
+            this.accessory.updateCharacteristicValue(this.valveSvc, this.Characteristic.Active, isActive);
+            this.accessory.updateCharacteristicValue(this.valveSvc, this.Characteristic.InUse, inUse);
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

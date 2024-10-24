@@ -26,9 +26,9 @@ export default class SmokeDetector extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.smokeSensorSvc = this.getOrAddService(this.Service.SmokeSensor);
+        this.smokeSensorSvc = this.accessory.getOrAddService(this.Service.SmokeSensor);
 
-        this.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.SmokeDetected, {
+        this.accessory.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.SmokeDetected, {
             getHandler: () => {
                 const smoke = this.convertSmokeStatus(this.deviceData.attributes.smoke);
                 this.log.debug(`${this.accessory.displayName} | Smoke Detected Retrieved: ${smoke}`);
@@ -36,7 +36,7 @@ export default class SmokeDetector extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | Smoke Detector Status Active Retrieved: ${isActive}`);
@@ -44,7 +44,7 @@ export default class SmokeDetector extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.smokeSensorSvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -84,18 +84,18 @@ export default class SmokeDetector extends HubitatAccessory {
         switch (change.attribute) {
             case "smoke": {
                 const smokeDetected = this.convertSmokeStatus(change.value);
-                this.updateCharacteristicValue(this.smokeSensorSvc, this.Characteristic.SmokeDetected, smokeDetected);
+                this.accessory.updateCharacteristicValue(this.smokeSensorSvc, this.Characteristic.SmokeDetected, smokeDetected);
                 break;
             }
             case "status": {
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.smokeSensorSvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.smokeSensorSvc, this.Characteristic.StatusActive, isActive);
                 break;
             }
             case "tamper": {
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.smokeSensorSvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.smokeSensorSvc, this.Characteristic.StatusTampered, isTampered);
                 }
                 break;
             }

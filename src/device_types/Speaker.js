@@ -24,13 +24,13 @@ export default class Speaker extends HubitatAccessory {
      * @method initializeService
      */
     async initializeService() {
-        this.speakerSvc = this.getOrAddService(this.Service.Speaker);
+        this.speakerSvc = this.accessory.getOrAddService(this.Service.Speaker);
 
         const isSonos = this.deviceData.manufacturerName === "Sonos";
         const lvlAttr = isSonos || this.hasAttribute("volume") ? "volume" : this.hasAttribute("level") ? "level" : undefined;
 
         if (lvlAttr) {
-            this.getOrAddCharacteristic(this.speakerSvc, this.Characteristic.Volume, {
+            this.accessory.getOrAddCharacteristic(this.speakerSvc, this.Characteristic.Volume, {
                 getHandler: () => {
                     let volume = parseInt(this.deviceData.attributes[lvlAttr], 10);
                     volume = this.clamp(volume, 0, 100);
@@ -50,7 +50,7 @@ export default class Speaker extends HubitatAccessory {
             });
         }
 
-        this.getOrAddCharacteristic(this.speakerSvc, this.Characteristic.Mute, {
+        this.accessory.getOrAddCharacteristic(this.speakerSvc, this.Characteristic.Mute, {
             preReqChk: () => this.hasCapability("AudioMute"),
             getHandler: () => {
                 const isMuted = this.deviceData.attributes.mute === "muted";
@@ -94,13 +94,13 @@ export default class Speaker extends HubitatAccessory {
             case "level":
                 if (lvlAttr && change.attribute === lvlAttr) {
                     const volume = this.clamp(parseInt(change.value, 10), 0, 100);
-                    this.updateCharacteristicValue(this.speakerSvc, this.Characteristic.Volume, this.volumeToHomeKit(volume));
+                    this.accessory.updateCharacteristicValue(this.speakerSvc, this.Characteristic.Volume, this.volumeToHomeKit(volume));
                 }
                 break;
             case "mute":
                 if (this.hasCapability("AudioMute")) {
                     const isMuted = change.value === "muted";
-                    this.updateCharacteristicValue(this.speakerSvc, this.Characteristic.Mute, isMuted);
+                    this.accessory.updateCharacteristicValue(this.speakerSvc, this.Characteristic.Mute, isMuted);
                 }
                 break;
             default:

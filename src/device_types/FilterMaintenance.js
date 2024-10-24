@@ -20,9 +20,9 @@ export default class FilterMaintenance extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service is initialized.
      */
     async initializeService() {
-        this.filterSvc = this.getOrAddService(this.Service.FilterMaintenance);
+        this.filterSvc = this.accessory.getOrAddService(this.Service.FilterMaintenance);
 
-        this.getOrAddCharacteristic(this.filterSvc, this.Characteristic.FilterChangeIndication, {
+        this.accessory.getOrAddCharacteristic(this.filterSvc, this.Characteristic.FilterChangeIndication, {
             getHandler: () => {
                 const doReplace = this.deviceData.attributes.switch === "replace";
                 this.log.debug(`${this.accessory.displayName} | FilterChangeIndication Retrieved: ${doReplace ? "REPLACE" : "OFF"}`);
@@ -49,7 +49,7 @@ export default class FilterMaintenance extends HubitatAccessory {
         }
 
         if (change.attribute === "filterStatus") {
-            this.updateCharacteristicValue(this.filterSvc, this.Characteristic.FilterChangeIndication, this.getFilterStatus(change.value));
+            this.accessory.updateCharacteristicValue(this.filterSvc, this.Characteristic.FilterChangeIndication, this.getFilterStatus(change.value));
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }

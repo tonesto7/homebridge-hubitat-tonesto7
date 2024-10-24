@@ -26,10 +26,10 @@ export default class Battery extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.batterySvc = this.getOrAddService(this.Service.Battery);
+        this.batterySvc = this.accessory.getOrAddService(this.Service.Battery);
 
         // Battery Level
-        this.getOrAddCharacteristic(this.batterySvc, this.Characteristic.BatteryLevel, {
+        this.accessory.getOrAddCharacteristic(this.batterySvc, this.Characteristic.BatteryLevel, {
             getHandler: () => {
                 const battery = this.clamp(this.deviceData.attributes.battery, 0, 100);
                 this.log.debug(`${this.accessory.displayName} | Battery Level: ${battery}%`);
@@ -38,7 +38,7 @@ export default class Battery extends HubitatAccessory {
         });
 
         // Status Low Battery
-        this.getOrAddCharacteristic(this.batterySvc, this.Characteristic.StatusLowBattery, {
+        this.accessory.getOrAddCharacteristic(this.batterySvc, this.Characteristic.StatusLowBattery, {
             getHandler: () => {
                 const battery = this.deviceData.attributes.battery;
                 const lowBattery = battery < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
@@ -48,7 +48,7 @@ export default class Battery extends HubitatAccessory {
         });
 
         // Charging State
-        this.getOrAddCharacteristic(this.batterySvc, this.Characteristic.ChargingState, {
+        this.accessory.getOrAddCharacteristic(this.batterySvc, this.Characteristic.ChargingState, {
             getHandler: () => {
                 const powerSource = this.deviceData.attributes.powerSource;
                 const chargingState = this.getChargeState(powerSource);
@@ -85,12 +85,12 @@ export default class Battery extends HubitatAccessory {
             case "battery":
                 const batteryLevel = this.clamp(parseInt(change.value), 0, 100);
                 const lowBattery = batteryLevel < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-                this.updateCharacteristicValue(this.batterySvc, this.Characteristic.BatteryLevel, batteryLevel);
-                this.updateCharacteristicValue(this.batterySvc, this.Characteristic.StatusLowBattery, lowBattery);
+                this.accessory.updateCharacteristicValue(this.batterySvc, this.Characteristic.BatteryLevel, batteryLevel);
+                this.accessory.updateCharacteristicValue(this.batterySvc, this.Characteristic.StatusLowBattery, lowBattery);
                 break;
             case "powerSource":
                 const chargingState = this.getChargeState(change.value);
-                this.updateCharacteristicValue(this.batterySvc, this.Characteristic.ChargingState, chargingState);
+                this.accessory.updateCharacteristicValue(this.batterySvc, this.Characteristic.ChargingState, chargingState);
                 break;
             default:
                 this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);

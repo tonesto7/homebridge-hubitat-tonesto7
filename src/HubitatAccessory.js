@@ -52,6 +52,7 @@
  * @method clamp - Clamps a value between a minimum and maximum value.
  * @method clearAndSetTimeout - Clears the existing timeout and sets a new timeout.
  * @method toTitleCase - Converts a string to title case.
+ * @method getServiceName - Retrieves the name of a service.
  */
 export default class HubitatAccessory {
     constructor(platform, accessory) {
@@ -74,8 +75,8 @@ export default class HubitatAccessory {
         this.accessory.deviceGroups = [];
 
         // Initialize services and characteristics to keep
-        this.accessory.servicesToKeep = [];
-        this.accessory.characteristicsToKeep = {};
+        // this.accessory.servicesToKeep = new Map();
+        // this.accessory.characteristicsToKeep = new Map();
 
         // Bind functions to the accessory
         accessory.hasCapability = this.hasCapability.bind(this);
@@ -86,8 +87,14 @@ export default class HubitatAccessory {
         accessory.hasCharacteristic = this.hasCharacteristic.bind(this);
         accessory.hasDeviceFlag = this.hasDeviceFlag.bind(this);
         accessory.getButtonSvcByName = this.getButtonSvcByName.bind(this);
+        accessory.removeUnusedServices = this.removeUnusedServices.bind(this);
+        accessory.removeUnusedCharacteristics = this.removeUnusedCharacteristics.bind(this);
+        accessory.updateCharacteristicValue = this.updateCharacteristicValue.bind(this);
+        accessory.getServiceName = this.getServiceName.bind(this);
         accessory.sendCommand = this.sendCommand.bind(this);
         accessory.isAdaptiveLightingSupported = (this.platform.homebridge.version >= 2.7 && this.platform.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.platform.homebridge.hap.AdaptiveLightingController;
+        accessory.getOrAddService = this.getOrAddService.bind(this);
+        accessory.getOrAddCharacteristic = this.getOrAddCharacteristic.bind(this);
 
         // Setup AccessoryInformation service
         this.setupAccessoryInformation();
@@ -258,85 +265,47 @@ export default class HubitatAccessory {
         return characteristic;
     }
 
-    /**
-     * Adds a service to the list of services to keep for the accessory.
-     *
-     * @param {object} service - The service object to add.
-     * @param {string} service.UUID - The unique identifier for the service.
-     * @param {string} [service.subtype] - The optional subtype of the service.
-     */
     addServiceToKeep(service) {
         const serviceKey = `${service.UUID}:${service.subtype || ""}`;
-        if (!this.accessory.servicesToKeep.includes(serviceKey)) {
-            this.accessory.servicesToKeep.push(serviceKey);
-        }
+        this.accessory.servicesToKeep.add(serviceKey);
     }
 
-    /**
-     * Adds a characteristic to the list of characteristics to keep for a given service.
-     *
-     * @param {object} service - The service to which the characteristic belongs.
-     * @param {object} characteristic - The characteristic to keep.
-     */
     addCharacteristicToKeep(service, characteristic) {
-        if (!this.accessory.characteristicsToKeep[service.UUID]) {
-            this.accessory.characteristicsToKeep[service.UUID] = [];
+        if (!this.accessory.characteristicsToKeep.has(service.UUID)) {
+            this.accessory.characteristicsToKeep.set(service.UUID, new Set());
         }
-        if (!this.accessory.characteristicsToKeep[service.UUID].includes(characteristic.UUID)) {
-            this.accessory.characteristicsToKeep[service.UUID].push(characteristic.UUID);
-        }
+        this.accessory.characteristicsToKeep.get(service.UUID).add(characteristic.UUID);
     }
 
-    /**
-     * Removes unused services from the accessory.
-     *
-     * This method iterates over the services of the accessory and removes those
-     * that are not in the `servicesToKeep` set. If a service is kept, it calls
-     * `removeUnusedCharacteristics` on that service.
-     *
-     * @method
-     */
-    removeUnusedServices() {
-        const servicesToKeep = new Set(this.accessory.servicesToKeep);
-        this.accessory.services.forEach((service) => {
+    async removeUnusedServices() {
+        const services = [...this.accessory.services];
+
+        for (const service of services) {
             const serviceKey = `${service.UUID}:${service.subtype || ""}`;
-            if (!servicesToKeep.has(serviceKey)) {
+
+            if (!this.accessory.servicesToKeep.has(serviceKey) && service.UUID !== this.Service.AccessoryInformation.UUID) {
+                this.platform.logWarn(`${this.accessory.displayName} | Removing Service: ${this.getServiceName(service)}`);
                 this.accessory.removeService(service);
-                this.log.info(`Removing Unused Service: ${service.displayName ? service.displayName : service.UUID} from ${this.accessory.name}`);
             } else {
-                this.removeUnusedCharacteristics(service);
+                await this.removeUnusedCharacteristics(service);
             }
-        });
+        }
     }
 
-    /**
-     * Removes unused characteristics from a given service.
-     *
-     * This method checks if the service UUID matches the AccessoryInformation UUID.
-     * If it does, the method returns immediately. Otherwise, it iterates through
-     * the characteristics of the service and removes any characteristic that is not
-     * included in the `characteristicsToKeep` array for the given service UUID.
-     *
-     * @param {object} service - The service object from which unused characteristics will be removed.
-     * @param {string} service.UUID - The UUID of the service.
-     * @param {Array} service.characteristics - The array of characteristics associated with the service.
-     * @param {function} service.removeCharacteristic - The function to remove a characteristic from the service.
-     * @param {string} service.displayName - The display name of the service.
-     *
-     * @returns {void}
-     */
-    removeUnusedCharacteristics(service) {
+    async removeUnusedCharacteristics(service) {
         if (service.UUID === this.Service.AccessoryInformation.UUID) {
             return;
         }
 
-        const characteristicsToKeep = this.accessory.characteristicsToKeep[service.UUID] || [];
-        service.characteristics.forEach((characteristic) => {
-            if (!characteristicsToKeep.includes(characteristic.UUID)) {
+        const characteristicsToKeep = this.accessory.characteristicsToKeep.get(service.UUID) || new Set();
+        const characteristics = [...service.characteristics];
+
+        for (const characteristic of characteristics) {
+            if (!characteristicsToKeep.has(characteristic.UUID)) {
                 service.removeCharacteristic(characteristic);
-                this.log.info(`Removing Unused Characteristic: ${characteristic.displayName} from ${service.displayName} from ${this.accessory.name}`);
+                this.platform.logWarn(`Removing Unused Characteristic: ${characteristic.displayName} from ${service.displayName} from ${this.accessory.name}`);
             }
-        });
+        }
     }
 
     /**
@@ -463,6 +432,16 @@ export default class HubitatAccessory {
         this.addServiceToKeep(svc);
 
         return svc;
+    }
+
+    getServiceName(service) {
+        // console.log(service.UUID);
+        for (const [key, value] of Object.entries(this.Service)) {
+            if (value && value.UUID && value.UUID === service.UUID) {
+                return key;
+            }
+        }
+        return service.displayName || service.UUID;
     }
 
     /**

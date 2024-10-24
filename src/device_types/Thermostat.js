@@ -25,9 +25,9 @@ export default class Thermostat extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.thermostatSvc = this.getOrAddService(this.Service.Thermostat);
+        this.thermostatSvc = this.accessory.getOrAddService(this.Service.Thermostat);
 
-        this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentHeatingCoolingState, {
+        this.accessory.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentHeatingCoolingState, {
             getHandler: () => {
                 const operatingState = this.getCurrentOperatingState(this.deviceData.attributes.thermostatOperatingState);
                 this.log.debug(`${this.accessory.displayName} | Current HeatingCoolingState: ${this.deviceData.attributes.thermostatOperatingState.replace("ing", "").toUpperCase()}`);
@@ -37,7 +37,7 @@ export default class Thermostat extends HubitatAccessory {
 
         const supportedModes = this.getSupportedThermostatModes();
 
-        this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.TargetHeatingCoolingState, {
+        this.accessory.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.TargetHeatingCoolingState, {
             props: {
                 validValues: supportedModes,
             },
@@ -66,7 +66,7 @@ export default class Thermostat extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentTemperature, {
+        this.accessory.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentTemperature, {
             getHandler: () => {
                 const temp = this.deviceData.attributes.temperature;
                 const convertedTemp = this.thermostatTempConversion(temp);
@@ -75,7 +75,7 @@ export default class Thermostat extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.TargetTemperature, {
+        this.accessory.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.TargetTemperature, {
             props: {
                 minValue: 10,
                 maxValue: 38,
@@ -100,7 +100,7 @@ export default class Thermostat extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentRelativeHumidity, {
+        this.accessory.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.CurrentRelativeHumidity, {
             preReqChk: () => this.hasCapability("RelativeHumidityMeasurement"),
             getHandler: () => {
                 const humidity = Math.round(this.clamp(parseFloat(this.deviceData.attributes.humidity) || 0, 0, 100));
@@ -109,7 +109,7 @@ export default class Thermostat extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.TemperatureDisplayUnits, {
+        this.accessory.getOrAddCharacteristic(this.thermostatSvc, this.Characteristic.TemperatureDisplayUnits, {
             getHandler: () => {
                 const unit = this.platform.getTempUnit() === "F" ? this.Characteristic.TemperatureDisplayUnits.FAHRENHEIT : this.Characteristic.TemperatureDisplayUnits.CELSIUS;
                 this.log.debug(`${this.accessory.displayName} | Temperature Display Units Retrieved: ${unit === this.Characteristic.TemperatureDisplayUnits.FAHRENHEIT ? "Fahrenheit" : "Celsius"}`);
@@ -138,30 +138,30 @@ export default class Thermostat extends HubitatAccessory {
         switch (change.attribute) {
             case "thermostatOperatingState":
                 const currentState = this.getCurrentOperatingState(change.value);
-                this.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.CurrentHeatingCoolingState, currentState);
+                this.accessory.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.CurrentHeatingCoolingState, currentState);
                 break;
 
             case "thermostatMode":
                 const targetState = this.getTargetOperatingState(change.value);
-                this.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.TargetHeatingCoolingState, targetState);
+                this.accessory.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.TargetHeatingCoolingState, targetState);
                 break;
 
             case "temperature":
                 const currentTemp = this.thermostatTempConversion(change.value);
-                this.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.CurrentTemperature, currentTemp);
+                this.accessory.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.CurrentTemperature, currentTemp);
                 break;
 
             case "coolingSetpoint":
             case "heatingSetpoint":
             case "thermostatSetpoint":
                 const targetTemp = this.thermostatTargetTemp();
-                this.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.TargetTemperature, targetTemp);
+                this.accessory.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.TargetTemperature, targetTemp);
                 break;
 
             case "humidity":
                 if (this.hasCapability("RelativeHumidityMeasurement")) {
                     const humidity = Math.round(this.clamp(parseFloat(change.value) || 0, 0, 100));
-                    this.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.CurrentRelativeHumidity, humidity);
+                    this.accessory.updateCharacteristicValue(this.thermostatSvc, this.Characteristic.CurrentRelativeHumidity, humidity);
                 }
                 break;
 

@@ -22,9 +22,9 @@ export default class PresenceSensor extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.occupancySvc = this.getOrAddService(this.Service.OccupancySensor);
+        this.occupancySvc = this.accessory.getOrAddService(this.Service.OccupancySensor);
 
-        this.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.OccupancyDetected, {
+        this.accessory.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.OccupancyDetected, {
             getHandler: () => {
                 const occupancy = this.convertPresence(this.deviceData.attributes.presence);
                 this.log.debug(`${this.accessory.displayName} | Occupancy Detected Retrieved: ${occupancy}`);
@@ -32,7 +32,7 @@ export default class PresenceSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.StatusActive, {
+        this.accessory.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const isActive = this.deviceData.status === "ACTIVE";
                 this.log.debug(`${this.accessory.displayName} | Presence Sensor Status Active Retrieved: ${isActive}`);
@@ -40,7 +40,7 @@ export default class PresenceSensor extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.StatusTampered, {
+        this.accessory.getOrAddCharacteristic(this.occupancySvc, this.Characteristic.StatusTampered, {
             preReqChk: () => this.hasCapability("TamperAlert"),
             getHandler: () => {
                 const isTampered = this.deviceData.attributes.tamper === "detected";
@@ -69,16 +69,16 @@ export default class PresenceSensor extends HubitatAccessory {
         switch (change.attribute) {
             case "presence":
                 const occupancy = this.convertPresence(change.value);
-                this.updateCharacteristicValue(this.occupancySvc, this.Characteristic.OccupancyDetected, occupancy);
+                this.accessory.updateCharacteristicValue(this.occupancySvc, this.Characteristic.OccupancyDetected, occupancy);
                 break;
             case "status":
                 const isActive = change.value === "ACTIVE";
-                this.updateCharacteristicValue(this.occupancySvc, this.Characteristic.StatusActive, isActive);
+                this.accessory.updateCharacteristicValue(this.occupancySvc, this.Characteristic.StatusActive, isActive);
                 break;
             case "tamper":
                 if (this.hasCapability("TamperAlert")) {
                     const isTampered = change.value === "detected";
-                    this.updateCharacteristicValue(this.occupancySvc, this.Characteristic.StatusTampered, isTampered);
+                    this.accessory.updateCharacteristicValue(this.occupancySvc, this.Characteristic.StatusTampered, isTampered);
                 }
                 break;
             default:

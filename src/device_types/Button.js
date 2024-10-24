@@ -47,13 +47,13 @@ export default class Button extends HubitatAccessory {
             const buttonSvc = this.getButtonService(this.Service.StatelessProgrammableSwitch, serviceName, btnNum);
             const validValues = this.getSupportedBtnValues();
 
-            this.getOrAddCharacteristic(buttonSvc, this.Characteristic.ProgrammableSwitchEvent, {
+            this.accessory.getOrAddCharacteristic(buttonSvc, this.Characteristic.ProgrammableSwitchEvent, {
                 props: { validValues: validValues },
                 eventOnly: false,
                 getHandler: () => this.getButtonState(this.deviceData.attributes.button),
             });
 
-            this.getOrAddCharacteristic(buttonSvc, this.Characteristic.ServiceLabelIndex, {
+            this.accessory.getOrAddCharacteristic(buttonSvc, this.Characteristic.ServiceLabelIndex, {
                 getHandler: () => btnNum,
             });
 
@@ -84,7 +84,7 @@ export default class Button extends HubitatAccessory {
                 const btnOut = this.getButtonState(btnVal);
                 if (btnOut >= 0) {
                     this.log.info(`${this.accessory.displayName} | Updating Button ${btnNum} event to: ${btnOut}`);
-                    this.updateCharacteristicValue(buttonSvc, this.Characteristic.ProgrammableSwitchEvent, btnOut);
+                    this.accessory.updateCharacteristicValue(buttonSvc, this.Characteristic.ProgrammableSwitchEvent, btnOut);
                 }
             } else {
                 this.log.warn(`${this.accessory.displayName} | No service found for button number: ${btnNum}`);

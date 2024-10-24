@@ -25,7 +25,7 @@ export default class WindowCovering extends HubitatAccessory {
      * @returns {Promise<void>} Resolves when the service is initialized.
      */
     async initializeService() {
-        this.windowCoverSvc = this.getOrAddService(this.Service.WindowCovering);
+        this.windowCoverSvc = this.accessory.getOrAddService(this.Service.WindowCovering);
 
         // Determine position attribute
         this.positionAttr = this.hasCommand("setPosition") ? "position" : this.hasAttribute("level") ? "level" : undefined;
@@ -34,7 +34,7 @@ export default class WindowCovering extends HubitatAccessory {
             return;
         }
 
-        this.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.CurrentPosition, {
+        this.accessory.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.CurrentPosition, {
             getHandler: () => {
                 let position = parseInt(this.deviceData.attributes[this.positionAttr], 10);
                 position = this.clamp(position, 0, 100);
@@ -43,7 +43,7 @@ export default class WindowCovering extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.TargetPosition, {
+        this.accessory.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.TargetPosition, {
             getHandler: () => {
                 let position = parseInt(this.deviceData.attributes[this.positionAttr], 10);
                 position = this.clamp(position, 0, 100);
@@ -58,7 +58,7 @@ export default class WindowCovering extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.PositionState, {
+        this.accessory.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.PositionState, {
             getHandler: () => {
                 const state = this.deviceData.attributes.windowShade;
                 const positionState = this.convertPositionState(state);
@@ -67,14 +67,14 @@ export default class WindowCovering extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.ObstructionDetected, {
+        this.accessory.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.ObstructionDetected, {
             getHandler: () => {
                 this.log.debug(`${this.accessory.displayName} | Window Shade Obstruction Detected Retrieved: false`);
                 return false;
             },
         });
 
-        this.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.HoldPosition, {
+        this.accessory.getOrAddCharacteristic(this.windowCoverSvc, this.Characteristic.HoldPosition, {
             setHandler: (value) => {
                 if (value) {
                     this.log.info(`${this.accessory.displayName} | Pausing window shade movement via command: pause`);
@@ -110,13 +110,13 @@ export default class WindowCovering extends HubitatAccessory {
             case "level":
                 if (change.attribute === this.positionAttr) {
                     let position = this.clamp(parseInt(change.value, 10), 0, 100);
-                    this.updateCharacteristicValue(this.windowCoverSvc, this.Characteristic.CurrentPosition, position);
-                    this.updateCharacteristicValue(this.windowCoverSvc, this.Characteristic.TargetPosition, position);
+                    this.accessory.updateCharacteristicValue(this.windowCoverSvc, this.Characteristic.CurrentPosition, position);
+                    this.accessory.updateCharacteristicValue(this.windowCoverSvc, this.Characteristic.TargetPosition, position);
                 }
                 break;
             case "windowShade":
                 const positionState = this.convertPositionState(change.value);
-                this.updateCharacteristicValue(this.windowCoverSvc, this.Characteristic.PositionState, positionState);
+                this.accessory.updateCharacteristicValue(this.windowCoverSvc, this.Characteristic.PositionState, positionState);
                 break;
             default:
                 this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);

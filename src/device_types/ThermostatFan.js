@@ -23,9 +23,9 @@ export default class ThermostatFan extends HubitatAccessory {
      * @returns {Promise<void>} A promise that resolves when the service is initialized.
      */
     async initializeService() {
-        this.fanV2Svc = this.getOrAddService(this.Service.Fanv2);
+        this.fanV2Svc = this.accessory.getOrAddService(this.Service.Fanv2);
 
-        this.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.Active, {
+        this.accessory.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.Active, {
             getHandler: () => {
                 const mode = this.deviceData.attributes.thermostatFanMode;
                 const activeState = this.convertFanModeToActive(mode);
@@ -39,7 +39,7 @@ export default class ThermostatFan extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.CurrentFanState, {
+        this.accessory.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.CurrentFanState, {
             getHandler: () => {
                 const mode = this.deviceData.attributes.thermostatFanMode;
                 const currentState = this.convertFanModeToCurrentState(mode);
@@ -48,7 +48,7 @@ export default class ThermostatFan extends HubitatAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.TargetFanState, {
+        this.accessory.getOrAddCharacteristic(this.fanV2Svc, this.Characteristic.TargetFanState, {
             getHandler: () => {
                 const mode = this.deviceData.attributes.thermostatFanMode;
                 const targetState = mode === "auto" ? this.Characteristic.TargetFanState.AUTO : this.Characteristic.TargetFanState.MANUAL;
@@ -84,9 +84,9 @@ export default class ThermostatFan extends HubitatAccessory {
             const activeState = this.convertFanModeToActive(change.value);
             const currentState = this.convertFanModeToCurrentState(change.value);
             const targetState = change.value === "auto" ? this.Characteristic.TargetFanState.AUTO : this.Characteristic.TargetFanState.MANUAL;
-            this.updateCharacteristicValue(this.fanV2Svc, this.Characteristic.Active, activeState);
-            this.updateCharacteristicValue(this.fanV2Svc, this.Characteristic.CurrentFanState, currentState);
-            this.updateCharacteristicValue(this.fanV2Svc, this.Characteristic.TargetFanState, targetState);
+            this.accessory.updateCharacteristicValue(this.fanV2Svc, this.Characteristic.Active, activeState);
+            this.accessory.updateCharacteristicValue(this.fanV2Svc, this.Characteristic.CurrentFanState, currentState);
+            this.accessory.updateCharacteristicValue(this.fanV2Svc, this.Characteristic.TargetFanState, targetState);
         } else {
             this.log.debug(`${this.accessory.displayName} | Unhandled attribute update: ${change.attribute}`);
         }
