@@ -21,7 +21,6 @@ export default class HE_Accessories {
         });
 
         this.homebridge = platform.homebridge;
-        this.utils = platform.utils;
         this.log = platform.log;
         this.hap = platform.hap;
         this.uuid = platform.uuid;
@@ -105,7 +104,7 @@ export default class HE_Accessories {
             .getOrAddService(this.Service.AccessoryInformation)
             .setCharacteristic(this.Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
             .setCharacteristic(this.Characteristic.Manufacturer, accessory.context.deviceData.manufacturerName)
-            .setCharacteristic(this.Characteristic.Model, accessory.context.deviceData.modelName ? `${this.utils.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
+            .setCharacteristic(this.Characteristic.Model, accessory.context.deviceData.modelName ? `${this.platform.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
             .setCharacteristic(this.Characteristic.Name, accessory.name)
 
             .setCharacteristic(this.Characteristic.HardwareRevision, pluginVersion)

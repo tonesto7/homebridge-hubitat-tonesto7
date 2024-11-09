@@ -1,16 +1,18 @@
 // HE_Platform.js
 
-import { pluginName, platformName, platformDesc, pluginVersion } from "./Constants.js";
+import { packageName, pluginName, platformName, platformDesc, pluginVersion } from "./Constants.js";
+import { exec } from "child_process";
+import os from "os";
+import { compare, validate } from "compare-versions";
 import events from "events";
 import ConfigManager from "./ConfigManager.js";
-import Utils from "./libs/MyUtils.js";
 import HEClient from "./HE_Client.js";
 import HEAccessories from "./HE_Accessories.js";
 import CommunityTypes from "./libs/CommunityTypes.js";
 import express from "express";
 import bodyParser from "body-parser";
 import chalk from "chalk";
-import fs from "fs";
+// import fs from "fs";
 import _ from "lodash";
 
 const webApp = express();
@@ -48,8 +50,6 @@ export default class HE_Platform {
 
         this.excludedAttributes = this.config.excluded_attributes || [];
         this.excludedCapabilities = this.config.excluded_capabilities || [];
-
-        this.utils = new Utils(this);
 
         // console.log("pluginConfig: ", this.loadConfig());
         this.unknownCapabilities = [];
@@ -535,4 +535,32 @@ export default class HE_Platform {
             }
         });
     }
+
+    toTitleCase(str) {
+        return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    }
+
+    checkVersion = async () => {
+        this.log.info("Checking Package Version for Updates...");
+        return new Promise((resolve) => {
+            exec(`npm view ${packageName} version`, (error, stdout) => {
+                const newVer = stdout && stdout.trim();
+                if (newVer && validate(newVer) && compare(stdout.trim(), pluginVersion, ">")) {
+                    this.log.warn("---------------------------------------------------------------");
+                    this.log.warn(`NOTICE: New version of ${packageName} available: ${newVer}`);
+                    this.log.warn("---------------------------------------------------------------");
+                    resolve({
+                        hasUpdate: true,
+                        newVersion: newVer,
+                    });
+                } else {
+                    this.log.info("INFO: Your plugin version is up-to-date");
+                    resolve({
+                        hasUpdate: false,
+                        newVersion: newVer,
+                    });
+                }
+            });
+        });
+    };
 }

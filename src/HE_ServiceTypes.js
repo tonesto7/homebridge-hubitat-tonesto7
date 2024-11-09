@@ -8,7 +8,6 @@ export default class ServiceTypes {
         this.platform = accessories.platform;
         this.accessories = accessories;
         this.client = accessories.client;
-        this.utils = accessories.utils;
         this.CommunityTypes = accessories.CommunityTypes;
         this.Service = accessories.Service;
         this.config = this.platform.configManager.getConfig();

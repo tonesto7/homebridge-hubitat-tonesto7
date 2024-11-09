@@ -155,7 +155,7 @@ export default class HEClient {
      */
     sendUpdateStatus = async () => {
         try {
-            const res = await this.platform.Utils.checkVersion();
+            const res = await this.platform.checkVersion();
             this.platform.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
             const response = await axios({
                 method: "post",
@@ -171,7 +171,7 @@ export default class HEClient {
                     newVersion: res.newVersion,
                     version: pluginVersion,
                     isLocal: this.config.use_cloud ? "false" : "true",
-                    accCount: Array.from(this.platform.deviceManager.getAllAccessoriesFromCache().values()).length || null,
+                    accCount: Array.from(this.platform.HEAccessories.getAllAccessoriesFromCache().values()).length || null,
                 },
                 timeout: 10000,
             });
