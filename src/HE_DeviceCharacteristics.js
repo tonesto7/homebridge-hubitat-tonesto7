@@ -203,14 +203,15 @@ export default class DeviceCharacteristics {
         // console.log("btnCnt: ", btnCnt);
         if (btnCnt >= 1) {
             for (let bNum = 1; bNum <= btnCnt; bNum++) {
-                const svc = _accessory.getOrAddServiceByName(_service, `${_accessory.context.deviceData.deviceid}_${bNum}`, bNum);
+                const btnSvcName = this.platform.sanitizeName(`${_accessory.context.deviceData.deviceid}_${bNum}`);
+                const svc = _accessory.getOrAddServiceByName(_service, btnSvcName, bNum);
                 let c = svc.getCharacteristic(Characteristic.ProgrammableSwitchEvent);
                 c.setProps({
                     validValues: validValues,
                 });
                 c.eventOnlyCharacteristic = false;
                 if (!c._events.get) {
-                    that.accessories._buttonMap[`${_accessory.context.deviceData.deviceid}_${bNum}`] = svc;
+                    that.accessories._buttonMap[btnSvcName] = svc;
                     c.on("get", (callback) => {
                         this.value = -1;
                         callback(null, that.transforms.transformAttributeState("button", _accessory.context.deviceData.attributes.button));
@@ -226,8 +227,9 @@ export default class DeviceCharacteristics {
     }
 
     buttonEvent(btnNum, btnVal, devId, btnMap) {
-        console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal);
-        let bSvc = btnMap[`${devId}_${btnNum}`];
+        const btnSvcName = this.platform.sanitizeName(`${devId}_${btnNum}`);
+        console.log("Button Press Event... | Button Number: (" + btnNum + ") | Button Value: " + btnVal + " | ButtonSvcName: (" + btnSvcName + ")");
+        let bSvc = btnMap[btnSvcName];
         // console.log(bSvc);
         if (bSvc) {
             let btnOut = undefined;
