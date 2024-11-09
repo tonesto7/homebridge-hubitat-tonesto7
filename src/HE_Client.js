@@ -1,22 +1,21 @@
 // HE_Client.js
 
-const { platformName, platformDesc, pluginVersion } = require("./libs/Constants"),
-    axios = require("axios").default;
+import { platformName, platformDesc, pluginVersion } from "./Constants.js";
+import axios from "axios";
 
-module.exports = class ST_Client {
+export default class HEClient {
     constructor(platform) {
         this.platform = platform;
         this.log = platform.log;
-        this.logInfo = platform.logInfo;
-        this.logAlert = platform.logAlert;
-        this.logNotice = platform.logNotice;
-        this.logDebug = platform.logDebug;
-        this.logError = platform.logError;
-        this.logWarn = platform.logWarn;
-        this.logConfig = platform.logConfig;
-        this.appEvts = platform.appEvts;
-        this.hubIp = platform.local_hub_ip;
-        this.configItems = platform.getConfigItems();
+
+        this.config = this.platform.configManager.getConfig();
+
+        // Subscribe to configuration updates
+        this.platform.configManager.onConfigUpdate((newConfig) => {
+            // console.log("Client Config Update:", newConfig);
+            this.config = newConfig;
+        });
+
         this.localErrCnt = 0;
         this.localDisabled = false;
         this.clientsLogSocket = [];
@@ -26,13 +25,13 @@ module.exports = class ST_Client {
     }
 
     registerEvtListeners() {
-        this.appEvts.on("event:device_command", async (devData, cmd, vals) => {
+        this.platform.appEvts.on("event:device_command", async (devData, cmd, vals) => {
             await this.sendDeviceCommand(devData, cmd, vals);
         });
-        this.appEvts.on("event:plugin_upd_status", async () => {
+        this.platform.appEvts.on("event:plugin_upd_status", async () => {
             await this.sendUpdateStatus();
         });
-        this.appEvts.on("event:plugin_start_direct", async () => {
+        this.platform.appEvts.on("event:plugin_start_direct", async () => {
             await this.sendStartDirect();
         });
     }
@@ -40,171 +39,194 @@ module.exports = class ST_Client {
     updateGlobals(hubIp, use_cloud = false) {
         this.logNotice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${use_cloud}`);
         this.hubIp = hubIp;
-        this.configItems.use_cloud = use_cloud === true;
+        this.config.use_cloud = use_cloud === true;
     }
 
-    handleError(src, err) {
+    /**
+     * Handles errors by logging appropriate messages based on the error status.
+     *
+     * @param {string} src - The source of the error.
+     * @param {Object} err - The error object.
+     * @param {number} err.status - The HTTP status code of the error.
+     * @param {string} err.message - The error message.
+     * @param {Object} [err.response] - The response object associated with the error.
+     */
+    handleError = (src, err) => {
         switch (err.status) {
             case 401:
-                this.logError(`${src} Error | Hubitat Token Error: ${err.response} | Message: ${err.message}`);
+                this.platform.logError(`${src} Error | Hubitat Token Error: ${err.response} | Message: ${err.message}`);
                 break;
             case 403:
-                this.logError(`${src} Error | Hubitat Authentication Error: ${err.response} | Message: ${err.message}`);
+                this.platform.logError(`${src} Error | Hubitat Authentication Error: ${err.response} | Message: ${err.message}`);
                 break;
             default:
                 if (err.message.startsWith("getaddrinfo EAI_AGAIN")) {
-                    this.logError(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
+                    this.platform.logError(`${src} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${err.message}`);
                 } else {
-                    // console.error(err);
-                    this.logError(`${src} ${err.response && err.response.defined !== undefined ? err.response : "Connection failure"} | Message: ${err.message}`);
+                    this.platform.logError(`${src} ${err.response && err.response.defined !== undefined ? err.response : "Connection failure"} | Message: ${err.message}`);
                 }
                 break;
         }
-        if (this.logConfig.debug === true) {
-            this.logDebug(`${src} ${JSON.stringify(err)}`);
-        }
-    }
 
-    getDevices() {
-        let that = this;
-        return new Promise((resolve) => {
-            axios({
+        this.platform.logDebug(`${src} ${JSON.stringify(err)}`);
+    };
+
+    /**
+     * Fetches the list of devices from the configured URL.
+     *
+     * This function makes an asynchronous HTTP GET request to retrieve device data.
+     * The URL is determined based on whether the cloud or local configuration is used.
+     *
+     * @async
+     * @function getDevices
+     * @returns {Promise<Object|undefined>} A promise that resolves to the device data, or undefined if an error occurs.
+     * @throws Will handle and log errors internally using the handleError method.
+     */
+    getDevices = async () => {
+        try {
+            const response = await axios({
                 method: "get",
-                url: `${that.configItems.use_cloud ? that.configItems.app_url_cloud : that.configItems.app_url_local}${that.configItems.app_id}/devices`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/devices`,
                 params: {
-                    access_token: that.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    isLocal: that.configItems.use_cloud ? "false" : "true",
+                    isLocal: this.config.use_cloud ? "false" : "true",
                 },
                 timeout: 10000,
-            })
-                .then((response) => {
-                    resolve(response.data);
-                })
-                .catch((err) => {
-                    this.handleError("getDevices", err);
-                    resolve(undefined);
-                });
-        });
-    }
+            });
+            return response.data;
+        } catch (err) {
+            this.handleError("getDevices", err);
+            return undefined;
+        }
+    };
 
-    sendDeviceCommand(devData, cmd, vals) {
-        return new Promise((resolve) => {
-            let that = this;
-            let config = {
+    /**
+     * Sends a command to a specified device.
+     *
+     * @async
+     * @param {Object} devData - The device data.
+     * @param {string} devData.name - The name of the device.
+     * @param {string} devData.deviceid - The ID of the device.
+     * @param {string} cmd - The command to send to the device.
+     * @param {Object} [vals] - Optional values to send with the command.
+     * @returns {Promise<boolean>} - Returns true if the command was sent successfully, otherwise false.
+     */
+    sendDeviceCommand = async (devData, cmd, vals) => {
+        // console.log("sendDeviceCommand", devData, cmd, vals);
+        try {
+            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
+            const response = await axios({
                 method: "post",
-                url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/${devData.deviceid}/command/${cmd}`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/${devData.deviceid}/command/${cmd}`,
                 params: {
-                    access_token: this.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    evtsource: `Homebridge_${platformName}_${this.configItems.app_id}`,
+                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
                     evttype: "hkCommand",
-                    isLocal: this.configItems.use_cloud ? "false" : "true",
+                    isLocal: this.config.use_cloud ? "false" : "true",
                 },
                 data: vals || null,
                 timeout: 5000,
-            };
-            // console.log("config: ", config);
-            try {
-                that.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid}) | UsingCloud: (${that.configItems.use_cloud === true})`);
-                axios(config)
-                    .then((response) => {
-                        // console.log("command response:", response);
-                        this.logDebug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
-                        resolve(true);
-                    })
-                    .catch((err) => {
-                        that.handleError("sendDeviceCommand", err);
-                        resolve(false);
-                    });
-            } catch (err) {
-                resolve(false);
-            }
-        });
-    }
-
-    sendUpdateStatus() {
-        return new Promise((resolve) => {
-            this.platform.myUtils.checkVersion().then((res) => {
-                this.logNotice(`Sending Plugin Status to Hubitat | UpdateAvailable: ${res.hasUpdate}${res.newVersion ? " | newVersion: " + res.newVersion : ""}`);
-                axios({
-                    method: "post",
-                    url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/pluginStatus`,
-                    params: {
-                        access_token: this.configItems.access_token,
-                    },
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    data: {
-                        hasUpdate: res.hasUpdate,
-                        newVersion: res.newVersion,
-                        version: pluginVersion,
-                        isLocal: this.configItems.use_cloud ? "false" : "true",
-                        accCount: Object.keys(this.platform.HEAccessories.getAllAccessoriesFromCache()).length || null,
-                    },
-                    timeout: 10000,
-                })
-                    .then((response) => {
-                        // console.log(response.data);
-                        if (response.data) {
-                            this.logDebug(`sendUpdateStatus Resp: ${JSON.stringify(response.data)}`);
-                            resolve(response.data);
-                        } else {
-                            resolve(null);
-                        }
-                    })
-                    .catch((err) => {
-                        this.handleError("sendUpdateStatus", err);
-                        resolve(undefined);
-                    });
             });
-        });
-    }
+            this.platform.logDebug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
+            return true;
+        } catch (err) {
+            this.handleError("sendDeviceCommand", err);
+            return false;
+        }
+    };
 
-    sendStartDirect() {
-        let that = this;
-        return new Promise((resolve) => {
-            let config = {
+    /**
+     * Sends the plugin status to Hubitat.
+     *
+     * This function checks the current version of the plugin and sends the status to Hubitat,
+     * indicating whether there is an update available and other relevant information.
+     *
+     * @async
+     * @function sendUpdateStatus
+     * @returns {Promise<Object|null|undefined>} The response data from the server if available,
+     *                                           null if no data is returned, or undefined if an error occurs.
+     * @throws Will handle and log any errors that occur during the process.
+     */
+    sendUpdateStatus = async () => {
+        try {
+            const res = await this.platform.Utils.checkVersion();
+            this.platform.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
+            const response = await axios({
                 method: "post",
-                url: `${this.configItems.use_cloud ? this.configItems.app_url_cloud : this.configItems.app_url_local}${this.configItems.app_id}/startDirect/${this.configItems.direct_ip}/${this.configItems.direct_port}/${pluginVersion}`,
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/pluginStatus`,
                 params: {
-                    access_token: this.configItems.access_token,
+                    access_token: this.config.access_token,
                 },
                 headers: {
                     "Content-Type": "application/json",
-                    isLocal: this.configItems.use_cloud ? "false" : "true",
                 },
                 data: {
-                    ip: that.configItems.direct_ip,
-                    port: that.configItems.direct_port,
+                    hasUpdate: res.hasUpdate,
+                    newVersion: res.newVersion,
+                    version: pluginVersion,
+                    isLocal: this.config.use_cloud ? "false" : "true",
+                    accCount: Array.from(this.platform.deviceManager.getAllAccessoriesFromCache().values()).length || null,
+                },
+                timeout: 10000,
+            });
+            if (response.data) {
+                this.platform.logDebug(`sendUpdateStatus Resp: ${JSON.stringify(response.data)}`);
+                return response.data;
+            } else {
+                return null;
+            }
+        } catch (err) {
+            this.handleError("sendUpdateStatus", err);
+            return undefined;
+        }
+    };
+
+    /**
+     * Sends a StartDirect request to the configured URL.
+     *
+     * This function constructs a POST request to either the cloud or local URL based on the configuration.
+     * It includes necessary parameters and headers, and handles the response or any errors that occur.
+     *
+     * @async
+     * @function sendStartDirect
+     * @returns {Promise<Object|null|undefined>} The response data if successful, null if no data, or undefined if an error occurs.
+     * @throws Will handle and log any errors that occur during the request.
+     */
+    sendStartDirect = async () => {
+        try {
+            this.platform.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.config.use_cloud === true})`);
+            const response = await axios({
+                method: "post",
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/startDirect/${this.config.direct_ip}/${this.config.direct_port}/${pluginVersion}`,
+                params: {
+                    access_token: this.config.access_token,
+                },
+                headers: {
+                    "Content-Type": "application/json",
+                    isLocal: this.config.use_cloud ? "false" : "true",
+                },
+                data: {
+                    ip: this.config.direct_ip,
+                    port: this.config.direct_port,
                     version: pluginVersion,
                 },
                 timeout: 10000,
-            };
-            that.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${that.configItems.use_cloud === true})`);
-            try {
-                axios(config)
-                    .then((response) => {
-                        // that.logInfo('sendStartDirect Resp:', body);
-                        if (response.data) {
-                            this.logDebug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
-                            resolve(response.data);
-                        } else {
-                            resolve(null);
-                        }
-                    })
-                    .catch((err) => {
-                        that.handleError("sendStartDirect", err);
-                        resolve(undefined);
-                    });
-            } catch (err) {
-                resolve(err);
+            });
+            if (response.data) {
+                this.platform.logDebug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
+                return response.data;
+            } else {
+                return null;
             }
-        });
-    }
-};
+        } catch (err) {
+            this.handleError("sendStartDirect", err);
+            return undefined;
+        }
+    };
+}

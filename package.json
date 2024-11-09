@@ -3,30 +3,30 @@
         "@homebridge/plugin-ui-utils": "^1.0.3",
         "axios": "^1.7.7",
         "body-parser": "^1.20.3",
-        "chalk": "^4.1.2",
-        "compare-versions": "^4.1.4",
-        "express": "^4.21.0",
+        "chalk": "^5.3.0",
+        "compare-versions": "^6.1.1",
+        "express": "^4.21.1",
         "hap-nodejs-community-types": "0.3.1",
         "lodash": "^4.17.21",
         "os": "0.1.2",
         "portfinder-sync": "^0.0.2"
     },
     "devDependencies": {
-        "@snyk/protect": "^1.1293.1",
-        "@types/node": "^22.7.4",
+        "@snyk/protect": "^1.1294.0",
+        "@types/node": "^22.9.0",
         "cheerio": "1.0.0",
-        "eslint": "^9.11.1",
+        "eslint": "^9.14.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-prettier": "^5.2.1",
         "hap-nodejs": "^1.1.0",
-        "homebridge": "^1.8.4",
+        "homebridge": "^1.8.5",
         "lint-staged": "^15.2.10",
         "prettier": "^3.3.3"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
-        "homebridge": "^1.6.0 || ^2.0.0-beta.22",
-        "node": "^18.20.4 || <23.0.0"
+        "homebridge": "^1.8.4 || ^2.0.0-beta.23",
+        "node": "^18.20.4 || <25.0.0"
     },
     "lint-staged": {
         "*.js": [
@@ -52,11 +52,13 @@
         "test": "eslint .",
         "prettier": "prettier --write src/**/*.js",
         "freeport": "npx kill-port 8000",
-        "start": "homebridge -D -P . -U .",
+        "start": "homebridge -P . -U .",
+        "start-debug": "homebridge -D -P . -U .",
         "snyk-protect": "snyk-protect",
-        "prepare": "yarn run snyk-protect",
+        "prepare": "npm run snyk-protect",
         "hb_cleanup_win": "rmdir /Q /S accessories && rmdir /Q /S persist"
     },
+    "type": "module",
     "main": "src/index.js",
     "license": "ISC",
     "name": "homebridge-hubitat-tonesto7",
@@ -68,6 +70,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "2.10.0-beta.4",
+    "version": "2.10.0-beta.5",
     "synk": true
 }

@@ -1,9 +1,9 @@
-const pluginName = require("./Constants").pluginName,
-    chalk = require('chalk'),
-    { createLogger, format, transports } = require('winston'),
+const pluginName = require("../Constants").pluginName,
+    chalk = require("chalk"),
+    { createLogger, format, transports } = require("winston"),
     { combine } = format,
-    util = require('util'),
-    DailyRotateFile = require('winston-daily-rotate-file');
+    util = require("util"),
+    DailyRotateFile = require("winston-daily-rotate-file");
 
 // rotateFile = require('winston-daily-rotate-file');
 var DEBUG_ENABLED = false;
@@ -16,15 +16,15 @@ module.exports = class Logging {
         this.platform = platform;
         this.logConfig = config;
         this.homebridge = platform.homebridge;
-        this.logLevel = 'good';
+        this.logLevel = "good";
         let pre = prefix;
         if (this.logConfig) {
             if (this.logConfig.debug === true) {
-                this.logLevel = 'debug';
-                DEBUG_ENABLED = (this.logConfig.debug === true);
+                this.logLevel = "debug";
+                DEBUG_ENABLED = this.logConfig.debug === true;
             }
-            TIMESTAMP_ENABLED = (this.logConfig.hideTimestamp === false);
-            pre = (this.logConfig.hideNamePrefix === true) ? '' : pre;
+            TIMESTAMP_ENABLED = this.logConfig.hideTimestamp === false;
+            pre = this.logConfig.hideNamePrefix === true ? "" : pre;
         }
         this.options = {
             levels: {
@@ -34,8 +34,8 @@ module.exports = class Logging {
                 notice: 3,
                 alert: 4,
                 good: 5,
-                debug: 6
-            }
+                debug: 6,
+            },
         };
         this.prefix = pre;
     }
@@ -48,55 +48,61 @@ module.exports = class Logging {
                 colorize: true,
                 handleExceptions: true,
                 format: combine(
-                    format.timestamp({ format: 'M/D/YYYY, h:mm:ss a' }),
+                    format.timestamp({ format: "M/D/YYYY, h:mm:ss a" }),
                     format.printf((info) => {
-                        const timestamp = (TIMESTAMP_ENABLED === true) ? chalk.white("[" + info.timestamp.trim() + "] ") : '';
-                        const prefix = that.prefix ? chalk.cyan("[" + that.prefix + "] ") : '';
-                        const strArgs = (info[Symbol.for('splat')] || []).map((arg) => {
-                            return util.inspect(arg, { colors: true });
-                        }).join(' ');
-                        const message = (`${this.colorMsgLevel(info.level, info.message + ' ' + strArgs)}`).trim();
+                        const timestamp = TIMESTAMP_ENABLED === true ? chalk.white("[" + info.timestamp.trim() + "] ") : "";
+                        const prefix = that.prefix ? chalk.cyan("[" + that.prefix + "] ") : "";
+                        const strArgs = (info[Symbol.for("splat")] || [])
+                            .map((arg) => {
+                                return util.inspect(arg, { colors: true });
+                            })
+                            .join(" ");
+                        const message = `${this.colorMsgLevel(info.level, info.message + " " + strArgs)}`.trim();
                         return `${timestamp}${prefix}${this.levelColor(info.level.toUpperCase())}: ${message}`;
-                    })
-                )
-            })
+                    }),
+                ),
+            }),
         ];
         if (this.logConfig && this.logConfig.file && this.logConfig.file.enabled) {
-            trans.push(new DailyRotateFile({
-                filename: `${this.homebridge.user.storagePath()}/${pluginName}-%DATE%.log`,
-                datePattern: 'YYYY-MM-DD',
-                createSymlink: true,
-                symlinkName: `${pluginName}.log`,
-                level: this.logConfig.file.level || this.logLevel,
-                auditFile: `${this.homebridge.user.storagePath()}/${pluginName}-logaudit.json`,
-                colorize: false,
-                handleExceptions: true,
-                zippedArchive: (this.logConfig.file.compress !== false),
-                maxFiles: this.logConfig.file.daysToKeep || 5,
-                maxSize: this.logConfig.file.maxFilesize || '10m',
-                format: combine(
-                    format.timestamp({ format: 'M/D/YYYY, h:mm:ss a' }),
-                    format.printf((info) => {
-                        const strArgs = (info[Symbol.for('splat')] || []).map((arg) => {
-                            return util.inspect(arg, { colors: true });
-                        }).join(' ');
-                        return `[${info.timestamp.trim()}] [${info.level.toUpperCase()}]: ${this.removeAnsi(info.message + ' ' + strArgs)}`;
-                    })
-                )
-            }));
+            trans.push(
+                new DailyRotateFile({
+                    filename: `${this.homebridge.user.storagePath()}/${pluginName}-%DATE%.log`,
+                    datePattern: "YYYY-MM-DD",
+                    createSymlink: true,
+                    symlinkName: `${pluginName}.log`,
+                    level: this.logConfig.file.level || this.logLevel,
+                    auditFile: `${this.homebridge.user.storagePath()}/${pluginName}-logaudit.json`,
+                    colorize: false,
+                    handleExceptions: true,
+                    zippedArchive: this.logConfig.file.compress !== false,
+                    maxFiles: this.logConfig.file.daysToKeep || 5,
+                    maxSize: this.logConfig.file.maxFilesize || "10m",
+                    format: combine(
+                        format.timestamp({ format: "M/D/YYYY, h:mm:ss a" }),
+                        format.printf((info) => {
+                            const strArgs = (info[Symbol.for("splat")] || [])
+                                .map((arg) => {
+                                    return util.inspect(arg, { colors: true });
+                                })
+                                .join(" ");
+                            return `[${info.timestamp.trim()}] [${info.level.toUpperCase()}]: ${this.removeAnsi(info.message + " " + strArgs)}`;
+                        }),
+                    ),
+                }),
+            );
         }
         logger = createLogger({
             levels: this.options.levels,
             colors: this.options.colors,
             transports: trans,
-            exitOnError: false
+            exitOnError: false,
         });
         return logger;
     }
 
     removeAnsi(msg) {
         // eslint-disable-next-line no-control-regex
-        return msg.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+        return msg.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "");
     }
 
     getLogLevel(lvl) {
@@ -105,50 +111,48 @@ module.exports = class Logging {
 
     levelColor(lvl) {
         switch (lvl) {
-            case 'DEBUG':
-                if (DEBUG_ENABLED)
-                    return chalk.bold.gray(lvl);
+            case "DEBUG":
+                if (DEBUG_ENABLED) return chalk.bold.gray(lvl);
                 break;
-            case 'WARN':
-                return chalk.bold.keyword('orange')(lvl);
-            case 'ERROR':
+            case "WARN":
+                return chalk.bold.keyword("orange")(lvl);
+            case "ERROR":
                 return chalk.bold.red(lvl);
-            case 'GOOD':
+            case "GOOD":
                 return chalk.bold.green(lvl);
-            case 'INFO':
+            case "INFO":
                 return chalk.bold.whiteBright(lvl);
-            case 'ALERT':
+            case "ALERT":
                 return chalk.bold.yellow(lvl);
-            case 'NOTICE':
+            case "NOTICE":
                 return chalk.bold.blueBright(lvl);
-            case 'CUSTOM':
-                return '';
+            case "CUSTOM":
+                return "";
             default:
                 return lvl;
         }
     }
 
     colorMsgLevel(lvl, msg) {
-        if (msg.startsWith('chalk')) return msg;
+        if (msg.startsWith("chalk")) return msg;
         switch (lvl) {
-            case 'debug':
-                if (DEBUG_ENABLED)
-                    return chalk.gray(msg);
+            case "debug":
+                if (DEBUG_ENABLED) return chalk.gray(msg);
                 break;
-            case 'warn':
-                return chalk.keyword('orange').bold(msg);
-            case 'error':
+            case "warn":
+                return chalk.keyword("orange").bold(msg);
+            case "error":
                 return chalk.bold.red(msg);
-            case 'good':
+            case "good":
                 return chalk.green(msg);
-            case 'info':
+            case "info":
                 return chalk.white(msg);
-            case 'alert':
+            case "alert":
                 return chalk.yellow(msg);
-            case 'notice':
+            case "notice":
                 return chalk.blueBright(msg);
-            case 'custom':
-                return chalk `${msg}`;
+            case "custom":
+                return chalk`${msg}`;
             default:
                 return msg;
         }

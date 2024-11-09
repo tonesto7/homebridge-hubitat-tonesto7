@@ -1,61 +1,61 @@
 // HE_Platform.js
 
-const { pluginName, platformName, platformDesc, pluginVersion } = require("./libs/Constants"),
-    events = require("events"),
-    myUtils = require("./libs/MyUtils"),
-    HEClient = require("./HE_Client"),
-    HEAccessories = require("./HE_Accessories"),
-    // EveTypes = require("./types/eve_types.js"),
-    express = require("express"),
-    bodyParser = require("body-parser"),
-    chalk = require("chalk"),
-    webApp = express(),
-    fs = require("fs"),
-    _ = require("lodash"),
-    portFinderSync = require("portfinder-sync");
+import { pluginName, platformName, platformDesc, pluginVersion } from "./Constants.js";
+import events from "events";
+import ConfigManager from "./ConfigManager.js";
+import Utils from "./libs/MyUtils.js";
+import HEClient from "./HE_Client.js";
+import HEAccessories from "./HE_Accessories.js";
+import CommunityTypes from "./libs/CommunityTypes.js";
+import express from "express";
+import bodyParser from "body-parser";
+import chalk from "chalk";
+import fs from "fs";
+import _ from "lodash";
 
-var PlatformAccessory;
+const webApp = express();
 
-module.exports = class HE_Platform {
+export default class HE_Platform {
     constructor(log, config, api) {
-        this.config = config;
-        this.homebridge = api;
-        this.Service = api.hap.Service;
-        this.Characteristic = api.hap.Characteristic;
-        this.Categories = api.hap.Categories;
-        PlatformAccessory = api.platformAccessory;
-        this.uuid = api.hap.uuid;
+        this.log = log;
+        this.configManager = new ConfigManager(config, api.user);
+        this.config = this.configManager.getConfig();
+
         if (config === undefined || config === null || config.app_url_local === undefined || config.app_url_local === null || config.app_url_cloud === undefined || config.app_url_cloud === null || config.app_id === undefined || config.app_id === null) {
             log(`${platformName} Plugin is not Configured | Skipping...`);
             return;
         }
+
+        // Subscribe to configuration updates
+        this.configManager.onConfigUpdate((newConfig) => {
+            this.config = newConfig;
+        });
+
+        this.homebridge = api;
+        this.hap = api.hap;
+        this.Service = api.hap.Service;
+        this.Characteristic = api.hap.Characteristic;
+        this.Categories = api.hap.Categories;
+        this.CommunityTypes = CommunityTypes(this.Service, this.Characteristic);
+        this.PlatformAccessory = api.platformAccessory;
+        this.uuid = api.hap.uuid;
+
         this.ok2Run = true;
-        this.direct_port = this.findDirectPort();
-        this.logConfig = this.getLogConfig();
         this.appEvts = new events.EventEmitter();
-        this.log = log;
-        this.logInfo = this.logInfo.bind(this);
-        this.logGreen = this.logGreen.bind(this);
-        this.logAlert = this.logAlert.bind(this);
-        this.logNotice = this.logNotice.bind(this);
-        this.logError = this.logError.bind(this);
-        this.logInfo = this.logInfo.bind(this);
-        this.logDebug = this.logDebug.bind(this);
 
         this.logInfo(`Homebridge Version: ${this.homebridge.version}`);
         this.logInfo(`Plugin Version: ${pluginVersion}`);
-        this.polling_seconds = config.polling_seconds || 3600;
+
         this.excludedAttributes = this.config.excluded_attributes || [];
         this.excludedCapabilities = this.config.excluded_capabilities || [];
-        this.update_method = this.config.update_method || "direct";
-        this.temperature_unit = this.config.temperature_unit || "F";
-        this.local_hub_ip = undefined;
-        this.myUtils = new myUtils(this);
-        this.configItems = this.getConfigItems();
+
+        this.utils = new Utils(this);
+
         // console.log("pluginConfig: ", this.loadConfig());
         this.unknownCapabilities = [];
         this.client = new HEClient(this);
         this.HEAccessories = new HEAccessories(this);
+
         this.homebridge.on("didFinishLaunching", this.didFinishLaunching.bind(this));
         this.appEvts.emit("event:plugin_upd_status");
     }
@@ -125,100 +125,72 @@ module.exports = class HE_Platform {
         }
     }
 
-    getLogConfig() {
-        let config = this.config;
-        return {
-            debug: config.logConfig ? config.logConfig.debug === true : false,
-            showChanges: config.logConfig ? config.logConfig.showChanges === true : true,
-        };
-    }
-
-    findDirectPort() {
-        let port = this.config.direct_port || 8000;
-        if (port) port = portFinderSync.getPort(port);
-        return (this.direct_port = port);
-    }
-
-    getConfigItems() {
-        return {
-            app_url_local: this.config.app_url_local,
-            app_url_cloud: this.config.app_url_cloud,
-            app_id: this.config.app_id,
-            access_token: this.config.access_token,
-            use_cloud: this.config.use_cloud === true,
-            app_platform: this.config.app_platform,
-            polling_seconds: this.config.polling_seconds || 3600,
-            round_levels: this.config.round_levels !== false,
-            direct_port: this.direct_port,
-            direct_ip: this.config.direct_ip || this.myUtils.getIPAddress(),
-            validateTokenId: this.config.validateTokenId === true,
-            consider_fan_by_name: this.config.consider_fan_by_name !== false,
-            consider_light_by_name: this.config.consider_light_by_name === true,
-            adaptive_lighting: this.config.adaptive_lighting !== false,
-            adaptive_lighting_offset: this.config.adaptive_lighting !== false && this.config.adaptive_lighting_offset !== undefined ? this.config.adaptive_lighting_offset : undefined,
-        };
-    }
-
+    /**
+     * Logs an alert message with yellow color.
+     *
+     * @param {string} args - The message to be logged.
+     */
     logAlert(args) {
         this.log.info(chalk.yellow(args));
     }
 
+    /**
+     * Logs the provided arguments in green color.
+     *
+     * @param {string} args - The message or arguments to log.
+     */
     logGreen(args) {
         this.log.info(chalk.green(args));
     }
 
+    /**
+     * Logs a notice message with blue bright color.
+     *
+     * @param {string} args - The message to be logged.
+     */
     logNotice(args) {
         this.log.info(chalk.blueBright(args));
     }
 
+    /**
+     * Logs a warning message with a specific color and style.
+     *
+     * @param {string} args - The warning message to be logged.
+     */
     logWarn(args) {
-        this.log.warn(chalk.keyword("orange").bold(args));
+        this.log.warn(chalk.hex("#FFA500").bold(args));
     }
 
+    /**
+     * Logs an error message with bold red formatting.
+     *
+     * @param {string} args - The error message to be logged.
+     */
     logError(args) {
         this.log.error(chalk.bold.red(args));
     }
 
+    /**
+     * Logs an informational message.
+     *
+     * @param {string} args - The message to log.
+     */
     logInfo(args) {
         this.log.info(chalk.white(args));
     }
 
+    /**
+     * Logs a debug message if debugging is enabled in the log configuration.
+     *
+     * @param {string} args - The message to be logged.
+     */
     logDebug(args) {
-        if (this.logConfig.debug === true) this.log.debug(chalk.gray(args));
-    }
-
-    loadConfig() {
-        const configPath = this.homebridge.user.configPath();
-        const file = fs.readFileSync(configPath);
-        const config = JSON.parse(file);
-        return config.platforms.find((x) => x.name === this.config.name);
-    }
-
-    updateConfig(newConfig) {
-        const configPath = this.homebridge.user.configPath();
-        const file = fs.readFileSync(configPath);
-        const config = JSON.parse(file);
-        const platConfig = config.platforms.find((x) => x.name === this.config.name);
-        _.extend(platConfig, newConfig);
-        const serializedConfig = JSON.stringify(config, null, "  ");
-        fs.writeFileSync(configPath, serializedConfig, "utf8");
-        _.extend(this.config, newConfig);
-        // Update local configItems
-        // this.configItems =
-    }
-
-    updateTempUnit(unit) {
-        this.logNotice(`Temperature Unit is Now: (${unit})`);
-        this.temperature_unit = unit;
-    }
-
-    getTempUnit() {
-        return this.temperature_unit;
+        if (this.config.logConfig.debug === true) this.log.debug(chalk.gray(args));
     }
 
     didFinishLaunching() {
         this.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
-        setInterval(this.refreshDevices.bind(this), this.polling_seconds * 1000);
+        setInterval(this.refreshDevices.bind(this), this.config.polling_seconds * 1000);
         let that = this;
         this.refreshDevices("First Launch")
             .then(() => {
@@ -233,62 +205,66 @@ module.exports = class HE_Platform {
             });
     }
 
-    refreshDevices(src = undefined) {
+    async refreshDevices(src = undefined) {
         let that = this;
         let starttime = new Date();
-        return new Promise((resolve, reject) => {
-            try {
-                that.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
-                this.client
-                    .getDevices()
-                    .catch((err) => {
-                        that.logError("getDevices Exception: " + err);
-                        reject(err.message);
-                    })
-                    .then((resp) => {
-                        if (resp && resp.location) {
-                            that.updateTempUnit(resp.location.temperature_scale);
-                            if (resp.location.hubIP) {
-                                that.local_hub_ip = resp.location.hubIP;
-                                that.configItems.use_cloud = resp.location.use_cloud === true;
-                                that.client.updateGlobals(that.local_hub_ip, that.configItems.use_cloud);
-                            }
-                        }
-                        if (resp && resp.deviceList && resp.deviceList instanceof Array) {
-                            // that.logDebug("Received All Device Data");
-                            const toCreate = this.HEAccessories.diffAdd(resp.deviceList);
-                            const toUpdate = this.HEAccessories.intersection(resp.deviceList);
-                            const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
-                            that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
-                            that.log.info(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
-                            that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
 
-                            toRemove.forEach((accessory) => this.removeAccessory(accessory));
-                            toUpdate.forEach((device) => this.updateDevice(device));
-                            toCreate.forEach((device) => this.addDevice(device));
-                        }
-                        that.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
-                        that.logNotice(`Unknown Capabilities: ${JSON.stringify(that.unknownCapabilities)}`);
-                        that.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.HEAccessories.getAllAccessoriesFromCache()).length})`);
-                        if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
-                        resolve(true);
-                    });
-            } catch (ex) {
-                this.logError("refreshDevices Error: ", ex);
-                resolve(false);
+        try {
+            that.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
+            const resp = await this.client.getDevices();
+            if (!resp || !resp.deviceList || !Array.isArray(resp.deviceList)) {
+                throw new Error("Invalid device list received");
             }
-        });
+            if (resp && resp.location) {
+                this.configManager.updateTempUnit(resp.location.temperature_scale);
+                if (resp.location.hubIP) {
+                    this.configManager.updateConfig({ direct_ip: resp.location.hubIP, use_cloud: resp.location.use_cloud === true });
+                }
+            }
+
+            // that.logDebug("Received All Device Data");
+            const toCreate = this.HEAccessories.diffAdd(resp.deviceList);
+            const toUpdate = this.HEAccessories.intersection(resp.deviceList);
+            const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
+            that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
+            that.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
+            that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
+
+            // Remove devices first
+            for (const accessory of toRemove) {
+                await this.removeAccessory(accessory);
+            }
+
+            // Update existing devices
+            for (const device of toUpdate) {
+                await this.updateDevice(device);
+            }
+
+            // Add new devices
+            for (const device of toCreate) {
+                await this.addDevice(device);
+            }
+
+            this.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
+            this.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
+            this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.HEAccessories.getAllAccessoriesFromCache()).length})`);
+            if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
+            return true;
+        } catch (ex) {
+            this.logError(`didFinishLaunching | refreshDevices Exception: ${ex.message}`, ex.stack);
+            throw ex;
+        }
     }
 
     getNewAccessory(device, UUID) {
-        let accessory = new PlatformAccessory(device.name, UUID);
+        let accessory = new this.PlatformAccessory(device.name, UUID);
         accessory.context.deviceData = device;
         this.HEAccessories.initializeAccessory(accessory);
         this.sanitizeAndUpdateAccessoryName(accessory); // Added name sanitization
         return accessory;
     }
 
-    addDevice(device) {
+    async addDevice(device) {
         let accessory;
         const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
@@ -299,7 +275,7 @@ module.exports = class HE_Platform {
         this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
     }
 
-    updateDevice(device) {
+    async updateDevice(device) {
         let cachedAccessory = this.HEAccessories.getAccessoryFromCache(device);
         device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
         cachedAccessory.context.deviceData = device;
@@ -309,7 +285,7 @@ module.exports = class HE_Platform {
         this.HEAccessories.addAccessoryToCache(cachedAccessory);
     }
 
-    removeAccessory(accessory) {
+    async removeAccessory(accessory) {
         if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
             this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
             this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
@@ -319,9 +295,9 @@ module.exports = class HE_Platform {
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
         this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
-        let cachedAccessory = this.HEAccessories.initializeAccessory(accessory, true);
-        this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
-        this.HEAccessories.addAccessoryToCache(cachedAccessory);
+        // let cachedAccessory = this.HEAccessories.initializeAccessory(accessory, true);
+        // this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
+        this.HEAccessories.addAccessoryToCache(accessory);
     }
 
     processIncrementalUpdate(data, that) {
@@ -334,10 +310,10 @@ module.exports = class HE_Platform {
     }
 
     isValidRequestor(access_token, app_id, src) {
-        if (this.configItems.validateTokenId !== true) {
+        if (this.config.validateTokenId !== true) {
             return true;
         }
-        if (app_id && access_token && this.getConfigItems().app_id && this.getConfigItems().access_token && access_token === this.getConfigItems().access_token && parseInt(app_id) === parseInt(this.getConfigItems().app_id)) return true;
+        if (app_id && access_token && this.config.app_id && this.config.access_token && access_token === this.config.access_token && parseInt(app_id) === parseInt(this.config.app_id)) return true;
         this.logError(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
         return false;
     }
@@ -347,12 +323,13 @@ module.exports = class HE_Platform {
         // Get the IP address that we will send to the Hubitat App. This can be overridden in the config file.
         return new Promise((resolve) => {
             try {
-                let ip = that.configItems.direct_ip || that.myUtils.getIPAddress();
+                const ip = this.configManager.getConfigValue("direct_ip");
+                const port = this.configManager.getConfigValue("direct_port");
                 that.logInfo("WebServer Initiated...");
 
                 // Start the HTTP Server
-                webApp.listen(that.configItems.direct_port, () => {
-                    that.logInfo(`Direct Connect Active | Listening at ${ip}:${that.configItems.direct_port}`);
+                webApp.listen(port, () => {
+                    that.logInfo(`Direct Connect Active | Listening at ${ip}:${port}`);
                 });
 
                 webApp.use(
@@ -427,7 +404,7 @@ module.exports = class HE_Platform {
                                     platform_name: platformName,
                                     platform_desc: platformDesc,
                                     version: pluginVersion,
-                                    config: this.configItems,
+                                    config: this.configManager.getConfig(),
                                 },
                             },
                             null,
@@ -478,22 +455,25 @@ module.exports = class HE_Platform {
                         // if (body && Object.keys(body).length > 0) {
                         //     Object.keys(body).forEach((key) => {});
                         // }
-                        if (body.use_cloud && that.configItems.use_cloud !== body.use_cloud) {
-                            sendUpd = true;
-                            that.logInfo(`${platformName} Updated Use Cloud Preference | Before: ${that.configItems.use_cloud} | Now: ${body.use_cloud}`);
-                            that.configItems.use_cloud = body.use_cloud;
+                        if (body.use_cloud && this.config.use_cloud !== body.use_cloud) {
+                            this.logInfo(`${platformName} Updated Use Cloud Preference | Before: ${this.config.use_cloud} | Now: ${body.use_cloud}`);
+                            this.configManager.updateConfig({ use_cloud: body.use_cloud === true });
                         }
-                        if (body.validateTokenId && that.configItems.validateTokenId !== body.validateTokenId) {
-                            that.logInfo(`${platformName} Updated Validate Token & Id Preference | Before: ${that.configItems.validateTokenId} | Now: ${body.validateTokenId}`);
-                            that.configItems.validateTokenId = body.validateTokenId;
+                        if (body.validateTokenId && this.config.validateTokenId !== body.validateTokenId) {
+                            this.logInfo(`${platformName} Updated Validate Token & Id Preference | Before: ${this.config.validateTokenId} | Now: ${body.validateTokenId}`);
+                            this.configManager.updateConfig({ validateTokenId: body.validateTokenId === true });
                         }
-                        if (body.local_hub_ip && that.local_hub_ip !== body.local_hub_ip) {
-                            sendUpd = true;
-                            that.logInfo(`${platformName} Updated Hub IP Preference | Before: ${that.local_hub_ip} | Now: ${body.local_hub_ip}`);
-                            that.local_hub_ip = body.local_hub_ip;
+                        if (body.local_hub_ip && this.config.direct_ip !== body.local_hub_ip) {
+                            this.logInfo(`${platformName} Updated Hub IP Preference | Before: ${this.config.direct_ip} | Now: ${body.local_hub_ip}`);
+                            this.configManager.updateConfig({ direct_ip: body.local_hub_ip });
                         }
-                        if (sendUpd) {
-                            that.client.updateGlobals(that.local_hub_ip, that.configItems.use_cloud);
+                        if (body.consider_fan_by_name && this.config.consider_fan_by_name !== body.consider_fan_by_name) {
+                            this.logInfo(`${platformName} Updated Consider Fan By Name Preference | Before: ${this.config.consider_fan_by_name} | Now: ${body.consider_fan_by_name}`);
+                            this.configManager.updateConfig({ consider_fan_by_name: body.consider_fan_by_name === true });
+                        }
+                        if (body.consider_light_by_name && this.config.consider_light_by_name !== body.consider_light_by_name) {
+                            this.logInfo(`${platformName} Updated Consider Light By Name Preference | Before: ${this.config.consider_light_by_name} | Now: ${body.consider_light_by_name}`);
+                            this.configManager.updateConfig({ consider_light_by_name: body.consider_light_by_name === true });
                         }
                         res.send({
                             status: "OK",
@@ -518,11 +498,11 @@ module.exports = class HE_Platform {
                                 date: body.change_date,
                             };
                             that.HEAccessories.processDeviceAttributeUpdate(newChange).then((resp) => {
-                                if (that.logConfig.showChanges) {
-                                    that.logInfo(chalk`[{keyword('orange') Device Event}]: ({blueBright ${body.change_name}}) [{yellow.bold ${body.change_attribute ? body.change_attribute.toUpperCase() : "unknown"}}] is {keyword('pink') ${body.change_value}}`);
+                                if (that.config.logConfig.showChanges) {
+                                    this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: (${chalk.blueBright(body.change_name)}) [${chalk.yellow.bold(body.change_attribute ? body.change_attribute.toUpperCase() : "unknown")}] is ${chalk.green(body.change_value)}`);
                                 }
                                 res.send({
-                                    evtSource: `Homebridge_${platformName}_${this.configItems.app_id}`,
+                                    evtSource: `Homebridge_${platformName}_${this.config.app_id}`,
                                     evtType: "attrUpdStatus",
                                     evtDevice: body.change_name,
                                     evtAttr: body.change_attribute,
@@ -531,7 +511,7 @@ module.exports = class HE_Platform {
                             });
                         } else {
                             res.send({
-                                evtSource: `Homebridge_${platformName}_${this.configItems.app_id}`,
+                                evtSource: `Homebridge_${platformName}_${this.config.app_id}`,
                                 evtType: "attrUpdStatus",
                                 evtDevice: body.change_name,
                                 evtAttr: body.change_attribute,
@@ -555,4 +535,4 @@ module.exports = class HE_Platform {
             }
         });
     }
-};
+}

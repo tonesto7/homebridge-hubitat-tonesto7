@@ -1,0 +1,51 @@
+Objective and Scope:
+  - I have a complex codebase that needs refactoring. Here's what I'd like your help with:
+
+Refactoring Goals:
+
+1. Code Organization:
+   - Split device types from HE_DeviceCharacteristics.js into individual files
+   - Place new the device type files in src/devices_types/ folder
+   - Create a base class for all device types to extend
+   - We don't need to create a complicated folder structure for this plugin so just use a flat folder structure with the exception of the devices_types folder
+   - the devices_types folder should have a file for each device type in a flat folder structure
+   
+
+2. Create a HubitatAccessory Class Implementation:
+   - Should contain common functions across device types:
+     - handle all interactions the PlatformAccessory object called accessory
+     - Accessory initialization
+     - AccessoryInfo assignment 
+     - getOrAddService
+     - hasCapability
+     - hasService
+     - getCharacteristic
+     - any Other shared utility functions necessary
+
+3. Device Type Handling:
+   - Move service/characteristic logic to individual device files
+   - use the device type id as the file name 
+   - Properly handle special services:
+     - Buttons
+     - Lights (including adaptive lighting)
+   - Maintain service/characteristic cleanup logic.
+   - handle each device type's specific logic in their respective files like the transforms, adaptive lighting, etc.
+
+4. File Cleanup:
+   - Eliminate HE_DeviceCharacteristics.js file
+   - Eliminate Transforms file
+
+5. Function Cleanup:
+   - Eliminate manageGetCharacteristic
+   - Eliminate manageGetSetCharacteristic
+
+
+# 5. Resource usage optimizations:
+#   - optimize memory and cpu resource consumption 
+#    - Eliminate the use of global variables
+#    - Eliminate the use of the Utils class
+
+Output Expectations:
+  - Step 1: Let's create a plan and outline the steps we need to take to refactor the code.
+  - Step 2: Please provide the refactored code for the device types and any other necessary changes (one file at a time to avoid going over the response limit).
+

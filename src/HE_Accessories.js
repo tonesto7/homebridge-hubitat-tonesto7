@@ -1,42 +1,41 @@
 // HE_Accessories.js
 
-const knownCapabilities = require("./libs/Constants").knownCapabilities,
-    pluginVersion = require("./libs/Constants").pluginVersion,
-    _ = require("lodash"),
-    ServiceTypes = require("./HE_ServiceTypes"),
-    Transforms = require("./HE_Transforms"),
-    DeviceTypes = require("./HE_DeviceCharacteristics");
-var Service, Characteristic, Catagories, appEvts;
+import { knownCapabilities, pluginVersion } from "./Constants.js";
+// import _ from "lodash";
+import ServiceTypes from "./HE_ServiceTypes.js";
+import Transforms from "./HE_Transforms.js";
+import DeviceTypes from "./HE_DeviceCharacteristics.js";
 
-module.exports = class HE_Accessories {
+let appEvts;
+
+export default class HE_Accessories {
     constructor(platform) {
-        this.mainPlatform = platform;
+        this.platform = platform;
         appEvts = platform.appEvts;
-        this.logConfig = platform.logConfig;
-        this.configItems = platform.getConfigItems();
+        this.config = platform.configManager.getConfig();
+
+        // Subscribe to configuration updates
+        this.platform.configManager.onConfigUpdate((newConfig) => {
+            // console.log("Client Config Update:", newConfig);
+            this.config = newConfig;
+        });
+
         this.homebridge = platform.homebridge;
-        this.myUtils = platform.myUtils;
+        this.utils = platform.utils;
         this.log = platform.log;
-        this.logInfo = platform.logInfo;
-        this.logAlert = platform.logAlert;
-        this.logGreen = platform.logGreen;
-        this.logNotice = platform.logNotice;
-        this.logDebug = platform.logDebug;
-        this.logError = platform.logError;
-        this.logWarn = platform.logWarn;
         this.hap = platform.hap;
         this.uuid = platform.uuid;
-        this._ = _;
-        Service = platform.Service;
-        Characteristic = platform.Characteristic;
-        Catagories = platform.Catagories;
-        this.CommunityTypes = require("./libs/CommunityTypes")(Service, Characteristic);
+
+        this.Service = platform.Service;
+        this.Characteristic = platform.Characteristic;
+        this.Catagories = platform.Catagories;
+        this.CommunityTypes = platform.CommunityTypes;
         this.client = platform.client;
         this.comparator = this.comparator.bind(this);
-        this.transforms = new Transforms(this, Characteristic);
-        this.serviceTypes = new ServiceTypes(this, Service);
-        this.device_types = new DeviceTypes(this, Service, Characteristic);
-        this._platformAccessories = {};
+        this.transforms = new Transforms(this);
+        this.serviceTypes = new ServiceTypes(this);
+        this.device_types = new DeviceTypes(this);
+        this._platformAccessories = new Map();
         this._buttonMap = {};
         this._attributeLookup = {};
     }
@@ -47,12 +46,12 @@ module.exports = class HE_Accessories {
         if (!fromCache) {
             accessory.context.deviceData.excludedCapabilities.forEach((cap) => {
                 if (cap !== undefined) {
-                    this.logDebug(`Removing capability: ${cap} from Device: ${accessory.name}`);
+                    this.platform.logDebug(`Removing capability: ${cap} from Device: ${accessory.name}`);
                     delete accessory.context.deviceData.capabilities[cap];
                 }
             });
         } else {
-            this.logDebug(`Initializing Cached Device ${accessory.name} | ${accessory.deviceid}`);
+            this.platform.logDebug(`Initializing Cached Device ${accessory.name} | ${accessory.deviceid}`);
         }
         try {
             accessory.commandTimers = {};
@@ -60,7 +59,6 @@ module.exports = class HE_Accessories {
             accessory.context.uuid = accessory.UUID || this.uuid.generate(`hubitat_v2_${accessory.deviceid}`);
             accessory.log = this.log;
             accessory.homebridgeApi = this.homebridge;
-            accessory.getPlatformConfig = this.mainPlatform.getConfigItems();
             accessory.getOrAddService = this.getOrAddService.bind(accessory);
             accessory.getOrAddServiceByName = this.getOrAddServiceByName.bind(accessory);
             accessory.getOrAddCharacteristic = this.getOrAddCharacteristic.bind(accessory);
@@ -77,7 +75,6 @@ module.exports = class HE_Accessories {
             accessory.manageGetSetCharacteristic = this.device_types.manageGetSetCharacteristic.bind(accessory);
             accessory.setServiceLabelIndex = this.setServiceLabelIndex.bind(accessory);
             accessory.sendCommand = this.sendCommand.bind(accessory);
-            accessory.platformConfigItems = this.configItems;
             // console.log("accessory:", accessory);
             // Adaptive Lighting Controller Functions
             accessory.isAdaptiveLightingSupported = (this.homebridge.version >= 2.7 && this.homebridge.versionGreaterOrEqual("1.3.0-beta.19")) || !!this.homebridge.hap.AdaptiveLightingController; // support check on Hoobs
@@ -89,7 +86,7 @@ module.exports = class HE_Accessories {
             accessory.disableAdaptiveLighting = this.disableAdaptiveLighting.bind(accessory);
             return this.configureCharacteristics(accessory);
         } catch (err) {
-            this.logError(`initializeAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ` + err);
+            this.platform.logError(`initializeAccessory (fromCache: ${fromCache}) | Name: ${accessory.name} | Error: ` + err);
             console.error(err);
             return accessory;
         }
@@ -97,7 +94,7 @@ module.exports = class HE_Accessories {
 
     configureCharacteristics(accessory) {
         for (let index in accessory.context.deviceData.capabilities) {
-            if (knownCapabilities.indexOf(index) === -1 && this.mainPlatform.unknownCapabilities.indexOf(index) === -1) this.mainPlatform.unknownCapabilities.push(index);
+            if (knownCapabilities.indexOf(index) === -1 && this.platform.unknownCapabilities.indexOf(index) === -1) this.platform.unknownCapabilities.push(index);
         }
         accessory.context.deviceGroups = [];
         accessory.servicesToKeep = [];
@@ -105,19 +102,19 @@ module.exports = class HE_Accessories {
         accessory.context.lastUpdate = new Date();
 
         let accessoryInformation = accessory
-            .getOrAddService(Service.AccessoryInformation)
-            .setCharacteristic(Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
-            .setCharacteristic(Characteristic.Manufacturer, accessory.context.deviceData.manufacturerName)
-            .setCharacteristic(Characteristic.Model, accessory.context.deviceData.modelName ? `${this.myUtils.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
-            .setCharacteristic(Characteristic.Name, accessory.name)
+            .getOrAddService(this.Service.AccessoryInformation)
+            .setCharacteristic(this.Characteristic.FirmwareRevision, accessory.context.deviceData.firmwareVersion)
+            .setCharacteristic(this.Characteristic.Manufacturer, accessory.context.deviceData.manufacturerName)
+            .setCharacteristic(this.Characteristic.Model, accessory.context.deviceData.modelName ? `${this.utils.toTitleCase(accessory.context.deviceData.modelName)}` : "Unknown")
+            .setCharacteristic(this.Characteristic.Name, accessory.name)
 
-            .setCharacteristic(Characteristic.HardwareRevision, pluginVersion)
-            .setCharacteristic(Characteristic.SerialNumber, "he_deviceid_" + accessory.context.deviceData.deviceid);
-        accessory.servicesToKeep.push(Service.AccessoryInformation.UUID);
+            .setCharacteristic(this.Characteristic.HardwareRevision, pluginVersion)
+            .setCharacteristic(this.Characteristic.SerialNumber, "he_deviceid_" + accessory.context.deviceData.deviceid);
+        accessory.servicesToKeep.push(this.Service.AccessoryInformation.UUID);
 
         if (!accessoryInformation.listeners("identify")) {
             accessoryInformation.on("identify", function (paired, callback) {
-                this.logInfo(accessory.displayName + " - identify");
+                this.platform.logInfo(accessory.displayName + " - identify");
                 callback();
             });
         }
@@ -126,7 +123,7 @@ module.exports = class HE_Accessories {
         if (svcTypes) {
             svcTypes.forEach((svc) => {
                 if (svc.name && svc.type) {
-                    this.logDebug(`${accessory.name} | ${svc.name}`);
+                    this.platform.logDebug(`${accessory.name} | ${svc.name}`);
                     accessory.servicesToKeep.push(svc.type.UUID);
                     this.device_types[svc.name](accessory, svc.type);
                 }
@@ -164,7 +161,7 @@ module.exports = class HE_Accessories {
                         if (val === null || val === undefined) {
                             console.log("change:", change);
                             console.log("char: ", char.props);
-                            this.logWarn(`[${accessory.context.deviceData.name}] Attribute (${change.attribute}) | OldValue: ${currentVal} | NewValueIn: [${change.value}] | NewValueOut: [${val}] | Characteristic: (${char.displayName}`);
+                            this.platform.logWarn(`[${accessory.context.deviceData.name}] Attribute (${change.attribute}) | OldValue: ${currentVal} | NewValueIn: [${change.value}] | NewValueOut: [${val}] | Characteristic: (${char.displayName}`);
                         } else {
                             char.updateValue(val);
                         }
@@ -222,7 +219,7 @@ module.exports = class HE_Accessories {
                     d = d2 || 0;
                 }
             }
-            acc.commandTimers[id] = _.debounce(
+            acc.commandTimers[id] = debounce(
                 async () => {
                     acc.commandTimersTS[id] = tsNow;
                     appEvts.emit("event:device_command", dev, cmd, vals);
@@ -239,15 +236,15 @@ module.exports = class HE_Accessories {
     }
 
     log_change(attr, char, acc, chgObj) {
-        if (this.logConfig.debug === true) this.logNotice(`[CHARACTERISTIC (${char.name}) CHANGE] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | NewValue: (${chgObj.newValue}) | OldValue: (${chgObj.oldValue})`);
+        if (this.config.logConfig.debug === true) this.platform.logNotice(`[CHARACTERISTIC (${char.name}) CHANGE] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | NewValue: (${chgObj.newValue}) | OldValue: (${chgObj.oldValue})`);
     }
 
     log_get(attr, char, acc, val) {
-        if (this.logConfig.debug === true) this.logGreen(`[CHARACTERISTIC (${char.name}) GET] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | Value: (${val})`);
+        if (this.config.logConfig.debug === true) this.platform.logGreen(`[CHARACTERISTIC (${char.name}) GET] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | Value: (${val})`);
     }
 
     log_set(attr, char, acc, val) {
-        if (this.logConfig.debug === true) this.logWarn(`[CHARACTERISTIC (${char.name}) SET] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | Value: (${val})`);
+        if (this.config.logConfig.debug === true) this.platform.logWarn(`[CHARACTERISTIC (${char.name}) SET] ${attr} (${acc.displayName}) | LastUpdate: (${acc.context.lastUpdate}) | Value: (${val})`);
     }
 
     hasCapability(obj) {
@@ -319,7 +316,7 @@ module.exports = class HE_Accessories {
     }
 
     setServiceLabelIndex(service, index) {
-        service.setCharacteristic(Characteristic.ServiceLabelIndex, index);
+        service.setCharacteristic(this.Characteristic.ServiceLabelIndex, index);
     }
 
     getOrAddCharacteristic(service, characteristic) {
@@ -337,7 +334,7 @@ module.exports = class HE_Accessories {
         if (Object.keys(svcs2rmv).length) {
             svcs2rmv.forEach((s) => {
                 acc.removeService(s);
-                this.logInfo("Removing Unused Service: " + s.UUID);
+                this.platform.logInfo("Removing Unused Service: " + s.UUID);
             });
         }
         return acc;
@@ -369,7 +366,7 @@ module.exports = class HE_Accessories {
     getDeviceAttributeValueFromCache(device, attr) {
         const key = this.getAccessoryId(device);
         let result = this._platformAccessories[key] ? this._platformAccessories[key].context.deviceData.attributes[attr] : undefined;
-        this.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
+        this.platform.logInfo(`Attribute (${attr}) Value From Cache: [${result}]`);
         return result;
     }
 
@@ -380,7 +377,7 @@ module.exports = class HE_Accessories {
 
     getAccessoryFromCache(device) {
         const key = this.getAccessoryId(device);
-        return this._platformAccessories[key];
+        return this._platformAccessories.get(key);
     }
 
     getAllAccessoriesFromCache() {
@@ -388,44 +385,46 @@ module.exports = class HE_Accessories {
     }
 
     clearAccessoryCache() {
-        this.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
-        this._platformAccessories = {};
+        this.platform.logAlert("CLEARING ACCESSORY CACHE AND FORCING DEVICE RELOAD");
+        this._platformAccessories = new Map();
     }
 
     addAccessoryToCache(accessory) {
         const key = this.getAccessoryId(accessory);
-        this._platformAccessories[key] = accessory;
+        this._platformAccessories.set(key, accessory);
         return true;
     }
 
     removeAccessoryFromCache(accessory) {
         const key = this.getAccessoryId(accessory);
-        const _accessory = this._platformAccessories[key];
-        delete this._platformAccessories[key];
+        const _accessory = this._platformAccessories.get(key);
+        this._platformAccessories.delete(key);
         return _accessory;
     }
 
     forEach(fn) {
-        return _.forEach(this._platformAccessories, fn);
+        return _forEach(this._platformAccessories, fn);
     }
 
     intersection(devices) {
-        const accessories = _.values(this._platformAccessories);
-        return _.intersectionWith(devices, accessories, this.comparator);
+        const accessories = Array.from(this._platformAccessories.values());
+        return devices.filter((device) => accessories.some((accessory) => this.comparator(device, accessory)));
     }
 
     diffAdd(devices) {
-        const accessories = _.values(this._platformAccessories);
-        return _.differenceWith(devices, accessories, this.comparator);
+        const accessories = Array.from(this._platformAccessories.values());
+        return devices.filter((device) => !accessories.some((accessory) => this.comparator(device, accessory)));
     }
 
     diffRemove(devices) {
-        const accessories = _.values(this._platformAccessories);
-        return _.differenceWith(accessories, devices, this.comparator);
+        const accessories = Array.from(this._platformAccessories.values());
+        return accessories.filter((accessory) => !devices.some((device) => this.comparator(accessory, device)));
     }
 
     comparator(accessory1, accessory2) {
-        return this.getAccessoryId(accessory1) === this.getAccessoryId(accessory2);
+        const id1 = accessory1.deviceid || accessory1.context.deviceData.deviceid;
+        const id2 = accessory2.deviceid || accessory2.context.deviceData.deviceid;
+        return id1 === id2;
     }
 
     clearAndSetTimeout(timeoutReference, fn, timeoutMs) {
@@ -435,29 +434,31 @@ module.exports = class HE_Accessories {
 
     // Adaptive Lighting Functions
     addAdaptiveLightingController(_accessory, _service) {
+        return;
         const svc = _accessory.getOrAddService(_service);
-        const offset = this.getPlatformConfig.adaptive_lighting_offset || 0;
+        console.log(this.config);
+        const offset = this.config.adaptive_lighting_offset || 0;
         const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
         if (svc) {
             this.adaptiveLightingController = new this.homebridge.hap.AdaptiveLightingController(svc, { controllerMode: controlMode, customTemperatureAdjustment: offset });
             this.adaptiveLightingController.on("update", (evt) => {
-                this.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
+                this.platform.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
             });
             this.adaptiveLightingController.on("disable", (evt) => {
-                this.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
+                this.platform.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
             });
 
             // Configure the Adaptive Lighting Controller with the accessory and HAP service
             this.configureController(this.adaptiveLightingController);
-            this.log.info(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
+            this.platform.logInfo(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${this.context.deviceData.name}]!!!`);
         } else {
-            this.log.error("Unable to add adaptiveLightingController because the required service parameter was missing...");
+            this.platform.logError("Unable to add adaptiveLightingController because the required service parameter was missing...");
         }
     }
 
     removeAdaptiveLightingController() {
         if (this.adaptiveLightingController) {
-            this.log.info(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
+            this.platform.logInfo(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${this.context.deviceData.name}]!!!`);
             this.removeController(this.adaptiveLightingController);
             delete this["adaptiveLightingController"];
         }
@@ -490,4 +491,4 @@ module.exports = class HE_Accessories {
     disableAdaptiveLighting() {
         if (this.adaptiveLightingController) this.adaptiveLightingController.disableAdaptiveLighting();
     }
-};
+}
