@@ -17,7 +17,7 @@ import _ from "lodash";
 
 const webApp = express();
 
-export default class HE_Platform {
+export default class HubitatPlatform {
     constructor(log, config, api) {
         this.log = log;
         this.configManager = new ConfigManager(config, api.user);

@@ -5,6 +5,8 @@ import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
 export default class Light extends HubitatPlatformAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
+        this.platform = platform;
+        this.config = platform.config;
         this.lightService = null;
         this.adaptiveLightingController = null;
     }
@@ -121,7 +123,7 @@ export default class Light extends HubitatPlatformAccessory {
 
     // Adaptive Lighting
     async configureAdaptiveLighting() {
-        const canUseAL = this.platform.config.adaptive_lighting !== false && this.hasAttribute("level") && this.hasAttribute("colorTemperature") && !this.hasDeviceFlag("light_no_al");
+        const canUseAL = this.config.adaptive_lighting !== false && this.hasAttribute("level") && this.hasAttribute("colorTemperature") && !this.hasDeviceFlag("light_no_al");
 
         if (canUseAL && !this.adaptiveLightingController) {
             await this.enableAdaptiveLighting();
@@ -131,7 +133,7 @@ export default class Light extends HubitatPlatformAccessory {
     }
 
     async enableAdaptiveLighting() {
-        const offset = this.platform.config.adaptive_lighting_offset || 0;
+        const offset = this.config.adaptive_lighting_offset || 0;
         this.adaptiveLightingController = new this.platform.api.hap.AdaptiveLightingController(this.lightService, {
             controllerMode: this.platform.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
             customTemperatureAdjustment: offset,
@@ -157,7 +159,7 @@ export default class Light extends HubitatPlatformAccessory {
 
     // Value Transformations
     transformBrightnessFromDevice(value) {
-        if (this.platform.config.round_levels) {
+        if (this.config.round_levels) {
             if (value < 5) return 0;
             if (value > 95) return 100;
         }

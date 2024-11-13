@@ -5,7 +5,7 @@ import axios from "axios";
 
 export default class HubitatClient {
     constructor(platform) {
-        // Store only what we need instead of the entire platform
+        this.platform = platform;
         this.log = platform.log;
         this.logDebug = platform.logDebug;
 
@@ -90,7 +90,7 @@ export default class HubitatClient {
     sendDeviceCommand = async (devData, cmd, vals) => {
         // console.log("sendDeviceCommand", devData, cmd, vals);
         try {
-            this.log.notice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
+            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
             const response = await axios({
                 method: "post",
                 url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/${devData.deviceid}/command/${cmd}`,
@@ -117,7 +117,7 @@ export default class HubitatClient {
     sendUpdateStatus = async () => {
         try {
             const res = await this.platform.checkVersion();
-            this.log.notice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
+            this.platform.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
             const response = await axios({
                 method: "post",
                 url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/pluginStatus`,

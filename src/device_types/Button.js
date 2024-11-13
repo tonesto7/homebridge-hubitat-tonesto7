@@ -5,6 +5,7 @@ import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
 export default class Button extends HubitatPlatformAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
+        this.platform = platform;
         this.buttonServices = new Map(); // Track button services by number
     }
 

@@ -7,7 +7,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
         super(platform, accessory);
         this.thermostatService = null;
         this.fanService = null;
-        this.tempUnit = this.platform.configManager.getTempUnit();
+        this.tempUnit = platform.configManager.getTempUnit();
     }
 
     async configureServices() {

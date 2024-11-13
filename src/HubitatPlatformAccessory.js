@@ -6,6 +6,8 @@ export default class HubitatPlatformAccessory {
             throw new Error("Platform object with required properties not provided to HubitatPlatformAccessory");
         }
 
+        // TODO: Fix the name sanitizer
+
         this.log = platform.log;
         this.client = platform.client;
         this.Characteristic = platform.Characteristic;
@@ -65,8 +67,9 @@ export default class HubitatPlatformAccessory {
             getHandler: () => this.deviceData.firmwareVersion || "Unknown",
         });
 
+        // Sanitize the name
         this.getOrAddCharacteristic(infoService, this.Characteristic.Name, {
-            getHandler: () => this.sanitizeName(this.accessory.displayName),
+            getHandler: () => this.deviceData.name,
         });
     }
 
@@ -248,7 +251,7 @@ export default class HubitatPlatformAccessory {
     async executeCommand(command, value = null) {
         try {
             const payload = value ? { value1: value } : undefined;
-            return await this.platform.client.sendDeviceCommand(this.deviceData.deviceid, command, payload);
+            return await this.client.sendDeviceCommand(this.deviceData.deviceid, command, payload);
         } catch (error) {
             this.log.error(`Error executing command ${command} for ${this.accessory.displayName}:`, error);
             throw error;
