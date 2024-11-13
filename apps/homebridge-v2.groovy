@@ -413,6 +413,7 @@ private String getSelectedDeviceDescs() {
             if (conf || tl.size()) { conf = true }
         }
     }
+
     String desc; desc = sNULL
     Integer devCnt = getDeviceCnt()
     if (conf) {
@@ -440,9 +441,9 @@ private String getSelectedDeviceDescs() {
         desc += spanSmBld('Devices Selected:')  + spanSmBr(" (${devCnt})")
         desc += (devCnt > 149) ? lineBr() + spanSmBld('NOTICE: ', sCLRRED) + spanSmBr('Homebridge only allows 149 Devices per HomeKit Bridge!!!', sCLRRED) : sBLANK
         desc += inputFooter(sTTM)
-        }
-    return desc
     }
+    return desc
+}
 
 private void resetCapFilters() {
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') }.collect { (String)it.key }
@@ -529,7 +530,7 @@ private void resetAttrFilters() {
 }
 
 private Boolean deviceFiltersSelected() {
-    return state.deviceFiltersMap.keySet()?.size() > 0 ? true : false
+    return state.deviceFiltersMap?.keySet()?.size() > 0 ? true : false
 }
 
 private Boolean attrFiltersSelected() {
@@ -992,16 +993,18 @@ def attrFilterPage() {
 def donationPage() {
     return dynamicPage(name: 'donationPage', title: sBLANK, nextPage: 'mainPage', install: false, uninstall: false) {
         appCssOverrideUI()
-        section(sBLANK) {
+        section(sectHead('Donations')) {
             String str; str = sBLANK
-            str += spanSmBldBr('Hello User,') + spanSmBr("Please forgive the interuption but it's been 30 days since you installed/updated this App and I wanted to present you with this one time reminder that donations are accepted (We do not require them).")
-            str += spanSmBr("If you have been enjoying the software and devices please remember that we have spent thousand's of hours of our spare time working on features and stability for those applications and devices.")
-            str += spanSmBr('If you have already donated, thank you very much for your support!')
-            str += spanSmBr('If you are just not interested in donating please ignore this message')
-            str += spanSm('Thanks again for using Homebridge Hubitat')
-            paragraph divSm(str, sCLRRED)
+            str += spanSmBldBr('Hello,') + spanSmBr("It's been 30 days since you installed or updated Homebridge Hubitat. We wanted to take a moment to remind you that while donations are completely optional, they are greatly appreciated.")
+            str += spanSmBr("If you've found this integration valuable, please consider that thousands of hours of volunteer development time have gone into making it reliable and feature-rich.")
+            str += spanSmBr('For those who have already donated - thank you for your generous support!')
+            str += spanSmBr('If you prefer not to donate, no worries! Please continue enjoying Homebridge Hubitat.')
+            str += spanSm('Thank you for being part of our community.')
+            paragraph divSm(str) + lineBr()
+
+            paragraph spanSm("<div style='text-align:left;'><b>Donate via QR Code</b><br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target='_blank'><img width='120' height='120' src='https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png'></a></div>", sCLRORG)
             input 'sentDonation', sBOOL, title: inTS('Already Donated?'), defaultValue: false, submitOnChange: true
-            href url: textDonateLink(), style: sEXTNRL, required: false, title: inTS('Donations', 'donations'), description: inputFooter('Tap to open in browser', sCLRGRY, true)
+            href url: textDonateLink(), style: sEXTNRL, required: false, title: inTS('Donations', 'info'), description: inputFooter('Tap to open in browser', sCLRGRY, true)
         }
         updInstData('shownDonation', true)
     }
@@ -1771,8 +1774,8 @@ private void changeMode(String modeId, Boolean shw) {
             /* groovylint-disable-next-line UnnecessarySetter */
             setLocationMode(mode.name)
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
-        }
     }
+}
 
 private runPiston(String rtId, Boolean shw) {
     if (rtId) {
