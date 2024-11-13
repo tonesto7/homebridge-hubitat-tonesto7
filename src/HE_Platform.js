@@ -6,8 +6,8 @@ import os from "os";
 import { compare, validate } from "compare-versions";
 import events from "events";
 import ConfigManager from "./ConfigManager.js";
-import HEClient from "./HE_Client.js";
-import HEAccessories from "./HE_Accessories.js";
+import HubitatClient from "./HubitatClient.js";
+import HubitatAccessories from "./HubitatAccessories.js";
 import CommunityTypes from "./libs/CommunityTypes.js";
 import express from "express";
 import bodyParser from "body-parser";
@@ -23,16 +23,7 @@ export default class HE_Platform {
         this.configManager = new ConfigManager(config, api.user);
         this.config = this.configManager.getConfig();
 
-        if (config === undefined || config === null || config.app_url_local === undefined || config.app_url_local === null || config.app_url_cloud === undefined || config.app_url_cloud === null || config.app_id === undefined || config.app_id === null) {
-            log(`${platformName} Plugin is not Configured | Skipping...`);
-            return;
-        }
-
-        // Subscribe to configuration updates
-        this.configManager.onConfigUpdate((newConfig) => {
-            this.config = newConfig;
-        });
-
+        this.api = api;
         this.homebridge = api;
         this.hap = api.hap;
         this.Service = api.hap.Service;
@@ -42,262 +33,142 @@ export default class HE_Platform {
         this.PlatformAccessory = api.platformAccessory;
         this.uuid = api.hap.uuid;
 
+        // Validate config
+        if (this.validateConfig(this.config)) {
+            log(`${platformName} Plugin is not Configured | Skipping...`);
+            return;
+        }
+
+        // Platform state
         this.ok2Run = true;
         this.appEvts = new events.EventEmitter();
 
-        this.logInfo(`Homebridge Version: ${this.homebridge.version}`);
+        // Initialize components
+        this.client = new HubitatClient(this);
+        this.unknownCapabilities = [];
+        this.accessories = new HubitatAccessories(this);
+
+        // Log platform info
+        this.logInfo(`Homebridge Version: ${api.version}`);
         this.logInfo(`Plugin Version: ${pluginVersion}`);
 
-        this.excludedAttributes = this.config.excluded_attributes || [];
-        this.excludedCapabilities = this.config.excluded_capabilities || [];
+        // Configuration subscriptions
+        this.configManager.onConfigUpdate((newConfig) => {
+            this.config = newConfig;
+        });
 
-        // console.log("pluginConfig: ", this.loadConfig());
-        this.unknownCapabilities = [];
-        this.client = new HEClient(this);
-        this.HEAccessories = new HEAccessories(this);
-
-        this.homebridge.on("didFinishLaunching", this.didFinishLaunching.bind(this));
+        // Register platform
+        api.on("didFinishLaunching", this.didFinishLaunching.bind(this));
         this.appEvts.emit("event:plugin_upd_status");
     }
 
-    /**
-     * Sanitize accessory names to ensure they are clean and consistent.
-     * Removes unwanted characters and trims spaces.
-     * @param {string} name - The original accessory name.
-     * @returns {string} - The sanitized accessory name.
-     */
-    sanitizeName(name) {
-        // Remove all characters except alphanumerics, spaces, and apostrophes
-        let sanitized = name
-            .replace(/[^a-zA-Z0-9 ']/g, "")
-            .trim()
-            .replace(/^[^a-zA-Z0-9]+/, "") // Remove leading non-alphanumeric characters
-            .replace(/[^a-zA-Z0-9]+$/, "") // Remove trailing non-alphanumeric characters
-            .replace(/\s{2,}/g, " "); // Replace multiple spaces with a single space
+    // Platform initialization
+    async didFinishLaunching() {
+        try {
+            this.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
 
-        // If the name becomes empty after sanitization, use a default name
-        sanitized = sanitized.length === 0 ? "Unnamed Device" : sanitized;
+            // Setup refresh interval
+            setInterval(this.refreshDevices.bind(this), this.config.polling_seconds * 1000);
 
-        // Log if the name was sanitized
-        if (name !== sanitized) {
-            this.logWarn(`Sanitized Name: "${name}" => "${sanitized}"`);
-        }
+            // Initial device refresh
+            await this.refreshDevices("First Launch");
 
-        return sanitized;
-    }
-
-    /**
-     * Add or update an accessory's name after sanitizing it.
-     * @param {PlatformAccessory} accessory - The accessory to sanitize and update.
-     */
-    sanitizeAndUpdateAccessoryName(accessory) {
-        const originalName = accessory.context.deviceData.name;
-        const sanitizedName = this.sanitizeName(originalName);
-
-        if (sanitizedName !== originalName) {
-            // Update the name properties
-            accessory.name = sanitizedName;
-            // accessory.context.name = sanitizedName;
-
-            // Important: Update displayName like this
-            // accessory._associatedHAPAccessory.displayName = sanitizedName;
-
-            // Update the AccessoryInformation service
-            const accessoryInformation = accessory.getService(this.Service.AccessoryInformation);
-            if (accessoryInformation) {
-                accessoryInformation.getCharacteristic(this.Characteristic.Name).updateValue(sanitizedName);
-
-                // Verify that the displayName was updated
-                const displayName = accessoryInformation.getCharacteristic(this.Characteristic.Name).value;
-                if (displayName !== sanitizedName) {
-                    this.logWarn(`Failed to update displayName for device ID: ${accessory.deviceid}`);
-                } else {
-                    this.logInfo(`AccessoryInformation service updated successfully for device ID: ${accessory.deviceid} | Old Name: "${originalName}" | Display Name: "${displayName}"`);
-                    this.homebridge.updatePlatformAccessories([accessory]);
-                }
-            } else {
-                this.logWarn(`AccessoryInformation service not found for device ID: ${accessory.deviceid}`);
+            // Initialize web server
+            const webServerResult = await this.WebServerInit(this);
+            if (webServerResult && webServerResult.status === "OK") {
+                this.appEvts.emit("event:plugin_start_direct");
             }
-
-            // this.logDebug(`Accessory name updated successfully to "${sanitizedName}"`);
-        } else {
-            // this.logDebug(`No name update needed for accessory "${originalName}"`);
+        } catch (err) {
+            console.error("Platform Initialization Error:", err);
         }
-    }
-
-    /**
-     * Logs an alert message with yellow color.
-     *
-     * @param {string} args - The message to be logged.
-     */
-    logAlert(args) {
-        this.log.info(chalk.yellow(args));
-    }
-
-    /**
-     * Logs the provided arguments in green color.
-     *
-     * @param {string} args - The message or arguments to log.
-     */
-    logGreen(args) {
-        this.log.info(chalk.green(args));
-    }
-
-    /**
-     * Logs a notice message with blue bright color.
-     *
-     * @param {string} args - The message to be logged.
-     */
-    logNotice(args) {
-        this.log.info(chalk.blueBright(args));
-    }
-
-    /**
-     * Logs a warning message with a specific color and style.
-     *
-     * @param {string} args - The warning message to be logged.
-     */
-    logWarn(args) {
-        this.log.warn(chalk.hex("#FFA500").bold(args));
-    }
-
-    /**
-     * Logs an error message with bold red formatting.
-     *
-     * @param {string} args - The error message to be logged.
-     */
-    logError(args) {
-        this.log.error(chalk.bold.red(args));
-    }
-
-    /**
-     * Logs an informational message.
-     *
-     * @param {string} args - The message to log.
-     */
-    logInfo(args) {
-        this.log.info(chalk.white(args));
-    }
-
-    /**
-     * Logs a debug message if debugging is enabled in the log configuration.
-     *
-     * @param {string} args - The message to be logged.
-     */
-    logDebug(args) {
-        if (this.config.logConfig.debug === true) this.log.debug(chalk.gray(args));
-    }
-
-    didFinishLaunching() {
-        this.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
-        setInterval(this.refreshDevices.bind(this), this.config.polling_seconds * 1000);
-        let that = this;
-        this.refreshDevices("First Launch")
-            .then(() => {
-                that.WebServerInit(that)
-                    .catch((err) => that.logError("WebServerInit Error: ", err))
-                    .then((resp) => {
-                        if (resp && resp.status === "OK") this.appEvts.emit("event:plugin_start_direct");
-                    });
-            })
-            .catch((err) => {
-                that.logError(`didFinishLaunching | refreshDevices Exception:` + err);
-            });
     }
 
     async refreshDevices(src = undefined) {
-        let that = this;
         let starttime = new Date();
 
         try {
-            that.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
+            this.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);
+
+            // Fetch devices from hub
             const resp = await this.client.getDevices();
             if (!resp || !resp.deviceList || !Array.isArray(resp.deviceList)) {
                 throw new Error("Invalid device list received");
             }
-            if (resp && resp.location) {
-                this.configManager.updateTempUnit(resp.location.temperature_scale);
-                if (resp.location.hubIP) {
-                    this.configManager.updateConfig({ direct_ip: resp.location.hubIP, use_cloud: resp.location.use_cloud === true });
-                }
+
+            // Update location settings if available
+            if (resp.location) {
+                this.handleLocationUpdate(resp.location);
             }
 
-            // that.logDebug("Received All Device Data");
-            const toCreate = this.HEAccessories.diffAdd(resp.deviceList);
-            const toUpdate = this.HEAccessories.intersection(resp.deviceList);
-            const toRemove = this.HEAccessories.diffRemove(resp.deviceList);
-            that.logWarn(`Devices to Remove: (${Object.keys(toRemove).length}) ` + toRemove.map((i) => i.name));
-            that.logInfo(`Devices to Update: (${Object.keys(toUpdate).length})`); // + toUpdate.map((i) => i.name));
-            that.logGreen(`Devices to Create: (${Object.keys(toCreate).length}) ` + toCreate.map((i) => i.name));
+            // Refresh accessories
+            await this.accessories.refreshDevices(resp.deviceList);
 
-            // Remove devices first
-            for (const accessory of toRemove) {
-                await this.removeAccessory(accessory);
-            }
-
-            // Update existing devices
-            for (const device of toUpdate) {
-                await this.updateDevice(device);
-            }
-
-            // Add new devices
-            for (const device of toCreate) {
-                await this.addDevice(device);
-            }
-
+            // Log completion
             this.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
-            this.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
-            this.logInfo(`${platformDesc} DeviceCache Size: (${Object.keys(this.HEAccessories.getAllAccessoriesFromCache()).length})`);
-            if (src !== "First Launch") this.appEvts.emit("event:plugin_upd_status");
+
+            if (src !== "First Launch") {
+                this.appEvts.emit("event:plugin_upd_status");
+            }
+
             return true;
         } catch (ex) {
-            this.logError(`didFinishLaunching | refreshDevices Exception: ${ex.message}`, ex.stack);
+            console.error(`refreshDevices Error:`, ex);
             throw ex;
         }
     }
 
-    getNewAccessory(device, UUID) {
-        let accessory = new this.PlatformAccessory(device.name, UUID);
-        accessory.context.deviceData = device;
-        this.HEAccessories.initializeAccessory(accessory);
-        this.sanitizeAndUpdateAccessoryName(accessory); // Added name sanitization
-        return accessory;
-    }
-
-    async addDevice(device) {
-        let accessory;
-        const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
-        device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
-        this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
-        accessory = this.getNewAccessory(device, new_uuid);
-        this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
-        this.HEAccessories.addAccessoryToCache(accessory);
-        this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
-    }
-
-    async updateDevice(device) {
-        let cachedAccessory = this.HEAccessories.getAccessoryFromCache(device);
-        device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
-        cachedAccessory.context.deviceData = device;
-        this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
-        cachedAccessory = this.HEAccessories.initializeAccessory(cachedAccessory);
-        this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
-        this.HEAccessories.addAccessoryToCache(cachedAccessory);
-    }
-
-    async removeAccessory(accessory) {
-        if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
-            this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-            this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
+    handleLocationUpdate(location) {
+        if (location.temperature_scale) {
+            this.configManager.updateTempUnit(location.temperature_scale);
+        }
+        if (location.hubIP) {
+            this.configManager.updateConfig({
+                direct_ip: location.hubIP,
+                use_cloud: location.use_cloud === true,
+            });
         }
     }
 
+    // getNewAccessory(device, UUID) {
+    //     let accessory = new this.PlatformAccessory(device.name, UUID);
+    //     accessory.context.deviceData = device;
+    //     this.HEAccessories.initializeAccessory(accessory);
+    //     this.sanitizeAndUpdateAccessoryName(accessory); // Added name sanitization
+    //     return accessory;
+    // }
+
+    // async addDevice(device) {
+    //     let accessory;
+    //     const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
+    //     device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
+    //     this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
+    //     accessory = this.getNewAccessory(device, new_uuid);
+    //     this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
+    //     this.HEAccessories.addAccessoryToCache(accessory);
+    //     this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
+    // }
+
+    // async updateDevice(device) {
+    //     let cachedAccessory = this.HEAccessories.getAccessoryFromCache(device);
+    //     device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
+    //     cachedAccessory.context.deviceData = device;
+    //     this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
+    //     cachedAccessory = this.HEAccessories.initializeAccessory(cachedAccessory);
+    //     this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
+    //     this.HEAccessories.addAccessoryToCache(cachedAccessory);
+    // }
+
+    // async removeAccessory(accessory) {
+    //     if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
+    //         this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
+    //         this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
+    //     }
+    // }
+
+    // Platform accessory management - now delegated to HubitatAccessories
     configureAccessory(accessory) {
         if (!this.ok2Run) return;
-        this.logDebug(`Configure Cached Accessory: ${accessory.displayName}, UUID: ${accessory.UUID}`);
-        // let cachedAccessory = this.HEAccessories.initializeAccessory(accessory, true);
-        // this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
-        this.HEAccessories.addAccessoryToCache(accessory);
+        this.accessories.configureAccessory(accessory);
     }
 
     processIncrementalUpdate(data, that) {
@@ -497,16 +368,16 @@ export default class HE_Platform {
                                 data: body.change_data,
                                 date: body.change_date,
                             };
-                            that.HEAccessories.processDeviceAttributeUpdate(newChange).then((resp) => {
-                                if (that.config.logConfig.showChanges) {
-                                    this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: (${chalk.blueBright(body.change_name)}) [${chalk.yellow.bold(body.change_attribute ? body.change_attribute.toUpperCase() : "unknown")}] is ${chalk.green(body.change_value)}`);
+                            this.processAttributeUpdate(update).then((success) => {
+                                if (this.config.logConfig.showChanges) {
+                                    this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: ` + `(${chalk.blueBright(update.name)}) ` + `[${chalk.yellow.bold(update.attribute ? update.attribute.toUpperCase() : "unknown")}] ` + `is ${chalk.green(update.value)}`);
                                 }
                                 res.send({
                                     evtSource: `Homebridge_${platformName}_${this.config.app_id}`,
                                     evtType: "attrUpdStatus",
-                                    evtDevice: body.change_name,
-                                    evtAttr: body.change_attribute,
-                                    evtStatus: resp ? "OK" : "Failed",
+                                    evtDevice: update.name,
+                                    evtAttr: update.attribute,
+                                    evtStatus: success ? "OK" : "Failed",
                                 });
                             });
                         } else {
@@ -536,31 +407,86 @@ export default class HE_Platform {
         });
     }
 
+    async processAttributeUpdate(update) {
+        try {
+            return await this.accessories.handleAttributeUpdate(update);
+        } catch (error) {
+            this.logError(`Error processing attribute update:`, error);
+            return false;
+        }
+    }
+
+    // Logging methods
+    logAlert(args) {
+        this.log.info(chalk.yellow(args));
+    }
+
+    logGreen(args) {
+        this.log.info(chalk.green(args));
+    }
+
+    logNotice(args) {
+        this.log.info(chalk.blueBright(args));
+    }
+
+    logWarn(args) {
+        this.log.warn(chalk.hex("#FFA500").bold(args));
+    }
+
+    logError(args) {
+        this.log.error(chalk.bold.red(args));
+    }
+
+    logInfo(args) {
+        this.log.info(chalk.white(args));
+    }
+
+    logDebug(args) {
+        if (this.config.logConfig.debug === true) this.log.debug(chalk.gray(args));
+    }
+
+    // Utility methods
+    validateConfig(config) {
+        return config === undefined || config === null || config.app_url_local === undefined || config.app_url_local === null || config.app_url_cloud === undefined || config.app_url_cloud === null || config.app_id === undefined || config.app_id === null;
+    }
+
+    sanitizeName(name) {
+        let sanitized = name
+            .replace(/[^a-zA-Z0-9 ']/g, "")
+            .trim()
+            .replace(/^[^a-zA-Z0-9]+/, "")
+            .replace(/[^a-zA-Z0-9]+$/, "")
+            .replace(/\s{2,}/g, " ");
+
+        sanitized = sanitized.length === 0 ? "Unnamed Device" : sanitized;
+
+        if (name !== sanitized) {
+            this.logWarn(`Sanitized Name: "${name}" => "${sanitized}"`);
+        }
+
+        return sanitized;
+    }
+
     toTitleCase(str) {
         return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     }
 
-    checkVersion = async () => {
-        this.log.info("Checking Package Version for Updates...");
+    // Version checking
+    async checkVersion() {
+        this.logInfo("Checking Package Version for Updates...");
         return new Promise((resolve) => {
             exec(`npm view ${packageName} version`, (error, stdout) => {
                 const newVer = stdout && stdout.trim();
                 if (newVer && validate(newVer) && compare(stdout.trim(), pluginVersion, ">")) {
-                    this.log.warn("---------------------------------------------------------------");
-                    this.log.warn(`NOTICE: New version of ${packageName} available: ${newVer}`);
-                    this.log.warn("---------------------------------------------------------------");
-                    resolve({
-                        hasUpdate: true,
-                        newVersion: newVer,
-                    });
+                    this.logWarn("---------------------------------------------------------------");
+                    this.logWarn(`NOTICE: New version of ${packageName} available: ${newVer}`);
+                    this.logWarn("---------------------------------------------------------------");
+                    resolve({ hasUpdate: true, newVersion: newVer });
                 } else {
-                    this.log.info("INFO: Your plugin version is up-to-date");
-                    resolve({
-                        hasUpdate: false,
-                        newVersion: newVer,
-                    });
+                    this.logInfo("INFO: Your plugin version is up-to-date");
+                    resolve({ hasUpdate: false, newVersion: newVer });
                 }
             });
         });
-    };
+    }
 }

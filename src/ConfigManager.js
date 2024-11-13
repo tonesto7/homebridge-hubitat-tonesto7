@@ -37,13 +37,12 @@ export default class ConfigManager {
             app_id: config.app_id,
             access_token: config.access_token,
             use_cloud: config.use_cloud === true,
-            app_platform: config.app_platform,
             polling_seconds: config.polling_seconds || 900,
             excluded_attributes: config.excluded_attributes || [],
             excluded_capabilities: config.excluded_capabilities || [],
             update_method: config.update_method || "direct",
             round_levels: config.round_levels !== false,
-            direct_port: config.direct_port || this.findDirectPort() || 8000,
+            direct_port: config.direct_port || this.findDirectPort(config) || 8000,
             direct_ip: config.direct_ip ? config.direct_ip : this.getIPAddress(),
             validateTokenId: config.validateTokenId === true,
             consider_fan_by_name: config.consider_fan_by_name !== false,
@@ -143,9 +142,12 @@ export default class ConfigManager {
      *
      * @returns {number} - The available direct port.
      */
-    findDirectPort() {
-        let port = this.config.direct_port || 8000;
-        if (port) port = portFinderSync.getPort(port);
+    findDirectPort(rawConfig) {
+        console.log("Finding direct port...");
+        let port = (rawConfig && rawConfig.direct_port) || 8000;
+        if (port) {
+            port = portFinderSync.getPort(port);
+        }
         return port;
     }
 
