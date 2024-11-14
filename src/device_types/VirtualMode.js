@@ -11,7 +11,7 @@ export default class VirtualMode extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.modeService = this.getOrAddService(this.Service.Switch);
-            this.markServiceForRetention(this.modeService);
+            // this.markServiceForRetention(this.modeService);
 
             // On State
             this.getOrAddCharacteristic(this.modeService, this.Characteristic.On, {

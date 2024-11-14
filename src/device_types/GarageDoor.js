@@ -11,7 +11,7 @@ export default class GarageDoor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.doorService = this.getOrAddService(this.Service.GarageDoorOpener);
-            this.markServiceForRetention(this.doorService);
+            // this.markServiceForRetention(this.doorService);
 
             // Current Door State
             this.getOrAddCharacteristic(this.doorService, this.Characteristic.CurrentDoorState, {

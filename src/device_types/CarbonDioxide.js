@@ -11,7 +11,7 @@ export default class CarbonDioxideSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.co2Service = this.getOrAddService(this.Service.CarbonDioxideSensor);
-            this.markServiceForRetention(this.co2Service);
+            // this.markServiceForRetention(this.co2Service);
 
             // CO2 Detected
             this.getOrAddCharacteristic(this.co2Service, this.Characteristic.CarbonDioxideDetected, {

@@ -4,9 +4,13 @@ import { platformName, platformDesc, pluginVersion } from "./Constants.js";
 import axios from "axios";
 
 export default class HubitatClient {
-    constructor(platform) {
-        this.platform = platform;
+    constructor(platform, accessories) {
         this.log = platform.log;
+        this.logNotice = platform.logNotice;
+        this.logInfo = platform.logInfo;
+        this.checkVersion = platform.checkVersion;
+        this.accessories = accessories;
+
         this.logDebug = platform.logDebug;
 
         this.configManager = platform.configManager;
@@ -30,7 +34,7 @@ export default class HubitatClient {
 
     registerEvtListeners() {
         this.appEvts.on("event:device_command", async (devData, cmd, vals) => {
-            await this.sendDeviceCommand(devData, cmd, vals);
+            await this.sendHubitatCommand(devData, cmd, vals);
         });
         this.appEvts.on("event:plugin_upd_status", async () => {
             await this.sendUpdateStatus();
@@ -87,10 +91,10 @@ export default class HubitatClient {
         }
     };
 
-    sendDeviceCommand = async (devData, cmd, vals) => {
-        // console.log("sendDeviceCommand", devData, cmd, vals);
+    sendHubitatCommand = async (devData, cmd, vals) => {
+        // console.log("sendHubitatCommand", devData, cmd, vals);
         try {
-            this.platform.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
+            this.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
             const response = await axios({
                 method: "post",
                 url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/${devData.deviceid}/command/${cmd}`,
@@ -106,18 +110,18 @@ export default class HubitatClient {
                 data: vals || null,
                 timeout: 5000,
             });
-            this.log.debug(`sendDeviceCommand | Response: ${JSON.stringify(response.data)}`);
+            this.log.debug(`sendHubitatCommand | Response: ${JSON.stringify(response.data)}`);
             return true;
         } catch (err) {
-            this.handleError("sendDeviceCommand", err);
+            this.handleError("sendHubitatCommand", err);
             return false;
         }
     };
 
     sendUpdateStatus = async () => {
         try {
-            const res = await this.platform.checkVersion();
-            this.platform.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
+            const res = await this.checkVersion();
+            this.logNotice(`Sending Plugin Status to Hubitat | Version: [${res.hasUpdate && res.newVersion ? "New Version: " + res.newVersion : "Up-to-date"}]`);
             const response = await axios({
                 method: "post",
                 url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/pluginStatus`,
@@ -132,7 +136,7 @@ export default class HubitatClient {
                     newVersion: res.newVersion,
                     version: pluginVersion,
                     isLocal: this.config.use_cloud ? "false" : "true",
-                    accCount: Array.from(this.platform.accessories.getAllAccessories().values()).length || null,
+                    accCount: Array.from(this.accessories.getAllAccessories().values()).length || null,
                 },
                 timeout: 10000,
             });

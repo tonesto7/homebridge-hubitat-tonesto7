@@ -12,7 +12,6 @@ export default class AccelerationSensor extends HubitatPlatformAccessory {
         try {
             // Use motion sensor service type for acceleration
             this.accelerationService = this.getOrAddService(this.Service.MotionSensor);
-            this.markServiceForRetention(this.accelerationService);
 
             // Motion Detected (used for acceleration state)
             this.getOrAddCharacteristic(this.accelerationService, this.Characteristic.MotionDetected, {
@@ -37,24 +36,6 @@ export default class AccelerationSensor extends HubitatPlatformAccessory {
                 getHandler: () => this.getStatusLowBattery(),
                 removeIfMissingPreReq: true,
             });
-
-            // Battery Level (if supported)
-            if (this.hasCapability("Battery")) {
-                const batteryService = this.getOrAddService(this.Service.Battery);
-                this.markServiceForRetention(batteryService);
-
-                this.getOrAddCharacteristic(batteryService, this.Characteristic.BatteryLevel, {
-                    getHandler: () => this.getBatteryLevel(),
-                });
-
-                this.getOrAddCharacteristic(batteryService, this.Characteristic.ChargingState, {
-                    getHandler: () => this.getChargingState(),
-                });
-
-                this.getOrAddCharacteristic(batteryService, this.Characteristic.StatusLowBattery, {
-                    getHandler: () => this.getStatusLowBattery(),
-                });
-            }
 
             return true;
         } catch (error) {
@@ -111,23 +92,6 @@ export default class AccelerationSensor extends HubitatPlatformAccessory {
                 if (!this.hasCapability("TamperAlert")) return;
 
                 this.accelerationService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
-                break;
-
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-
-                const batteryService = this.accessory.getService(this.Service.Battery);
-                if (!batteryService) return;
-
-                const batteryLevel = Math.max(0, Math.min(100, parseInt(value) || 0));
-                const lowBattery = batteryLevel < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-
-                batteryService.getCharacteristic(this.Characteristic.BatteryLevel).updateValue(batteryLevel);
-
-                batteryService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(lowBattery);
-
-                // Update low battery status on main service as well
-                this.accelerationService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(lowBattery);
                 break;
 
             default:

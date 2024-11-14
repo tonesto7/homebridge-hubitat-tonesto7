@@ -11,7 +11,7 @@ export default class SwitchDevice extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.switchService = this.getOrAddService(this.Service.Switch);
-            this.markServiceForRetention(this.switchService);
+            // this.markServiceForRetention(this.switchService);
 
             // On/Off State
             this.getOrAddCharacteristic(this.switchService, this.Characteristic.On, {

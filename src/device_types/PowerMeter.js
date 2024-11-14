@@ -12,7 +12,7 @@ export default class PowerMeter extends HubitatPlatformAccessory {
         try {
             // Using a custom service type for power measurement
             this.powerService = this.getOrAddService(this.platform.CommunityTypes.WattService);
-            this.markServiceForRetention(this.powerService);
+            // this.markServiceForRetention(this.powerService);
 
             // Configure the watts characteristic
             this.getOrAddCharacteristic(this.powerService, this.platform.CommunityTypes.Watts, {

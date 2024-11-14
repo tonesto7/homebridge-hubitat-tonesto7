@@ -12,7 +12,7 @@ export default class Speaker extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.speakerService = this.getOrAddService(this.Service.Speaker);
-            this.markServiceForRetention(this.speakerService);
+            // this.markServiceForRetention(this.speakerService);
 
             // Volume
             const volumeAttr = this.isSonos || this.hasAttribute("volume") ? "volume" : this.hasAttribute("level") ? "level" : null;

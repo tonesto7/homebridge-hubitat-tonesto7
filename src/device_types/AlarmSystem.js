@@ -11,7 +11,6 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.alarmService = this.getOrAddService(this.Service.SecuritySystem);
-            this.markServiceForRetention(this.alarmService);
 
             // Configure Current State
             this.getOrAddCharacteristic(this.alarmService, this.Characteristic.SecuritySystemCurrentState, {
@@ -32,29 +31,78 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
     }
 
     getCurrentState() {
-        return this.platform.accessories.transforms.convertAlarmState(this.deviceData.attributes.alarmSystemStatus);
+        const val = this.deviceData.attributes.alarmSystemStatus;
+        switch (val) {
+            case "armedHome":
+                return this.Characteristic.SecuritySystemCurrentState.STAY_ARM;
+            case "armedNight":
+                return this.Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+            case "armedAway":
+                return this.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+            case "disarmed":
+                return this.Characteristic.SecuritySystemCurrentState.DISARMED;
+            case "intrusion":
+            case "intrusion-home":
+            case "intrusion-away":
+            case "intrusion-night":
+                return this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+            default:
+                return this.Characteristic.SecuritySystemCurrentState.DISARMED;
+        }
     }
 
     getTargetState() {
-        return this.platform.accessories.transforms.convertAlarmTargetState(this.deviceData.attributes.alarmSystemStatus);
+        const val = this.deviceData.attributes.alarmSystemStatus;
+        switch (val) {
+            case "armedHome":
+            case "intrusion-home":
+                return this.Characteristic.SecuritySystemCurrentState.STAY_ARM;
+            case "armedNight":
+            case "intrusion-night":
+                return this.Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+            case "armedAway":
+            case "intrusion-away":
+                return this.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+            case "disarmed":
+                return this.Characteristic.SecuritySystemCurrentState.DISARMED;
+            default:
+                return this.Characteristic.SecuritySystemCurrentState.DISARMED;
+        }
     }
 
     async setTargetState(value) {
-        const command = this.platform.accessories.transforms.convertAlarmCmd(value);
+        let command;
+        switch (value) {
+            case this.Characteristic.SecuritySystemCurrentState.STAY_ARM:
+                command = "armHome";
+                break;
+            case this.Characteristic.SecuritySystemCurrentState.AWAY_ARM:
+                command = "armAway";
+                break;
+            case this.Characteristic.SecuritySystemCurrentState.NIGHT_ARM:
+                command = "armNight";
+                break;
+            case this.Characteristic.SecuritySystemCurrentState.DISARMED:
+                command = "disarm";
+                break;
+            default:
+                command = "disarm";
+        }
         await this.sendCommand(command);
     }
 
     async handleAttributeUpdate(attribute, value) {
-        if (attribute !== "alarmSystemStatus") return;
         this.updateDeviceAttribute(attribute, value);
 
-        // Update current state
-        const currentState = this.platform.accessories.transforms.convertAlarmState(value);
-        this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemCurrentState).updateValue(currentState);
+        if (attribute === "alarmSystemStatus") {
+            // Update current state
+            this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemCurrentState).updateValue(this.getCurrentState());
 
-        // Update target state
-        const targetState = this.platform.accessories.transforms.convertAlarmTargetState(value);
-        this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemTargetState).updateValue(targetState);
+            // Update target state
+            this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemTargetState).updateValue(this.getTargetState());
+        } else {
+            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 
     // Override cleanup

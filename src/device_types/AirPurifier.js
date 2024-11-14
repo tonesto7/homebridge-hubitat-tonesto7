@@ -11,7 +11,6 @@ export default class AirPurifier extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.airPurifierService = this.getOrAddService(this.Service.AirPurifier);
-            this.markServiceForRetention(this.airPurifierService);
 
             // Active State (On/Off)
             this.getOrAddCharacteristic(this.airPurifierService, this.Characteristic.Active, {

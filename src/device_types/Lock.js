@@ -11,7 +11,7 @@ export default class Lock extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.lockService = this.getOrAddService(this.Service.LockMechanism);
-            this.markServiceForRetention(this.lockService);
+            // this.markServiceForRetention(this.lockService);
 
             // Lock Current State
             this.getOrAddCharacteristic(this.lockService, this.Characteristic.LockCurrentState, {

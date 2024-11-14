@@ -11,7 +11,7 @@ export default class IlluminanceSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.lightSensorService = this.getOrAddService(this.Service.LightSensor);
-            this.markServiceForRetention(this.lightSensorService);
+            // this.markServiceForRetention(this.lightSensorService);
 
             // Current Ambient Light Level
             this.getOrAddCharacteristic(this.lightSensorService, this.Characteristic.CurrentAmbientLightLevel, {

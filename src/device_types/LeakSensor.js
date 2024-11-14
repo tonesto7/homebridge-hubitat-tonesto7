@@ -11,7 +11,7 @@ export default class LeakSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.leakService = this.getOrAddService(this.Service.LeakSensor);
-            this.markServiceForRetention(this.leakService);
+            // this.markServiceForRetention(this.leakService);
 
             // Leak Detected
             this.getOrAddCharacteristic(this.leakService, this.Characteristic.LeakDetected, {

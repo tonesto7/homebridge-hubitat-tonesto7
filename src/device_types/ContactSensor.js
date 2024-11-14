@@ -11,7 +11,7 @@ export default class ContactSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.contactService = this.getOrAddService(this.Service.ContactSensor);
-            this.markServiceForRetention(this.contactService);
+            // this.markServiceForRetention(this.contactService);
 
             // Contact Sensor State
             this.getOrAddCharacteristic(this.contactService, this.Characteristic.ContactSensorState, {

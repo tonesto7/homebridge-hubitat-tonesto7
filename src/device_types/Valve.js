@@ -11,7 +11,7 @@ export default class Valve extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.valveService = this.getOrAddService(this.Service.Valve);
-            this.markServiceForRetention(this.valveService);
+            // this.markServiceForRetention(this.valveService);
 
             // Active
             this.getOrAddCharacteristic(this.valveService, this.Characteristic.Active, {

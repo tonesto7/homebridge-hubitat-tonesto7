@@ -1,6 +1,6 @@
 // HubitatAccessories.js
 
-import { pluginName, platformDesc, platformName, pluginVersion } from "./Constants.js";
+import { pluginName, platformName } from "./Constants.js";
 
 // Load the device types modules
 import AccelerationSensor from "./device_types/AccelerationSensor.js";
@@ -42,11 +42,9 @@ export default class HubitatAccessories {
         this.api = platform.api;
         this.config = platform.config;
         this.configManager = platform.configManager;
-        this.client = platform.client;
 
-        this.accessories = new Map();
+        this.cachedAccessories = new Map();
         this.buttonMap = new Map();
-        this.attributeUpdateHandlers = new Map();
         this.deviceInstances = new Map();
         this.deviceTypeTests = this.initializeDeviceTests();
     }
@@ -248,7 +246,7 @@ export default class HubitatAccessories {
         const additions = [];
 
         for (const device of deviceList) {
-            if (this.accessories.has(device.deviceid)) {
+            if (this.cachedAccessories.has(device.deviceid)) {
                 updates.push(this.updateAccessory(device));
             } else {
                 additions.push(this.addAccessory(device));
@@ -256,7 +254,7 @@ export default class HubitatAccessories {
         }
 
         this.log.warn(`Devices to Update: ${updates.length}`);
-        this.log.warn(`Devices to Add: ${additions.length}` + additions.map((a) => a.displayName).join(", "));
+        this.log.warn(`Devices to Add: ${additions.length}`);
 
         await Promise.all([...updates, ...additions]);
     }
@@ -265,7 +263,7 @@ export default class HubitatAccessories {
         const currentDeviceIds = new Set(currentDevices.map((d) => d.deviceid));
         const staleAccessories = [];
 
-        for (const [id, accessory] of this.accessories) {
+        for (const [id, accessory] of this.cachedAccessories) {
             if (!currentDeviceIds.has(id)) {
                 staleAccessories.push(accessory);
                 this.log.warn(`Removing stale accessory: ${accessory.displayName}`);
@@ -319,7 +317,7 @@ export default class HubitatAccessories {
 
             // Register with homebridge
             this.api.registerPlatformAccessories(pluginName, platformName, [accessory]);
-            this.accessories.set(device.deviceid, accessory);
+            this.cachedAccessories.set(device.deviceid, accessory);
 
             this.log.debug(`Added accessory ${accessory.displayName} with ` + `${activeServices.size} services and ` + `${Array.from(activeCharacteristics.values()).reduce((sum, set) => sum + set.size, 0)} characteristics`);
 
@@ -331,11 +329,11 @@ export default class HubitatAccessories {
     }
 
     configureAccessory(accessory) {
-        this.log.info(`Configuring cached accessory: ${accessory.displayName}`);
+        this.log.debug(`Configuring cached accessory: ${accessory.displayName}`);
 
         const deviceId = accessory.context.deviceData?.deviceid;
         if (deviceId) {
-            this.accessories.set(deviceId, accessory);
+            this.cachedAccessories.set(deviceId, accessory);
         } else {
             this.log.warn(`Accessory ${accessory.displayName} is missing deviceData.deviceid`);
         }
@@ -343,26 +341,22 @@ export default class HubitatAccessories {
 
     async updateAccessory(device) {
         try {
-            const accessory = this.accessories.get(device.deviceid);
+            const accessory = this.cachedAccessories.get(device.deviceid);
             if (!accessory) return;
 
             this.log.debug(`Updating accessory: ${device.name} (${device.deviceid})`);
 
             // Store previous state
-            const previousInstances = accessory.context.deviceInstances || [];
+            const previousInstances = this.deviceInstances.get(accessory.UUID) || [];
             const previousState = {
-                services: new Set(),
-                characteristics: new Map(),
+                services: new Set(Array.from(accessory.context._activeServices || [])),
+                // Convert the Map or create empty Map if undefined
+                characteristics: new Map(accessory.context._activeCharacteristics instanceof Map ? accessory.context._activeCharacteristics : []),
             };
 
-            previousInstances.forEach((instance) => {
-                instance.activeServices.forEach((uuid) => {
-                    previousState.services.add(uuid);
-                    if (instance.activeCharacteristics.has(uuid)) {
-                        previousState.characteristics.set(uuid, instance.activeCharacteristics.get(uuid));
-                    }
-                });
-            });
+            // Reset active services and characteristics tracking
+            accessory.context._activeServices = new Set();
+            accessory.context._activeCharacteristics = new Map();
 
             // Update device data
             accessory.context.deviceData = {
@@ -400,12 +394,16 @@ export default class HubitatAccessories {
                 await instance.cleanup();
             }
 
-            // Log changes
+            // Store new instances
+            this.deviceInstances.set(accessory.UUID, deviceInstances);
+
+            // Log changes if any occurred
             this.logServiceChanges(accessory.displayName, previousState, currentState);
 
-            // Update accessory
-            // accessory.context.deviceInstances = deviceInstances;
-            this.deviceInstances.set(accessory.UUID, deviceInstances);
+            // Clean up unused services
+            this.cleanupUnusedServices(accessory);
+
+            // Update the accessory
             this.api.updatePlatformAccessories([accessory]);
 
             return accessory;
@@ -431,7 +429,7 @@ export default class HubitatAccessories {
             this.buttonMap.delete(accessory.UUID);
 
             // Remove from accessories map
-            this.accessories.delete(accessory.context.deviceData.deviceid);
+            this.cachedAccessories.delete(accessory.context.deviceData.deviceid);
 
             // Clean up device instances
             this.deviceInstances.delete(accessory.UUID);
@@ -469,17 +467,41 @@ export default class HubitatAccessories {
         if (matchedTypes.length === 0) {
             this.log.warn(`No device types matched for ${accessory.displayName}`);
         } else {
-            this.log.info(`Device types for ${accessory.displayName}: ${matchedTypes.map((t) => t.name).join(", ")}`);
+            // this.log.info(`Device types for ${accessory.displayName}: ${matchedTypes.map((t) => t.name).join(", ")}`);
         }
 
         return matchedTypes;
     }
 
+    getServiceId(service) {
+        return service.subtype ? `${service.UUID} ${service.subtype}` : service.UUID;
+    }
+
+    cleanupUnusedServices(accessory) {
+        const services = accessory.services.slice();
+        const activeServices = accessory.context._activeServices;
+
+        for (const service of services) {
+            const serviceId = this.getServiceId(service);
+
+            // Never remove AccessoryInformation service
+            if (service.UUID === this.platform.Service.AccessoryInformation.UUID) {
+                continue;
+            }
+
+            // Remove services that aren't marked as active
+            if (!activeServices.has(serviceId)) {
+                this.log.debug(`Removing unused service: ${service.displayName} ` + `(${serviceId}) from ${accessory.displayName}`);
+                accessory.removeService(service);
+            }
+        }
+    }
+
     async handleAttributeUpdate(update) {
         try {
-            const accessory = this.accessories.get(update.deviceId);
-            if (!accessory || !accessory.context.deviceInstances) {
-                this.log.debug(`No accessory or instances found for device ${update.deviceId}`);
+            const accessory = this.cachedAccessories.get(update.deviceId);
+            if (!accessory) {
+                this.log.debug(`No accessory found for device ${update.deviceId}`);
                 return false;
             }
 
@@ -506,7 +528,7 @@ export default class HubitatAccessories {
 
     // Button handling
     registerButtonService(accessory, service, buttonNumber) {
-        const key = `${accessory.UUID} ${buttonNumber}`;
+        const key = `${accessory.UUID} Button ${buttonNumber}`;
         this.buttonMap.set(key, service);
     }
 
@@ -517,7 +539,7 @@ export default class HubitatAccessories {
 
     // Attribute update handling
     async handleDeviceUpdate(change) {
-        const accessory = this.accessories.get(change.deviceid);
+        const accessory = this.cachedAccessories.get(change.deviceid);
         if (!accessory) return;
 
         try {
@@ -558,10 +580,10 @@ export default class HubitatAccessories {
     }
 
     logDeviceStatistics() {
-        const deviceCount = this.accessories.size;
+        const deviceCount = this.cachedAccessories.size;
         const deviceTypes = new Map();
 
-        for (const accessory of this.accessories.values()) {
+        for (const accessory of this.cachedAccessories.values()) {
             const deviceInstances = this.deviceInstances.get(accessory.UUID);
             for (const instance of deviceInstances) {
                 const type = instance.constructor.name;
@@ -577,10 +599,10 @@ export default class HubitatAccessories {
     }
 
     getAccessory(deviceId) {
-        return this.accessories.get(deviceId);
+        return this.cachedAccessories.get(deviceId);
     }
 
     getAllAccessories() {
-        return Array.from(this.accessories.values());
+        return Array.from(this.cachedAccessories.values());
     }
 }

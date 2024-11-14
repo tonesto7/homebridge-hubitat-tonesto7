@@ -11,7 +11,7 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.pistonService = this.getOrAddService(this.Service.Switch);
-            this.markServiceForRetention(this.pistonService);
+            // this.markServiceForRetention(this.pistonService);
 
             // On State
             this.getOrAddCharacteristic(this.pistonService, this.Characteristic.On, {

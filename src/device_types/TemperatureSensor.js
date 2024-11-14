@@ -11,7 +11,6 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.temperatureService = this.getOrAddService(this.Service.TemperatureSensor);
-            this.markServiceForRetention(this.temperatureService);
 
             // Current Temperature
             this.getOrAddCharacteristic(this.temperatureService, this.Characteristic.CurrentTemperature, {
@@ -44,7 +43,7 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
     }
 
     getCurrentTemperature() {
-        return this.platform.accessories.transforms.tempConversion(this.deviceData.attributes.temperature);
+        return this.transformTemperatureToHomeKit(this.deviceData.attributes.temperature);
     }
 
     getStatusTampered() {
@@ -52,8 +51,8 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
     }
 
     getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+        const battery = parseInt(this.deviceData.attributes.battery);
+        return battery < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
     }
 
     async handleAttributeUpdate(attribute, value) {
@@ -61,17 +60,17 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
 
         switch (attribute) {
             case "temperature":
-                this.temperatureService.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this.platform.accessories.transforms.tempConversion(value));
+                this.temperatureService.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this.transformTemperatureToHomeKit(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.temperatureService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
+                this.temperatureService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered());
                 break;
 
             case "battery":
                 if (!this.hasCapability("Battery")) return;
-                this.temperatureService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+                this.temperatureService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(this.getStatusLowBattery());
                 break;
 
             default:
@@ -79,7 +78,6 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
         }
     }
 
-    // Override cleanup
     async cleanup() {
         this.temperatureService = null;
         await super.cleanup();

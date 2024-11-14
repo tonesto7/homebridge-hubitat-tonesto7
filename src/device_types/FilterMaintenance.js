@@ -11,11 +11,20 @@ export default class FilterMaintenance extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.filterMaintenanceService = this.getOrAddService(this.Service.FilterMaintenance);
-            this.markServiceForRetention(this.filterMaintenanceService);
 
             // Filter Change Indicator
-            this.getOrAddCharacteristic(this.filterMaintenanceService, this.Characteristic.FilterChangeIndicator, {
-                getHandler: () => this.getFilterChangeIndicator(),
+            this.getOrAddCharacteristic(this.filterMaintenanceService, this.Characteristic.FilterChangeIndication, {
+                getHandler: () => {
+                    const status = this.getFilterChangeIndicator();
+                    return status !== undefined ? status : this.Characteristic.FilterChangeIndication.FILTER_OK;
+                },
+            });
+
+            // Filter Life Level (optional but helps with status reporting)
+            this.getOrAddCharacteristic(this.filterMaintenanceService, this.Characteristic.FilterLifeLevel, {
+                getHandler: () => {
+                    return this.deviceData.attributes.filterStatus === "replace" ? 0 : 100;
+                },
             });
 
             return true;
@@ -26,19 +35,28 @@ export default class FilterMaintenance extends HubitatPlatformAccessory {
     }
 
     getFilterChangeIndicator() {
-        return this.deviceData.attributes.filterStatus === "replace" ? this.Characteristic.FilterChangeIndicator.FILTER_CHANGE_INDICATOR_NEEDS_SERVICE : this.Characteristic.FilterChangeIndicator.FILTER_CHANGE_INDICATOR_OK;
+        const status = this.deviceData.attributes.filterStatus;
+        if (!status) return undefined;
+
+        return status === "replace" ? this.Characteristic.FilterChangeIndication.CHANGE_FILTER : this.Characteristic.FilterChangeIndication.FILTER_OK;
     }
 
     async handleAttributeUpdate(attribute, value) {
         if (attribute === "filterStatus") {
             this.updateDeviceAttribute(attribute, value);
-            this.filterMaintenanceService.getCharacteristic(this.Characteristic.FilterChangeIndicator).updateValue(this.getFilterChangeIndicator());
+
+            // Update both characteristics
+            const changeIndication = this.getFilterChangeIndicator();
+            if (changeIndication !== undefined) {
+                this.filterMaintenanceService.getCharacteristic(this.Characteristic.FilterChangeIndication).updateValue(changeIndication);
+
+                this.filterMaintenanceService.getCharacteristic(this.Characteristic.FilterLifeLevel).updateValue(value === "replace" ? 0 : 100);
+            }
         }
     }
 
-    // Override cleanup
     async cleanup() {
         this.filterMaintenanceService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

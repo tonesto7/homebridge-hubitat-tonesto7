@@ -11,7 +11,7 @@ export default class SmokeDetector extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.smokeService = this.getOrAddService(this.Service.SmokeSensor);
-            this.markServiceForRetention(this.smokeService);
+            // this.markServiceForRetention(this.smokeService);
 
             // Smoke Detected
             this.getOrAddCharacteristic(this.smokeService, this.Characteristic.SmokeDetected, {

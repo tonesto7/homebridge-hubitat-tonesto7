@@ -5,7 +5,9 @@ import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
 export default class Light extends HubitatPlatformAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
-        this.platform = platform;
+        // this.platform = platform;
+        this.api = platform.api;
+        this.log = platform.log;
         this.config = platform.config;
         this.lightService = null;
         this.adaptiveLightingController = null;
@@ -13,7 +15,7 @@ export default class Light extends HubitatPlatformAccessory {
 
     async configureServices() {
         this.lightService = this.getOrAddService(this.Service.Lightbulb);
-        this.markServiceForRetention(this.lightService);
+        // this.markServiceForRetention(this.lightService);
 
         // Basic on/off
         this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
@@ -125,35 +127,38 @@ export default class Light extends HubitatPlatformAccessory {
     async configureAdaptiveLighting() {
         const canUseAL = this.config.adaptive_lighting !== false && this.hasAttribute("level") && this.hasAttribute("colorTemperature") && !this.hasDeviceFlag("light_no_al");
 
-        if (canUseAL && !this.adaptiveLightingController) {
-            await this.enableAdaptiveLighting();
-        } else if (!canUseAL && this.adaptiveLightingController) {
-            this.disableAdaptiveLighting();
-        }
-    }
+        try {
+            // Get existing AL controller if any
+            const existingController = this.accessory._controllers?.find((controller) => controller.controllerId?.includes("characteristic-transition-00000043"));
 
-    async enableAdaptiveLighting() {
-        const offset = this.config.adaptive_lighting_offset || 0;
-        this.adaptiveLightingController = new this.platform.api.hap.AdaptiveLightingController(this.lightService, {
-            controllerMode: this.platform.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
-            customTemperatureAdjustment: offset,
-        });
+            // If AL is disabled and there's a controller, remove it
+            if (!canUseAL && existingController) {
+                this.accessory.removeController(existingController);
+                this.log.warn(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
+                return;
+            }
 
-        this.adaptiveLightingController.on("update", (values) => {
-            this.platform.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Update:`, values);
-        });
+            // If AL is enabled and no controller exists, add it
+            if (canUseAL && !existingController) {
+                const offset = this.config.adaptive_lighting_offset || 0;
+                const controller = new this.api.hap.AdaptiveLightingController(this.lightService, {
+                    controllerMode: this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
+                    customTemperatureAdjustment: offset,
+                });
 
-        this.adaptiveLightingController.on("disable", () => {
-            this.platform.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
-        });
+                controller.on("update", (values) => {
+                    this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Update:`, values);
+                });
 
-        this.accessory.configureController(this.adaptiveLightingController);
-    }
+                controller.on("disable", () => {
+                    this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
+                });
 
-    disableAdaptiveLighting() {
-        if (this.adaptiveLightingController) {
-            this.accessory.removeController(this.adaptiveLightingController);
-            this.adaptiveLightingController = null;
+                this.accessory.configureController(controller);
+                this.log.info(`[${this.accessory.displayName}] Adaptive Lighting Enabled`);
+            }
+        } catch (error) {
+            this.log.error(`[${this.accessory.displayName}] Error configuring Adaptive Lighting: ${error.message}`);
         }
     }
 
@@ -194,16 +199,35 @@ export default class Light extends HubitatPlatformAccessory {
                 this.lightService.updateCharacteristic(this.Characteristic.On, value === "on");
                 break;
             case "level":
-                this.lightService.updateCharacteristic(this.Characteristic.Brightness, this.transformBrightnessFromDevice(value));
+                const level = this.transformBrightnessFromDevice(value);
+                if (isNaN(level)) {
+                    this.logWarn(`Invalid brightness level: ${value}`);
+                    return;
+                }
+                this.lightService.updateCharacteristic(this.Characteristic.Brightness, level);
                 break;
             case "hue":
-                this.lightService.updateCharacteristic(this.Characteristic.Hue, this.transformHueFromDevice(value));
+                const hue = this.transformHueFromDevice(value);
+                if (isNaN(hue)) {
+                    this.logWarn(`Invalid hue value: ${value}`);
+                    return;
+                }
+                this.lightService.updateCharacteristic(this.Characteristic.Hue, hue);
                 break;
             case "saturation":
+                if (value === null || value === undefined || isNaN(value)) {
+                    this.logWarn(`Invalid saturation update value: ${value}`);
+                    return;
+                }
                 this.lightService.updateCharacteristic(this.Characteristic.Saturation, value);
                 break;
             case "colorTemperature":
-                this.lightService.updateCharacteristic(this.Characteristic.ColorTemperature, this.kelvinToMired(value));
+                const temp = this.kelvinToMired(value);
+                if (isNaN(temp)) {
+                    this.logWarn(`Invalid color temperature value: ${value}`);
+                    return;
+                }
+                this.lightService.updateCharacteristic(this.Characteristic.ColorTemperature, temp);
                 break;
         }
     }

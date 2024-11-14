@@ -11,7 +11,7 @@ export default class HumiditySensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.humidityService = this.getOrAddService(this.Service.HumiditySensor);
-            this.markServiceForRetention(this.humidityService);
+            // this.markServiceForRetention(this.humidityService);
 
             // Current Relative Humidity
             this.getOrAddCharacteristic(this.humidityService, this.Characteristic.CurrentRelativeHumidity, {

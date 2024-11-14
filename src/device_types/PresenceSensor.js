@@ -11,7 +11,7 @@ export default class PresenceSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.occupancyService = this.getOrAddService(this.Service.OccupancySensor);
-            this.markServiceForRetention(this.occupancyService);
+            // this.markServiceForRetention(this.occupancyService);
 
             // Occupancy Detected
             this.getOrAddCharacteristic(this.occupancyService, this.Characteristic.OccupancyDetected, {

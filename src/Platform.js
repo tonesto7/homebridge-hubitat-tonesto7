@@ -44,9 +44,9 @@ export default class HubitatPlatform {
         this.appEvts = new events.EventEmitter();
 
         // Initialize components
-        this.client = new HubitatClient(this);
-        this.unknownCapabilities = [];
         this.accessories = new HubitatAccessories(this);
+        this.client = new HubitatClient(this, this.accessories);
+        this.unknownCapabilities = [];
 
         // Log platform info
         this.logInfo(`Homebridge Version: ${api.version}`);
@@ -128,42 +128,6 @@ export default class HubitatPlatform {
             });
         }
     }
-
-    // getNewAccessory(device, UUID) {
-    //     let accessory = new this.PlatformAccessory(device.name, UUID);
-    //     accessory.context.deviceData = device;
-    //     this.HEAccessories.initializeAccessory(accessory);
-    //     this.sanitizeAndUpdateAccessoryName(accessory); // Added name sanitization
-    //     return accessory;
-    // }
-
-    // async addDevice(device) {
-    //     let accessory;
-    //     const new_uuid = this.uuid.generate(`hubitat_v2_${device.deviceid}`);
-    //     device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
-    //     this.logDebug(`Initializing New Device (${device.name} | ${device.deviceid})`);
-    //     accessory = this.getNewAccessory(device, new_uuid);
-    //     this.homebridge.registerPlatformAccessories(pluginName, platformName, [accessory]);
-    //     this.HEAccessories.addAccessoryToCache(accessory);
-    //     this.logInfo(`Added Device: (${accessory.name} | ${accessory.deviceid})`);
-    // }
-
-    // async updateDevice(device) {
-    //     let cachedAccessory = this.HEAccessories.getAccessoryFromCache(device);
-    //     device.excludedCapabilities = this.excludedCapabilities[device.deviceid] || [];
-    //     cachedAccessory.context.deviceData = device;
-    //     this.logDebug(`Loading Existing Device | Name: (${device.name}) | ID: (${device.deviceid})`);
-    //     cachedAccessory = this.HEAccessories.initializeAccessory(cachedAccessory);
-    //     this.sanitizeAndUpdateAccessoryName(cachedAccessory); // Added name sanitization
-    //     this.HEAccessories.addAccessoryToCache(cachedAccessory);
-    // }
-
-    // async removeAccessory(accessory) {
-    //     if (this.HEAccessories.removeAccessoryFromCache(accessory)) {
-    //         this.homebridge.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
-    //         this.logInfo(`Removed: ${accessory.name} (${accessory.deviceid})`);
-    //     }
-    // }
 
     // Platform accessory management - now delegated to HubitatAccessories
     configureAccessory(accessory) {

@@ -1744,14 +1744,14 @@ private processCmd(String idevId, String cmd, value1, value2) {
     }
 
     String cmdS
-    cmdS = shw ? "Command Successful for Device | Name: ${devN} | DeviceId: ${devId} | Command: [${command}(".toString() : sBLANK
+    cmdS = shw ? "Command Successful for Device | Name: ${devN} | DeviceId: ${devId} | Command: [${command}(" : sBLANK
     try {
         if (value2 != null) {
             device."$command"(value1, value2)
-            if (shw) { cmdS = cmdS + "$value1, $value2)]".toString() }
+            if (shw) { cmdS = cmdS + "$value1, $value2)]" }
         } else if (value1 != null) {
             device."$command"(value1)
-            if (shw) { cmdS = cmdS + "$value1)]".toString() }
+            if (shw) { cmdS = cmdS + "$value1)]" }
         } else {
             device."$command"()
             if (shw) { cmdS = cmdS + ')]' }
@@ -1759,7 +1759,7 @@ private processCmd(String idevId, String cmd, value1, value2) {
         if (shw) { logInfo(cmdS) }
         Long pt = execDt ? (wnow() - execDt) : 0L
         logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}(${value1})] | Process Time: (${pt}ms)", 200)
+        return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}${value1 ? "($value1)" : "()"}] | Process Time: (${pt}ms)", 200)
     } catch (ex) {
         logError("Error Occurred for Device | Name: ${devN} | Command: [${command}()] ${ex}", ex)
         return CommandReply(shw, 'Failure', "Error Occurred For Device ${devN} | Command [${command}()]", 500)

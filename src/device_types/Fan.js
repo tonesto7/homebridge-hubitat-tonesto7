@@ -11,7 +11,7 @@ export default class Fan extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.fanService = this.getOrAddService(this.Service.Fan);
-            this.markServiceForRetention(this.fanService);
+            // this.markServiceForRetention(this.fanService);
 
             // Active State (On/Off)
             this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {

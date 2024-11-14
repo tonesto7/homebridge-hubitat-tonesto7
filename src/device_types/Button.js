@@ -5,13 +5,15 @@ import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
 export default class Button extends HubitatPlatformAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
-        this.platform = platform;
         this.buttonServices = new Map(); // Track button services by number
     }
 
     async configureServices() {
         try {
-            const buttonCount = this.deviceData.attributes.numberOfButtons || 1;
+            // Get number of buttons, clamp between 1 and 10
+            const buttonCount = Math.min(Math.max(this.deviceData.attributes.numberOfButtons || 1, 1), 10);
+
+            this.log.debug(`${this.deviceData.name} | Initializing button accessory with ${buttonCount} buttons`);
 
             // Configure each button
             for (let buttonNumber = 1; buttonNumber <= buttonCount; buttonNumber++) {
@@ -26,48 +28,51 @@ export default class Button extends HubitatPlatformAccessory {
     }
 
     async configureButton(buttonNumber) {
-        const serviceName = `${this.accessory.displayName}_Button${buttonNumber}`;
+        // Use consistent service naming scheme
+        const serviceName = `${this.deviceData.deviceid} Button ${buttonNumber}`;
+        this.logDebug(`${this.deviceData.name} | Initializing button service: ${serviceName}`);
 
-        // Create button service
-        const buttonService = this.getOrAddService(this.Service.StatelessProgrammableSwitch, serviceName, buttonNumber.toString());
+        // Try to find existing service first
+        let buttonService = this.accessory.services.find((service) => service.UUID === this.Service.StatelessProgrammableSwitch.UUID && service.subtype === buttonNumber.toString());
+
+        // If no existing service, create new one
+        if (!buttonService) {
+            buttonService = this.getOrAddService(this.Service.StatelessProgrammableSwitch, serviceName, buttonNumber.toString());
+        }
 
         // Store for tracking
         this.buttonServices.set(buttonNumber, buttonService);
-        this.markServiceForRetention(buttonService);
 
         // Configure characteristics
-        this.setupButtonCharacteristics(buttonService, buttonNumber);
-
-        // Register with platform's button map
-        this.platform.accessories.registerButtonService(this.accessory, buttonService, buttonNumber);
-    }
-
-    setupButtonCharacteristics(service, buttonNumber) {
-        // Get valid values based on capabilities
-        const validValues = this.getValidButtonValues();
+        const validValues = this.getSupportedButtonValues();
 
         // Programmable Switch Event characteristic
-        this.getOrAddCharacteristic(service, this.Characteristic.ProgrammableSwitchEvent, {
-            props: { validValues },
+        this.getOrAddCharacteristic(buttonService, this.Characteristic.ProgrammableSwitchEvent, {
+            props: { validValues: validValues },
             eventOnly: true,
+            getHandler: () => this.getButtonState(),
         });
 
         // Service Label Index characteristic
-        this.getOrAddCharacteristic(service, this.Characteristic.ServiceLabelIndex, {
+        this.getOrAddCharacteristic(buttonService, this.Characteristic.ServiceLabelIndex, {
             getHandler: () => buttonNumber,
         });
 
-        // Name characteristic (optional but helpful)
-        this.getOrAddCharacteristic(service, this.Characteristic.Name, {
+        // Name characteristic
+        this.getOrAddCharacteristic(buttonService, this.Characteristic.Name, {
             getHandler: () => `Button ${buttonNumber}`,
         });
+
+        // Mark this service for retention
+        this.markServiceForRetention(buttonService);
+
+        this.log.debug(`${this.deviceData.name} | Button ${buttonNumber} service initialized`);
     }
 
-    getValidButtonValues() {
+    getSupportedButtonValues() {
         const values = new Set();
         const ProgrammableSwitchEvent = this.Characteristic.ProgrammableSwitchEvent;
 
-        // Add supported button actions based on capabilities
         if (this.hasCapability("PushableButton")) {
             values.add(ProgrammableSwitchEvent.SINGLE_PRESS);
         }
@@ -95,41 +100,47 @@ export default class Button extends HubitatPlatformAccessory {
         const service = this.buttonServices.get(buttonNumber);
 
         if (!service) {
-            this.logWarn(`No service found for button ${buttonNumber}`);
+            this.log.warn(`No service found for button ${buttonNumber}`);
             return;
         }
 
         const eventValue = this.transformButtonValue(value);
         if (eventValue !== null) {
             service.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent).updateValue(eventValue);
-
-            this.logDebug(`Button ${buttonNumber} event: ${value} transformed to ${eventValue}`);
+            this.log.debug(`Button ${buttonNumber} event: ${value} transformed to ${eventValue}`);
         }
     }
 
     transformButtonValue(value) {
-        const ProgrammableSwitchEvent = this.Characteristic.ProgrammableSwitchEvent;
-
         switch (value) {
             case "pushed":
-                return ProgrammableSwitchEvent.SINGLE_PRESS;
-            case "held":
-                return ProgrammableSwitchEvent.LONG_PRESS;
+                return this.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
             case "doubleTapped":
-                return ProgrammableSwitchEvent.DOUBLE_PRESS;
+                return this.Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
+            case "held":
+                return this.Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
             default:
-                this.logWarn(`Unknown button value: ${value}`);
+                this.log.warn(`Unknown button value: ${value}`);
+                return null;
+        }
+    }
+
+    getButtonState() {
+        switch (this.deviceData.attributes.button) {
+            case "pushed":
+                return this.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
+            case "doubleTapped":
+                return this.Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
+            case "held":
+                return this.Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
+            default:
+                this.log.warn(`Unknown button value: ${this.deviceData.attributes.button}`);
                 return null;
         }
     }
 
     // Override cleanup to handle button service cleanup
     async cleanup() {
-        // Clean up button map registrations
-        for (const [buttonNumber, service] of this.buttonServices) {
-            this.platform.accessories.unregisterButtonService(this.accessory, buttonNumber);
-        }
-
         this.buttonServices.clear();
         await super.cleanup();
     }

@@ -11,7 +11,7 @@ export default class Outlet extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.outletService = this.getOrAddService(this.Service.Outlet);
-            this.markServiceForRetention(this.outletService);
+            // this.markServiceForRetention(this.outletService);
 
             // On/Off State
             this.getOrAddCharacteristic(this.outletService, this.Characteristic.On, {

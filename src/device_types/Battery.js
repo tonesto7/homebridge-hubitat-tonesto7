@@ -11,7 +11,6 @@ export default class Battery extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.batteryService = this.getOrAddService(this.Service.Battery);
-            this.markServiceForRetention(this.batteryService);
 
             // Battery Level
             this.getOrAddCharacteristic(this.batteryService, this.Characteristic.BatteryLevel, {

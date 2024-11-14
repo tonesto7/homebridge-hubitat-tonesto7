@@ -11,7 +11,9 @@ export default class MotionSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.motionService = this.getOrAddService(this.Service.MotionSensor);
-            this.markServiceForRetention(this.motionService);
+            // console.log(`${this.deviceData.name} | Motion service created: ${this.motionService.UUID}`);
+            // this.markServiceForRetention(this.motionService);
+            // console.log(`${this.deviceData.name} | Active services after marking:`, Array.from(this.activeServices));
 
             // Motion Detected
             this.getOrAddCharacteristic(this.motionService, this.Characteristic.MotionDetected, {
@@ -39,7 +41,7 @@ export default class MotionSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring motion sensor services:", error);
+            console.error("Error configuring motion sensor services:", error);
             throw error;
         }
     }
@@ -49,7 +51,7 @@ export default class MotionSensor extends HubitatPlatformAccessory {
     }
 
     getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+        return this.deviceData.status === "ACTIVE";
     }
 
     getStatusTampered() {
@@ -91,6 +93,6 @@ export default class MotionSensor extends HubitatPlatformAccessory {
     // Override cleanup
     async cleanup() {
         this.motionService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

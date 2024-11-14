@@ -12,7 +12,7 @@ export default class EnergyMeter extends HubitatPlatformAccessory {
         try {
             // We'll use a custom service type for energy measurement
             this.energyService = this.getOrAddService(this.platform.CommunityTypes.KilowattHoursService);
-            this.markServiceForRetention(this.energyService);
+            // this.markServiceForRetention(this.energyService);
 
             // Configure the kilowatt hours characteristic
             this.getOrAddCharacteristic(this.energyService, this.platform.CommunityTypes.KilowattHours, {
