@@ -13,54 +13,82 @@ export default class Light extends HubitatPlatformAccessory {
         this.adaptiveLightingController = null;
     }
 
+    static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];
+
     async configureServices() {
-        this.lightService = this.getOrAddService(this.Service.Lightbulb);
-        // this.markServiceForRetention(this.lightService);
+        try {
+            this.lightService = this.getOrAddService(this.Service.Lightbulb, this.getServiceDisplayName(this.deviceData.name, "Light"));
+            // this.markServiceForRetention(this.lightService);
 
-        // Basic on/off
-        this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
-            getHandler: () => this.getOnState(),
-            setHandler: (value) => this.setOnState(value),
-        });
-
-        // Brightness if supported
-        if (this.hasAttribute("level")) {
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Brightness, {
-                getHandler: () => this.getBrightness(),
-                setHandler: (value) => this.setBrightness(value),
-                props: {
-                    minStep: 1,
-                    minValue: 0,
-                    maxValue: 100,
-                },
+            // Basic on/off
+            this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
+                getHandler: () => this.getOnState(this.deviceData.attributes.switch),
+                setHandler: (value) => this.setOnState(value),
             });
-        }
 
-        // Color features if supported
-        if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
-            this.configureColorCharacteristics();
-        }
+            // Brightness if supported
+            if (this.hasAttribute("level")) {
+                this.getOrAddCharacteristic(this.lightService, this.Characteristic.Brightness, {
+                    getHandler: () => this.getBrightness(this.deviceData.attributes.level),
+                    setHandler: (value) => this.setBrightness(value),
+                    props: {
+                        minStep: 1,
+                        minValue: 0,
+                        maxValue: 100,
+                    },
+                });
+            }
 
-        // Color temperature if supported
-        if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
-            this.configureColorTemperature();
-        }
+            // Color features if supported
+            if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
+                this.getOrAddCharacteristic(this.lightService, this.Characteristic.Hue, {
+                    getHandler: () => this.getHue(this.deviceData.attributes.hue),
+                    setHandler: (value) => this.setHue(value),
+                    props: { minValue: 0, maxValue: 360 },
+                });
 
-        // Setup adaptive lighting if supported
-        await this.configureAdaptiveLighting();
+                if (this.hasAttribute("saturation")) {
+                    this.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
+                        getHandler: () => this.deviceData.attributes.saturation,
+                        setHandler: (value) => this.setSaturation(value),
+                        props: { minValue: 0, maxValue: 100 },
+                    });
+                }
+            }
+
+            // Color temperature if supported
+            if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
+                this.getOrAddCharacteristic(this.lightService, this.Characteristic.ColorTemperature, {
+                    getHandler: () => this.getColorTemperature(),
+                    setHandler: (value) => this.setColorTemperature(value),
+                    props: {
+                        minValue: 140, // 7143K
+                        maxValue: 500, // 2000K
+                    },
+                });
+            }
+
+            // Setup adaptive lighting if supported
+            await this.configureAdaptiveLighting();
+
+            return true;
+        } catch (error) {
+            this.logError(`Light | ${this.deviceData.name} | Error configuring services:`, error);
+            throw error;
+        }
     }
 
     // Characteristic Handlers
-    getOnState() {
-        return this.deviceData.attributes.switch === "on";
+    getOnState(state) {
+        return state === "on";
     }
 
     async setOnState(value) {
         await this.sendCommand(value ? "on" : "off");
     }
 
-    getBrightness() {
-        return this.transformBrightnessFromDevice(this.deviceData.attributes.level);
+    getBrightness(value) {
+        return this.transformBrightnessFromDevice(value);
     }
 
     async setBrightness(value) {
@@ -68,46 +96,14 @@ export default class Light extends HubitatPlatformAccessory {
         await this.sendCommand("setLevel", { value1: transformedValue });
     }
 
-    // Color Related Methods
-    configureColorCharacteristics() {
-        this.getOrAddCharacteristic(this.lightService, this.Characteristic.Hue, {
-            getHandler: () => this.getHue(),
-            setHandler: (value) => this.setHue(value),
-            props: { minValue: 0, maxValue: 360 },
-        });
-
-        if (this.hasAttribute("saturation")) {
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
-                getHandler: () => this.getSaturation(),
-                setHandler: (value) => this.setSaturation(value),
-                props: { minValue: 0, maxValue: 100 },
-            });
-        }
-    }
-
-    configureColorTemperature() {
-        this.getOrAddCharacteristic(this.lightService, this.Characteristic.ColorTemperature, {
-            getHandler: () => this.getColorTemperature(),
-            setHandler: (value) => this.setColorTemperature(value),
-            props: {
-                minValue: 140, // 7143K
-                maxValue: 500, // 2000K
-            },
-        });
-    }
-
     // Color Value Handlers
-    getHue() {
-        return this.transformHueFromDevice(this.deviceData.attributes.hue);
+    getHue(value) {
+        return this.transformHueFromDevice(value);
     }
 
     async setHue(value) {
         const transformed = this.transformHueToDevice(value);
         await this.sendCommand("setHue", { value1: transformed });
-    }
-
-    getSaturation() {
-        return this.deviceData.attributes.saturation;
     }
 
     async setSaturation(value) {
@@ -192,11 +188,12 @@ export default class Light extends HubitatPlatformAccessory {
     }
 
     // Attribute Updates
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
+
         switch (attribute) {
             case "switch":
-                this.lightService.updateCharacteristic(this.Characteristic.On, value === "on");
+                this.lightService.getCharacteristic(this.Characteristic.On).updateValue(this.getOnState(value));
                 break;
             case "level":
                 const level = this.transformBrightnessFromDevice(value);
@@ -204,7 +201,7 @@ export default class Light extends HubitatPlatformAccessory {
                     this.logWarn(`Invalid brightness level: ${value}`);
                     return;
                 }
-                this.lightService.updateCharacteristic(this.Characteristic.Brightness, level);
+                this.lightService.getCharacteristic(this.Characteristic.Brightness).updateValue(level);
                 break;
             case "hue":
                 const hue = this.transformHueFromDevice(value);
@@ -212,14 +209,14 @@ export default class Light extends HubitatPlatformAccessory {
                     this.logWarn(`Invalid hue value: ${value}`);
                     return;
                 }
-                this.lightService.updateCharacteristic(this.Characteristic.Hue, hue);
+                this.lightService.getCharacteristic(this.Characteristic.Hue).updateValue(hue);
                 break;
             case "saturation":
                 if (value === null || value === undefined || isNaN(value)) {
                     this.logWarn(`Invalid saturation update value: ${value}`);
                     return;
                 }
-                this.lightService.updateCharacteristic(this.Characteristic.Saturation, value);
+                this.lightService.getCharacteristic(this.Characteristic.Saturation).updateValue(value);
                 break;
             case "colorTemperature":
                 const temp = this.kelvinToMired(value);
@@ -227,8 +224,11 @@ export default class Light extends HubitatPlatformAccessory {
                     this.logWarn(`Invalid color temperature value: ${value}`);
                     return;
                 }
-                this.lightService.updateCharacteristic(this.Characteristic.ColorTemperature, temp);
+                this.lightService.getCharacteristic(this.Characteristic.ColorTemperature).updateValue(temp);
                 break;
+
+            default:
+                this.logDebug(`Light | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 }

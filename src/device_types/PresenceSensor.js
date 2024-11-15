@@ -8,72 +8,73 @@ export default class PresenceSensor extends HubitatPlatformAccessory {
         this.occupancyService = null;
     }
 
+    static relevantAttributes = ["presence", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.occupancyService = this.getOrAddService(this.Service.OccupancySensor);
-            // this.markServiceForRetention(this.occupancyService);
+            this.occupancyService = this.getOrAddService(this.Service.OccupancySensor, this.getServiceDisplayName(this.deviceData.name, "Presence Sensor"));
 
             // Occupancy Detected
             this.getOrAddCharacteristic(this.occupancyService, this.Characteristic.OccupancyDetected, {
-                getHandler: () => this.getOccupancyDetected(),
+                getHandler: () => this.getOccupancyDetected(this.deviceData.attributes.presence),
             });
 
             // Status Active
             this.getOrAddCharacteristic(this.occupancyService, this.Characteristic.StatusActive, {
-                getHandler: () => this.getStatusActive(),
+                getHandler: () => this.getStatusActive(this.deviceData.status),
             });
 
             // Status Tampered (if supported)
             this.getOrAddCharacteristic(this.occupancyService, this.Characteristic.StatusTampered, {
                 preReqChk: () => this.hasCapability("TamperAlert"),
-                getHandler: () => this.getStatusTampered(),
+                getHandler: () => this.getStatusTampered(this.deviceData.attributes.tamper),
                 removeIfMissingPreReq: true,
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring presence sensor services:", error);
+            this.logError(`PresenceSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getOccupancyDetected() {
-        return this.deviceData.attributes.presence === "present" ? this.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : this.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
+    getOccupancyDetected(value) {
+        return value === "present" ? this.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : this.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
     }
 
-    getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+    getStatusActive(value) {
+        return value === "ACTIVE";
     }
 
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    getStatusTampered(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
         switch (attribute) {
             case "presence":
-                this.occupancyService.getCharacteristic(this.Characteristic.OccupancyDetected).updateValue(value === "present" ? this.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : this.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED);
+                this.occupancyService.getCharacteristic(this.Characteristic.OccupancyDetected).updateValue(this.getOccupancyDetected(value));
                 break;
 
             case "status":
-                this.occupancyService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.occupancyService.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.occupancyService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
+                this.occupancyService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`PresenceSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.occupancyService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

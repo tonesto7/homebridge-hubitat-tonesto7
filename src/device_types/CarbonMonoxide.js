@@ -8,9 +8,11 @@ export default class CarbonMonoxideSensor extends HubitatPlatformAccessory {
         this.coService = null;
     }
 
+    static relevantAttributes = ["carbonMonoxide", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.coService = this.getOrAddService(this.Service.CarbonMonoxideSensor);
+            this.coService = this.getOrAddService(this.Service.CarbonMonoxideSensor, this.getServiceDisplayName(this.deviceData.name, "Carbon Monoxide"));
             // this.markServiceForRetention(this.coService);
 
             // CO Detected
@@ -30,16 +32,9 @@ export default class CarbonMonoxideSensor extends HubitatPlatformAccessory {
                 removeIfMissingPreReq: true,
             });
 
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.coService, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
-                removeIfMissingPreReq: true,
-            });
-
             return true;
         } catch (error) {
-            this.logError("Error configuring CO sensor services:", error);
+            this.logError(`CarbonMonoxide | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -49,27 +44,23 @@ export default class CarbonMonoxideSensor extends HubitatPlatformAccessory {
     }
 
     getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+        return this.deviceData.status === "ACTIVE";
     }
 
     getStatusTampered() {
         return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    }
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
         switch (attribute) {
             case "carbonMonoxide":
                 this.coService.getCharacteristic(this.Characteristic.CarbonMonoxideDetected).updateValue(value === "clear" ? this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL);
                 break;
 
             case "status":
-                this.coService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.coService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "ACTIVE");
                 break;
 
             case "tamper":
@@ -77,19 +68,14 @@ export default class CarbonMonoxideSensor extends HubitatPlatformAccessory {
                 this.coService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
                 break;
 
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.coService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
-                break;
-
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`CarbonMonoxide | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.coService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

@@ -8,14 +8,15 @@ export default class LeakSensor extends HubitatPlatformAccessory {
         this.leakService = null;
     }
 
+    static relevantAttributes = ["water", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.leakService = this.getOrAddService(this.Service.LeakSensor);
-            // this.markServiceForRetention(this.leakService);
+            this.leakService = this.getOrAddService(this.Service.LeakSensor, this.getServiceDisplayName(this.deviceData.name, "Leak Sensor"));
 
             // Leak Detected
             this.getOrAddCharacteristic(this.leakService, this.Characteristic.LeakDetected, {
-                getHandler: () => this.getLeakDetected(),
+                getHandler: () => this.getLeakDetected(this.deviceData.attributes.water),
             });
 
             // Status Active
@@ -30,35 +31,23 @@ export default class LeakSensor extends HubitatPlatformAccessory {
                 removeIfMissingPreReq: true,
             });
 
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.leakService, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
-                removeIfMissingPreReq: true,
-            });
-
             return true;
         } catch (error) {
-            this.logError("Error configuring leak sensor services:", error);
+            this.logError(`LeakSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getLeakDetected() {
-        return this.deviceData.attributes.water === "dry" ? this.Characteristic.LeakDetected.LEAK_NOT_DETECTED : this.Characteristic.LeakDetected.LEAK_DETECTED;
+    getLeakDetected(status) {
+        return status === "dry" ? this.Characteristic.LeakDetected.LEAK_NOT_DETECTED : this.Characteristic.LeakDetected.LEAK_DETECTED;
     }
 
-    getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+    getStatusActive(status) {
+        return status === "ACTIVE";
     }
 
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
-    }
-
-    getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+    getStatusTampered(status) {
+        return status === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
     async handleAttributeUpdate(attribute, value) {
@@ -66,31 +55,26 @@ export default class LeakSensor extends HubitatPlatformAccessory {
 
         switch (attribute) {
             case "water":
-                this.leakService.getCharacteristic(this.Characteristic.LeakDetected).updateValue(value === "dry" ? this.Characteristic.LeakDetected.LEAK_NOT_DETECTED : this.Characteristic.LeakDetected.LEAK_DETECTED);
+                this.leakService.getCharacteristic(this.Characteristic.LeakDetected).updateValue(this.getLeakDetected(value));
                 break;
 
             case "status":
-                this.leakService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.leakService.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.leakService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
-                break;
-
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.leakService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+                this.leakService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`LeakSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.leakService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

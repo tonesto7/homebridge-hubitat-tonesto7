@@ -10,16 +10,15 @@ export default class WindowCovering extends HubitatPlatformAccessory {
         this.positionAttr = this.usePosition ? "position" : "level";
     }
 
+    static relevantAttributes = ["position", "level", "windowShade"];
+
     async configureServices() {
         try {
-            this.shadeService = this.getOrAddService(this.Service.WindowCovering);
+            this.shadeService = this.getOrAddService(this.Service.WindowCovering, this.getServiceDisplayName(this.deviceData.name, "Window Covering"));
 
             // Current Position
             this.getOrAddCharacteristic(this.shadeService, this.Characteristic.CurrentPosition, {
-                getHandler: () => {
-                    const position = this.getCurrentPosition();
-                    return isNaN(position) ? 0 : position;
-                },
+                getHandler: () => this.getCurrentPosition(this.deviceData.attributes[this.positionAttr]),
                 props: {
                     minValue: 0,
                     maxValue: 100,
@@ -29,10 +28,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
 
             // Target Position
             this.getOrAddCharacteristic(this.shadeService, this.Characteristic.TargetPosition, {
-                getHandler: () => {
-                    const position = this.getTargetPosition();
-                    return isNaN(position) ? 0 : position;
-                },
+                getHandler: () => this.getTargetPosition(this.deviceData.attributes[this.positionAttr]),
                 setHandler: async (value) => this.setTargetPosition(value),
                 props: {
                     minValue: 0,
@@ -43,7 +39,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
 
             // Position State
             this.getOrAddCharacteristic(this.shadeService, this.Characteristic.PositionState, {
-                getHandler: () => this.getPositionState(),
+                getHandler: () => this.getPositionState(this.deviceData.attributes.windowShade),
             });
 
             // Obstruction Detection
@@ -59,18 +55,18 @@ export default class WindowCovering extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring window covering services:", error);
+            this.logError(`WindowCovering | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getCurrentPosition() {
-        const position = parseInt(this.deviceData.attributes[this.positionAttr]);
+    getCurrentPosition(value) {
+        const position = parseInt(value);
         return this.validatePosition(position);
     }
 
-    getTargetPosition() {
-        const position = parseInt(this.deviceData.attributes[this.positionAttr]);
+    getTargetPosition(value) {
+        const position = parseInt(value);
         return this.validatePosition(position);
     }
 
@@ -93,12 +89,12 @@ export default class WindowCovering extends HubitatPlatformAccessory {
             const command = this.usePosition ? "setPosition" : "setLevel";
             await this.sendCommand(command, { value1: targetValue });
         } catch (error) {
-            this.logError("Error setting target position:", error);
+            this.logError("WindowCovering | Error setting target position:", error);
         }
     }
 
-    getPositionState() {
-        switch (this.deviceData.attributes.windowShade) {
+    getPositionState(value) {
+        switch (value) {
             case "opening":
                 return this.Characteristic.PositionState.INCREASING;
             case "closing":
@@ -108,27 +104,28 @@ export default class WindowCovering extends HubitatPlatformAccessory {
         }
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
         switch (attribute) {
             case "position":
             case "level":
                 if (attribute !== this.positionAttr) return;
-                const position = this.validatePosition(parseInt(value));
-                this.shadeService.getCharacteristic(this.Characteristic.CurrentPosition).updateValue(position);
-                this.shadeService.getCharacteristic(this.Characteristic.TargetPosition).updateValue(position);
+                this.shadeService.getCharacteristic(this.Characteristic.CurrentPosition).updateValue(this.getCurrentPosition(value));
+                this.shadeService.getCharacteristic(this.Characteristic.TargetPosition).updateValue(this.getTargetPosition(value));
                 break;
 
             case "windowShade":
-                const state = this.getPositionState();
-                this.shadeService.getCharacteristic(this.Characteristic.PositionState).updateValue(state);
+                this.shadeService.getCharacteristic(this.Characteristic.PositionState).updateValue(this.getPositionState(value));
                 break;
+
+            default:
+                this.logDebug(`WindowCovering | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     async cleanup() {
         this.shadeService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

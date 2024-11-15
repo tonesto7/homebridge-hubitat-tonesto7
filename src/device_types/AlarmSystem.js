@@ -8,31 +8,32 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
         this.alarmService = null;
     }
 
+    static relevantAttributes = ["alarmSystemStatus"];
+
     async configureServices() {
         try {
-            this.alarmService = this.getOrAddService(this.Service.SecuritySystem);
+            this.alarmService = this.getOrAddService(this.Service.SecuritySystem, this.getServiceDisplayName(this.deviceData.name, "Alarm System"));
 
             // Configure Current State
             this.getOrAddCharacteristic(this.alarmService, this.Characteristic.SecuritySystemCurrentState, {
-                getHandler: () => this.getCurrentState(),
+                getHandler: () => this.getCurrentState(this.deviceData.attributes.alarmSystemStatus),
             });
 
             // Configure Target State
             this.getOrAddCharacteristic(this.alarmService, this.Characteristic.SecuritySystemTargetState, {
-                getHandler: () => this.getTargetState(),
+                getHandler: () => this.getTargetState(this.deviceData.attributes.alarmSystemStatus),
                 setHandler: async (value) => this.setTargetState(value),
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring alarm system services:", error);
+            this.logError(`AlarmSystem | ${this.deviceData.name} | Error configuring alarm system services:`, error);
             throw error;
         }
     }
 
-    getCurrentState() {
-        const val = this.deviceData.attributes.alarmSystemStatus;
-        switch (val) {
+    getCurrentState(value) {
+        switch (value) {
             case "armedHome":
                 return this.Characteristic.SecuritySystemCurrentState.STAY_ARM;
             case "armedNight":
@@ -51,9 +52,8 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
         }
     }
 
-    getTargetState() {
-        const val = this.deviceData.attributes.alarmSystemStatus;
-        switch (val) {
+    getTargetState(value) {
+        switch (value) {
             case "armedHome":
             case "intrusion-home":
                 return this.Characteristic.SecuritySystemCurrentState.STAY_ARM;
@@ -91,17 +91,17 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
         await this.sendCommand(command);
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
         if (attribute === "alarmSystemStatus") {
             // Update current state
-            this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemCurrentState).updateValue(this.getCurrentState());
+            this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemCurrentState).updateValue(this.getCurrentState(value));
 
             // Update target state
-            this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemTargetState).updateValue(this.getTargetState());
+            this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemTargetState).updateValue(this.getTargetState(value));
         } else {
-            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+            this.logDebug(`AlarmSystem | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

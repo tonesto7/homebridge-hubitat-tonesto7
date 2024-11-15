@@ -8,10 +8,11 @@ export default class IlluminanceSensor extends HubitatPlatformAccessory {
         this.lightSensorService = null;
     }
 
+    static relevantAttributes = ["illuminance", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.lightSensorService = this.getOrAddService(this.Service.LightSensor);
-            // this.markServiceForRetention(this.lightSensorService);
+            this.lightSensorService = this.getOrAddService(this.Service.LightSensor, this.getServiceDisplayName(this.deviceData.name, "Light Sensor"));
 
             // Current Ambient Light Level
             this.getOrAddCharacteristic(this.lightSensorService, this.Characteristic.CurrentAmbientLightLevel, {
@@ -24,26 +25,19 @@ export default class IlluminanceSensor extends HubitatPlatformAccessory {
 
             // Status Active
             this.getOrAddCharacteristic(this.lightSensorService, this.Characteristic.StatusActive, {
-                getHandler: () => this.getStatusActive(),
+                getHandler: () => this.getStatusActive(this.deviceData.status),
             });
 
             // Status Tampered (if supported)
             this.getOrAddCharacteristic(this.lightSensorService, this.Characteristic.StatusTampered, {
                 preReqChk: () => this.hasCapability("TamperAlert"),
-                getHandler: () => this.getStatusTampered(),
-                removeIfMissingPreReq: true,
-            });
-
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.lightSensorService, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
+                getHandler: () => this.getStatusTampered(this.deviceData.attributes.tamper),
                 removeIfMissingPreReq: true,
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring illuminance sensor services:", error);
+            this.logError(`IlluminanceSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -54,51 +48,42 @@ export default class IlluminanceSensor extends HubitatPlatformAccessory {
         return Math.round(Math.ceil(illuminance));
     }
 
-    getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+    getStatusActive(status) {
+        return status === "ACTIVE";
     }
 
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    getStatusTampered(status) {
+        return status === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    }
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
         switch (attribute) {
             case "illuminance":
-                const illuminance = parseFloat(value);
+                const illuminance = this.getLightLevel(value);
                 if (!isNaN(illuminance)) {
-                    this.lightSensorService.getCharacteristic(this.Characteristic.CurrentAmbientLightLevel).updateValue(Math.round(Math.ceil(illuminance)));
+                    this.lightSensorService.getCharacteristic(this.Characteristic.CurrentAmbientLightLevel).updateValue(illuminance);
                 }
                 break;
 
             case "status":
-                this.lightSensorService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.lightSensorService.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.lightSensorService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
-                break;
-
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.lightSensorService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+                this.lightSensorService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`IlluminanceSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.lightSensorService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

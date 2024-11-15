@@ -8,78 +8,77 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
         this.temperatureService = null;
     }
 
+    static relevantAttributes = ["temperature", "tamper", "status"];
+
     async configureServices() {
         try {
-            this.temperatureService = this.getOrAddService(this.Service.TemperatureSensor);
+            this.temperatureService = this.getOrAddService(this.Service.TemperatureSensor, this.getServiceDisplayName(this.deviceData.name, "Temp Sensor"));
 
             // Current Temperature
             this.getOrAddCharacteristic(this.temperatureService, this.Characteristic.CurrentTemperature, {
-                getHandler: () => this.getCurrentTemperature(),
+                getHandler: () => this.getCurrentTemperature(this.deviceData.attributes.temperature),
                 props: {
                     minValue: -100,
                     maxValue: 200,
                 },
             });
 
+            // Status Active
+            this.getOrAddCharacteristic(this.temperatureService, this.Characteristic.StatusActive, {
+                getHandler: () => this.getStatusActive(this.deviceData.status),
+            });
+
             // Status Tampered (if supported)
             this.getOrAddCharacteristic(this.temperatureService, this.Characteristic.StatusTampered, {
                 preReqChk: () => this.hasCapability("TamperAlert"),
-                getHandler: () => this.getStatusTampered(),
-                removeIfMissingPreReq: true,
-            });
-
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.temperatureService, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
+                getHandler: () => this.getStatusTampered(this.deviceData.attributes.tamper),
                 removeIfMissingPreReq: true,
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring temperature sensor services:", error);
+            this.logError(`TemperatureSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getCurrentTemperature() {
-        return this.transformTemperatureToHomeKit(this.deviceData.attributes.temperature);
+    getCurrentTemperature(value) {
+        return this.transformTemperatureToHomeKit(value);
     }
 
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    getStatusTampered(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    getStatusLowBattery() {
-        const battery = parseInt(this.deviceData.attributes.battery);
-        return battery < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+    getStatusActive(value) {
+        return value === "ACTIVE";
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
         switch (attribute) {
             case "temperature":
-                this.temperatureService.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this.transformTemperatureToHomeKit(value));
+                this.temperatureService.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this.getCurrentTemperature(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.temperatureService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered());
+                this.temperatureService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.temperatureService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(this.getStatusLowBattery());
+            case "status":
+                this.temperatureService.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`TemperatureSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                break;
         }
     }
 
     async cleanup() {
         this.temperatureService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

@@ -8,31 +8,32 @@ export default class Lock extends HubitatPlatformAccessory {
         this.lockService = null;
     }
 
+    static relevantAttributes = ["lock"];
+
     async configureServices() {
         try {
-            this.lockService = this.getOrAddService(this.Service.LockMechanism);
-            // this.markServiceForRetention(this.lockService);
+            this.lockService = this.getOrAddService(this.Service.LockMechanism, this.getServiceDisplayName(this.deviceData.name, "Lock"));
 
             // Lock Current State
             this.getOrAddCharacteristic(this.lockService, this.Characteristic.LockCurrentState, {
-                getHandler: () => this.getLockCurrentState(),
+                getHandler: () => this.getLockCurrentState(this.deviceData.attributes.lock),
             });
 
             // Lock Target State
             this.getOrAddCharacteristic(this.lockService, this.Characteristic.LockTargetState, {
-                getHandler: () => this.getLockTargetState(),
+                getHandler: () => this.getLockTargetState(this.deviceData.attributes.lock),
                 setHandler: async (value) => this.setLockTargetState(value),
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring lock services:", error);
+            this.logError(`Lock | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getLockCurrentState() {
-        switch (this.deviceData.attributes.lock) {
+    getLockCurrentState(value) {
+        switch (value) {
             case "locked":
                 return this.Characteristic.LockCurrentState.SECURED;
             case "unlocked":
@@ -42,8 +43,8 @@ export default class Lock extends HubitatPlatformAccessory {
         }
     }
 
-    getLockTargetState() {
-        switch (this.deviceData.attributes.lock) {
+    getLockTargetState(value) {
+        switch (value) {
             case "locked":
                 return this.Characteristic.LockTargetState.SECURED;
             case "unlocked":
@@ -57,35 +58,23 @@ export default class Lock extends HubitatPlatformAccessory {
         await this.sendCommand(value === this.Characteristic.LockTargetState.SECURED ? "lock" : "unlock");
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-        if (attribute === "lock") {
-            let currentState, targetState;
-            switch (value) {
-                case "locked":
-                    currentState = this.Characteristic.LockCurrentState.SECURED;
-                    targetState = this.Characteristic.LockTargetState.SECURED;
-                    break;
-                case "unlocked":
-                    currentState = this.Characteristic.LockCurrentState.UNSECURED;
-                    targetState = this.Characteristic.LockTargetState.UNSECURED;
-                    break;
-                default:
-                    currentState = this.Characteristic.LockCurrentState.UNKNOWN;
-                    targetState = this.Characteristic.LockTargetState.UNSECURED;
-            }
+        switch (attribute) {
+            case "lock":
+                this.lockService.getCharacteristic(this.Characteristic.LockCurrentState).updateValue(this.getLockCurrentState(value));
+                this.lockService.getCharacteristic(this.Characteristic.LockTargetState).updateValue(this.getLockTargetState(value));
+                break;
 
-            this.lockService.getCharacteristic(this.Characteristic.LockCurrentState).updateValue(currentState);
-            this.lockService.getCharacteristic(this.Characteristic.LockTargetState).updateValue(targetState);
-        } else {
-            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+            default:
+                this.logDebug(`Lock | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.lockService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

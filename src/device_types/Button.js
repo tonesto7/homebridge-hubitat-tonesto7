@@ -8,12 +8,14 @@ export default class Button extends HubitatPlatformAccessory {
         this.buttonServices = new Map(); // Track button services by number
     }
 
+    static relevantAttributes = ["button", "numberOfButtons"];
+
     async configureServices() {
         try {
             // Get number of buttons, clamp between 1 and 10
             const buttonCount = Math.min(Math.max(this.deviceData.attributes.numberOfButtons || 1, 1), 10);
 
-            this.log.debug(`${this.deviceData.name} | Initializing button accessory with ${buttonCount} buttons`);
+            this.logDebug(`${this.deviceData.name} | Initializing button accessory with ${buttonCount} buttons`);
 
             // Configure each button
             for (let buttonNumber = 1; buttonNumber <= buttonCount; buttonNumber++) {
@@ -22,7 +24,7 @@ export default class Button extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring button services:", error);
+            this.logError(`Button | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -58,15 +60,7 @@ export default class Button extends HubitatPlatformAccessory {
             getHandler: () => buttonNumber,
         });
 
-        // Name characteristic
-        this.getOrAddCharacteristic(buttonService, this.Characteristic.Name, {
-            getHandler: () => `Button ${buttonNumber}`,
-        });
-
-        // Mark this service for retention
-        this.markServiceForRetention(buttonService);
-
-        this.log.debug(`${this.deviceData.name} | Button ${buttonNumber} service initialized`);
+        this.logDebug(`Button | ${this.deviceData.name} | Button ${buttonNumber} service initialized`);
     }
 
     getSupportedButtonValues() {
@@ -92,22 +86,26 @@ export default class Button extends HubitatPlatformAccessory {
         return Array.from(values);
     }
 
-    async handleAttributeUpdate(attribute, value, data = {}) {
-        this.updateDeviceAttribute(attribute, value);
-        if (attribute !== "button") return;
+    async handleAttributeUpdate(change) {
+        const { attribute, value, data } = change;
 
-        const buttonNumber = data.buttonNumber || 1;
-        const service = this.buttonServices.get(buttonNumber);
+        switch (attribute) {
+            case "button":
+                const buttonNumber = data.buttonNumber || 1;
+                const service = this.buttonServices.get(buttonNumber);
+                if (!service) {
+                    this.logWarn(`No service found for button ${buttonNumber}`);
+                    return;
+                }
 
-        if (!service) {
-            this.log.warn(`No service found for button ${buttonNumber}`);
-            return;
-        }
-
-        const eventValue = this.transformButtonValue(value);
-        if (eventValue !== null) {
-            service.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent).updateValue(eventValue);
-            this.log.debug(`Button ${buttonNumber} event: ${value} transformed to ${eventValue}`);
+                const eventValue = this.transformButtonValue(value);
+                if (eventValue !== null) {
+                    service.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent).updateValue(eventValue);
+                    this.logDebug(`${this.deviceData.name} | Button ${buttonNumber} event: ${value} transformed to ${eventValue}`);
+                }
+                break;
+            default:
+                this.logDebug(`Button | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
@@ -120,7 +118,7 @@ export default class Button extends HubitatPlatformAccessory {
             case "held":
                 return this.Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
             default:
-                this.log.warn(`Unknown button value: ${value}`);
+                this.logWarn(`Button | ${this.deviceData.name} | Unknown button value: ${value}`);
                 return null;
         }
     }
@@ -134,7 +132,7 @@ export default class Button extends HubitatPlatformAccessory {
             case "held":
                 return this.Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
             default:
-                this.log.warn(`Unknown button value: ${this.deviceData.attributes.button}`);
+                this.logWarn(`Button | ${this.deviceData.name} | Unknown button value: ${this.deviceData.attributes.button}`);
                 return null;
         }
     }
@@ -142,6 +140,6 @@ export default class Button extends HubitatPlatformAccessory {
     // Override cleanup to handle button service cleanup
     async cleanup() {
         this.buttonServices.clear();
-        await super.cleanup();
+        super.cleanup();
     }
 }

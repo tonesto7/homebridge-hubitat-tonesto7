@@ -8,10 +8,10 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
         this.pistonService = null;
     }
 
+    static relevantAttributes = ["switch"];
     async configureServices() {
         try {
-            this.pistonService = this.getOrAddService(this.Service.Switch);
-            // this.markServiceForRetention(this.pistonService);
+            this.pistonService = this.getOrAddService(this.Service.Switch, this.getServiceDisplayName(this.deviceData.name, "Piston"));
 
             // On State
             this.getOrAddCharacteristic(this.pistonService, this.Characteristic.On, {
@@ -21,7 +21,7 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring virtual piston services:", error);
+            this.logError(`Virtual Piston | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -38,19 +38,21 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
         }
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-        if (attribute === "switch") {
-            this.pistonService.getCharacteristic(this.Characteristic.On).updateValue(false);
-        } else {
-            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+        switch (attribute) {
+            case "switch":
+                this.pistonService.getCharacteristic(this.Characteristic.On).updateValue(this.getOnState(value));
+                break;
+            default:
+                this.logDebug(`Virtual Piston | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.pistonService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

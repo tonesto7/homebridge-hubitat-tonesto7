@@ -8,20 +8,22 @@ export default class Fan extends HubitatPlatformAccessory {
         this.fanService = null;
     }
 
+    static relevantAttributes = ["switch", "speed", "level"];
+
     async configureServices() {
         try {
-            this.fanService = this.getOrAddService(this.Service.Fan);
+            this.fanService = this.getOrAddService(this.Service.Fan, this.getServiceDisplayName(this.deviceData.name, "Fan"));
             // this.markServiceForRetention(this.fanService);
 
             // Active State (On/Off)
             this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {
-                getHandler: () => this.getActiveState(),
+                getHandler: () => this.getActiveState(this.deviceData.attributes.switch),
                 setHandler: async (value) => this.setActiveState(value),
             });
 
             // Current Fan State
             this.getOrAddCharacteristic(this.fanService, this.Characteristic.CurrentFanState, {
-                getHandler: () => this.getCurrentState(),
+                getHandler: () => this.getCurrentState(this.deviceData.attributes.switch),
             });
 
             // Rotation Speed (if supported)
@@ -41,21 +43,21 @@ export default class Fan extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring fan services:", error);
+            this.logError(`Fan | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getActiveState() {
-        return this.deviceData.attributes.switch === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+    getActiveState(state) {
+        return state === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
     }
 
     async setActiveState(value) {
         await this.sendCommand(value === this.Characteristic.Active.ACTIVE ? "on" : "off");
     }
 
-    getCurrentState() {
-        if (this.deviceData.attributes.switch !== "on") {
+    getCurrentState(state) {
+        if (state !== "on") {
             return this.Characteristic.CurrentFanState.INACTIVE;
         }
         const speedAttr = this.hasAttribute("speed") ? "speed" : "level";
@@ -92,14 +94,13 @@ export default class Fan extends HubitatPlatformAccessory {
         }
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
+
         switch (attribute) {
             case "switch":
-                const activeState = value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
-
-                this.fanService.getCharacteristic(this.Characteristic.Active).updateValue(activeState);
-                this.fanService.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this.getCurrentState());
+                this.fanService.getCharacteristic(this.Characteristic.Active).updateValue(this.getActiveState(value));
+                this.fanService.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this.getCurrentState(value));
 
                 if (value === "off") {
                     // Update rotation speed to 0 when turned off
@@ -129,13 +130,15 @@ export default class Fan extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`Fan | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
+
+        return true;
     }
 
     // Override cleanup
     async cleanup() {
         this.fanService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

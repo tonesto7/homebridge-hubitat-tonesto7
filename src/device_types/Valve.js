@@ -8,20 +8,21 @@ export default class Valve extends HubitatPlatformAccessory {
         this.valveService = null;
     }
 
+    static relevantAttributes = ["valve"];
+
     async configureServices() {
         try {
-            this.valveService = this.getOrAddService(this.Service.Valve);
-            // this.markServiceForRetention(this.valveService);
+            this.valveService = this.getOrAddService(this.Service.Valve, this.getServiceDisplayName(this.deviceData.name, "Valve"));
 
             // Active
             this.getOrAddCharacteristic(this.valveService, this.Characteristic.Active, {
-                getHandler: () => this.getActiveState(),
+                getHandler: () => this.getActiveState(this.deviceData.attributes.valve),
                 setHandler: async (value) => this.setActiveState(value),
             });
 
             // In Use
             this.getOrAddCharacteristic(this.valveService, this.Characteristic.InUse, {
-                getHandler: () => this.getInUseState(),
+                getHandler: () => this.getInUseState(this.deviceData.attributes.valve),
             });
 
             // Valve Type (defaults to 0 - Generic Valve)
@@ -31,38 +32,39 @@ export default class Valve extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring valve services:", error);
+            this.logError(`Valve | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getActiveState() {
-        return this.deviceData.attributes.valve === "open" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+    getActiveState(valve) {
+        return valve === "open" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
     }
 
     async setActiveState(value) {
         await this.sendCommand(value === this.Characteristic.Active.ACTIVE ? "open" : "close");
     }
 
-    getInUseState() {
-        return this.deviceData.attributes.valve === "open" ? this.Characteristic.InUse.IN_USE : this.Characteristic.InUse.NOT_IN_USE;
+    getInUseState(valve) {
+        return valve === "open" ? this.Characteristic.InUse.IN_USE : this.Characteristic.InUse.NOT_IN_USE;
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-        if (attribute === "valve") {
-            const isOpen = value === "open";
-            this.valveService.getCharacteristic(this.Characteristic.Active).updateValue(isOpen ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE);
-            this.valveService.getCharacteristic(this.Characteristic.InUse).updateValue(isOpen ? this.Characteristic.InUse.IN_USE : this.Characteristic.InUse.NOT_IN_USE);
-        } else {
-            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+        switch (attribute) {
+            case "valve":
+                this.valveService.getCharacteristic(this.Characteristic.Active).updateValue(this.getActiveState(value));
+                this.valveService.getCharacteristic(this.Characteristic.InUse).updateValue(this.getInUseState(value));
+                break;
+            default:
+                this.logDebug(`Valve | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.valveService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

@@ -8,18 +8,20 @@ export default class AirQuality extends HubitatPlatformAccessory {
         this.airQualityService = null;
     }
 
+    static relevantAttributes = ["airQualityIndex", "status", "pm25", "tamper"];
+
     async configureServices() {
         try {
-            this.airQualityService = this.getOrAddService(this.Service.AirQualitySensor);
+            this.airQualityService = this.getOrAddService(this.Service.AirQualitySensor, this.getServiceDisplayName(this.deviceData.name, "Air Quality"));
 
             // Air Quality
             this.getOrAddCharacteristic(this.airQualityService, this.Characteristic.AirQuality, {
-                getHandler: () => this.getAirQuality(),
+                getHandler: () => this.getAirQuality(this.deviceData.attributes.airQualityIndex),
             });
 
             // Status Active
             this.getOrAddCharacteristic(this.airQualityService, this.Characteristic.StatusActive, {
-                getHandler: () => this.getStatusActive(),
+                getHandler: () => this.getStatusActive(this.deviceData.status),
             });
 
             // Status Fault
@@ -30,28 +32,27 @@ export default class AirQuality extends HubitatPlatformAccessory {
             // PM2.5 Density if supported
             if (this.hasAttribute("pm25")) {
                 this.getOrAddCharacteristic(this.airQualityService, this.Characteristic.PM2_5Density, {
-                    getHandler: () => this.getPM25Density(),
+                    getHandler: () => this.getPM25Density(this.deviceData.attributes.pm25),
                 });
             }
 
             // Status Tampered if supported
             this.getOrAddCharacteristic(this.airQualityService, this.Characteristic.StatusTampered, {
                 preReqChk: () => this.hasCapability("TamperAlert"),
-                getHandler: () => this.getStatusTampered(),
+                getHandler: () => this.getStatusTampered(this.deviceData.attributes.tamper),
                 removeIfMissingPreReq: true,
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring air quality sensor services:", error);
+            this.logError(`AirQuality | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
     // Air Quality
-    getAirQuality() {
-        const aqi = parseInt(this.deviceData.attributes.airQualityIndex);
-
+    getAirQuality(value) {
+        const aqi = parseInt(value);
         if (aqi <= 50) return this.Characteristic.AirQuality.EXCELLENT;
         if (aqi <= 100) return this.Characteristic.AirQuality.GOOD;
         if (aqi <= 150) return this.Characteristic.AirQuality.FAIR;
@@ -60,52 +61,50 @@ export default class AirQuality extends HubitatPlatformAccessory {
     }
 
     // Status Active
-    getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+    getStatusActive(value) {
+        return value === "ACTIVE";
     }
 
     // Status Fault
     getStatusFault() {
-        return this.deviceData.attributes.status === "fault" ? this.Characteristic.StatusFault.GENERAL_FAULT : this.Characteristic.StatusFault.NO_FAULT;
+        return this.Characteristic.StatusFault.NO_FAULT;
     }
 
     // PM2.5 Density
-    getPM25Density() {
-        return parseFloat(this.deviceData.attributes.pm25) || 0;
+    getPM25Density(value) {
+        return parseFloat(value) || 0;
     }
 
     // Status Tampered
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    getStatusTampered(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
+
         switch (attribute) {
             case "airQualityIndex":
-                this.airQualityService.getCharacteristic(this.Characteristic.AirQuality).updateValue(this.getAirQuality());
+                this.airQualityService.getCharacteristic(this.Characteristic.AirQuality).updateValue(this.getAirQuality(value));
                 break;
 
             case "status":
-                this.airQualityService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
-
-                this.airQualityService.getCharacteristic(this.Characteristic.StatusFault).updateValue(value === "fault" ? this.Characteristic.StatusFault.GENERAL_FAULT : this.Characteristic.StatusFault.NO_FAULT);
+                this.airQualityService.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
+                this.airQualityService.getCharacteristic(this.Characteristic.StatusFault).updateValue(this.getStatusFault());
                 break;
 
             case "pm25":
                 if (!this.hasAttribute("pm25")) return;
-
-                this.airQualityService.getCharacteristic(this.Characteristic.PM2_5Density).updateValue(parseFloat(value) || 0);
+                this.airQualityService.getCharacteristic(this.Characteristic.PM2_5Density).updateValue(this.getPM25Density(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-
-                this.airQualityService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
+                this.airQualityService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`AirQuality | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

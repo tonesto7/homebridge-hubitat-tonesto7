@@ -9,131 +9,109 @@ export default class Thermostat extends HubitatPlatformAccessory {
         this.fanService = null;
     }
 
+    static relevantAttributes = ["temperature", "thermostatOperatingState", "thermostatMode", "heatingSetpoint", "coolingSetpoint", "thermostatFanMode", "humidity"];
+
     // Main Service Configuration
     async configureServices() {
         try {
-            await this.configureThermostatService();
+            this.thermostatService = this.getOrAddService(this.Service.Thermostat, this.getServiceDisplayName(this.deviceData.name, "Thermostat"));
 
-            if (this.supportsFan()) {
-                await this.configureFanService();
+            // Current Temperature
+            this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentTemperature, {
+                getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.temperature),
+                props: { minValue: -100, maxValue: 100, minStep: 0.1 },
+            });
+
+            // Target Temperature
+            this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TargetTemperature, {
+                getHandler: () => this.transformTemperatureToHomeKit(this.getActiveSetpoint()),
+                setHandler: async (value) => this.handleSetTargetTemperature(value),
+                props: {
+                    minValue: this.tempUnit === "F" ? 50 : 10,
+                    maxValue: this.tempUnit === "F" ? 90 : 32,
+                    minStep: 0.5,
+                },
+            });
+
+            // Current Heating/Cooling State
+            this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentHeatingCoolingState, {
+                getHandler: () => this.getCurrentHeatingCoolingState(this.deviceData.attributes.thermostatOperatingState),
+            });
+
+            // Target Heating/Cooling State
+            this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TargetHeatingCoolingState, {
+                getHandler: () => this.getTargetHeatingCoolingState(this.deviceData.attributes.thermostatMode),
+                setHandler: async (value) => this.handleSetThermostatMode(value),
+                props: { validValues: this.getSupportedThermostatModes() },
+            });
+
+            this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentRelativeHumidity, {
+                preReqChk: () => this.hasCapability("RelativeHumidityMeasurement") && this.hasAttribute("humidity"),
+                getHandler: () => {
+                    const humidity = parseInt(this.deviceData.attributes.humidity);
+                    if (isNaN(humidity)) {
+                        this.logWarn(`Invalid humidity value: ${this.deviceData.attributes.humidity}`);
+                        return 0;
+                    }
+                    return humidity;
+                },
+            });
+
+            // Display Units
+            this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TemperatureDisplayUnits, {
+                getHandler: () => this.getTemperatureDisplayUnits(),
+            });
+
+            // Auto Mode Temperature Thresholds
+            if (this.supportsAutoMode()) {
+                const props = {
+                    minValue: this.tempUnit === "F" ? 50 : 10,
+                    maxValue: this.tempUnit === "F" ? 90 : 32,
+                    minStep: 0.5,
+                };
+
+                this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CoolingThresholdTemperature, {
+                    getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.coolingSetpoint),
+                    setHandler: async (value) => this.sendCommand("setCoolingSetpoint", this.transformTemperatureFromHomeKit(value)),
+                    props,
+                });
+
+                this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.HeatingThresholdTemperature, {
+                    getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.heatingSetpoint),
+                    setHandler: async (value) => this.sendCommand("setHeatingSetpoint", this.transformTemperatureFromHomeKit(value)),
+                    props,
+                });
             }
 
-            if (this.hasCapability("RelativeHumidityMeasurement") && this.hasAttribute("humidity")) {
-                this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentRelativeHumidity, {
-                    getHandler: () => {
-                        const humidity = parseInt(this.deviceData.attributes.humidity);
-                        if (isNaN(humidity)) {
-                            this.logWarn(`Invalid humidity value: ${this.deviceData.attributes.humidity}`);
-                            return 0;
-                        }
-                        return humidity;
-                    },
+            if (this.supportsFan()) {
+                this.fanService = this.getOrAddService(this.Service.Fanv2, this.getServiceDisplayName(this.deviceData.name, "Fan"));
+
+                // Fan Active State
+                this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {
+                    getHandler: () => this.getFanActive(this.deviceData.attributes.thermostatFanMode),
+                    setHandler: async (value) => this.setFanActive(value),
+                });
+
+                // Fan State Controls
+                this.getOrAddCharacteristic(this.fanService, this.Characteristic.CurrentFanState, {
+                    getHandler: () => this.getCurrentFanState(this.deviceData.attributes.thermostatFanMode),
+                });
+
+                this.getOrAddCharacteristic(this.fanService, this.Characteristic.TargetFanState, {
+                    getHandler: () => this.getTargetFanState(this.deviceData.attributes.thermostatFanMode),
+                    setHandler: async (value) => this.setTargetFanState(value),
                 });
             }
 
             return true;
         } catch (error) {
-            this.logError("Error configuring thermostat services:", error);
+            this.logError(`Thermostat | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    // Core Thermostat Configuration
-    async configureThermostatService() {
-        this.thermostatService = this.getOrAddService(this.Service.Thermostat);
-
-        // Basic Temperature Controls
-        this.configureTemperatureControls();
-
-        // Thermostat Mode Controls
-        this.configureModeControls();
-
-        // Display Units
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TemperatureDisplayUnits, {
-            getHandler: () => this.getTemperatureDisplayUnits(),
-        });
-
-        // Auto Mode Temperature Thresholds
-        if (this.supportsAutoMode()) {
-            this.configureAutoModeThresholds();
-        }
-    }
-
-    // Temperature Controls Configuration
-    configureTemperatureControls() {
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentTemperature, {
-            getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.temperature),
-            props: { minValue: -100, maxValue: 100, minStep: 0.1 },
-        });
-
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TargetTemperature, {
-            getHandler: () => this.transformTemperatureToHomeKit(this.getActiveSetpoint()),
-            setHandler: async (value) => this.handleSetTargetTemperature(value),
-            props: {
-                minValue: this.tempUnit === "F" ? 50 : 10,
-                maxValue: this.tempUnit === "F" ? 90 : 32,
-                minStep: 0.5,
-            },
-        });
-    }
-
-    // Mode Controls Configuration
-    configureModeControls() {
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentHeatingCoolingState, {
-            getHandler: () => this.getCurrentHeatingCoolingState(),
-        });
-
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TargetHeatingCoolingState, {
-            getHandler: () => this.getTargetHeatingCoolingState(),
-            setHandler: async (value) => this.handleSetThermostatMode(value),
-            props: { validValues: this.getSupportedThermostatModes() },
-        });
-    }
-
-    // Auto Mode Configuration
-    configureAutoModeThresholds() {
-        const props = {
-            minValue: this.tempUnit === "F" ? 50 : 10,
-            maxValue: this.tempUnit === "F" ? 90 : 32,
-            minStep: 0.5,
-        };
-
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CoolingThresholdTemperature, {
-            getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.coolingSetpoint),
-            setHandler: async (value) => this.sendCommand("setCoolingSetpoint", this.transformTemperatureFromHomeKit(value)),
-            props,
-        });
-
-        this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.HeatingThresholdTemperature, {
-            getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.heatingSetpoint),
-            setHandler: async (value) => this.sendCommand("setHeatingSetpoint", this.transformTemperatureFromHomeKit(value)),
-            props,
-        });
-    }
-    // Fan Configuration
-    async configureFanService() {
-        this.fanService = this.getOrAddService(this.Service.Fanv2);
-
-        // Fan Active State
-        this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {
-            getHandler: () => this.getFanActive(),
-            setHandler: async (value) => this.setFanActive(value),
-        });
-
-        // Fan State Controls
-        this.getOrAddCharacteristic(this.fanService, this.Characteristic.CurrentFanState, {
-            getHandler: () => this.getCurrentFanState(),
-        });
-
-        this.getOrAddCharacteristic(this.fanService, this.Characteristic.TargetFanState, {
-            getHandler: () => this.getTargetFanState(),
-            setHandler: async (value) => this.setTargetFanState(value),
-        });
-    }
-
     // Heating/Cooling State Handlers
-    getCurrentHeatingCoolingState() {
-        const state = this.deviceData.attributes.thermostatOperatingState;
+    getCurrentHeatingCoolingState(state) {
         switch (state) {
             case "heating":
             case "pending heat":
@@ -146,8 +124,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
         }
     }
 
-    getTargetHeatingCoolingState() {
-        const mode = this.deviceData.attributes.thermostatMode;
+    getTargetHeatingCoolingState(mode) {
         switch (mode) {
             case "heat":
             case "emergency heat":
@@ -180,20 +157,20 @@ export default class Thermostat extends HubitatPlatformAccessory {
     }
 
     // Fan State Handlers
-    getFanActive() {
-        return this.deviceData.attributes.thermostatFanMode === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+    getFanActive(fanMode) {
+        return fanMode === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
     }
 
     async setFanActive(value) {
         await this.sendCommand(value === this.Characteristic.Active.ACTIVE ? "fanOn" : "fanAuto");
     }
 
-    getCurrentFanState() {
-        return this.deviceData.attributes.thermostatFanMode === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE;
+    getCurrentFanState(fanMode) {
+        return fanMode === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE;
     }
 
-    getTargetFanState() {
-        return this.deviceData.attributes.thermostatFanMode === "auto" ? this.Characteristic.TargetFanState.AUTO : this.Characteristic.TargetFanState.MANUAL;
+    getTargetFanState(fanMode) {
+        return fanMode === "auto" ? this.Characteristic.TargetFanState.AUTO : this.Characteristic.TargetFanState.MANUAL;
     }
 
     async setTargetFanState(value) {
@@ -250,8 +227,8 @@ export default class Thermostat extends HubitatPlatformAccessory {
     }
 
     // Attribute Update Handler
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
         switch (attribute) {
             case "temperature":
@@ -259,11 +236,11 @@ export default class Thermostat extends HubitatPlatformAccessory {
                 break;
 
             case "thermostatOperatingState":
-                this.thermostatService.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).updateValue(this.getCurrentHeatingCoolingState());
+                this.thermostatService.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).updateValue(this.getCurrentHeatingCoolingState(value));
                 break;
 
             case "thermostatMode":
-                this.thermostatService.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(this.getTargetHeatingCoolingState());
+                this.thermostatService.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(this.getTargetHeatingCoolingState(value));
                 this.thermostatService.getCharacteristic(this.Characteristic.TargetTemperature).updateValue(this.transformTemperatureToHomeKit(this.getActiveSetpoint()));
                 break;
 
@@ -280,15 +257,18 @@ export default class Thermostat extends HubitatPlatformAccessory {
 
             case "thermostatFanMode":
                 if (!this.fanService) return;
-                this.fanService.getCharacteristic(this.Characteristic.Active).updateValue(this.getFanActive());
-                this.fanService.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this.getCurrentFanState());
-                this.fanService.getCharacteristic(this.Characteristic.TargetFanState).updateValue(this.getTargetFanState());
+                this.fanService.getCharacteristic(this.Characteristic.Active).updateValue(this.getFanActive(value));
+                this.fanService.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this.getCurrentFanState(value));
+                this.fanService.getCharacteristic(this.Characteristic.TargetFanState).updateValue(this.getTargetFanState(value));
                 break;
 
             case "humidity":
                 if (!this.hasCapability("RelativeHumidityMeasurement")) return;
                 this.thermostatService.getCharacteristic(this.Characteristic.CurrentRelativeHumidity).updateValue(parseInt(value));
                 break;
+
+            default:
+                this.logDebug(`Thermostat | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

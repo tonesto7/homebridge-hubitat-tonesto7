@@ -8,19 +8,20 @@ export default class GarageDoor extends HubitatPlatformAccessory {
         this.doorService = null;
     }
 
+    static relevantAttributes = ["door"];
+
     async configureServices() {
         try {
-            this.doorService = this.getOrAddService(this.Service.GarageDoorOpener);
-            // this.markServiceForRetention(this.doorService);
+            this.doorService = this.getOrAddService(this.Service.GarageDoorOpener, this.getServiceDisplayName(this.deviceData.name, "Garage Door"));
 
             // Current Door State
             this.getOrAddCharacteristic(this.doorService, this.Characteristic.CurrentDoorState, {
-                getHandler: () => this.getCurrentDoorState(),
+                getHandler: () => this.getCurrentDoorState(this.deviceData.attributes.door),
             });
 
             // Target Door State
             this.getOrAddCharacteristic(this.doorService, this.Characteristic.TargetDoorState, {
-                getHandler: () => this.getTargetDoorState(),
+                getHandler: () => this.getTargetDoorState(this.deviceData.attributes.door),
                 setHandler: async (value) => this.setTargetDoorState(value),
             });
 
@@ -31,13 +32,13 @@ export default class GarageDoor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring garage door services:", error);
+            this.logError(`GarageDoor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getCurrentDoorState() {
-        switch (this.deviceData.attributes.door) {
+    getCurrentDoorState(value) {
+        switch (value) {
             case "open":
                 return this.Characteristic.CurrentDoorState.OPEN;
             case "opening":
@@ -51,8 +52,8 @@ export default class GarageDoor extends HubitatPlatformAccessory {
         }
     }
 
-    getTargetDoorState() {
-        switch (this.deviceData.attributes.door) {
+    getTargetDoorState(value) {
+        switch (value) {
             case "closed":
             case "closing":
                 return this.Characteristic.TargetDoorState.CLOSED;
@@ -69,40 +70,26 @@ export default class GarageDoor extends HubitatPlatformAccessory {
         await this.sendCommand(command);
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
-        if (attribute === "door") {
-            // Update current state
-            let currentState;
-            switch (value) {
-                case "open":
-                    currentState = this.Characteristic.CurrentDoorState.OPEN;
-                    break;
-                case "opening":
-                    currentState = this.Characteristic.CurrentDoorState.OPENING;
-                    break;
-                case "closed":
-                    currentState = this.Characteristic.CurrentDoorState.CLOSED;
-                    break;
-                case "closing":
-                    currentState = this.Characteristic.CurrentDoorState.CLOSING;
-                    break;
-                default:
-                    currentState = this.Characteristic.CurrentDoorState.STOPPED;
-            }
-            this.doorService.getCharacteristic(this.Characteristic.CurrentDoorState).updateValue(currentState);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-            // Update target state
-            const targetState = value === "closed" || value === "closing" ? this.Characteristic.TargetDoorState.CLOSED : this.Characteristic.TargetDoorState.OPEN;
-            this.doorService.getCharacteristic(this.Characteristic.TargetDoorState).updateValue(targetState);
-        } else {
-            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+        switch (attribute) {
+            case "door":
+                // Update current state
+                this.doorService.getCharacteristic(this.Characteristic.CurrentDoorState).updateValue(this.getCurrentDoorState(value));
+
+                // Update target state
+                this.doorService.getCharacteristic(this.Characteristic.TargetDoorState).updateValue(this.getTargetDoorState(value));
+                break;
+
+            default:
+                this.logDebug(`GarageDoor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.doorService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

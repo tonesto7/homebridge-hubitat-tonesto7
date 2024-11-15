@@ -8,85 +8,67 @@ export default class MotionSensor extends HubitatPlatformAccessory {
         this.motionService = null;
     }
 
+    static relevantAttributes = ["motion", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.motionService = this.getOrAddService(this.Service.MotionSensor);
-            // console.log(`${this.deviceData.name} | Motion service created: ${this.motionService.UUID}`);
-            // this.markServiceForRetention(this.motionService);
-            // console.log(`${this.deviceData.name} | Active services after marking:`, Array.from(this.activeServices));
+            this.motionService = this.getOrAddService(this.Service.MotionSensor, this.getServiceDisplayName(this.deviceData.name, "Motion Sensor"));
 
             // Motion Detected
             this.getOrAddCharacteristic(this.motionService, this.Characteristic.MotionDetected, {
-                getHandler: () => this.getMotionDetected(),
+                getHandler: () => this.getMotionDetected(this.deviceData.attributes.motion),
             });
 
             // Status Active
             this.getOrAddCharacteristic(this.motionService, this.Characteristic.StatusActive, {
-                getHandler: () => this.getStatusActive(),
+                getHandler: () => this.getStatusActive(this.deviceData.status),
             });
 
             // Status Tampered (if supported)
             this.getOrAddCharacteristic(this.motionService, this.Characteristic.StatusTampered, {
                 preReqChk: () => this.hasCapability("TamperAlert"),
-                getHandler: () => this.getStatusTampered(),
-                removeIfMissingPreReq: true,
-            });
-
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.motionService, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
+                getHandler: () => this.getStatusTampered(this.deviceData.attributes.tamper),
                 removeIfMissingPreReq: true,
             });
 
             return true;
         } catch (error) {
-            console.error("Error configuring motion sensor services:", error);
+            this.logError(`MotionSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getMotionDetected() {
-        return this.deviceData.attributes.motion === "active";
+    getMotionDetected(value) {
+        return value === "active";
     }
 
-    getStatusActive() {
-        return this.deviceData.status === "ACTIVE";
+    getStatusActive(value) {
+        return value === "ACTIVE";
     }
 
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    getStatusTampered(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    }
-
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
         switch (attribute) {
             case "motion":
-                this.motionService.getCharacteristic(this.Characteristic.MotionDetected).updateValue(value === "active");
+                this.motionService.getCharacteristic(this.Characteristic.MotionDetected).updateValue(this.getMotionDetected(value));
                 break;
 
             case "status":
-                this.motionService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.motionService.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.motionService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
-                break;
-
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.motionService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+                this.motionService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`MotionSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -8,41 +8,45 @@ export default class PowerMeter extends HubitatPlatformAccessory {
         this.powerService = null;
     }
 
+    static relevantAttributes = ["power"];
+
     async configureServices() {
         try {
             // Using a custom service type for power measurement
-            this.powerService = this.getOrAddService(this.platform.CommunityTypes.WattService);
-            // this.markServiceForRetention(this.powerService);
+            this.powerService = this.getOrAddService(this.platform.CommunityTypes.WattService, this.getServiceDisplayName(this.deviceData.name, "Power Meter"));
 
             // Configure the watts characteristic
             this.getOrAddCharacteristic(this.powerService, this.platform.CommunityTypes.Watts, {
-                getHandler: () => this.getPowerValue(),
+                getHandler: () => this.getPowerValue(this.deviceData.attributes.power),
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring power meter services:", error);
+            this.logError(`PowerMeter | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getPowerValue() {
-        return Math.round(parseFloat(this.deviceData.attributes.power) || 0);
+    getPowerValue(value) {
+        return Math.round(parseFloat(value) || 0);
     }
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-        if (attribute === "power") {
-            this.powerService?.getCharacteristic(this.platform.CommunityTypes.Watts).updateValue(Math.round(parseFloat(value) || 0));
-        } else {
-            this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+        switch (attribute) {
+            case "power":
+                this.powerService?.getCharacteristic(this.platform.CommunityTypes.Watts).updateValue(this.getPowerValue(value));
+                break;
+
+            default:
+                this.logDebug(`PowerMeter | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.powerService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

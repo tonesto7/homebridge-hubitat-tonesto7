@@ -19,6 +19,7 @@ const webApp = express();
 
 export default class HubitatPlatform {
     constructor(log, config, api) {
+        this.chalk = chalk;
         this.log = log;
         this.configManager = new ConfigManager(config, api.user);
         this.config = this.configManager.getConfig();
@@ -326,16 +327,14 @@ export default class HubitatPlatform {
                     if (body && that.isValidRequestor(body.access_token, body.app_id, "update")) {
                         if (Object.keys(body).length > 3) {
                             let newChange = {
+                                name: body.change_name,
                                 deviceid: body.change_device,
                                 attribute: body.change_attribute,
                                 value: body.change_value,
                                 data: body.change_data,
                                 date: body.change_date,
                             };
-                            this.processAttributeUpdate(newChange).then((success) => {
-                                if (this.config.logConfig.showChanges) {
-                                    this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: ` + `(${chalk.blueBright(body.change_name)}) ` + `[${chalk.yellow.bold(body.change_attribute ? body.change_attribute.toUpperCase() : "unknown")}] ` + `is ${chalk.green(body.change_value)}`);
-                                }
+                            this.accessories.processDeviceAttributeUpdate(newChange).then((success) => {
                                 res.send({
                                     evtSource: `Homebridge_${platformName}_${this.config.app_id}`,
                                     evtType: "attrUpdStatus",
@@ -371,15 +370,6 @@ export default class HubitatPlatform {
         });
     }
 
-    async processAttributeUpdate(update) {
-        try {
-            return await this.accessories.handleAttributeUpdate(update);
-        } catch (error) {
-            this.logError(`Error processing attribute update:`, error);
-            return false;
-        }
-    }
-
     // Logging methods
     logAlert(args) {
         this.log.info(chalk.yellow(args));
@@ -397,8 +387,9 @@ export default class HubitatPlatform {
         this.log.warn(chalk.hex("#FFA500").bold(args));
     }
 
-    logError(args) {
-        this.log.error(chalk.bold.red(args));
+    logError(msg, err) {
+        this.log.error(chalk.bold.red(msg));
+        if (err) this.log.error(err);
     }
 
     logInfo(args) {

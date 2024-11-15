@@ -8,9 +8,11 @@ export default class ContactSensor extends HubitatPlatformAccessory {
         this.contactService = null;
     }
 
+    static relevantAttributes = ["contact", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.contactService = this.getOrAddService(this.Service.ContactSensor);
+            this.contactService = this.getOrAddService(this.Service.ContactSensor, this.getServiceDisplayName(this.deviceData.name, "Contact Sensor"));
             // this.markServiceForRetention(this.contactService);
 
             // Contact Sensor State
@@ -30,16 +32,9 @@ export default class ContactSensor extends HubitatPlatformAccessory {
                 removeIfMissingPreReq: true,
             });
 
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.contactService, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
-                removeIfMissingPreReq: true,
-            });
-
             return true;
         } catch (error) {
-            this.logError("Error configuring contact sensor services:", error);
+            this.logError(`ContactSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -49,27 +44,23 @@ export default class ContactSensor extends HubitatPlatformAccessory {
     }
 
     getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+        return this.deviceData.status === "ACTIVE";
     }
 
     getStatusTampered() {
         return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    }
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
         switch (attribute) {
             case "contact":
                 this.contactService.getCharacteristic(this.Characteristic.ContactSensorState).updateValue(value === "closed" ? this.Characteristic.ContactSensorState.CONTACT_DETECTED : this.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED);
                 break;
 
             case "status":
-                this.contactService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.contactService.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "ACTIVE");
                 break;
 
             case "tamper":
@@ -77,19 +68,14 @@ export default class ContactSensor extends HubitatPlatformAccessory {
                 this.contactService.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
                 break;
 
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.contactService.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
-                break;
-
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`ContactSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.contactService = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }

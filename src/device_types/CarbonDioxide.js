@@ -8,105 +8,86 @@ export default class CarbonDioxideSensor extends HubitatPlatformAccessory {
         this.co2Service = null;
     }
 
+    static relevantAttributes = ["carbonDioxide", "status", "tamper"];
+
     async configureServices() {
         try {
-            this.co2Service = this.getOrAddService(this.Service.CarbonDioxideSensor);
-            // this.markServiceForRetention(this.co2Service);
+            this.co2Service = this.getOrAddService(this.Service.CarbonDioxideSensor, this.getServiceDisplayName(this.deviceData.name, "Carbon Dioxide"));
 
             // CO2 Detected
             this.getOrAddCharacteristic(this.co2Service, this.Characteristic.CarbonDioxideDetected, {
-                getHandler: () => this.getCO2Detected(),
+                getHandler: () => this.getCO2Detected(this.deviceData.attributes.carbonDioxide),
             });
 
             // CO2 Level
             this.getOrAddCharacteristic(this.co2Service, this.Characteristic.CarbonDioxideLevel, {
-                getHandler: () => this.getCO2Level(),
+                getHandler: () => this.getCO2Level(this.deviceData.attributes.carbonDioxide),
             });
 
             // Status Active
             this.getOrAddCharacteristic(this.co2Service, this.Characteristic.StatusActive, {
-                getHandler: () => this.getStatusActive(),
+                getHandler: () => this.getStatusActive(this.deviceData.status),
             });
 
             // Status Tampered (if supported)
             this.getOrAddCharacteristic(this.co2Service, this.Characteristic.StatusTampered, {
                 preReqChk: () => this.hasCapability("TamperAlert"),
-                getHandler: () => this.getStatusTampered(),
-                removeIfMissingPreReq: true,
-            });
-
-            // Status Low Battery (if supported)
-            this.getOrAddCharacteristic(this.co2Service, this.Characteristic.StatusLowBattery, {
-                preReqChk: () => this.hasCapability("Battery"),
-                getHandler: () => this.getStatusLowBattery(),
+                getHandler: () => this.getStatusTampered(this.deviceData.attributes.tamper),
                 removeIfMissingPreReq: true,
             });
 
             return true;
         } catch (error) {
-            this.logError("Error configuring CO2 sensor services:", error);
+            this.logError(`CarbonDioxide | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
 
-    getCO2Detected() {
-        const level = parseInt(this.deviceData.attributes.carbonDioxide);
+    getCO2Detected(value) {
+        const level = parseInt(value);
         return level >= 2000 ? this.Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL : this.Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
     }
 
-    getCO2Level() {
-        const level = parseInt(this.deviceData.attributes.carbonDioxide);
+    getCO2Level(value) {
+        const level = parseInt(value);
         // Clamp value between 0 and 100000 ppm (reasonable max for indoor sensors)
         return Math.max(0, Math.min(100000, level));
     }
 
-    getStatusActive() {
-        return this.deviceData.attributes.status === "online";
+    getStatusActive(value) {
+        return value === "ACTIVE";
     }
 
-    getStatusTampered() {
-        return this.deviceData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    getStatusTampered(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
     }
 
-    getStatusLowBattery() {
-        const battery = this.deviceData.attributes.battery;
-        return parseInt(battery) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    }
+    async handleAttributeUpdate(change) {
+        const { attribute, value } = change;
 
-    async handleAttributeUpdate(attribute, value) {
-        this.updateDeviceAttribute(attribute, value);
         switch (attribute) {
             case "carbonDioxide":
-                const level = parseInt(value);
-                const detected = level >= 2000 ? this.Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL : this.Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
-
-                this.co2Service.getCharacteristic(this.Characteristic.CarbonDioxideDetected).updateValue(detected);
-
-                this.co2Service.getCharacteristic(this.Characteristic.CarbonDioxideLevel).updateValue(Math.max(0, Math.min(100000, level)));
+                this.co2Service.getCharacteristic(this.Characteristic.CarbonDioxideDetected).updateValue(this.getCO2Detected(value));
+                this.co2Service.getCharacteristic(this.Characteristic.CarbonDioxideLevel).updateValue(this.getCO2Level(value));
                 break;
 
             case "status":
-                this.co2Service.getCharacteristic(this.Characteristic.StatusActive).updateValue(value === "online");
+                this.co2Service.getCharacteristic(this.Characteristic.StatusActive).updateValue(this.getStatusActive(value));
                 break;
 
             case "tamper":
                 if (!this.hasCapability("TamperAlert")) return;
-                this.co2Service.getCharacteristic(this.Characteristic.StatusTampered).updateValue(value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED);
-                break;
-
-            case "battery":
-                if (!this.hasCapability("Battery")) return;
-                this.co2Service.getCharacteristic(this.Characteristic.StatusLowBattery).updateValue(parseInt(value) < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+                this.co2Service.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this.getStatusTampered(value));
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logDebug(`CarbonDioxide | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
     // Override cleanup
     async cleanup() {
         this.co2Service = null;
-        await super.cleanup();
+        super.cleanup();
     }
 }
