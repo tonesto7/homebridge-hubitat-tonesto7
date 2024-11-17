@@ -81,26 +81,19 @@ export default class HubitatPlatformAccessory {
 
         const infoService = this.getOrAddService(this.Service.AccessoryInformation, null, "accessoryInfo");
 
-        // Add required characteristics
-        this.getOrAddCharacteristic(infoService, this.Characteristic.Manufacturer, {
-            getHandler: () => this.deviceData.manufacturerName || "Unknown",
-        });
+        // Direct updates instead of handlers
+        infoService
+            .updateCharacteristic(this.Characteristic.Manufacturer, this.deviceData.manufacturerName || "Unknown")
+            .updateCharacteristic(this.Characteristic.Model, this.deviceData.modelName || "Unknown")
+            .updateCharacteristic(this.Characteristic.SerialNumber, `hubitat_${this.deviceData.deviceid}`)
+            .updateCharacteristic(this.Characteristic.FirmwareRevision, this.deviceData.firmwareVersion || "Unknown")
+            .updateCharacteristic(this.Characteristic.Name, this.sanitizeName(this.deviceData.name));
 
-        this.getOrAddCharacteristic(infoService, this.Characteristic.Model, {
-            getHandler: () => this.deviceData.modelName || "Unknown",
-        });
-
-        this.getOrAddCharacteristic(infoService, this.Characteristic.SerialNumber, {
-            getHandler: () => `hubitat_${this.deviceData.deviceid}`,
-        });
-
-        this.getOrAddCharacteristic(infoService, this.Characteristic.FirmwareRevision, {
-            getHandler: () => this.deviceData.firmwareVersion || "Unknown",
-        });
-
-        // Sanitize the name
-        this.getOrAddCharacteristic(infoService, this.Characteristic.Name, {
-            getHandler: () => this.sanitizeName(this.deviceData.name),
+        // Only add handler for Identify
+        this.getOrAddCharacteristic(infoService, this.Characteristic.Identify, {
+            setHandler: () => {
+                this.logInfo(`${this.deviceData.name} - identify`);
+            },
         });
 
         // handle the identify event
