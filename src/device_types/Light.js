@@ -138,13 +138,13 @@ export default class Light extends HubitatPlatformAccessory {
             this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Supported: ${canUseAL}`);
 
             // Always remove existing controller first to prevent duplicates
-            if (this.adaptiveLightingController) {
+            if (!canUseAL && this.adaptiveLightingController) {
                 this.accessory.removeController(this.adaptiveLightingController);
                 this.adaptiveLightingController = null;
             }
 
             // Only add new controller if AL is enabled
-            if (canUseAL) {
+            if (canUseAL && !this.adaptiveLightingController) {
                 const offset = this.config.adaptive_lighting_offset || 0;
                 const controller = new this.api.hap.AdaptiveLightingController(this.lightService, {
                     controllerMode: this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
