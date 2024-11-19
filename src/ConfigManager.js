@@ -48,6 +48,7 @@ export default class ConfigManager {
             consider_fan_by_name: config.consider_fan_by_name !== false,
             consider_light_by_name: config.consider_light_by_name === true,
             adaptive_lighting: config.adaptive_lighting !== false,
+            adaptive_lighting_off_when_on: config.adaptive_lighting_off_when_on === true,
             adaptive_lighting_offset: config.adaptive_lighting !== false && config.adaptive_lighting_offset !== undefined ? config.adaptive_lighting_offset : undefined,
             temperature_unit: config.temperature_unit || "F",
             logConfig: {

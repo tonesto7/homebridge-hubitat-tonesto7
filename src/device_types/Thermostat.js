@@ -24,13 +24,12 @@ export default class Thermostat extends HubitatPlatformAccessory {
 
             // Target Temperature
             this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.TargetTemperature, {
-                getHandler: () => this.transformTemperatureToHomeKit(this.getActiveSetpoint()),
-                setHandler: async (value) => this.handleSetTargetTemperature(value),
-                props: {
-                    minValue: this.tempUnit === "F" ? 50 : 10,
-                    maxValue: this.tempUnit === "F" ? 90 : 32,
-                    minStep: 0.5,
+                getHandler: () => {
+                    const temp = this.transformTemperatureToHomeKit(this.getActiveSetpoint());
+                    return this.validateTemperatureValue(temp);
                 },
+                setHandler: async (value) => this.handleSetTargetTemperature(value),
+                props: this.getTemperatureProps(),
             });
 
             // Current Heating/Cooling State
@@ -64,22 +63,22 @@ export default class Thermostat extends HubitatPlatformAccessory {
 
             // Auto Mode Temperature Thresholds
             if (this.supportsAutoMode()) {
-                const props = {
-                    minValue: this.tempUnit === "F" ? 50 : 10,
-                    maxValue: this.tempUnit === "F" ? 90 : 32,
-                    minStep: 0.5,
-                };
-
                 this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CoolingThresholdTemperature, {
-                    getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.coolingSetpoint),
+                    getHandler: () => {
+                        const temp = this.transformTemperatureToHomeKit(this.deviceData.attributes.coolingSetpoint);
+                        return this.validateTemperatureValue(temp);
+                    },
                     setHandler: async (value) => this.sendCommand("setCoolingSetpoint", this.transformTemperatureFromHomeKit(value)),
-                    props,
+                    props: this.getTemperatureProps(),
                 });
 
                 this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.HeatingThresholdTemperature, {
-                    getHandler: () => this.transformTemperatureToHomeKit(this.deviceData.attributes.heatingSetpoint),
+                    getHandler: () => {
+                        const temp = this.transformTemperatureToHomeKit(this.deviceData.attributes.heatingSetpoint);
+                        return this.validateTemperatureValue(temp);
+                    },
                     setHandler: async (value) => this.sendCommand("setHeatingSetpoint", this.transformTemperatureFromHomeKit(value)),
-                    props,
+                    props: this.getTemperatureProps(),
                 });
             }
 
@@ -108,6 +107,27 @@ export default class Thermostat extends HubitatPlatformAccessory {
             this.logError(`Thermostat | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
+    }
+
+    getTemperatureProps() {
+        return {
+            minValue: this.tempUnit === "F" ? 50 : 10, // 10°C = 50°F
+            maxValue: this.tempUnit === "F" ? 90 : 32, // 32°C = 90°F
+            minStep: 0.5,
+        };
+    }
+
+    validateTemperatureValue(temp) {
+        const props = this.getTemperatureProps();
+        if (temp < props.minValue) {
+            this.logWarn(`${this.deviceData.name} | Temperature value ${temp} below minimum ${props.minValue}, using minimum`);
+            return props.minValue;
+        }
+        if (temp > props.maxValue) {
+            this.logWarn(`${this.deviceData.name} | Temperature value ${temp} above maximum ${props.maxValue}, using maximum`);
+            return props.maxValue;
+        }
+        return temp;
     }
 
     // Heating/Cooling State Handlers

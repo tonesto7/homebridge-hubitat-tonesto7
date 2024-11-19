@@ -11,6 +11,8 @@ export default class Light extends HubitatPlatformAccessory {
         this.config = platform.config;
         this.lightService = null;
         this.adaptiveLightingController = null;
+        this.televisionService = null;
+        this.effectsMap = {};
     }
 
     static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];
@@ -71,6 +73,11 @@ export default class Light extends HubitatPlatformAccessory {
             // Setup adaptive lighting if supported
             await this.configureAdaptiveLighting();
 
+            // Add effects support if device has lightEffects attribute
+            if (this.hasAttribute("lightEffects") && this.hasCommand("setEffect")) {
+                await this.setupEffectsService();
+            }
+
             return true;
         } catch (error) {
             this.logError(`Light | ${this.deviceData.name} | Error configuring services:`, error);
@@ -119,23 +126,25 @@ export default class Light extends HubitatPlatformAccessory {
         await this.sendCommand("setColorTemperature", { value1: kelvin });
     }
 
+    isAdaptiveLightingActive() {
+        return this.adaptiveLightingController ? this.adaptiveLightingController.isAdaptiveLightingActive() : false;
+    }
+
     // Adaptive Lighting
     async configureAdaptiveLighting() {
-        const canUseAL = this.config.adaptive_lighting !== false && this.hasAttribute("level") && this.hasAttribute("colorTemperature") && !this.hasDeviceFlag("light_no_al");
-
         try {
-            // Get existing AL controller if any
-            const existingController = this.accessory._controllers?.find((controller) => controller.controllerId?.includes("characteristic-transition-00000043"));
+            const canUseAL = this.adaptiveLightingSupported() && this.config.adaptive_lighting !== false && this.hasAttribute("level") && this.hasAttribute("colorTemperature") && !this.hasDeviceFlag("light_no_al");
 
-            // If AL is disabled and there's a controller, remove it
-            if (!canUseAL && existingController) {
-                this.accessory.removeController(existingController);
-                this.log.warn(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
-                return;
+            this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Supported: ${canUseAL}`);
+
+            // Always remove existing controller first to prevent duplicates
+            if (this.adaptiveLightingController) {
+                this.accessory.removeController(this.adaptiveLightingController);
+                this.adaptiveLightingController = null;
             }
 
-            // If AL is enabled and no controller exists, add it
-            if (canUseAL && !existingController) {
+            // Only add new controller if AL is enabled
+            if (canUseAL) {
                 const offset = this.config.adaptive_lighting_offset || 0;
                 const controller = new this.api.hap.AdaptiveLightingController(this.lightService, {
                     controllerMode: this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
@@ -143,18 +152,90 @@ export default class Light extends HubitatPlatformAccessory {
                 });
 
                 controller.on("update", (values) => {
-                    this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Update:`, values);
+                    this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Update:`, values);
                 });
 
                 controller.on("disable", () => {
-                    this.log.debug(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
+                    this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
                 });
 
+                // Store controller reference before configuring
+                this.adaptiveLightingController = controller;
+
+                // Configure the controller
                 this.accessory.configureController(controller);
-                this.log.info(`[${this.accessory.displayName}] Adaptive Lighting Enabled`);
+                this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Enabled`);
             }
         } catch (error) {
-            this.log.error(`[${this.accessory.displayName}] Error configuring Adaptive Lighting: ${error.message}`);
+            this.logError(`[${this.accessory.displayName}] Error configuring Adaptive Lighting:`, error);
+        }
+    }
+
+    async setupEffectsService() {
+        this.televisionService = this.getOrAddService(this.Service.Television, this.getServiceDisplayName(this.deviceData.name, "Effects"));
+
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.SleepDiscoveryMode).updateValue(this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ConfiguredName).updateValue(`${this.accessory.displayName} Effects`);
+
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.Active, {
+            getHandler: () => (this.deviceData.attributes.effectName !== undefined && this.deviceData.attributes.effectName !== "None" ? 1 : 0),
+            setHandler: (value) => {
+                if (!value) {
+                    this.sendCommand("setEffect", { value1: 0 });
+                } else {
+                    const firstEffectNumber = Object.keys(this.effectsMap)[0];
+                    if (firstEffectNumber) {
+                        this.sendCommand("setEffect", { value1: parseInt(firstEffectNumber) });
+                    }
+                }
+            },
+        });
+
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ActiveIdentifier, {
+            getHandler: () => {
+                const currentEffect = this.deviceData.attributes.effectName;
+                return this.effectsMap[currentEffect] || 0;
+            },
+            setHandler: (value) => this.sendCommand("setEffect", { value1: value }),
+        });
+
+        await this.updateEffects();
+    }
+
+    async updateEffects() {
+        const effects = JSON.parse(this.deviceData.attributes.lightEffects || "{}");
+        this.effectsMap = {};
+
+        // Remove old input services
+        const inputServices = this.accessory.services.filter((service) => service.UUID === this.Service.InputSource.UUID);
+        inputServices.forEach((service) => {
+            this.televisionService.removeLinkedService(service);
+            this.accessory.removeService(service);
+        });
+
+        // Add new input services
+        for (const [effectNumber, effectName] of Object.entries(effects)) {
+            const inputService = this.getOrAddService(this.Service.InputSource, `effect ${effectNumber}`, effectName);
+
+            inputService.setCharacteristic(this.Characteristic.Identifier, parseInt(effectNumber)).setCharacteristic(this.Characteristic.ConfiguredName, effectName).setCharacteristic(this.Characteristic.IsConfigured, 1).setCharacteristic(this.Characteristic.InputSourceType, 0);
+
+            this.televisionService.addLinkedService(inputService);
+            this.effectsMap[effectName] = parseInt(effectNumber);
+        }
+
+        this.updateEffectState();
+    }
+
+    updateEffectState() {
+        const currentEffect = this.deviceData.attributes.effectName;
+        const isActive = currentEffect !== undefined && currentEffect !== "None";
+
+        this.televisionService.updateCharacteristic(this.Characteristic.Active, isActive ? 1 : 0);
+
+        if (isActive) {
+            const effectNumber = this.effectsMap[currentEffect] || 0;
+            this.televisionService.updateCharacteristic(this.Characteristic.ActiveIdentifier, effectNumber);
         }
     }
 
@@ -194,6 +275,9 @@ export default class Light extends HubitatPlatformAccessory {
         switch (attribute) {
             case "switch":
                 this.lightService.getCharacteristic(this.Characteristic.On).updateValue(this.getOnState(value));
+                if (this.config.adaptive_lighting_off_when_on && this.getOnState(value) && this.isAdaptiveLightingActive()) {
+                    this.adaptiveLightingController.disableAdaptiveLighting();
+                }
                 break;
             case "level":
                 const level = this.transformBrightnessFromDevice(value);
@@ -202,6 +286,9 @@ export default class Light extends HubitatPlatformAccessory {
                     return;
                 }
                 this.lightService.getCharacteristic(this.Characteristic.Brightness).updateValue(level);
+                if (this.config.adaptive_lighting_off_when_on && level > 0 && this.isAdaptiveLightingActive()) {
+                    this.adaptiveLightingController.disableAdaptiveLighting();
+                }
                 break;
             case "hue":
                 const hue = this.transformHueFromDevice(value);
@@ -227,8 +314,36 @@ export default class Light extends HubitatPlatformAccessory {
                 this.lightService.getCharacteristic(this.Characteristic.ColorTemperature).updateValue(temp);
                 break;
 
+            case "effectName":
+                if (this.televisionService) {
+                    this.updateEffectState();
+                }
+                break;
+
+            case "lightEffects":
+                if (this.televisionService) {
+                    await this.updateEffects();
+                }
+                break;
+
             default:
-                this.logDebug(`Light | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logWarn(`Light | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
+    }
+
+    async cleanup() {
+        // Call parent cleanup
+        super.cleanup();
+
+        // Clean up Adaptive Lighting Controller
+        if (this.adaptiveLightingController) {
+            this.accessory.removeController(this.adaptiveLightingController);
+            this.adaptiveLightingController = null;
+        }
+
+        // Clean up Effects Service
+        if (this.televisionService) {
+            this.televisionService = null;
         }
     }
 }

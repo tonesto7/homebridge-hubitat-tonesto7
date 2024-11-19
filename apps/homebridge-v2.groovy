@@ -293,6 +293,7 @@ def pluginConfigPage() {
             href url: url, style: sEXTNRL, title: inTS('What is Adaptive Lighting?', sINFO), description: inputFooter('Tap to open in browser', sCLRGRY, true)
             input 'adaptive_lighting',  sBOOL, title: inTS('Allow Supported Bulbs to Use HomeKit Adaptive Lighting?', sCMD), required: false, defaultValue: true, submitOnChange: true
             if (getBoolSetting('adaptive_lighting')) {
+                input 'adaptive_lighting_off_when_on', sBOOL, title: inTS('Disable Adaptive Lighting when device is on?', sCMD), required: false, defaultValue: true, submitOnChange: true
                 input 'adaptive_lighting_offset', 'number', title: inTS('Adaptive Lighting - Offset ColorTemp Conversions by +/- Mireds?', sCMD), range: '-100..100', required: false, defaultValue: 0, submitOnChange: true
             }
         }
@@ -1644,9 +1645,10 @@ String renderConfig() {
         access_token: (String)state.accessToken,
         temperature_unit: getStrSetting('temp_unit') ?: (String)location.temperatureScale,
         validateTokenId: getBoolSetting('validate_token'),
-        adaptive_lighting: getBoolDefSetting('adaptive_lighting', true),
         consider_fan_by_name: getBoolDefSetting('consider_fan_by_name', true),
         consider_light_by_name: getBoolSetting('consider_light_by_name'),
+        adaptive_lighting: getBoolDefSetting('adaptive_lighting', true),
+        adaptive_lighting_off_when_on: getBoolDefSetting('adaptive_lighting_off_when_on', true),
         adaptive_lighting_offset: (getBoolSetting('adaptive_lighting') && settings.adaptive_lighting_offset) ? settings.adaptive_lighting_offset.toInteger() : 0,
         round_levels: getBoolDefSetting('round_levels', true),
         logConfig: [

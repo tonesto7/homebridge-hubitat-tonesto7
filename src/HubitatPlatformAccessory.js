@@ -6,6 +6,7 @@ export default class HubitatPlatformAccessory {
             throw new Error("Platform object with required properties not provided to HubitatPlatformAccessory");
         }
 
+        this.api = platform.api;
         this.logDebug = platform.logDebug;
         this.logInfo = platform.logInfo;
         this.logWarn = platform.logWarn;
@@ -379,6 +380,11 @@ export default class HubitatPlatformAccessory {
 
     hasDeviceFlag(flag) {
         return this.deviceData.deviceflags && Object.keys(this.deviceData.deviceflags).includes(flag);
+    }
+
+    // Checks homebridge version to see if Adaptive Lighting is supported
+    adaptiveLightingSupported() {
+        return this.api.versionGreaterOrEqual && this.api.versionGreaterOrEqual("v1.3.0-beta.23");
     }
 
     // Methods to be implemented by device type classes

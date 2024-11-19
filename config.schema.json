@@ -94,6 +94,13 @@
             "required": false,
             "default": true
         },
+        "adaptive_lighting_off_when_on": {
+            "title": "Disable Adaptive Lighting when device is on?",
+            "description": "When enabled, Adaptive Lighting will be disabled when the device is turned on manually.",
+            "type": "boolean",
+            "required": false,
+            "default": true
+        },
         "adaptive_lighting_offset": {
             "title": "Adaptive Lighting (ColorTemp in Mired) Offset",
             "description": "For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.",

@@ -130,6 +130,8 @@ export default class HubitatAccessories {
                 name: "switch_device",
                 test: (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.platform.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")),
                 class: Switch,
+                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl"], // Don't create switch for these
+                excludeAttributes: ["position", "level", "windowShade"], // Don't create switch if these attributes exist
             },
             {
                 name: "smoke_detector",
@@ -223,6 +225,47 @@ export default class HubitatAccessories {
             if (!a.onlyOnNoGrps && b.onlyOnNoGrps) return -1;
             return 0;
         });
+    }
+
+    async determineDeviceTypes(accessory) {
+        const matchedTypes = [];
+
+        const deviceWrapper = {
+            hasCapability: (capability) => accessory.context.deviceData.capabilities && Object.keys(accessory.context.deviceData.capabilities).includes(capability),
+            hasAttribute: (attribute) => accessory.context.deviceData.attributes && Object.keys(accessory.context.deviceData.attributes).includes(attribute),
+            hasCommand: (command) => accessory.context.deviceData.commands && Object.keys(accessory.context.deviceData.commands).includes(command),
+            context: accessory.context,
+        };
+
+        for (const deviceTest of this.deviceTypeTests) {
+            if (deviceTest.disable) continue;
+
+            // Check exclusions before running the test
+            const hasExcludedCapability = deviceTest.excludeCapabilities?.some((cap) => deviceWrapper.hasCapability(cap));
+            const hasExcludedAttribute = deviceTest.excludeAttributes?.some((attr) => deviceWrapper.hasAttribute(attr));
+
+            if (hasExcludedCapability || hasExcludedAttribute) {
+                this.logWarn(`${accessory.displayName} excluded from ${deviceTest.name} due to ` + `${hasExcludedCapability ? "capabilities" : "attributes"}`);
+                continue;
+            }
+
+            if (deviceTest.test(deviceWrapper)) {
+                if (deviceTest.excludeDevTypes && deviceTest.excludeDevTypes.some((type) => matchedTypes.some((match) => match.name === type))) {
+                    this.logInfo(`${accessory.displayName} excluded due to existing type`);
+                    continue;
+                }
+                matchedTypes.push({
+                    name: deviceTest.name,
+                    class: deviceTest.class,
+                });
+            }
+        }
+
+        if (matchedTypes.length === 0) {
+            this.logWarn(`No device types matched for ${accessory.displayName}`);
+        }
+
+        return matchedTypes;
     }
 
     async refreshDevices(deviceList) {
@@ -440,41 +483,6 @@ export default class HubitatAccessories {
             this.logError(`Error removing accessory ${accessory.displayName}:`, error);
             throw error;
         }
-    }
-
-    async determineDeviceTypes(accessory) {
-        const matchedTypes = [];
-        // this.logInfo(`Determining device types for ${accessory.displayName}`);
-
-        // Create a capability checker wrapper
-        const deviceWrapper = {
-            hasCapability: (capability) => accessory.context.deviceData.capabilities && Object.keys(accessory.context.deviceData.capabilities).includes(capability),
-            hasAttribute: (attribute) => accessory.context.deviceData.attributes && Object.keys(accessory.context.deviceData.attributes).includes(attribute),
-            hasCommand: (command) => accessory.context.deviceData.commands && Object.keys(accessory.context.deviceData.commands).includes(command),
-            context: accessory.context,
-        };
-
-        for (const deviceTest of this.deviceTypeTests) {
-            if (!deviceTest.disable && deviceTest.test(deviceWrapper)) {
-                // this.logInfo(`${accessory.displayName} matched device type: ${deviceTest.name}`);
-                if (deviceTest.excludeDevTypes && deviceTest.excludeDevTypes.some((type) => matchedTypes.some((match) => match.name === type))) {
-                    this.logInfo(`${accessory.displayName} excluded due to existing type`);
-                    continue;
-                }
-                matchedTypes.push({
-                    name: deviceTest.name,
-                    class: deviceTest.class,
-                });
-            }
-        }
-
-        if (matchedTypes.length === 0) {
-            this.logWarn(`No device types matched for ${accessory.displayName}`);
-        } else {
-            // this.logInfo(`Device types for ${accessory.displayName}: ${matchedTypes.map((t) => t.name).join(", ")}`);
-        }
-
-        return matchedTypes;
     }
 
     getServiceId(service) {

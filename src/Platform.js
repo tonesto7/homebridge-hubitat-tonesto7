@@ -311,6 +311,14 @@ export default class HubitatPlatform {
                             this.logInfo(`${platformName} Updated Consider Light By Name Preference | Before: ${this.config.consider_light_by_name} | Now: ${body.consider_light_by_name}`);
                             this.configManager.updateConfig({ consider_light_by_name: body.consider_light_by_name === true });
                         }
+                        if (body.adaptive_lighting && this.config.adaptive_lighting !== body.adaptive_lighting) {
+                            this.logInfo(`${platformName} Updated Adaptive Lighting Preference | Before: ${this.config.adaptive_lighting} | Now: ${body.adaptive_lighting}`);
+                            this.configManager.updateConfig({ adaptive_lighting: body.adaptive_lighting === true });
+                        }
+                        if (body.adaptive_lighting_off_when_on && this.config.adaptive_lighting_off_when_on !== body.adaptive_lighting_off_when_on) {
+                            this.logInfo(`${platformName} Updated Adaptive Lighting Off When On Preference | Before: ${this.config.adaptive_lighting_off_when_on} | Now: ${body.adaptive_lighting_off_when_on}`);
+                            this.configManager.updateConfig({ adaptive_lighting_off_when_on: body.adaptive_lighting_off_when_on === true });
+                        }
                         res.send({
                             status: "OK",
                         });
