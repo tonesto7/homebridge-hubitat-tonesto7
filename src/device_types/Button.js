@@ -5,7 +5,14 @@ import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
 export default class Button extends HubitatPlatformAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
-        this.buttonServices = new Map(); // Track button services by number
+
+        // Initialize button state in context if needed
+        if (!this.accessory.context.state.buttons) {
+            this.accessory.context.state.buttons = {
+                services: {}, // Maps button numbers to service IDs
+                states: {}, // Maps button numbers to current states
+            };
+        }
     }
 
     static relevantAttributes = ["button", "numberOfButtons"];
@@ -42,8 +49,9 @@ export default class Button extends HubitatPlatformAccessory {
             buttonService = this.getOrAddService(this.Service.StatelessProgrammableSwitch, serviceName, buttonNumber.toString());
         }
 
-        // Store for tracking
-        this.buttonServices.set(buttonNumber, buttonService);
+        // Store in context
+        const serviceId = this.getServiceId(buttonService);
+        this.accessory.context.state.buttons.services[buttonNumber] = serviceId;
 
         // Configure characteristics
         const validValues = this.getSupportedButtonValues();
@@ -52,7 +60,7 @@ export default class Button extends HubitatPlatformAccessory {
         this.getOrAddCharacteristic(buttonService, this.Characteristic.ProgrammableSwitchEvent, {
             props: { validValues: validValues },
             eventOnly: true,
-            getHandler: () => this.getButtonState(),
+            getHandler: () => this.getButtonState(buttonNumber),
         });
 
         // Service Label Index characteristic
@@ -86,13 +94,19 @@ export default class Button extends HubitatPlatformAccessory {
         return Array.from(values);
     }
 
+    getButtonState(buttonNumber) {
+        return this.accessory.context.state.buttons.states[buttonNumber] || null;
+    }
+
     async handleAttributeUpdate(change) {
         const { attribute, value, data } = change;
 
         switch (attribute) {
             case "button":
                 const buttonNumber = data.buttonNumber || 1;
-                const service = this.buttonServices.get(buttonNumber);
+                const serviceId = this.accessory.context.state.buttons.services[buttonNumber];
+                const service = this.accessory.services.find((s) => this.getServiceId(s) === serviceId);
+
                 if (!service) {
                     this.logWarn(`No service found for button ${buttonNumber}`);
                     return;
@@ -100,7 +114,11 @@ export default class Button extends HubitatPlatformAccessory {
 
                 const eventValue = this.transformButtonValue(value);
                 if (eventValue !== null) {
+                    // Store state in context
+                    this.accessory.context.state.buttons.states[buttonNumber] = eventValue;
+
                     service.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent).updateValue(eventValue);
+
                     this.logDebug(`${this.deviceData.name} | Button ${buttonNumber} event: ${value} transformed to ${eventValue}`);
                 }
                 break;
@@ -123,23 +141,14 @@ export default class Button extends HubitatPlatformAccessory {
         }
     }
 
-    getButtonState() {
-        switch (this.deviceData.attributes.button) {
-            case "pushed":
-                return this.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
-            case "doubleTapped":
-                return this.Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
-            case "held":
-                return this.Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-            default:
-                this.logWarn(`Button | ${this.deviceData.name} | Unknown button value: ${this.deviceData.attributes.button}`);
-                return null;
-        }
-    }
-
-    // Override cleanup to handle button service cleanup
     async cleanup() {
-        this.buttonServices.clear();
+        // Clear button states from context
+        this.accessory.context.state.buttons = {
+            services: {},
+            states: {},
+        };
+
+        // Call parent cleanup
         super.cleanup();
     }
 }

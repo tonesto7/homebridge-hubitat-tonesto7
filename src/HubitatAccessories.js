@@ -51,7 +51,7 @@ export default class HubitatAccessories {
 
         this.cachedAccessories = new Map();
         this.buttonMap = new Map();
-        this.deviceInstances = new Map();
+        this._deviceInstances = new Map();
         this.deviceTypeTests = this.initializeDeviceTests();
     }
 
@@ -327,9 +327,17 @@ export default class HubitatAccessories {
             const uuid = this.api.hap.uuid.generate(`hubitat_${device.deviceid}`);
             const accessory = new this.api.platformAccessory(device.name, uuid);
 
-            accessory.context.deviceData = {
-                ...device,
-                excludedCapabilities: this.config.excluded_capabilities[device.deviceid] || [],
+            // Initialize context structure
+            accessory.context = {
+                deviceData: {
+                    ...device,
+                    excludedCapabilities: this.config.excluded_capabilities[device.deviceid] || [],
+                },
+                state: {
+                    activeServices: [],
+                    activeCharacteristics: {},
+                    deviceTypes: [], // Track device types in context
+                },
             };
 
             // Initialize device instances
@@ -340,29 +348,16 @@ export default class HubitatAccessories {
                 const instance = new devType.class(this.platform, accessory);
                 await instance.initializeAccessory();
                 deviceInstances.push(instance);
+                // Store device type in context
+                accessory.context.state.deviceTypes.push(devType.name);
             }
 
-            // Track active services and characteristics
-            const activeServices = new Set();
-            const activeCharacteristics = new Map();
-
-            deviceInstances.forEach((instance) => {
-                instance.activeServices.forEach((uuid) => {
-                    activeServices.add(uuid);
-                    if (instance.activeCharacteristics.has(uuid)) {
-                        activeCharacteristics.set(uuid, instance.activeCharacteristics.get(uuid));
-                    }
-                });
-            });
-
-            // Store instances
-            this.deviceInstances.set(accessory.UUID, deviceInstances);
+            // Store instances in runtime map
+            this._deviceInstances.set(accessory.UUID, deviceInstances);
 
             // Register with homebridge
             this.api.registerPlatformAccessories(pluginName, platformName, [accessory]);
             this.cachedAccessories.set(device.deviceid, accessory);
-
-            this.logDebug(`Added accessory ${accessory.displayName} with ` + `${activeServices.size} services and ` + `${Array.from(activeCharacteristics.values()).reduce((sum, set) => sum + set.size, 0)} characteristics`);
 
             return accessory;
         } catch (error) {
@@ -389,60 +384,42 @@ export default class HubitatAccessories {
 
             this.logDebug(`Updating accessory: ${device.name} (${device.deviceid})`);
 
-            // Store previous state
-            const previousInstances = this.deviceInstances.get(accessory.UUID) || [];
-            const previousState = {
-                services: new Set(Array.from(accessory.context._activeServices || [])),
-                characteristics: new Map(accessory.context._activeCharacteristics instanceof Map ? accessory.context._activeCharacteristics : []),
+            // Update device data while preserving state
+            const existingState = accessory.context.state || {};
+            accessory.context = {
+                deviceData: {
+                    ...device,
+                    excludedCapabilities: this.config.excluded_capabilities[device.deviceid] || [],
+                },
+                state: existingState,
             };
 
-            // Reset active services and characteristics tracking
-            accessory.context._activeServices = new Set();
-            accessory.context._activeCharacteristics = new Map();
+            // Get previous instances
+            const previousInstances = this._deviceInstances.get(accessory.UUID) || [];
 
-            // Update device data
-            accessory.context.deviceData = {
-                ...device,
-                excludedCapabilities: this.config.excluded_capabilities[device.deviceid] || [],
-            };
-
-            // Initialize new instances
+            // Determine device types
             const deviceTypes = await this.determineDeviceTypes(accessory);
             const deviceInstances = [];
 
+            // Update device types in context
+            accessory.context.state.deviceTypes = deviceTypes.map((type) => type.name);
+
+            // Initialize new instances
             for (const devType of deviceTypes) {
                 const instance = new devType.class(this.platform, accessory);
                 await instance.initializeAccessory();
                 deviceInstances.push(instance);
             }
 
-            // Track current state
-            const currentState = {
-                services: new Set(),
-                characteristics: new Map(),
-            };
-
-            deviceInstances.forEach((instance) => {
-                instance.activeServices.forEach((uuid) => {
-                    currentState.services.add(uuid);
-                    if (instance.activeCharacteristics.has(uuid)) {
-                        currentState.characteristics.set(uuid, instance.activeCharacteristics.get(uuid));
-                    }
-                });
-            });
-
             // Clean up old instances
-            // for (const instance of previousInstances) {
-            //     await instance.cleanup();
-            // }
+            for (const instance of previousInstances) {
+                await instance.cleanup();
+            }
 
             // Store new instances
-            this.deviceInstances.set(accessory.UUID, deviceInstances);
+            this._deviceInstances.set(accessory.UUID, deviceInstances);
 
-            // Log changes if any occurred
-            this.logServiceChanges(accessory.displayName, previousState, currentState);
-
-            // Clean up unused services using the accessory's method
+            // Clean up unused services
             const firstInstance = deviceInstances[0];
             if (firstInstance) {
                 firstInstance.cleanupUnusedServices(accessory);
@@ -463,21 +440,19 @@ export default class HubitatAccessories {
             this.logInfo(`Removing accessory: ${accessory.displayName}`);
 
             // Clean up instances
-            const deviceInstances = this.deviceInstances.get(accessory.UUID);
+            const deviceInstances = this._deviceInstances.get(accessory.UUID);
             if (deviceInstances && deviceInstances.length) {
                 for (const instance of deviceInstances) {
                     await instance.cleanup();
                 }
             }
 
-            // Clean up button mappings
-            this.buttonMap.delete(accessory.UUID);
+            // Remove from instance map
+            this._deviceInstances.delete(accessory.UUID);
 
             // Remove from accessories map
             this.cachedAccessories.delete(accessory.context.deviceData.deviceid);
 
-            // Clean up device instances
-            this.deviceInstances.delete(accessory.UUID);
             // Unregister from homebridge
             this.api.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
         } catch (error) {
@@ -498,8 +473,7 @@ export default class HubitatAccessories {
                 return false;
             }
 
-            // Get device instances
-            const deviceInstances = this.deviceInstances.get(accessory.UUID);
+            const deviceInstances = this._deviceInstances.get(accessory.UUID);
             if (!deviceInstances || !deviceInstances.length) {
                 this.logWarn(`No device instances found for ${accessory.displayName}`);
                 return false;
@@ -508,12 +482,9 @@ export default class HubitatAccessories {
             let handled = false;
 
             for (const instance of deviceInstances) {
-                // Check if this attribute is relevant for this device type
                 if (instance.constructor.relevantAttributes?.includes(update.attribute)) {
-                    // Update the device data first
                     const updateResult = instance.updateDeviceAttribute(update.attribute, update.value, update.change_name);
                     if (updateResult.success) {
-                        // Pass the entire change object plus previous value
                         await instance.handleAttributeUpdate({
                             ...update,
                             previousValue: updateResult.previousValue,

@@ -8,9 +8,21 @@ export default class Light extends HubitatPlatformAccessory {
         this.api = platform.api;
         this.log = platform.log;
         this.config = platform.config;
-        this.lightService = null;
-        this.televisionService = null;
-        this.effectsMap = {};
+
+        // Initialize light state in context if needed
+        if (!this.accessory.context.state.light) {
+            this.accessory.context.state.light = {
+                lightService: null,
+                televisionService: null,
+                effectsMap: {},
+                adaptiveLighting: {
+                    enabled: false,
+                    controllerId: null,
+                    offset: 0,
+                    lastUpdate: null,
+                },
+            };
+        }
     }
 
     static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];
@@ -18,18 +30,18 @@ export default class Light extends HubitatPlatformAccessory {
     async configureServices() {
         this.logInfo(`[${this.accessory.displayName}] Configuring Light Services`);
         try {
-            this.lightService = this.getOrAddService(this.Service.Lightbulb, this.getServiceDisplayName(this.deviceData.name, "Light"));
-            // this.markServiceForRetention(this.lightService);
+            const lightService = this.getOrAddService(this.Service.Lightbulb, this.getServiceDisplayName(this.deviceData.name, "Light"));
+            this.accessory.context.state.light.lightService = this.getServiceId(lightService);
 
             // Basic on/off
-            this.getOrAddCharacteristic(this.lightService, this.Characteristic.On, {
+            this.getOrAddCharacteristic(lightService, this.Characteristic.On, {
                 getHandler: () => this.getOnState(this.deviceData.attributes.switch),
                 setHandler: (value) => this.setOnState(value),
             });
 
             // Brightness if supported
             if (this.hasAttribute("level")) {
-                this.getOrAddCharacteristic(this.lightService, this.Characteristic.Brightness, {
+                this.getOrAddCharacteristic(lightService, this.Characteristic.Brightness, {
                     getHandler: () => this.getBrightness(this.deviceData.attributes.level),
                     setHandler: (value) => this.setBrightness(value),
                     props: {
@@ -42,14 +54,14 @@ export default class Light extends HubitatPlatformAccessory {
 
             // Color features if supported
             if (this.hasAttribute("hue") && this.hasCommand("setHue")) {
-                this.getOrAddCharacteristic(this.lightService, this.Characteristic.Hue, {
+                this.getOrAddCharacteristic(lightService, this.Characteristic.Hue, {
                     getHandler: () => this.getHue(this.deviceData.attributes.hue),
                     setHandler: (value) => this.setHue(value),
                     props: { minValue: 0, maxValue: 360 },
                 });
 
                 if (this.hasAttribute("saturation")) {
-                    this.getOrAddCharacteristic(this.lightService, this.Characteristic.Saturation, {
+                    this.getOrAddCharacteristic(lightService, this.Characteristic.Saturation, {
                         getHandler: () => this.deviceData.attributes.saturation,
                         setHandler: (value) => this.setSaturation(value),
                         props: { minValue: 0, maxValue: 100 },
@@ -59,7 +71,7 @@ export default class Light extends HubitatPlatformAccessory {
 
             // Color temperature if supported
             if (this.hasAttribute("colorTemperature") && this.hasCommand("setColorTemperature")) {
-                this.getOrAddCharacteristic(this.lightService, this.Characteristic.ColorTemperature, {
+                this.getOrAddCharacteristic(lightService, this.Characteristic.ColorTemperature, {
                     getHandler: () => this.getColorTemperature(),
                     setHandler: (value) => this.setColorTemperature(value),
                     props: {
@@ -126,7 +138,7 @@ export default class Light extends HubitatPlatformAccessory {
     }
 
     isAdaptiveLightingActive() {
-        return this.adaptiveLightingController ? this.adaptiveLightingController.isAdaptiveLightingActive() : false;
+        return this.accessory.context.state.light.adaptiveLighting.enabled;
     }
 
     // Adaptive Lighting
@@ -136,33 +148,54 @@ export default class Light extends HubitatPlatformAccessory {
 
             this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Supported: ${canUseAL}`);
 
-            // Always remove existing controller first to prevent duplicates
-            if (!canUseAL && this.adaptiveLightingController) {
-                this.accessory.removeController(this.adaptiveLightingController);
-                this.adaptiveLightingController = null;
+            if (!canUseAL) {
+                // Clear adaptive lighting state from context
+                this.accessory.context.state.light.adaptiveLighting = {
+                    enabled: false,
+                    controllerId: null,
+                    offset: 0,
+                    lastUpdate: null,
+                };
+                if (this._adaptiveLightingController) {
+                    this.accessory.removeController(this._adaptiveLightingController);
+                    this._adaptiveLightingController = null;
+                }
+                return;
             }
 
-            // Only add new controller if AL is enabled
-            if (canUseAL && !this.adaptiveLightingController) {
+            // Get light service
+            const lightService = this.accessory.services.find((s) => this.getServiceId(s) === this.accessory.context.state.light.lightService);
+            if (!lightService) return;
+
+            // Create new controller if needed
+            if (!this._adaptiveLightingController) {
                 const offset = this.config.adaptive_lighting_offset || 0;
-                const controller = new this.api.hap.AdaptiveLightingController(this.lightService, {
+                this._adaptiveLightingController = new this.api.hap.AdaptiveLightingController(lightService, {
                     controllerMode: this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC,
                     customTemperatureAdjustment: offset,
                 });
 
-                controller.on("update", (values) => {
+                this._adaptiveLightingController.on("update", (values) => {
                     this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Update:`, values);
+                    // Store last update in context
+                    this.accessory.context.state.light.adaptiveLighting.lastUpdate = Date.now();
                 });
 
-                controller.on("disable", () => {
+                this._adaptiveLightingController.on("disable", () => {
                     this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Disabled`);
+                    this.accessory.context.state.light.adaptiveLighting.enabled = false;
                 });
 
-                // Store controller reference before configuring
-                this.adaptiveLightingController = controller;
+                // Store controller info in context
+                this.accessory.context.state.light.adaptiveLighting = {
+                    enabled: true,
+                    controllerId: this._adaptiveLightingController.instanceID,
+                    offset: offset,
+                    lastUpdate: Date.now(),
+                };
 
                 // Configure the controller
-                this.accessory.configureController(controller);
+                this.accessory.configureController(this._adaptiveLightingController);
                 this.logInfo(`[${this.accessory.displayName}] Adaptive Lighting Enabled`);
             }
         } catch (error) {
@@ -172,10 +205,11 @@ export default class Light extends HubitatPlatformAccessory {
 
     async setupEffectsService() {
         // Configure main television service
-        this.televisionService = this.getOrAddService(this.Service.Television, this.getServiceDisplayName(this.deviceData.name, "Effects"));
+        const televisionService = this.getOrAddService(this.Service.Television, this.getServiceDisplayName(this.deviceData.name, "Effects"));
+        this.accessory.context.state.light.televisionService = this.getServiceId(televisionService);
 
         // Configure required Television characteristics
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.Active, {
+        this.getOrAddCharacteristic(televisionService, this.Characteristic.Active, {
             getHandler: () => (this.deviceData.attributes.effectName !== undefined && this.deviceData.attributes.effectName !== "None" ? 1 : 0),
             setHandler: (value) => {
                 if (!value) {
@@ -189,7 +223,7 @@ export default class Light extends HubitatPlatformAccessory {
             },
         });
 
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ActiveIdentifier, {
+        this.getOrAddCharacteristic(televisionService, this.Characteristic.ActiveIdentifier, {
             getHandler: () => {
                 const currentEffect = this.deviceData.attributes.effectName;
                 return this.effectsMap[currentEffect] || 0;
@@ -198,17 +232,19 @@ export default class Light extends HubitatPlatformAccessory {
         });
 
         // Add required characteristics
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ConfiguredName, {
+        this.getOrAddCharacteristic(televisionService, this.Characteristic.ConfiguredName, {
             getHandler: () => `${this.accessory.displayName} Effects`,
         });
 
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.SleepDiscoveryMode, {
+        this.getOrAddCharacteristic(televisionService, this.Characteristic.SleepDiscoveryMode, {
             getHandler: () => this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE,
         });
 
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.RemoteKey);
+        this.getOrAddCharacteristic(televisionService, this.Characteristic.RemoteKey);
 
         await this.updateEffects();
+
+        this.accessory.context.state.light.effectsMap = {};
     }
 
     async updateEffects() {
@@ -367,20 +403,26 @@ export default class Light extends HubitatPlatformAccessory {
     }
 
     async cleanup() {
+        // Clean up Adaptive Lighting Controller
+        if (this._adaptiveLightingController) {
+            this.accessory.removeController(this._adaptiveLightingController);
+            this._adaptiveLightingController = null;
+        }
+
+        // Clear light state from context but maintain structure
+        this.accessory.context.state.light = {
+            lightService: null,
+            televisionService: null,
+            effectsMap: {},
+            adaptiveLighting: {
+                enabled: false,
+                controllerId: null,
+                offset: 0,
+                lastUpdate: null,
+            },
+        };
+
         // Call parent cleanup
         super.cleanup();
-
-        console.log("Light | Cleanup");
-
-        // Clean up Adaptive Lighting Controller
-        if (this.adaptiveLightingController) {
-            this.accessory.removeController(this.adaptiveLightingController);
-            this.adaptiveLightingController = null;
-        }
-
-        // Clean up Effects Service
-        if (this.televisionService) {
-            this.televisionService = null;
-        }
     }
 }
