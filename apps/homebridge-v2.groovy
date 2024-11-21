@@ -1690,82 +1690,79 @@ static Map getHttpHeaders(String headers) {
     return obj
 }
 
+// Command handler
 def deviceCommand() {
-    // log.info("Command Request | params: $params | Request: ${request.JSON}")
-    def val1 = request?.JSON?.value1 != null ? request?.JSON?.value1 : null
-    def val2 = request?.JSON?.value2 != null ? request?.JSON?.value2 : null
-    return processCmd((String)params?.id, (String)params?.command, val1, val2)
+    def body = request?.JSON
+    if (!body?.deviceId || !body?.command) {
+        return [status: 400, message: 'Missing required deviceId or command']
+    }
+    return processCmd(body.deviceId as String, body.command as String, body.params as List ?: [])
 }
 
-private processCmd(String idevId, String cmd, value1, value2) {
-    String devId; devId = idevId
+
+private processCmd(String devId, String command, List params) {
     Long execDt = wnow()
     Boolean shw = getBoolSetting('showCmdLogs')
-    if (shw) { logInfo("Plugin called Process Command | DeviceId: $devId | Command: ($cmd)${value1 ? " | Param1: ($value1)" : sBLANK}${value2 ? " | Param2: ($value2)" : sBLANK}") }
-    if (!devId) { return }
-    String command; command = cmd
 
+    if (shw) { logInfo("Plugin called Process Command | DeviceId: $devId | Command: ${command}(${params ? params.join(', ') : ''})") }
+    if (!devId) { return }
+
+    // Handle special device types
     if (devId.contains('securityKeypad_') && getListSetting('securityKeypadsList')) {
         command = mapSecurityKeypadMode(command)
         devId = devId.replaceFirst('securityKeypad_', '')
     }
 
-    if (devId == "alarmSystemStatus_${location?.id}" && getBoolSetting('addSecurityDevice')) {
-        setAlarmSystemMode(command)
-        Long pt = execDt ? (wnow() - execDt) : 0L
-        logCmd([cmd: command, device: getAlarmSystemName(), value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
-    } else if (command == 'mode' &&  getListSetting('modeList')) {
-        if (shw) { logDebug("Virtual Mode Received: ${devId}") }
-        String mdevId = devId.replaceAll('m_', sBLANK)
-        changeMode(mdevId, shw)
-        Long pt = execDt ? (wnow() - execDt) : 0L
-        logCmd([cmd: command, device: 'Mode Device', value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Mode Device | Command: [$command] | Process Time: (${pt}ms)", 200)
-    } else if (command == 'piston' && getListSetting('pistonList')) {
-        if (shw) { logDebug("Virtual Piston Received: ${devId}") }
-        String aa = runPiston(devId, shw)
-        Long pt = execDt ? (wnow() - execDt) : 0L
-        logCmd([cmd: command, device: 'Piston Device', value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Piston | ${aa} | Command: [$command] | Process Time: (${pt}ms)", 200)
+    // Special cases handling
+    switch(true) {
+        case devId == "alarmSystemStatus_${location?.id}" && getBoolSetting('addSecurityDevice'):
+            setAlarmSystemMode(command)
+            logCommandExecution(command, getAlarmSystemName(), params, execDt)
+            return CommandReply(shw, sSUCC, "Security Alarm, Command: [$command]", 200)
+
+        case command == 'mode' && getListSetting('modeList'):
+            String mdevId = devId.replaceAll('m_', sBLANK)
+            changeMode(mdevId, shw)
+            logCommandExecution(command, 'Mode Device', params, execDt)
+            return CommandReply(shw, sSUCC, "Mode Device | Command: [$command]", 200)
+
+        case command == 'piston' && getListSetting('pistonList'):
+            String aa = runPiston(devId, shw)
+            logCommandExecution(command, 'Piston Device', params, execDt)
+            return CommandReply(shw, sSUCC, "Piston | ${aa} | Command: [$command]", 200)
     }
 
     def device = findDevice(devId)
-    String devN = device?.displayName
+    String devName = device?.displayName
+
     if (!device) {
         logError("Device Not Found $devId")
         return CommandReply(shw, 'Failure', 'Device Not Found', 500)
     }
+
     if (!device?.hasCommand(command)) {
-        logError("Device ${devN} does not have the command $command")
-        return CommandReply(shw, 'Failure', "Device ${devN} does not have the command $command", 500)
+        logError("Device ${devName} does not have the command $command")
+        return CommandReply(shw, 'Failure', "Device ${devName} does not have the command $command", 500)
     }
 
     if (command == 'setColorTemperature' && device.currentValue('switch') != 'on') {
         return CommandReply(shw, sSUCC, 'Command was setColorTemperature but device is not on', 200)
     }
 
-    String cmdS
-    cmdS = shw ? "Command Successful for Device | Name: ${devN} | DeviceId: ${devId} | Command: [${command}(" : sBLANK
     try {
-        if (value2 != null) {
-            device."$command"(value1, value2)
-            if (shw) { cmdS = cmdS + "$value1, $value2)]" }
-        } else if (value1 != null) {
-            device."$command"(value1)
-            if (shw) { cmdS = cmdS + "$value1)]" }
-        } else {
-            device."$command"()
-            if (shw) { cmdS = cmdS + ')]' }
-        }
-        if (shw) { logInfo(cmdS) }
+        device."$command"(*params)
         Long pt = execDt ? (wnow() - execDt) : 0L
-        logCmd([cmd: command, device: devN, value1: value1, value2: value2, execTime: pt])
-        return CommandReply(shw, sSUCC, "Name: ${devN} | Command: [${command}${value1 ? "($value1)" : "()"}] | Process Time: (${pt}ms)", 200)
+        logCommandExecution(command, devName, params, execDt)
+        return CommandReply(shw, sSUCC, "Command Successful | Device: ${devName} | Command: [${command}(${params.join(', ')})] | Process Time: (${pt}ms)", 200)
     } catch (ex) {
-        logError("Error Occurred for Device | Name: ${devN} | Command: [${command}()] ${ex}", ex)
-        return CommandReply(shw, 'Failure', "Error Occurred For Device ${devN} | Command [${command}()]", 500)
+        logError("Error Occurred for Device | Name: ${devName} | Command: [${command}(${params.join(', ')})] ${ex}", ex)
+        return CommandReply(shw, 'Failure', "Error Occurred For Device ${devName} | Command [${command}()]", 500)
     }
+}
+
+private void logCommandExecution(command, deviceName, params, execDt) {
+    Long pt = execDt ? (wnow() - execDt) : 0L
+    logCmd([cmd: command, device: deviceName, params: params, execTime: pt])
 }
 
 private void changeMode(String modeId, Boolean shw) {
@@ -2452,7 +2449,7 @@ mappings {
     path('/deviceDebug')                    { action: [GET: 'viewDeviceDebug']      }
     path('/location')                       { action: [GET: 'renderLocation']       }
     path('/pluginStatus')                   { action: [POST: 'pluginStatus']        }
-    path('/:id/command/:command')           { action: [POST: 'deviceCommand']       }
+    path('/deviceCmd')                      { action: [POST: 'deviceCommand']       }
     path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }
     path('/startDirect/:ip/:port/:version') { action: [POST: 'enableDirectUpdates'] }
 }

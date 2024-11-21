@@ -46,10 +46,10 @@ export default class Speaker extends HubitatPlatformAccessory {
     async setVolume(value, attr) {
         if (value > 0) {
             if (this.isSonos) {
-                await this.sendCommand("setVolume", { value1: value });
+                await this.sendCommand("setVolume", [value]);
             } else {
                 const command = `set${attr.charAt(0).toUpperCase() + attr.slice(1)}`;
-                await this.sendCommand(command, { value1: value });
+                await this.sendCommand(command, [value]);
             }
         }
     }

@@ -87,7 +87,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
             if (value >= 98) targetValue = 100;
 
             const command = this.usePosition ? "setPosition" : "setLevel";
-            await this.sendCommand(command, { value1: targetValue });
+            await this.sendCommand(command, [targetValue]);
         } catch (error) {
             this.logError("WindowCovering | Error setting target position:", error);
         }

@@ -86,7 +86,7 @@ export default class Fan extends HubitatPlatformAccessory {
         }
 
         const command = this.hasAttribute("speed") ? "setSpeed" : "setLevel";
-        await this.sendCommand(command, { value1: parseInt(value) });
+        await this.sendCommand(command, [parseInt(value)]);
 
         // Ensure the fan is on when setting speed
         if (this.deviceData.attributes.switch !== "on") {

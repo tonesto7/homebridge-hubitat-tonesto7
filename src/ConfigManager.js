@@ -50,6 +50,7 @@ export default class ConfigManager {
             adaptive_lighting: config.adaptive_lighting !== false,
             adaptive_lighting_off_when_on: config.adaptive_lighting_off_when_on === true,
             adaptive_lighting_offset: config.adaptive_lighting !== false && config.adaptive_lighting_offset !== undefined ? config.adaptive_lighting_offset : undefined,
+            allow_led_effects_control: config.allow_led_effects_control !== false,
             temperature_unit: config.temperature_unit || "F",
             logConfig: {
                 debug: config.logConfig ? config.logConfig.debug === true : false,

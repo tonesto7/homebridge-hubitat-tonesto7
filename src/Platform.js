@@ -85,7 +85,7 @@ export default class HubitatPlatform {
     }
 
     async refreshDevices(src = undefined) {
-        let starttime = new Date();
+        const starttime = new Date();
 
         try {
             this.logInfo(`Refreshing All Device Data${src ? " | Source: (" + src + ")" : ""}`);

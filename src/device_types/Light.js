@@ -5,12 +5,10 @@ import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
 export default class Light extends HubitatPlatformAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
-        // this.platform = platform;
         this.api = platform.api;
         this.log = platform.log;
         this.config = platform.config;
         this.lightService = null;
-        this.adaptiveLightingController = null;
         this.televisionService = null;
         this.effectsMap = {};
     }
@@ -18,6 +16,7 @@ export default class Light extends HubitatPlatformAccessory {
     static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];
 
     async configureServices() {
+        this.logInfo(`[${this.accessory.displayName}] Configuring Light Services`);
         try {
             this.lightService = this.getOrAddService(this.Service.Lightbulb, this.getServiceDisplayName(this.deviceData.name, "Light"));
             // this.markServiceForRetention(this.lightService);
@@ -68,13 +67,13 @@ export default class Light extends HubitatPlatformAccessory {
                         maxValue: 500, // 2000K
                     },
                 });
+
+                // Setup adaptive lighting if supported
+                await this.configureAdaptiveLighting();
             }
 
-            // Setup adaptive lighting if supported
-            await this.configureAdaptiveLighting();
-
             // Add effects support if device has lightEffects attribute
-            if (this.hasAttribute("lightEffects") && this.hasCommand("setEffect")) {
+            if (this.hasAttribute("lightEffects") && this.hasCommand("setEffect") && this.config.allow_led_effects_control) {
                 await this.setupEffectsService();
             }
 
@@ -100,7 +99,7 @@ export default class Light extends HubitatPlatformAccessory {
 
     async setBrightness(value) {
         const transformedValue = this.transformBrightnessToDevice(value);
-        await this.sendCommand("setLevel", { value1: transformedValue });
+        await this.sendCommand("setLevel", [transformedValue]);
     }
 
     // Color Value Handlers
@@ -109,12 +108,12 @@ export default class Light extends HubitatPlatformAccessory {
     }
 
     async setHue(value) {
-        const transformed = this.transformHueToDevice(value);
-        await this.sendCommand("setHue", { value1: transformed });
+        const hue = this.transformHueToDevice(value);
+        await this.sendCommand("setHue", [hue]);
     }
 
-    async setSaturation(value) {
-        await this.sendCommand("setSaturation", { value1: value });
+    async setSaturation(saturation) {
+        await this.sendCommand("setSaturation", [saturation]);
     }
 
     getColorTemperature() {
@@ -172,21 +171,19 @@ export default class Light extends HubitatPlatformAccessory {
     }
 
     async setupEffectsService() {
+        // Configure main television service
         this.televisionService = this.getOrAddService(this.Service.Television, this.getServiceDisplayName(this.deviceData.name, "Effects"));
 
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.SleepDiscoveryMode).updateValue(this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
-
-        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ConfiguredName).updateValue(`${this.accessory.displayName} Effects`);
-
+        // Configure required Television characteristics
         this.getOrAddCharacteristic(this.televisionService, this.Characteristic.Active, {
             getHandler: () => (this.deviceData.attributes.effectName !== undefined && this.deviceData.attributes.effectName !== "None" ? 1 : 0),
             setHandler: (value) => {
                 if (!value) {
-                    this.sendCommand("setEffect", { value1: 0 });
+                    this.sendCommand("setEffect", [0]);
                 } else {
                     const firstEffectNumber = Object.keys(this.effectsMap)[0];
                     if (firstEffectNumber) {
-                        this.sendCommand("setEffect", { value1: parseInt(firstEffectNumber) });
+                        this.sendCommand("setEffect", [parseInt(firstEffectNumber)]);
                     }
                 }
             },
@@ -197,8 +194,19 @@ export default class Light extends HubitatPlatformAccessory {
                 const currentEffect = this.deviceData.attributes.effectName;
                 return this.effectsMap[currentEffect] || 0;
             },
-            setHandler: (value) => this.sendCommand("setEffect", { value1: value }),
+            setHandler: (value) => this.sendCommand("setEffect", [value]),
         });
+
+        // Add required characteristics
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.ConfiguredName, {
+            getHandler: () => `${this.accessory.displayName} Effects`,
+        });
+
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.SleepDiscoveryMode, {
+            getHandler: () => this.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE,
+        });
+
+        this.getOrAddCharacteristic(this.televisionService, this.Characteristic.RemoteKey);
 
         await this.updateEffects();
     }
@@ -207,20 +215,47 @@ export default class Light extends HubitatPlatformAccessory {
         const effects = JSON.parse(this.deviceData.attributes.lightEffects || "{}");
         this.effectsMap = {};
 
-        // Remove old input services
-        const inputServices = this.accessory.services.filter((service) => service.UUID === this.Service.InputSource.UUID);
-        inputServices.forEach((service) => {
+        // Remove old input sources
+        const inputSources = this.accessory.services.filter((service) => service.displayName && service.displayName.startsWith("effect "));
+        inputSources.forEach((service) => {
             this.televisionService.removeLinkedService(service);
             this.accessory.removeService(service);
         });
 
-        // Add new input services
+        // Add new input sources
         for (const [effectNumber, effectName] of Object.entries(effects)) {
-            const inputService = this.getOrAddService(this.Service.InputSource, `effect ${effectNumber}`, effectName);
+            // Create input service for each effect
+            const inputService = this.getOrAddService(this.Service.InputSource, effectName, `effect_${effectNumber}`);
 
-            inputService.setCharacteristic(this.Characteristic.Identifier, parseInt(effectNumber)).setCharacteristic(this.Characteristic.ConfiguredName, effectName).setCharacteristic(this.Characteristic.IsConfigured, 1).setCharacteristic(this.Characteristic.InputSourceType, 0);
+            // Configure required InputSource characteristics
+            this.getOrAddCharacteristic(inputService, this.Characteristic.Identifier, {
+                getHandler: () => parseInt(effectNumber),
+            });
 
+            this.getOrAddCharacteristic(inputService, this.Characteristic.ConfiguredName, {
+                getHandler: () => effectName,
+            });
+
+            this.getOrAddCharacteristic(inputService, this.Characteristic.IsConfigured, {
+                getHandler: () => this.Characteristic.IsConfigured.CONFIGURED,
+            });
+
+            this.getOrAddCharacteristic(inputService, this.Characteristic.InputSourceType, {
+                getHandler: () => this.Characteristic.InputSourceType.APPLICATION,
+            });
+
+            this.getOrAddCharacteristic(inputService, this.Characteristic.CurrentVisibilityState, {
+                getHandler: () => this.Characteristic.CurrentVisibilityState.SHOWN,
+            });
+
+            this.getOrAddCharacteristic(inputService, this.Characteristic.Name, {
+                getHandler: () => effectName,
+            });
+
+            // Link the input source to the television service
             this.televisionService.addLinkedService(inputService);
+
+            // Update our effects map
             this.effectsMap[effectName] = parseInt(effectNumber);
         }
 
@@ -334,6 +369,8 @@ export default class Light extends HubitatPlatformAccessory {
     async cleanup() {
         // Call parent cleanup
         super.cleanup();
+
+        console.log("Light | Cleanup");
 
         // Clean up Adaptive Lighting Controller
         if (this.adaptiveLightingController) {

@@ -41,6 +41,7 @@ export default class HubitatPlatformAccessory {
 
         // Device data shortcut
         this.deviceData = accessory.context.deviceData;
+        this.adaptiveLightingController = null;
 
         this.defaultCmdDebounceConfig = {
             setLevel: { delay: 600, trailing: true },
@@ -264,6 +265,7 @@ export default class HubitatPlatformAccessory {
         this.lastCommandTimes.clear();
     }
 
+    // In HubitatPlatformAccessory.js
     cleanupUnusedServices(accessory) {
         const services = accessory.services.slice();
         const activeServices = accessory.context._activeServices;
@@ -276,10 +278,36 @@ export default class HubitatPlatformAccessory {
                 continue;
             }
 
-            // Remove services that aren't marked as active
             if (!activeServices.has(serviceId)) {
+                // Remove the entire service if it's not active
                 this.logWarn(`Removing unused service: ${service.displayName || "unnamed"} ` + `(${serviceId}) from ${accessory.displayName}`);
                 accessory.removeService(service);
+            } else {
+                // Service is active, clean up its unused characteristics
+                const activeChars = this.activeCharacteristics.get(serviceId) || new Set();
+                const characteristics = service.characteristics.slice();
+
+                // Get required characteristics for this service type
+                const requiredCharUUIDs = new Set(service.constructor.requiredCharacteristics?.map((c) => c.UUID) || []);
+
+                for (const characteristic of characteristics) {
+                    // Skip if characteristic is required or active
+                    if (requiredCharUUIDs.has(characteristic.UUID) || activeChars.has(characteristic)) {
+                        continue;
+                    }
+
+                    // Remove handlers first
+                    characteristic.removeOnGet();
+                    characteristic.removeOnSet();
+                    characteristic.removeAllListeners("get");
+                    characteristic.removeAllListeners("set");
+                    characteristic.removeAllListeners("change");
+
+                    // Remove the characteristic
+                    service.removeCharacteristic(characteristic);
+
+                    this.logDebug(`${accessory.displayName} | Removed unused characteristic: ` + `${characteristic.displayName} from service ${service.displayName || serviceId}`);
+                }
             }
         }
     }
@@ -310,33 +338,35 @@ export default class HubitatPlatformAccessory {
     }
 
     // Command Handling
-    async sendCommand(command, value = null) {
+    async sendCommand(command, params = []) {
         try {
+            // Get the command debounce config
             const cmdConfig = this.defaultCmdDebounceConfig[command];
             const delay = cmdConfig?.delay || 300;
             const trailing = cmdConfig?.trailing || false;
 
+            // Get the time since the last command
             const now = Date.now();
             const lastTime = this.lastCommandTimes.get(command) || 0;
             const timeSinceLastCommand = now - lastTime;
 
-            // Clear existing timer if any
+            // Clear any existing timer for this command
             const existingTimer = this.commandTimers.get(command);
             if (existingTimer) {
                 clearTimeout(existingTimer);
                 this.commandTimers.delete(command);
             }
 
-            // Create payload
-            const payload = value ? { value1: value } : undefined;
+            // Ensure params is an array and filter out null/undefined
+            const validParams = Array.isArray(params) ? params.filter((p) => p != null) : [params].filter((p) => p != null);
 
-            // Execute command function
+            // Execute the command (check for trailing debounce)
             const executeCommand = async () => {
                 this.lastCommandTimes.set(command, Date.now());
-                return await this.client.sendHubitatCommand(this.deviceData, command, payload);
+                return await this.client.sendHubitatCommand(this.deviceData, command, validParams);
             };
 
-            // If command should trail or needs debouncing
+            // If trailing or time since last command is less than delay, set a timer to execute the command
             if (trailing || timeSinceLastCommand < delay) {
                 return new Promise((resolve, reject) => {
                     const timer = setTimeout(
@@ -352,12 +382,11 @@ export default class HubitatPlatformAccessory {
                         },
                         trailing ? delay : Math.max(0, delay - timeSinceLastCommand),
                     );
-
                     this.commandTimers.set(command, timer);
                 });
             }
 
-            // Execute immediately for non-trailing commands
+            // Otherwise, execute the command immediately
             return await executeCommand();
         } catch (error) {
             this.logError(`Error executing command ${command} for device ${this.deviceData.name}:`, error);

@@ -89,6 +89,13 @@
                 "default": 0,
                 "required": false
             },
+            "allow_led_effects_control": {
+                "title": "Allow LED Effects Control?",
+                "description": "If enabled, the plugin will allow control of LED effects for devices that support them.",
+                "type": "boolean",
+                "required": false,
+                "default": true
+            },
             "consider_fan_by_name": {
                 "title": "Assign Device as Fan when Device has the word Fan in the Name?",
                 "description": "By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.",

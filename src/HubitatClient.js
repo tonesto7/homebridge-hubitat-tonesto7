@@ -91,26 +91,28 @@ export default class HubitatClient {
         }
     };
 
-    sendHubitatCommand = async (devData, cmd, vals) => {
-        // console.log("sendHubitatCommand", devData, cmd, vals);
+    sendHubitatCommand = async (devData, cmd, params = []) => {
         try {
-            this.logNotice(`Sending Device Command: ${cmd}${vals ? " | Value: " + JSON.stringify(vals) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})${this.config.use_cloud === true ? " | UsingCloud: (true)" : ""}`);
+            this.logNotice(`Sending Device Command: ${cmd}${params.length ? " | Params: " + JSON.stringify(params) : ""} | Name: (${devData.name}) | DeviceID: (${devData.deviceid})`);
+
             const response = await axios({
                 method: "post",
-                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/${devData.deviceid}/command/${cmd}`,
-                params: {
-                    access_token: this.config.access_token,
-                },
+                url: `${this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local}${this.config.app_id}/deviceCmd`,
+                params: { access_token: this.config.access_token },
                 headers: {
                     "Content-Type": "application/json",
                     evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
                     evttype: "hkCommand",
                     isLocal: this.config.use_cloud ? "false" : "true",
                 },
-                data: vals || null,
+                data: {
+                    deviceId: devData.deviceid,
+                    command: cmd,
+                    params: params,
+                },
                 timeout: 5000,
             });
-            this.log.debug(`sendHubitatCommand | Response: ${JSON.stringify(response.data)}`);
+            // this.log.debug(`sendHubitatCommand | Response: ${JSON.stringify(response.data)}`);
             return true;
         } catch (err) {
             this.handleError("sendHubitatCommand", err);

@@ -245,7 +245,7 @@ export default class HubitatAccessories {
             const hasExcludedAttribute = deviceTest.excludeAttributes?.some((attr) => deviceWrapper.hasAttribute(attr));
 
             if (hasExcludedCapability || hasExcludedAttribute) {
-                this.logWarn(`${accessory.displayName} excluded from ${deviceTest.name} due to ` + `${hasExcludedCapability ? "capabilities" : "attributes"}`);
+                this.logDebug(`${accessory.displayName} excluded from ${deviceTest.name} due to ` + `${hasExcludedCapability ? "capabilities" : "attributes"}`);
                 continue;
             }
 
@@ -356,7 +356,6 @@ export default class HubitatAccessories {
             });
 
             // Store instances
-            // accessory.context.deviceInstances = deviceInstances;
             this.deviceInstances.set(accessory.UUID, deviceInstances);
 
             // Register with homebridge
@@ -394,7 +393,6 @@ export default class HubitatAccessories {
             const previousInstances = this.deviceInstances.get(accessory.UUID) || [];
             const previousState = {
                 services: new Set(Array.from(accessory.context._activeServices || [])),
-                // Convert the Map or create empty Map if undefined
                 characteristics: new Map(accessory.context._activeCharacteristics instanceof Map ? accessory.context._activeCharacteristics : []),
             };
 
@@ -434,9 +432,9 @@ export default class HubitatAccessories {
             });
 
             // Clean up old instances
-            for (const instance of previousInstances) {
-                await instance.cleanup();
-            }
+            // for (const instance of previousInstances) {
+            //     await instance.cleanup();
+            // }
 
             // Store new instances
             this.deviceInstances.set(accessory.UUID, deviceInstances);
@@ -444,8 +442,11 @@ export default class HubitatAccessories {
             // Log changes if any occurred
             this.logServiceChanges(accessory.displayName, previousState, currentState);
 
-            // Clean up unused services
-            this.cleanupUnusedServices(accessory);
+            // Clean up unused services using the accessory's method
+            const firstInstance = deviceInstances[0];
+            if (firstInstance) {
+                firstInstance.cleanupUnusedServices(accessory);
+            }
 
             // Update the accessory
             this.api.updatePlatformAccessories([accessory]);
@@ -487,26 +488,6 @@ export default class HubitatAccessories {
 
     getServiceId(service) {
         return service.subtype ? `${service.UUID} ${service.subtype}` : service.UUID;
-    }
-
-    cleanupUnusedServices(accessory) {
-        const services = accessory.services.slice();
-        const activeServices = accessory.context._activeServices;
-
-        for (const service of services) {
-            const serviceId = this.getServiceId(service);
-
-            // Never remove AccessoryInformation service
-            if (service.UUID === this.platform.Service.AccessoryInformation.UUID) {
-                continue;
-            }
-
-            // Remove services that aren't marked as active
-            if (!activeServices.has(serviceId)) {
-                this.logDebug(`Removing unused service: ${service.displayName} ` + `(${serviceId}) from ${accessory.displayName}`);
-                accessory.removeService(service);
-            }
-        }
     }
 
     async processDeviceAttributeUpdate(update) {
