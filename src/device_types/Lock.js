@@ -1,8 +1,8 @@
 // device_types/Lock.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Lock extends HubitatPlatformAccessory {
+export default class Lock extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.lockService = null;
@@ -12,7 +12,7 @@ export default class Lock extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.lockService = this.getOrAddService(this.Service.LockMechanism, this.getServiceDisplayName(this.deviceData.name, "Lock"));
+            this.lockService = this.getOrAddService(this.Service.LockMechanism, this.cleanServiceDisplayName(this.deviceData.name, "Lock"));
 
             // Lock Current State
             this.getOrAddCharacteristic(this.lockService, this.Characteristic.LockCurrentState, {
@@ -27,7 +27,7 @@ export default class Lock extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Lock | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Lock | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -68,7 +68,7 @@ export default class Lock extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Lock | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Lock | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

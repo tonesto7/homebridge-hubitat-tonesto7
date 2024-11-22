@@ -1,8 +1,8 @@
 // device_types/Thermostat.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Thermostat extends HubitatPlatformAccessory {
+export default class Thermostat extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.thermostatService = null;
@@ -14,7 +14,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
     // Main Service Configuration
     async configureServices() {
         try {
-            this.thermostatService = this.getOrAddService(this.Service.Thermostat, this.getServiceDisplayName(this.deviceData.name, "Thermostat"));
+            this.thermostatService = this.getOrAddService(this.Service.Thermostat, this.cleanServiceDisplayName(this.deviceData.name, "Thermostat"));
 
             // Current Temperature
             this.getOrAddCharacteristic(this.thermostatService, this.Characteristic.CurrentTemperature, {
@@ -49,7 +49,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
                 getHandler: () => {
                     const humidity = parseInt(this.deviceData.attributes.humidity);
                     if (isNaN(humidity)) {
-                        this.logWarn(`Invalid humidity value: ${this.deviceData.attributes.humidity}`);
+                        this.logManager.logWarn(`Invalid humidity value: ${this.deviceData.attributes.humidity}`);
                         return 0;
                     }
                     return humidity;
@@ -83,7 +83,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
             }
 
             if (this.supportsFan()) {
-                this.fanService = this.getOrAddService(this.Service.Fanv2, this.getServiceDisplayName(this.deviceData.name, "Fan"));
+                this.fanService = this.getOrAddService(this.Service.Fanv2, this.cleanServiceDisplayName(this.deviceData.name, "Fan"));
 
                 // Fan Active State
                 this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {
@@ -104,7 +104,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Thermostat | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Thermostat | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -120,11 +120,11 @@ export default class Thermostat extends HubitatPlatformAccessory {
     validateTemperatureValue(temp) {
         const props = this.getTemperatureProps();
         if (temp < props.minValue) {
-            this.logWarn(`${this.deviceData.name} | Temperature value ${temp} below minimum ${props.minValue}, using minimum`);
+            this.logManager.logWarn(`${this.deviceData.name} | Temperature value ${temp} below minimum ${props.minValue}, using minimum`);
             return props.minValue;
         }
         if (temp > props.maxValue) {
-            this.logWarn(`${this.deviceData.name} | Temperature value ${temp} above maximum ${props.maxValue}, using maximum`);
+            this.logManager.logWarn(`${this.deviceData.name} | Temperature value ${temp} above maximum ${props.maxValue}, using maximum`);
             return props.maxValue;
         }
         return temp;
@@ -288,7 +288,7 @@ export default class Thermostat extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Thermostat | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Thermostat | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

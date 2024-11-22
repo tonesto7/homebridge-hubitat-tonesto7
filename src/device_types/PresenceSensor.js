@@ -1,8 +1,8 @@
 // device_types/PresenceSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class PresenceSensor extends HubitatPlatformAccessory {
+export default class PresenceSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.occupancyService = null;
@@ -12,7 +12,7 @@ export default class PresenceSensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.occupancyService = this.getOrAddService(this.Service.OccupancySensor, this.getServiceDisplayName(this.deviceData.name, "Presence Sensor"));
+            this.occupancyService = this.getOrAddService(this.Service.OccupancySensor, this.cleanServiceDisplayName(this.deviceData.name, "Presence Sensor"));
 
             // Occupancy Detected
             this.getOrAddCharacteristic(this.occupancyService, this.Characteristic.OccupancyDetected, {
@@ -33,7 +33,7 @@ export default class PresenceSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`PresenceSensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`PresenceSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -68,7 +68,7 @@ export default class PresenceSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`PresenceSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`PresenceSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

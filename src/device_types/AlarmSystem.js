@@ -1,8 +1,8 @@
 // device_types/AlarmSystem.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class AlarmSystem extends HubitatPlatformAccessory {
+export default class AlarmSystem extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.alarmService = null;
@@ -12,7 +12,7 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.alarmService = this.getOrAddService(this.Service.SecuritySystem, this.getServiceDisplayName(this.deviceData.name, "Alarm System"));
+            this.alarmService = this.getOrAddService(this.Service.SecuritySystem, this.cleanServiceDisplayName(this.deviceData.name, "Alarm System"));
 
             // Configure Current State
             this.getOrAddCharacteristic(this.alarmService, this.Characteristic.SecuritySystemCurrentState, {
@@ -27,7 +27,7 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`AlarmSystem | ${this.deviceData.name} | Error configuring alarm system services:`, error);
+            this.logManager.logError(`AlarmSystem | ${this.deviceData.name} | Error configuring alarm system services:`, error);
             throw error;
         }
     }
@@ -101,7 +101,7 @@ export default class AlarmSystem extends HubitatPlatformAccessory {
             // Update target state
             this.alarmService.getCharacteristic(this.Characteristic.SecuritySystemTargetState).updateValue(this.getTargetState(value));
         } else {
-            this.logDebug(`AlarmSystem | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+            this.logManager.logDebug(`AlarmSystem | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -1,8 +1,8 @@
 // device_types/FilterMaintenance.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class FilterMaintenance extends HubitatPlatformAccessory {
+export default class FilterMaintenance extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.filterMaintenanceService = null;
@@ -12,7 +12,7 @@ export default class FilterMaintenance extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.filterMaintenanceService = this.getOrAddService(this.Service.FilterMaintenance, this.getServiceDisplayName(this.deviceData.name, "Filter"));
+            this.filterMaintenanceService = this.getOrAddService(this.Service.FilterMaintenance, this.cleanServiceDisplayName(this.deviceData.name, "Filter"));
 
             // Filter Change Indicator
             this.getOrAddCharacteristic(this.filterMaintenanceService, this.Characteristic.FilterChangeIndication, {
@@ -26,7 +26,7 @@ export default class FilterMaintenance extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`FilterMaintenance | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`FilterMaintenance | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -52,7 +52,7 @@ export default class FilterMaintenance extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`FilterMaintenance | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`FilterMaintenance | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

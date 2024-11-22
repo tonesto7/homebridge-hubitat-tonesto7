@@ -1,7 +1,7 @@
 // index.js
 
-import { pluginName, platformName } from "./Constants.js";
-import HubitatPlatform from "./Platform.js";
+import { pluginName, platformName } from "./StaticConfig.js";
+import HubitatPlatform from "./HubitatPlatform.js";
 
 export default function (homebridge) {
     homebridge.registerPlatform(pluginName, platformName, HubitatPlatform);

@@ -1,8 +1,8 @@
 // device_types/Outlet.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Outlet extends HubitatPlatformAccessory {
+export default class Outlet extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.outletService = null;
@@ -12,7 +12,7 @@ export default class Outlet extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.outletService = this.getOrAddService(this.Service.Outlet, this.getServiceDisplayName(this.deviceData.name, "Outlet"));
+            this.outletService = this.getOrAddService(this.Service.Outlet, this.cleanServiceDisplayName(this.deviceData.name, "Outlet"));
 
             // On/Off State
             this.getOrAddCharacteristic(this.outletService, this.Characteristic.On, {
@@ -27,7 +27,7 @@ export default class Outlet extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Outlet | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Outlet | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -54,7 +54,7 @@ export default class Outlet extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Outlet | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Outlet | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

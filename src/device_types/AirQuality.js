@@ -1,8 +1,8 @@
 // device_types/AirQuality.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class AirQuality extends HubitatPlatformAccessory {
+export default class AirQuality extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.airQualityService = null;
@@ -12,7 +12,7 @@ export default class AirQuality extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.airQualityService = this.getOrAddService(this.Service.AirQualitySensor, this.getServiceDisplayName(this.deviceData.name, "Air Quality"));
+            this.airQualityService = this.getOrAddService(this.Service.AirQualitySensor, this.cleanServiceDisplayName(this.deviceData.name, "Air Quality"));
 
             // Air Quality
             this.getOrAddCharacteristic(this.airQualityService, this.Characteristic.AirQuality, {
@@ -45,7 +45,7 @@ export default class AirQuality extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`AirQuality | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`AirQuality | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -104,7 +104,7 @@ export default class AirQuality extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`AirQuality | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`AirQuality | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -1,8 +1,8 @@
 // device_types/SwitchDevice.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class SwitchDevice extends HubitatPlatformAccessory {
+export default class SwitchDevice extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.switchService = null;
@@ -12,7 +12,7 @@ export default class SwitchDevice extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.switchService = this.getOrAddService(this.Service.Switch, this.getServiceDisplayName(this.deviceData.name, "Switch"));
+            this.switchService = this.getOrAddService(this.Service.Switch, this.cleanServiceDisplayName(this.deviceData.name, "Switch"));
 
             // On/Off State
             this.getOrAddCharacteristic(this.switchService, this.Characteristic.On, {
@@ -22,7 +22,7 @@ export default class SwitchDevice extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`SwitchDevice | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`SwitchDevice | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -43,7 +43,7 @@ export default class SwitchDevice extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`SwitchDevice | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`SwitchDevice | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

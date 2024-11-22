@@ -1,8 +1,8 @@
 // device_types/AirPurifier.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class AirPurifier extends HubitatPlatformAccessory {
+export default class AirPurifier extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.config = platform.config;
@@ -13,7 +13,7 @@ export default class AirPurifier extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.airPurifierService = this.getOrAddService(this.CommunityTypes.NewAirPurifierService, this.getServiceDisplayName(this.deviceData.name, "Air Purifier"));
+            this.airPurifierService = this.getOrAddService(this.CommunityTypes.NewAirPurifierService, this.cleanServiceDisplayName(this.deviceData.name, "Air Purifier"));
 
             // Active State (On/Off)
             this.getOrAddCharacteristic(this.airPurifierService, this.Characteristic.Active, {

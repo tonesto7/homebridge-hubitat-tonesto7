@@ -1,8 +1,8 @@
 // device_types/Valve.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Valve extends HubitatPlatformAccessory {
+export default class Valve extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.valveService = null;
@@ -12,7 +12,7 @@ export default class Valve extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.valveService = this.getOrAddService(this.Service.Valve, this.getServiceDisplayName(this.deviceData.name, "Valve"));
+            this.valveService = this.getOrAddService(this.Service.Valve, this.cleanServiceDisplayName(this.deviceData.name, "Valve"));
 
             // Active
             this.getOrAddCharacteristic(this.valveService, this.Characteristic.Active, {
@@ -32,7 +32,7 @@ export default class Valve extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Valve | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Valve | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -58,7 +58,7 @@ export default class Valve extends HubitatPlatformAccessory {
                 this.valveService.getCharacteristic(this.Characteristic.InUse).updateValue(this.getInUseState(value));
                 break;
             default:
-                this.logDebug(`Valve | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Valve | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

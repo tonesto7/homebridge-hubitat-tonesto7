@@ -1,8 +1,8 @@
 // device_types/AccelerationSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class AccelerationSensor extends HubitatPlatformAccessory {
+export default class AccelerationSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.accelerationService = null;
@@ -13,7 +13,7 @@ export default class AccelerationSensor extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             // Use motion sensor service type for acceleration
-            this.accelerationService = this.getOrAddService(this.Service.MotionSensor, this.getServiceDisplayName(this.deviceData.name, "Acceleration Sensor"));
+            this.accelerationService = this.getOrAddService(this.Service.MotionSensor, this.cleanServiceDisplayName(this.deviceData.name, "Acceleration Sensor"));
 
             // Motion Detected (used for acceleration state)
             this.getOrAddCharacteristic(this.accelerationService, this.Characteristic.MotionDetected, {

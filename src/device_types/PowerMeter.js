@@ -1,8 +1,8 @@
 // device_types/PowerMeter.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class PowerMeter extends HubitatPlatformAccessory {
+export default class PowerMeter extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.powerService = null;
@@ -13,7 +13,7 @@ export default class PowerMeter extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             // Using a custom service type for power measurement
-            this.powerService = this.getOrAddService(this.platform.CommunityTypes.WattService, this.getServiceDisplayName(this.deviceData.name, "Power Meter"));
+            this.powerService = this.getOrAddService(this.platform.CommunityTypes.WattService, this.cleanServiceDisplayName(this.deviceData.name, "Power Meter"));
 
             // Configure the watts characteristic
             this.getOrAddCharacteristic(this.powerService, this.platform.CommunityTypes.Watts, {
@@ -22,7 +22,7 @@ export default class PowerMeter extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`PowerMeter | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`PowerMeter | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -40,7 +40,7 @@ export default class PowerMeter extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`PowerMeter | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`PowerMeter | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -1,21 +1,19 @@
-// HubitatPlatformAccessory.js
+// device_types/BaseAccessory.js
 
-export default class HubitatPlatformAccessory {
+export default class HubitatBaseAccessory {
     constructor(platform, accessory) {
-        if (!platform || !platform.log) {
-            throw new Error("Platform object with required properties not provided to HubitatPlatformAccessory");
+        if (!platform || !platform.logManager || !platform.stateManager || !platform.configManager || !platform.api) {
+            throw new Error("Platform object with required properties not provided to HubitatBaseAccessory");
         }
 
-        this.api = platform.api;
-        this.logDebug = platform.logDebug;
-        this.logInfo = platform.logInfo;
-        this.logWarn = platform.logWarn;
-        this.logError = platform.logError;
-        this.logNotice = platform.logNotice;
-        this.logGreen = platform.logGreen;
+        // Initialize managers from platform
+        this.logManager = platform.logManager;
+        this.stateManager = platform.stateManager;
+        this.configManager = platform.configManager;
         this.sanitizeName = platform.sanitizeName;
-        this.log = platform.log;
-        this.chalk = platform.chalk;
+
+        // Initialize platform properties
+        this.api = platform.api;
         this.config = platform.config;
         this.client = platform.client;
         this.Characteristic = platform.Characteristic;
@@ -23,27 +21,13 @@ export default class HubitatPlatformAccessory {
         this.accessory = accessory;
         this.tempUnit = platform.configManager.getTempUnit();
 
-        // Initialize context structure if needed
-        if (!accessory.context.state) {
-            accessory.context.state = {
-                activeServices: [], // Array of service IDs
-                activeCharacteristics: {}, // Object of service IDs to array of characteristic UUIDs
-                buttonMap: {}, // Object mapping button numbers to service IDs
-                adaptiveLighting: {
-                    enabled: false,
-                    controllerConfig: null,
-                },
-            };
-        }
-
         // Runtime-only properties (non-serializable, don't store in context)
         this._commandTimers = new Map(); // Keep timers in memory only
         this._lastCommandTimes = new Map(); // Keep command times in memory only
         this._adaptiveLightingController = null; // Keep controller instance in memory
 
-        // Create runtime Sets/Maps from context data for efficient lookups
-        this._activeServicesSet = new Set(accessory.context.state.activeServices);
-        this._activeCharacteristicsMap = new Map(Object.entries(accessory.context.state.activeCharacteristics).map(([serviceId, charArray]) => [serviceId, new Set(charArray)]));
+        // Ensure context state exists and has required properties
+        this.stateManager.initializeAccessoryContext(accessory);
 
         // Device data shortcut
         this.deviceData = accessory.context.deviceData;
@@ -72,7 +56,7 @@ export default class HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Error initializing accessory ${this.accessory.displayName}:`, error);
+            this.logManager.logError(`Error initializing accessory ${this.accessory.displayName}:`, error);
             throw error;
         }
     }
@@ -99,21 +83,21 @@ export default class HubitatPlatformAccessory {
         // Only add handler for Identify
         this.getOrAddCharacteristic(infoService, this.Characteristic.Identify, {
             setHandler: () => {
-                this.logInfo(`${this.deviceData.name} - identify`);
+                this.logManager.logInfo(`${this.deviceData.name} - identify`);
             },
         });
 
         // handle the identify event
         this.getOrAddCharacteristic(infoService, this.Characteristic.Identify, {
             setHandler: () => {
-                this.logInfo(`${this.deviceData.name} - identify`);
+                this.logManager.logInfo(`${this.deviceData.name} - identify`);
             },
         });
     }
 
     updateDeviceAttribute(attribute, value, deviceName) {
         if (!this.deviceData) {
-            this.logError(`No deviceData found for ${this.accessory.displayName}`);
+            this.logManager.logError(`No deviceData found for ${this.accessory.displayName}`);
             return { success: false };
         }
 
@@ -125,7 +109,7 @@ export default class HubitatPlatformAccessory {
         this.deviceData.attributes[attribute] = value;
 
         if (this.config.logConfig?.showChanges) {
-            this.logInfo(`${this.chalk.hex("#FFA500")("Device Event")}: ` + `(${this.chalk.blueBright(deviceName || this.deviceData.name)}) ` + `[${this.chalk.yellow.bold(attribute ? attribute.toUpperCase() : "unknown")}] ` + `changed from ${this.chalk.green(previousValue)} to ${this.chalk.green(value)}`);
+            this.logManager.logAttributeChange(deviceName || this.deviceData.name, attribute, previousValue, value);
         }
 
         return { success: true, previousValue };
@@ -145,7 +129,7 @@ export default class HubitatPlatformAccessory {
                 if (displayName) {
                     if (!subType) {
                         subType = `${serviceType.UUID}_${Date.now()}`;
-                        this.logDebug(`${this.deviceData.name} | Generated subtype: ${subType}`);
+                        this.logManager.logDebug(`${this.deviceData.name} | Generated subtype: ${subType}`);
                     }
                     service = this.accessory.getServiceById(serviceType, subType) || this.accessory.addService(serviceType, displayName, subType);
                 }
@@ -161,12 +145,12 @@ export default class HubitatPlatformAccessory {
                 nameCharacteristic.setValue(displayName);
             }
 
-            // Mark the service for retention
-            this.markServiceForRetention(service);
+            // Use StateManager to track service
+            this.stateManager.trackService(this.accessory, service);
 
             return service;
         } catch (error) {
-            this.logError(`Error adding service ${displayName} (${subType}):`, error);
+            this.logManager.logError(`Error adding service ${displayName} (${subType}):`, error);
             throw error;
         }
     }
@@ -189,7 +173,7 @@ export default class HubitatPlatformAccessory {
         let characteristic = service.getCharacteristic(characteristicType) || service.addCharacteristic(characteristicType);
 
         // Track this characteristic as active
-        this.markCharacteristicForRetention(service, characteristic);
+        this.stateManager.trackCharacteristic(this.accessory, service, characteristic);
 
         // Configure characteristic
         if (Object.keys(props).length) {
@@ -224,47 +208,19 @@ export default class HubitatPlatformAccessory {
         return service.subtype ? `${service.UUID} ${service.subtype}` : service.UUID;
     }
 
-    getServiceDisplayName(deviceName, serviceName) {
-        // check if serviceName is present in deviceName and don't append if it is
-        if (deviceName.includes(serviceName)) {
-            return deviceName;
+    cleanServiceDisplayName(deviceName, serviceName) {
+        const sanitizedDeviceName = this.sanitizeName(deviceName);
+        const sanitizedServiceName = this.sanitizeName(serviceName);
+
+        // Check if the service name is already included in the device name
+        if (sanitizedDeviceName.includes(sanitizedServiceName)) {
+            return sanitizedDeviceName;
         }
-        return `${deviceName} ${serviceName}`;
-    }
-
-    // Service and Characteristic Tracking
-    markServiceForRetention(service) {
-        if (!service) {
-            this.logWarn("Attempted to mark null service for retention");
-            return;
-        }
-
-        const serviceId = this.getServiceId(service);
-        this._activeServicesSet.add(serviceId);
-
-        // Initialize characteristics tracking for this service if needed
-        if (!this._activeCharacteristicsMap.has(serviceId)) {
-            this._activeCharacteristicsMap.set(serviceId, new Set());
-        }
-
-        // Sync to context
-        this._syncActiveServices();
-    }
-
-    markCharacteristicForRetention(service, characteristic) {
-        const serviceId = this.getServiceId(service);
-        if (!this._activeCharacteristicsMap.has(serviceId)) {
-            this._activeCharacteristicsMap.set(serviceId, new Set());
-        }
-
-        this._activeCharacteristicsMap.get(serviceId).add(characteristic.UUID);
-
-        // Sync to context
-        this._syncActiveCharacteristics();
+        return `${sanitizedDeviceName} ${sanitizedServiceName}`;
     }
 
     // Cleanup Methods
-    cleanup() {
+    async cleanup() {
         // Clear runtime timers
         for (const [_, timer] of this._commandTimers) {
             clearTimeout(timer);
@@ -272,12 +228,33 @@ export default class HubitatPlatformAccessory {
         this._commandTimers.clear();
         this._lastCommandTimes.clear();
 
-        // Clear runtime collections
-        this._activeServicesSet.clear();
-        this._activeCharacteristicsMap.clear();
+        // Clean up adaptive lighting if present
+        if (this._adaptiveLightingController) {
+            this.accessory.removeController(this._adaptiveLightingController);
+            this._adaptiveLightingController = null;
+        }
+
+        // Use StateManager to clean up state
+        this.stateManager.cleanupAccessoryState(this.accessory);
     }
 
-    // In HubitatPlatformAccessory.js
+    getServiceDisplayName(service) {
+        let serviceName = "unnamed";
+        if (service.displayName) {
+            serviceName = service.displayName;
+        } else {
+            // Try to get the service name from the UUID
+            for (const [key, value] of Object.entries(this.Service)) {
+                if (value.UUID === service.UUID) {
+                    serviceName = key;
+                    break;
+                }
+            }
+        }
+        return serviceName;
+    }
+
+    // In HubitatBaseAccessory.js
     cleanupUnusedServices(accessory) {
         const services = accessory.services.slice();
 
@@ -289,13 +266,16 @@ export default class HubitatPlatformAccessory {
                 continue;
             }
 
-            if (!this._activeServicesSet.has(serviceId)) {
+            // Get a descriptive name for the service
+            const serviceName = this.getServiceDisplayName(service);
+
+            if (!this.stateManager.getActiveServices(accessory).includes(serviceId)) {
                 // Remove the entire service if it's not active
-                this.logWarn(`Removing unused service: ${service.displayName || "unnamed"} ` + `(${serviceId}) from ${accessory.displayName}`);
+                this.logManager.logWarn(`Removing unused service: ${serviceName} ` + `(${serviceId}) from ${accessory.displayName}`);
                 accessory.removeService(service);
             } else {
                 // Service is active, clean up its unused characteristics
-                const activeChars = this._activeCharacteristicsMap.get(serviceId) || new Set();
+                const activeChars = this.stateManager.getActiveCharacteristics(accessory, serviceId);
                 const characteristics = service.characteristics.slice();
 
                 // Get required characteristics for this service type
@@ -303,7 +283,7 @@ export default class HubitatPlatformAccessory {
 
                 for (const characteristic of characteristics) {
                     // Skip if characteristic is required or active
-                    if (requiredCharUUIDs.has(characteristic.UUID) || activeChars.has(characteristic.UUID)) {
+                    if (requiredCharUUIDs.has(characteristic.UUID) || activeChars.includes(characteristic.UUID)) {
                         continue;
                     }
 
@@ -321,14 +301,14 @@ export default class HubitatPlatformAccessory {
 
     cleanupServiceCharacteristics(service) {
         const serviceId = this.getServiceId(service);
-        const activeChars = this.activeCharacteristics.get(serviceId) || new Set();
+        const activeChars = this.stateManager.getActiveCharacteristics(this.accessory, serviceId);
         const characteristics = service.characteristics.slice();
 
         // Don't remove required characteristics
         // const requiredCharUUIDs = new Set(service.characteristics.filter((c) => c.props.perms.includes("pr")).map((c) => c.UUID));
 
         for (const characteristic of characteristics) {
-            if (!activeChars.has(characteristic)) {
+            if (!activeChars.includes(characteristic.UUID)) {
                 // Remove handlers first
                 characteristic.removeOnGet();
                 characteristic.removeOnSet();
@@ -339,7 +319,7 @@ export default class HubitatPlatformAccessory {
                 // Remove the characteristic
                 service.removeCharacteristic(characteristic);
 
-                this.logDebug(`${this.deviceData.name} | Removed unused characteristic: ${characteristic.displayName} ` + `from service ${service.displayName} on ${this.accessory.displayName}`);
+                this.logManager.logDebug(`${this.deviceData.name} | Removed unused characteristic: ${characteristic.displayName} ` + `from service ${service.displayName} on ${this.accessory.displayName}`);
             }
         }
     }
@@ -396,7 +376,7 @@ export default class HubitatPlatformAccessory {
             // Otherwise, execute the command immediately
             return await executeCommand();
         } catch (error) {
-            this.logError(`Error executing command ${command} for device ${this.deviceData.name}:`, error);
+            this.logManager.logError(`Error executing command ${command} for device ${this.deviceData.name}:`, error);
             throw error;
         }
     }
@@ -432,17 +412,6 @@ export default class HubitatPlatformAccessory {
         throw new Error("handleAttributeUpdate must be implemented by device type class");
     }
 
-    // Helper methods to sync runtime collections with context
-    _syncActiveServices() {
-        // Sync Set back to context array
-        this.accessory.context.state.activeServices = Array.from(this._activeServicesSet);
-    }
-
-    _syncActiveCharacteristics() {
-        // Sync Map back to context object
-        this.accessory.context.state.activeCharacteristics = Object.fromEntries(Array.from(this._activeCharacteristicsMap.entries()).map(([serviceId, charSet]) => [serviceId, Array.from(charSet)]));
-    }
-
     // Temperature Utilities
     getTempUnit() {
         return this.tempUnit;
@@ -472,13 +441,13 @@ export default class HubitatPlatformAccessory {
         const { minValue = characteristic.props.minValue, maxValue = characteristic.props.maxValue } = opts;
 
         if (value === null || value === undefined || isNaN(value)) {
-            this.logWarn(`Invalid ${charName} value: ${value}, keeping current value: ${currentValue}`);
+            this.logManager.logWarn(`Invalid ${charName} value: ${value}, keeping current value: ${currentValue}`);
             return currentValue;
         }
 
         const numValue = Number(value);
         if (numValue < minValue || numValue > maxValue) {
-            this.logWarn(`${charName} value out of range: ${value} (min: ${minValue}, max: ${maxValue}), keeping current value: ${currentValue}`);
+            this.logManager.logWarn(`${charName} value out of range: ${value} (min: ${minValue}, max: ${maxValue}), keeping current value: ${currentValue}`);
             return currentValue;
         }
 

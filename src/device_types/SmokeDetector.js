@@ -1,8 +1,8 @@
 // device_types/SmokeDetector.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class SmokeDetector extends HubitatPlatformAccessory {
+export default class SmokeDetector extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.smokeService = null;
@@ -12,7 +12,7 @@ export default class SmokeDetector extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.smokeService = this.getOrAddService(this.Service.SmokeSensor, this.getServiceDisplayName(this.deviceData.name, "Smoke Detector"));
+            this.smokeService = this.getOrAddService(this.Service.SmokeSensor, this.cleanServiceDisplayName(this.deviceData.name, "Smoke Detector"));
 
             // Smoke Detected
             this.getOrAddCharacteristic(this.smokeService, this.Characteristic.SmokeDetected, {
@@ -33,7 +33,7 @@ export default class SmokeDetector extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`SmokeDetector | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`SmokeDetector | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -68,7 +68,7 @@ export default class SmokeDetector extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`SmokeDetector | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`SmokeDetector | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

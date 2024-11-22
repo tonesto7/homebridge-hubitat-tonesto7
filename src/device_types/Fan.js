@@ -1,8 +1,8 @@
 // device_types/Fan.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Fan extends HubitatPlatformAccessory {
+export default class Fan extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.fanService = null;
@@ -12,8 +12,7 @@ export default class Fan extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.fanService = this.getOrAddService(this.Service.Fan, this.getServiceDisplayName(this.deviceData.name, "Fan"));
-            // this.markServiceForRetention(this.fanService);
+            this.fanService = this.getOrAddService(this.Service.Fan, this.cleanServiceDisplayName(this.deviceData.name, "Fan"));
 
             // Active State (On/Off)
             this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {
@@ -43,7 +42,7 @@ export default class Fan extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Fan | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Fan | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -130,7 +129,7 @@ export default class Fan extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Fan | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Fan | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
 
         return true;

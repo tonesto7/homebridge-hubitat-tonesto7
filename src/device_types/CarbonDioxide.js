@@ -1,8 +1,8 @@
 // device_types/CarbonDioxide.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class CarbonDioxideSensor extends HubitatPlatformAccessory {
+export default class CarbonDioxideSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.co2Service = null;
@@ -12,7 +12,7 @@ export default class CarbonDioxideSensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.co2Service = this.getOrAddService(this.Service.CarbonDioxideSensor, this.getServiceDisplayName(this.deviceData.name, "Carbon Dioxide"));
+            this.co2Service = this.getOrAddService(this.Service.CarbonDioxideSensor, this.cleanServiceDisplayName(this.deviceData.name, "Carbon Dioxide"));
 
             // CO2 Detected
             this.getOrAddCharacteristic(this.co2Service, this.Characteristic.CarbonDioxideDetected, {
@@ -38,7 +38,7 @@ export default class CarbonDioxideSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`CarbonDioxide | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`CarbonDioxide | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -81,7 +81,7 @@ export default class CarbonDioxideSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`CarbonDioxide | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`CarbonDioxide | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

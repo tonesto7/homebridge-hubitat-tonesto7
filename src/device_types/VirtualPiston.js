@@ -1,8 +1,8 @@
 // device_types/VirtualPiston.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class VirtualPiston extends HubitatPlatformAccessory {
+export default class VirtualPiston extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.pistonService = null;
@@ -11,7 +11,7 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
     static relevantAttributes = ["switch"];
     async configureServices() {
         try {
-            this.pistonService = this.getOrAddService(this.Service.Switch, this.getServiceDisplayName(this.deviceData.name, "Piston"));
+            this.pistonService = this.getOrAddService(this.Service.Switch, this.cleanServiceDisplayName(this.deviceData.name, "Piston"));
 
             // On State
             this.getOrAddCharacteristic(this.pistonService, this.Characteristic.On, {
@@ -21,7 +21,7 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Virtual Piston | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Virtual Piston | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -46,7 +46,7 @@ export default class VirtualPiston extends HubitatPlatformAccessory {
                 this.pistonService.getCharacteristic(this.Characteristic.On).updateValue(this.getOnState(value));
                 break;
             default:
-                this.logDebug(`Virtual Piston | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Virtual Piston | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -1,8 +1,8 @@
 // device_types/LeakSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class LeakSensor extends HubitatPlatformAccessory {
+export default class LeakSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.leakService = null;
@@ -12,7 +12,7 @@ export default class LeakSensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.leakService = this.getOrAddService(this.Service.LeakSensor, this.getServiceDisplayName(this.deviceData.name, "Leak Sensor"));
+            this.leakService = this.getOrAddService(this.Service.LeakSensor, this.cleanServiceDisplayName(this.deviceData.name, "Leak Sensor"));
 
             // Leak Detected
             this.getOrAddCharacteristic(this.leakService, this.Characteristic.LeakDetected, {
@@ -33,7 +33,7 @@ export default class LeakSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`LeakSensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`LeakSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -68,7 +68,7 @@ export default class LeakSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`LeakSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`LeakSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

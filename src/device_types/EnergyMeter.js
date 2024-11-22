@@ -1,8 +1,8 @@
 // device_types/EnergyMeter.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class EnergyMeter extends HubitatPlatformAccessory {
+export default class EnergyMeter extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.energyService = null;
@@ -13,8 +13,7 @@ export default class EnergyMeter extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             // We'll use a custom service type for energy measurement
-            this.energyService = this.getOrAddService(this.platform.CommunityTypes.KilowattHoursService, this.getServiceDisplayName(this.deviceData.name, "Energy Meter"));
-            // this.markServiceForRetention(this.energyService);
+            this.energyService = this.getOrAddService(this.platform.CommunityTypes.KilowattHoursService, this.cleanServiceDisplayName(this.deviceData.name, "Energy Meter"));
 
             // Configure the kilowatt hours characteristic
             this.getOrAddCharacteristic(this.energyService, this.platform.CommunityTypes.KilowattHours, {
@@ -23,7 +22,7 @@ export default class EnergyMeter extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`EnergyMeter | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`EnergyMeter | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -38,7 +37,7 @@ export default class EnergyMeter extends HubitatPlatformAccessory {
         if (attribute === "energy") {
             this.energyService?.getCharacteristic(this.platform.CommunityTypes.KilowattHours).updateValue(this.getEnergyValue(value));
         } else {
-            this.logDebug(`EnergyMeter | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+            this.logManager.logDebug(`EnergyMeter | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -1,8 +1,8 @@
 // device_types/Battery.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Battery extends HubitatPlatformAccessory {
+export default class Battery extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.batteryService = null;
@@ -12,7 +12,7 @@ export default class Battery extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.batteryService = this.getOrAddService(this.Service.Battery, this.getServiceDisplayName(this.deviceData.name, "Battery"));
+            this.batteryService = this.getOrAddService(this.Service.Battery, this.cleanServiceDisplayName(this.deviceData.name, "Battery"));
 
             // Battery Level
             this.getOrAddCharacteristic(this.batteryService, this.Characteristic.BatteryLevel, {
@@ -31,7 +31,7 @@ export default class Battery extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Battery | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Battery | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -71,7 +71,7 @@ export default class Battery extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Battery | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Battery | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

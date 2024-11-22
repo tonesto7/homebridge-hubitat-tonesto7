@@ -1,8 +1,8 @@
 // device_types/WindowCovering.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class WindowCovering extends HubitatPlatformAccessory {
+export default class WindowCovering extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.shadeService = null;
@@ -14,7 +14,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.shadeService = this.getOrAddService(this.Service.WindowCovering, this.getServiceDisplayName(this.deviceData.name, "Window Covering"));
+            this.shadeService = this.getOrAddService(this.Service.WindowCovering, this.cleanServiceDisplayName(this.deviceData.name, "Window Covering"));
 
             // Current Position
             this.getOrAddCharacteristic(this.shadeService, this.Characteristic.CurrentPosition, {
@@ -55,7 +55,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`WindowCovering | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`WindowCovering | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -89,7 +89,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
             const command = this.usePosition ? "setPosition" : "setLevel";
             await this.sendCommand(command, [targetValue]);
         } catch (error) {
-            this.logError("WindowCovering | Error setting target position:", error);
+            this.logManager.logError("WindowCovering | Error setting target position:", error);
         }
     }
 
@@ -120,7 +120,7 @@ export default class WindowCovering extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`WindowCovering | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`WindowCovering | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

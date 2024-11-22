@@ -1,8 +1,8 @@
 // device_types/Speaker.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class Speaker extends HubitatPlatformAccessory {
+export default class Speaker extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.speakerService = null;
@@ -12,7 +12,6 @@ export default class Speaker extends HubitatPlatformAccessory {
     async configureServices() {
         try {
             this.speakerService = this.getOrAddService(this.Service.Speaker);
-            // this.markServiceForRetention(this.speakerService);
 
             // Volume
             const volumeAttr = this.isSonos || this.hasAttribute("volume") ? "volume" : this.hasAttribute("level") ? "level" : null;
@@ -34,7 +33,7 @@ export default class Speaker extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError("Error configuring speaker services:", error);
+            this.logManager.logError("Error configuring speaker services:", error);
             throw error;
         }
     }
@@ -79,7 +78,7 @@ export default class Speaker extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

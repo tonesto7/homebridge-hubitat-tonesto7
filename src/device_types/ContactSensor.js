@@ -1,8 +1,8 @@
 // device_types/ContactSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class ContactSensor extends HubitatPlatformAccessory {
+export default class ContactSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.contactService = null;
@@ -12,8 +12,7 @@ export default class ContactSensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.contactService = this.getOrAddService(this.Service.ContactSensor, this.getServiceDisplayName(this.deviceData.name, "Contact Sensor"));
-            // this.markServiceForRetention(this.contactService);
+            this.contactService = this.getOrAddService(this.Service.ContactSensor, this.cleanServiceDisplayName(this.deviceData.name, "Contact Sensor"));
 
             // Contact Sensor State
             this.getOrAddCharacteristic(this.contactService, this.Characteristic.ContactSensorState, {
@@ -34,7 +33,7 @@ export default class ContactSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`ContactSensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`ContactSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -69,7 +68,7 @@ export default class ContactSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`ContactSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`ContactSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

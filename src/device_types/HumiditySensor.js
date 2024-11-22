@@ -1,8 +1,8 @@
 // device_types/HumiditySensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class HumiditySensor extends HubitatPlatformAccessory {
+export default class HumiditySensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.humidityService = null;
@@ -12,7 +12,7 @@ export default class HumiditySensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.humidityService = this.getOrAddService(this.Service.HumiditySensor, this.getServiceDisplayName(this.deviceData.name, "Humidity Sensor"));
+            this.humidityService = this.getOrAddService(this.Service.HumiditySensor, this.cleanServiceDisplayName(this.deviceData.name, "Humidity Sensor"));
 
             // Current Relative Humidity
             this.getOrAddCharacteristic(this.humidityService, this.Characteristic.CurrentRelativeHumidity, {
@@ -33,7 +33,7 @@ export default class HumiditySensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`HumiditySensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`HumiditySensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -69,7 +69,7 @@ export default class HumiditySensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`HumiditySensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`HumiditySensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

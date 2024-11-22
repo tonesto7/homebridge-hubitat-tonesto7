@@ -1,8 +1,8 @@
 // device_types/VirtualMode.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class VirtualMode extends HubitatPlatformAccessory {
+export default class VirtualMode extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.modeService = null;
@@ -11,7 +11,7 @@ export default class VirtualMode extends HubitatPlatformAccessory {
     static relevantAttributes = ["switch"];
     async configureServices() {
         try {
-            this.modeService = this.getOrAddService(this.Service.Switch, this.getServiceDisplayName(this.deviceData.name, "Mode"));
+            this.modeService = this.getOrAddService(this.Service.Switch, this.cleanServiceDisplayName(this.deviceData.name, "Mode"));
 
             // On State
             this.getOrAddCharacteristic(this.modeService, this.Characteristic.On, {
@@ -21,7 +21,7 @@ export default class VirtualMode extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`Virtual Mode | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`Virtual Mode | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -44,7 +44,7 @@ export default class VirtualMode extends HubitatPlatformAccessory {
                 this.modeService.getCharacteristic(this.Characteristic.On).updateValue(this.getOnState(value));
                 break;
             default:
-                this.logDebug(`Virtual Mode | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`Virtual Mode | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

@@ -1,8 +1,8 @@
 // device_types/GarageDoor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class GarageDoor extends HubitatPlatformAccessory {
+export default class GarageDoor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.doorService = null;
@@ -12,7 +12,7 @@ export default class GarageDoor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.doorService = this.getOrAddService(this.Service.GarageDoorOpener, this.getServiceDisplayName(this.deviceData.name, "Garage Door"));
+            this.doorService = this.getOrAddService(this.Service.GarageDoorOpener, this.cleanServiceDisplayName(this.deviceData.name, "Garage Door"));
 
             // Current Door State
             this.getOrAddCharacteristic(this.doorService, this.Characteristic.CurrentDoorState, {
@@ -32,7 +32,7 @@ export default class GarageDoor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`GarageDoor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`GarageDoor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -83,7 +83,7 @@ export default class GarageDoor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`GarageDoor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`GarageDoor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

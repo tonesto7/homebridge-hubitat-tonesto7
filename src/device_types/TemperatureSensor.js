@@ -1,8 +1,8 @@
 // device_types/TemperatureSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class TemperatureSensor extends HubitatPlatformAccessory {
+export default class TemperatureSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.temperatureService = null;
@@ -12,7 +12,7 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.temperatureService = this.getOrAddService(this.Service.TemperatureSensor, this.getServiceDisplayName(this.deviceData.name, "Temp Sensor"));
+            this.temperatureService = this.getOrAddService(this.Service.TemperatureSensor, this.cleanServiceDisplayName(this.deviceData.name, "Temp Sensor"));
 
             // Current Temperature
             this.getOrAddCharacteristic(this.temperatureService, this.Characteristic.CurrentTemperature, {
@@ -37,7 +37,7 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`TemperatureSensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`TemperatureSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -72,7 +72,7 @@ export default class TemperatureSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`TemperatureSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`TemperatureSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
                 break;
         }
     }

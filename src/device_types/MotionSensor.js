@@ -1,8 +1,8 @@
 // device_types/MotionSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class MotionSensor extends HubitatPlatformAccessory {
+export default class MotionSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.motionService = null;
@@ -12,7 +12,7 @@ export default class MotionSensor extends HubitatPlatformAccessory {
 
     async configureServices() {
         try {
-            this.motionService = this.getOrAddService(this.Service.MotionSensor, this.getServiceDisplayName(this.deviceData.name, "Motion Sensor"));
+            this.motionService = this.getOrAddService(this.Service.MotionSensor, this.cleanServiceDisplayName(this.deviceData.name, "Motion Sensor"));
 
             // Motion Detected
             this.getOrAddCharacteristic(this.motionService, this.Characteristic.MotionDetected, {
@@ -33,7 +33,7 @@ export default class MotionSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`MotionSensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`MotionSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -68,7 +68,7 @@ export default class MotionSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`MotionSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`MotionSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 

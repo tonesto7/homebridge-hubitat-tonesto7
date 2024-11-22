@@ -1,8 +1,8 @@
 // device_types/IlluminanceSensor.js
 
-import HubitatPlatformAccessory from "../HubitatPlatformAccessory.js";
+import HubitatBaseAccessory from "./BaseAccessory.js";
 
-export default class IlluminanceSensor extends HubitatPlatformAccessory {
+export default class IlluminanceSensor extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
         this.lightSensorService = null;
@@ -37,7 +37,7 @@ export default class IlluminanceSensor extends HubitatPlatformAccessory {
 
             return true;
         } catch (error) {
-            this.logError(`IlluminanceSensor | ${this.deviceData.name} | Error configuring services:`, error);
+            this.logManager.logError(`IlluminanceSensor | ${this.deviceData.name} | Error configuring services:`, error);
             throw error;
         }
     }
@@ -77,7 +77,7 @@ export default class IlluminanceSensor extends HubitatPlatformAccessory {
                 break;
 
             default:
-                this.logDebug(`IlluminanceSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
+                this.logManager.logDebug(`IlluminanceSensor | ${this.deviceData.name} | Unhandled attribute update: ${attribute} = ${value}`);
         }
     }
 
