@@ -5,6 +5,7 @@ import HubitatBaseAccessory from "./BaseAccessory.js";
 export default class Fan extends HubitatBaseAccessory {
     constructor(platform, accessory) {
         super(platform, accessory);
+        this.config = platform.config;
         this.fanService = null;
     }
 
@@ -70,7 +71,7 @@ export default class Fan extends HubitatBaseAccessory {
         let speed = parseInt(this.deviceData.attributes[speedAttr]) || 0;
 
         // Round levels if configured
-        if (this.platform.config.round_levels === true) {
+        if (this.config.round_levels === true) {
             if (speed < 5) speed = 0;
             if (speed > 95) speed = 100;
         }
@@ -116,7 +117,7 @@ export default class Fan extends HubitatBaseAccessory {
                 if (!this.hasAttribute(attribute)) return;
 
                 let speed = parseInt(value) || 0;
-                if (this.platform.config.round_levels === true) {
+                if (this.config.round_levels === true) {
                     if (speed < 5) speed = 0;
                     if (speed > 95) speed = 100;
                 }
