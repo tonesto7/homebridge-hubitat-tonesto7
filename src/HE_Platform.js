@@ -20,6 +20,7 @@ module.exports = class HE_Platform {
     constructor(log, config, api) {
         this.config = config;
         this.homebridge = api;
+        this.hap = api.hap;
         this.Service = api.hap.Service;
         this.Characteristic = api.hap.Characteristic;
         this.Categories = api.hap.Categories;
