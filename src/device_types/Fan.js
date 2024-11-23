@@ -12,7 +12,7 @@ export default class Fan extends HubitatBaseAccessory {
 
     async configureServices() {
         try {
-            this.fanService = this.getOrAddService(this.Service.Fan, this.cleanServiceDisplayName(this.deviceData.name, "Fan"));
+            this.fanService = this.getOrAddService(this.Service.Fanv2, this.cleanServiceDisplayName(this.deviceData.name, "Fan"));
 
             // Active State (On/Off)
             this.getOrAddCharacteristic(this.fanService, this.Characteristic.Active, {
@@ -95,11 +95,12 @@ export default class Fan extends HubitatBaseAccessory {
 
     async handleAttributeUpdate(change) {
         const { attribute, value } = change;
+        this.logManager.logInfo(`Fan | ${this.deviceData.name} | Attribute update: ${attribute} = ${value}`);
 
         switch (attribute) {
             case "switch":
-                this.fanService.getCharacteristic(this.Characteristic.Active).updateValue(this.getActiveState(value));
-                this.fanService.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this.getCurrentState(value));
+                this.fanService.updateCharacteristic(this.Characteristic.Active, this.getActiveState(value));
+                this.fanService.updateCharacteristic(this.Characteristic.CurrentFanState, this.getCurrentState(value));
 
                 if (value === "off") {
                     // Update rotation speed to 0 when turned off
@@ -125,7 +126,7 @@ export default class Fan extends HubitatBaseAccessory {
                     speedChar.updateValue(Math.max(0, Math.min(100, speed)));
                 }
 
-                this.fanService.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this.getCurrentState());
+                this.fanService.updateCharacteristic(this.Characteristic.CurrentFanState, this.getCurrentState(this.deviceData.attributes.switch));
                 break;
 
             default:

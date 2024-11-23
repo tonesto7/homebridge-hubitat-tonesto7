@@ -27,7 +27,7 @@ export default class Light extends HubitatBaseAccessory {
     static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];
 
     async configureServices() {
-        this.logManager.logInfo(`[${this.accessory.displayName}] Configuring Light Services`);
+        this.logManager.logDebug(`[${this.accessory.displayName}] Configuring Light Services`);
         try {
             const lightService = this.getOrAddService(this.Service.Lightbulb, this.cleanServiceDisplayName(this.deviceData.name, "Light"));
             this.accessory.context.state.light.lightService = this.getServiceId(lightService);
@@ -426,8 +426,8 @@ export default class Light extends HubitatBaseAccessory {
     }
 
     async cleanup() {
-        this.lightService = null;
-        this.televisionService = null;
+        // this.lightService = null;
+        // this.televisionService = null;
 
         // Call parent cleanup
         super.cleanup();
