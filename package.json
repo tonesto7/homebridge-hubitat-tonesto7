@@ -1,6 +1,6 @@
 {
     "dependencies": {
-        "@homebridge/plugin-ui-utils": "^1.0.3",
+        "@homebridge/plugin-ui-utils": "^2.0.0",
         "axios": "^1.7.7",
         "body-parser": "^1.20.3",
         "chalk": "^5.3.0",
@@ -12,8 +12,8 @@
         "portfinder-sync": "^0.0.2"
     },
     "devDependencies": {
-        "@snyk/protect": "^1.1294.0",
-        "@types/node": "^22.9.0",
+        "@snyk/protect": "^1.1294.1",
+        "@types/node": "^22.9.2",
         "cheerio": "1.0.0",
         "eslint": "^9.15.0",
         "eslint-config-prettier": "^9.1.0",
@@ -25,7 +25,7 @@
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
-        "homebridge": "^1.8.4 || ^2.0.0-beta.23",
+        "homebridge": "^1.8.5 || ^2.0.0-beta.23",
         "node": "^18.20.4 || <25.0.0"
     },
     "lint-staged": {
