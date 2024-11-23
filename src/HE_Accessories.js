@@ -437,9 +437,9 @@ module.exports = class HE_Accessories {
     addAdaptiveLightingController(_accessory, _service) {
         const svc = _accessory.getOrAddService(_service);
         const offset = this.getPlatformConfig.adaptive_lighting_offset || 0;
-        const controlMode = this.homebridge.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+        const controlMode = this.hap.AdaptiveLightingControllerMode.AUTOMATIC;
         if (svc) {
-            this.adaptiveLightingController = new this.homebridge.hap.AdaptiveLightingController(svc, { controllerMode: controlMode, customTemperatureAdjustment: offset });
+            this.adaptiveLightingController = new this.hap.AdaptiveLightingController(svc, { controllerMode: controlMode, customTemperatureAdjustment: offset });
             this.adaptiveLightingController.on("update", (evt) => {
                 this.logDebug(`[${_accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
             });
