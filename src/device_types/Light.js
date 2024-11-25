@@ -7,21 +7,6 @@ export default class Light extends HubitatBaseAccessory {
         super(platform, accessory);
         this.api = platform.api;
         this.config = platform.config;
-
-        // Initialize light state in context if needed
-        if (!this.accessory.context.state.light) {
-            this.accessory.context.state.light = {
-                lightService: null,
-                televisionService: null,
-                effectsMap: {},
-                adaptiveLighting: {
-                    enabled: false,
-                    controllerId: null,
-                    offset: 0,
-                    lastUpdate: null,
-                },
-            };
-        }
     }
 
     static relevantAttributes = ["switch", "level", "hue", "saturation", "colorTemperature", "colorName", "RGB", "color", "effectName", "lightEffects"];

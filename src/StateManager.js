@@ -1,4 +1,4 @@
-// platform/StateManager.js
+// StateManager.js
 
 export class StateManager {
     constructor(platform) {
