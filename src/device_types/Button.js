@@ -29,26 +29,41 @@ export default class Button extends HubitatBaseAccessory {
     }
 
     async configureButton(buttonNumber) {
-        // Use consistent service naming scheme
-        const serviceName = `${this.deviceData.deviceid} Button ${buttonNumber}`;
-        this.logManager.logDebug(`${this.deviceData.name} | Initializing button service: ${serviceName}`);
+        // Define both old and new format names
+        const oldServiceName = `${this.deviceData.deviceid}_${buttonNumber}`;
+        const newServiceName = `${this.deviceData.deviceid} Button ${buttonNumber}`;
 
-        // Try to find existing service first
-        let buttonService = this.accessory.services.find((service) => service.UUID === this.Service.StatelessProgrammableSwitch.UUID && service.subtype === buttonNumber.toString());
+        this.logManager.logDebug(`${this.deviceData.name} | Initializing button service: ${newServiceName}`);
 
-        // If no existing service, create new one
-        if (!buttonService) {
-            buttonService = this.getOrAddService(this.Service.StatelessProgrammableSwitch, serviceName, buttonNumber.toString());
+        // Look for service in both old and new formats
+        let buttonService = this.accessory.services.find((service) => service.UUID === this.Service.StatelessProgrammableSwitch.UUID && (service.displayName === oldServiceName || service.subtype === buttonNumber.toString()));
+
+        // If we found an old format service, remove it
+        if (buttonService && buttonService.displayName === oldServiceName) {
+            this.logManager.logInfo(`Upgrading button service from ${oldServiceName} to ${newServiceName}`);
+            // const index = this.accessory.services.indexOf(buttonService);
+            // if (index > -1) {
+            //     this.accessory.services.splice(index, 1);
+            // }
+
+            // Ensure Name characteristic is set correctly
+            this.getOrAddCharacteristic(buttonService, this.Characteristic.Name, {
+                value: newServiceName,
+            });
+            // buttonService = null;
         }
 
-        // Store in context and explicitly track the service
+        // Create new service if needed
+        if (!buttonService) {
+            buttonService = this.getOrAddService(this.Service.StatelessProgrammableSwitch, newServiceName, buttonNumber.toString());
+        }
+
+        // Store in context and track service
         const serviceId = this.getServiceId(buttonService);
         this.accessory.context.state.buttons.services[buttonNumber] = serviceId;
-
-        // Explicitly track the service in StateManager
         this.stateManager.trackService(this.accessory, buttonService);
 
-        // Rest of the configuration...
+        // Configure characteristics
         const validValues = this.getSupportedButtonValues();
 
         // Programmable Switch Event characteristic

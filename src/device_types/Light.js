@@ -351,6 +351,11 @@ export default class Light extends HubitatBaseAccessory {
     async handleAttributeUpdate(change) {
         const { attribute, value } = change;
 
+        if (!this.lightService) {
+            this.logManager.logWarn(`Light | ${this.deviceData.name} | Light service not found when handling attribute update`);
+            return;
+        }
+
         switch (attribute) {
             case "switch":
                 this.lightService.getCharacteristic(this.Characteristic.On).updateValue(this.getOnState(value));
