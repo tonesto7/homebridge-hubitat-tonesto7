@@ -2,435 +2,414 @@
 
 export default class Transforms {
     constructor(platform) {
-        this.platform = platform;
+        // this.platform = platform;
         this.logManager = platform.logManager;
-        this.configManager = platform.configManager;
-        this.config = platform.config;
+        this.config = platform.configManager.getConfig();
+        this.Characteristic = platform.Characteristic;
+        this.CommunityTypes = platform.CommunityTypes;
+        this.tempUnit = platform.configManager.getTempUnit();
+
+        // Subscribe to configuration updates
+        platform.configManager.onConfigUpdate(this.handleConfigUpdate.bind(this));
+
+        // Define characteristic ranges for clamping values
+        this.CHARACTERISTIC_RANGES = {
+            battery: { min: 0, max: 100 },
+            level: { min: 0, max: 100 },
+            volume: { min: 0, max: 100 },
+            colorTemperature: { min: 140, max: 500 },
+            temperature: { min: -100, max: 200 },
+            heatingSetpoint: { min: 10, max: 38 },
+            coolingSetpoint: { min: 10, max: 38 },
+            thermostatSetpoint: { min: 10, max: 38 },
+            humidity: { min: 0, max: 100 },
+            carbonDioxideMeasurement: { min: 0, max: 100000 },
+            airQualityIndex: { min: 0, max: 5 },
+            speed: { min: 0, max: 100 },
+            hue: { min: 0, max: 360 },
+            saturation: { min: 0, max: 100 },
+            pm25: { min: 0, max: 1000 },
+            illuminance: { min: 0, max: 100000 },
+        };
+    }
+
+    handleConfigUpdate(newConfig) {
+        this.config = newConfig;
     }
 
     /**
-     * Transform switch state from device to HomeKit
-     * @param {string} value - Device switch attribute value
-     * @returns {boolean} - HomeKit On characteristic value
+     * Clamps a value between min and max
+     * @param {number} value - The value to clamp
+     * @param {number} min - Minimum allowed value
+     * @param {number} max - Maximum allowed value
+     * @returns {number} - Clamped value
      */
-    transformSwitchState(value) {
-        return value === "on";
+    clampValue(value, min, max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     /**
-     * Transform brightness level from device to HomeKit (0-100)
-     * @param {string|number} value - Device level attribute value
-     * @returns {number} - HomeKit Brightness characteristic value
+     * Transforms a device status value
+     * @param {string} status - The device status value
+     * @returns {boolean} - True if device is active/online, false otherwise
      */
-    transformBrightnessFromDevice(value) {
-        let level = parseInt(value);
-        if (this.config.round_levels) {
-            if (level < 5) return 0;
-            if (level > 95) return 100;
+    transformStatus(status) {
+        return status !== "OFFLINE" && status !== "INACTIVE";
+    }
+
+    /**
+     * Transforms a Hubitat attribute value to a HomeKit characteristic value
+     * @param {string} attr - The attribute name
+     * @param {any} val - The attribute value
+     * @param {string} charName - The characteristic display name
+     * @param {object} [opts={}] - Additional options
+     * @returns {any} - The transformed value
+     */
+    transformAttributeState(attr, val, charName, opts = {}) {
+        const { Characteristic } = this;
+        const clampNumericValue = (value, attribute) => {
+            const range = this.CHARACTERISTIC_RANGES[attribute];
+            return range ? this.clampValue(parseFloat(value), range.min, range.max) : value;
+        };
+
+        // Define mappings for attributes to characteristic values
+        const attributeMappings = {
+            switch: () => val === "on",
+
+            contact: () => (val === "closed" ? Characteristic.ContactSensorState.CONTACT_DETECTED : Characteristic.ContactSensorState.CONTACT_NOT_DETECTED),
+
+            motion: () => val === "active",
+
+            battery: () => {
+                if (charName === "Status Low Battery") {
+                    return val < 20 ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+                } else {
+                    return clampNumericValue(val, attr);
+                }
+            },
+
+            temperature: () => clampNumericValue(this.convertTemperature(val), attr),
+
+            filterStatus: () => {
+                if (charName === "Filter Change Indication") {
+                    return val === "replace" ? Characteristic.FilterChangeIndication.CHANGE_FILTER : Characteristic.FilterChangeIndication.FILTER_OK;
+                } else if (charName === "Filter Life Level") {
+                    return val === "replace" ? 0 : 100;
+                } else {
+                    return val;
+                }
+            },
+
+            humidity: () => clampNumericValue(parseFloat(val), attr),
+
+            illuminance: () => clampNumericValue(parseFloat(val), attr),
+
+            acceleration: () => val === "active",
+
+            water: () => (val === "dry" ? Characteristic.LeakDetected.LEAK_NOT_DETECTED : Characteristic.LeakDetected.LEAK_DETECTED),
+
+            presence: () => val === "present",
+
+            smoke: () => (val === "clear" ? Characteristic.SmokeDetected.SMOKE_NOT_DETECTED : Characteristic.SmokeDetected.SMOKE_DETECTED),
+
+            carbonMonoxide: () => (val === "clear" ? Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL),
+
+            tamper: () => (val === "detected" ? Characteristic.StatusTampered.TAMPERED : Characteristic.StatusTampered.NOT_TAMPERED),
+
+            mute: () => val === "muted",
+
+            valve: () => (val === "open" ? Characteristic.InUse.IN_USE : Characteristic.InUse.NOT_IN_USE),
+
+            powerSource: () => {
+                switch (val) {
+                    case "mains":
+                    case "dc":
+                    case "USB Cable":
+                        return Characteristic.ChargingState.CHARGING;
+                    case "battery":
+                        return Characteristic.ChargingState.NOT_CHARGING;
+                    default:
+                        return Characteristic.ChargingState.NOT_CHARGEABLE;
+                }
+            },
+
+            lock: () => {
+                switch (val) {
+                    case "locked":
+                        return Characteristic.LockCurrentState.SECURED;
+                    case "unlocked":
+                        return Characteristic.LockCurrentState.UNSECURED;
+                    default:
+                        return Characteristic.LockCurrentState.UNKNOWN;
+                }
+            },
+
+            door: () => {
+                const stateMappings = {
+                    open: Characteristic.CurrentDoorState.OPEN,
+                    opening: Characteristic.CurrentDoorState.OPENING,
+                    closed: Characteristic.CurrentDoorState.CLOSED,
+                    closing: Characteristic.CurrentDoorState.CLOSING,
+                    unknown: Characteristic.CurrentDoorState.STOPPED,
+                };
+                return stateMappings[val] || Characteristic.CurrentDoorState.STOPPED;
+            },
+
+            thermostatOperatingState: () => {
+                const stateMappings = {
+                    heating: Characteristic.CurrentHeatingCoolingState.HEAT,
+                    cooling: Characteristic.CurrentHeatingCoolingState.COOL,
+                    idle: Characteristic.CurrentHeatingCoolingState.OFF,
+                };
+                return stateMappings[val] || Characteristic.CurrentHeatingCoolingState.OFF;
+            },
+
+            thermostatMode: () => {
+                const modeMappings = {
+                    off: Characteristic.TargetHeatingCoolingState.OFF,
+                    heat: Characteristic.TargetHeatingCoolingState.HEAT,
+                    cool: Characteristic.TargetHeatingCoolingState.COOL,
+                    auto: Characteristic.TargetHeatingCoolingState.AUTO,
+                };
+                return modeMappings[val] || Characteristic.TargetHeatingCoolingState.OFF;
+            },
+
+            thermostatFanMode: () => (val !== "auto" ? Characteristic.Active.ACTIVE : Characteristic.Active.INACTIVE),
+
+            fanState: () => (val === "off" || val === "auto" ? Characteristic.CurrentFanState.IDLE : Characteristic.CurrentFanState.BLOWING_AIR),
+
+            fanMode: () => {
+                const modeMappings = {
+                    low: this.CommunityTypes.FanOscillationMode.LOW,
+                    medium: this.CommunityTypes.FanOscillationMode.MEDIUM,
+                    high: this.CommunityTypes.FanOscillationMode.HIGH,
+                    sleep: this.CommunityTypes.FanOscillationMode.SLEEP,
+                };
+                return modeMappings[val] || this.CommunityTypes.FanOscillationMode.SLEEP;
+            },
+
+            hue: () => clampNumericValue(parseInt(val), attr),
+
+            saturation: () => clampNumericValue(parseInt(val), attr),
+
+            colorTemperature: () => clampNumericValue(this.convertColorTemperature(val), attr),
+
+            level: () => clampNumericValue(parseInt(val), attr),
+
+            speed: () => clampNumericValue(this.fanSpeedToLevel(val), attr),
+
+            airQualityIndex: () => clampNumericValue(this.aqiToHomeKit(val), attr),
+
+            pm25: () => clampNumericValue(parseFloat(val), attr),
+
+            carbonDioxideMeasurement: () => {
+                if (charName === "Carbon Dioxide Detected") {
+                    return val < 2000 ? Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL : Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
+                }
+                return clampNumericValue(parseFloat(val), attr);
+            },
+
+            alarmSystemStatus: () => this.convertAlarmState(val),
+        };
+
+        // If we have a mapping for the attribute, use it
+        if (attributeMappings[attr]) {
+            return attributeMappings[attr]();
         }
-        return Math.max(0, Math.min(100, level));
+
+        // If no specific mapping, return the value as-is
+        return val;
     }
 
     /**
-     * Transform brightness level from HomeKit to device
-     * @param {number} value - HomeKit Brightness characteristic value
-     * @returns {number} - Device level attribute value
+     * Transforms a HomeKit characteristic value to a Hubitat command value
+     * @param {string} attr - The attribute name
+     * @param {any} val - The characteristic value
+     * @returns {any} - The transformed command value
      */
-    transformBrightnessToDevice(value) {
-        return Math.max(0, Math.min(100, parseInt(value)));
-    }
+    transformCommandValue(attr, val) {
+        const { Characteristic } = this;
+        const commandValueMappings = {
+            switch: () => (val ? "on" : "off"),
 
-    /**
-     * Transform hue value from device (0-100) to HomeKit (0-360)
-     * @param {string|number} value - Device hue attribute value
-     * @returns {number} - HomeKit Hue characteristic value
-     */
-    transformHueFromDevice(value) {
-        return Math.max(0, Math.min(360, Math.round(value * 3.6)));
-    }
+            lock: () => (val === Characteristic.LockTargetState.SECURED ? "lock" : "unlock"),
 
-    /**
-     * Transform hue value from HomeKit to device (0-360)
-     * @param {number} value - HomeKit Hue characteristic value
-     * @returns {number} - Device hue attribute value
-     */
-    transformHueToDevice(value) {
-        return Math.round(value / 3.6);
-    }
+            door: () => (val === Characteristic.TargetDoorState.OPEN ? "open" : "close"),
 
-    /**
-     * Transform color temperature from device (Kelvin) to HomeKit (mired)
-     * @param {string|number} kelvin - Device colorTemperature attribute value
-     * @returns {number} - HomeKit ColorTemperature characteristic value
-     */
-    kelvinToMired(kelvin) {
-        return Math.max(140, Math.min(500, Math.round(1000000 / kelvin)));
-    }
+            mute: () => (val ? "mute" : "unmute"),
 
-    /**
-     * Transform color temperature from HomeKit (mired) to device (Kelvin)
-     * @param {number} mired - HomeKit ColorTemperature characteristic value
-     * @returns {number} - Device colorTemperature attribute value
-     */
-    miredToKelvin(mired) {
-        return Math.round(1000000 / mired);
-    }
+            valve: () => (val === Characteristic.InUse.IN_USE ? "open" : "close"),
 
-    /**
-     * Transform motion attribute from device to HomeKit
-     * @param {string} value - Device motion attribute value
-     * @returns {boolean} - HomeKit MotionDetected characteristic value
-     */
-    transformMotionDetected(value) {
-        return value === "active";
-    }
+            thermostatMode: () => {
+                const modeMappings = {
+                    [Characteristic.TargetHeatingCoolingState.OFF]: "off",
+                    [Characteristic.TargetHeatingCoolingState.HEAT]: "heat",
+                    [Characteristic.TargetHeatingCoolingState.COOL]: "cool",
+                    [Characteristic.TargetHeatingCoolingState.AUTO]: "auto",
+                };
+                return modeMappings[val];
+            },
 
-    /**
-     * Transform status attribute from device to HomeKit StatusActive characteristic
-     * @param {string} value - Device status attribute value
-     * @returns {boolean} - HomeKit StatusActive characteristic value
-     */
-    transformStatusActive(value) {
-        return value === "ACTIVE";
-    }
+            thermostatFanMode: () => (val ? "fanOn" : "fanAuto"),
 
-    /**
-     * Transform tamper attribute from device to HomeKit StatusTampered characteristic
-     * @param {string} value - Device tamper attribute value
-     * @returns {number} - HomeKit StatusTampered characteristic value
-     */
-    transformStatusTampered(value) {
-        return value === "detected" ? this.platform.Characteristic.StatusTampered.TAMPERED : this.platform.Characteristic.StatusTampered.NOT_TAMPERED;
-    }
+            fanMode: () => {
+                const modeMappings = {
+                    [this.CommunityTypes.FanOscillationMode.LOW]: "low",
+                    [this.CommunityTypes.FanOscillationMode.MEDIUM]: "medium",
+                    [this.CommunityTypes.FanOscillationMode.HIGH]: "high",
+                    [this.CommunityTypes.FanOscillationMode.SLEEP]: "sleep",
+                };
+                return modeMappings[val];
+            },
 
-    /**
-     * Transform temperature from device to HomeKit (Celsius)
-     * @param {string|number} value - Device temperature attribute value
-     * @returns {number} - HomeKit CurrentTemperature characteristic value
-     */
-    transformTemperatureFromDevice(value) {
-        const tempUnit = this.configManager.getTempUnit();
-        let temp = parseFloat(value);
-        if (tempUnit === "F") {
-            temp = (temp - 32) / 1.8;
+            hue: () => parseInt(val),
+
+            saturation: () => parseInt(val),
+
+            colorTemperature: () => this.convertColorTemperature(val, true),
+
+            level: () => parseInt(val),
+
+            speed: () => this.fanLevelToSpeed(val),
+
+            alarmSystemStatus: () => this.convertAlarmCommand(val),
+        };
+
+        if (commandValueMappings[attr]) {
+            return commandValueMappings[attr]();
         }
-        return parseFloat(temp.toFixed(1));
+
+        return val;
     }
 
     /**
-     * Transform temperature from HomeKit (Celsius) to device
-     * @param {number} value - HomeKit CurrentTemperature characteristic value
-     * @returns {number} - Device temperature attribute value
+     * Converts temperature between Celsius and Fahrenheit
+     * @param {number} temp - The temperature value to convert
+     * @param {boolean} [toHubitat=false] - Whether to convert to Hubitat's unit
+     * @returns {number} - The converted temperature
      */
-    transformTemperatureToDevice(value) {
-        const tempUnit = this.configManager.getTempUnit();
-        let temp = parseFloat(value);
-        if (tempUnit === "F") {
-            temp = temp * 1.8 + 32;
+    convertTemperature(temp, toHubitat = false) {
+        if (this.tempUnit === "F") {
+            return toHubitat ? temp * 1.8 + 32 : (temp - 32) / 1.8;
         }
-        return parseFloat(temp.toFixed(1));
+        return temp;
     }
 
     /**
-     * Transform humidity from device to HomeKit
-     * @param {string|number} value - Device humidity attribute value
-     * @returns {number} - HomeKit CurrentRelativeHumidity characteristic value
+     * Converts color temperature between Mired and Kelvin
+     * @param {number} value - The color temperature value
+     * @param {boolean} [toHubitat=false] - Whether to convert to Hubitat's unit
+     * @returns {number} - The converted color temperature
      */
-    transformHumidityFromDevice(value) {
-        return Math.max(0, Math.min(100, parseInt(value)));
+    convertColorTemperature(value, toHubitat = false) {
+        return toHubitat ? Math.round(1000000 / value) : Math.round(1000000 / value);
     }
 
     /**
-     * Transform contact sensor state from device to HomeKit
-     * @param {string} value - Device contact attribute value
-     * @returns {number} - HomeKit ContactSensorState characteristic value
+     * Converts fan speed value from Hubitat to HomeKit level
+     * @param {string} speedVal - The Hubitat fan speed value
+     * @returns {number} - The HomeKit level value
      */
-    transformContactSensorState(value) {
-        return value === "closed" ? this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED : this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+    fanSpeedToLevel(speedVal) {
+        const speedMappings = {
+            off: 0,
+            low: 25,
+            medium: 50,
+            high: 100,
+        };
+        return speedMappings[speedVal] !== undefined ? speedMappings[speedVal] : 0;
     }
 
     /**
-     * Transform leak sensor state from device to HomeKit
-     * @param {string} value - Device water attribute value
-     * @returns {number} - HomeKit LeakDetected characteristic value
+     * Converts HomeKit level to Hubitat fan speed value
+     * @param {number} level - The HomeKit level value
+     * @returns {string} - The Hubitat fan speed value
      */
-    transformLeakDetected(value) {
-        return value === "wet" ? this.platform.Characteristic.LeakDetected.LEAK_DETECTED : this.platform.Characteristic.LeakDetected.LEAK_NOT_DETECTED;
+    fanLevelToSpeed(level) {
+        if (level === 0) return "off";
+        if (level > 0 && level <= 33) return "low";
+        if (level > 33 && level <= 66) return "medium";
+        if (level > 66) return "high";
+        return "off";
     }
 
     /**
-     * Transform battery level from device to HomeKit
-     * @param {string|number} value - Device battery attribute value
-     * @returns {number} - HomeKit BatteryLevel characteristic value
+     * Converts Air Quality Index to HomeKit AirQuality characteristic value
+     * @param {number} aqi - The Air Quality Index
+     * @returns {number} - The HomeKit AirQuality value
      */
-    transformBatteryLevel(value) {
-        return Math.max(0, Math.min(100, parseInt(value)));
-    }
-
-    /**
-     * Transform low battery status from device to HomeKit
-     * @param {string|number} value - Device battery attribute value
-     * @returns {number} - HomeKit StatusLowBattery characteristic value
-     */
-    transformStatusLowBattery(value) {
-        const batteryLevel = parseInt(value);
-        return batteryLevel <= 20 ? this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-    }
-
-    /**
-     * Transform occupancy state from device to HomeKit
-     * @param {string} value - Device presence attribute value
-     * @returns {number} - HomeKit OccupancyDetected characteristic value
-     */
-    transformOccupancyDetected(value) {
-        return value === "present" ? this.platform.Characteristic.OccupancyDetected.OCCUPANCY_DETECTED : this.platform.Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED;
-    }
-
-    /**
-     * Transform smoke detected state from device to HomeKit
-     * @param {string} value - Device smoke attribute value
-     * @returns {number} - HomeKit SmokeDetected characteristic value
-     */
-    transformSmokeDetected(value) {
-        return value === "detected" ? this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED : this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED;
-    }
-
-    /**
-     * Transform carbon monoxide detected state from device to HomeKit
-     * @param {string} value - Device carbonMonoxide attribute value
-     * @returns {number} - HomeKit CarbonMonoxideDetected characteristic value
-     */
-    transformCarbonMonoxideDetected(value) {
-        return value === "detected" ? this.platform.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL : this.platform.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
-    }
-
-    /**
-     * Transform air quality index from device to HomeKit
-     * @param {string|number} value - Device airQualityIndex attribute value
-     * @returns {number} - HomeKit AirQuality characteristic value
-     */
-    transformAirQuality(value) {
-        const index = parseInt(value);
-        if (index <= 50) {
-            return this.platform.Characteristic.AirQuality.EXCELLENT;
-        } else if (index <= 100) {
-            return this.platform.Characteristic.AirQuality.GOOD;
-        } else if (index <= 150) {
-            return this.platform.Characteristic.AirQuality.FAIR;
-        } else if (index <= 200) {
-            return this.platform.Characteristic.AirQuality.INFERIOR;
+    aqiToHomeKit(aqi) {
+        if (aqi <= 50) {
+            return this.Characteristic.AirQuality.EXCELLENT;
+        } else if (aqi <= 100) {
+            return this.Characteristic.AirQuality.GOOD;
+        } else if (aqi <= 150) {
+            return this.Characteristic.AirQuality.FAIR;
+        } else if (aqi <= 200) {
+            return this.Characteristic.AirQuality.INFERIOR;
         } else {
-            return this.platform.Characteristic.AirQuality.POOR;
+            return this.Characteristic.AirQuality.POOR;
         }
     }
 
     /**
-     * Transform illumination from device to HomeKit
-     * @param {string|number} value - Device illuminance attribute value
-     * @returns {number} - HomeKit CurrentAmbientLightLevel characteristic value
+     * Converts alarm system states between Hubitat and HomeKit
+     * @param {string} value - The Hubitat alarm system state
+     * @returns {number} - The HomeKit security system state
      */
-    transformIlluminance(value) {
-        // HomeKit requires value between 0.0001 and 100000 lux
-        let lux = parseFloat(value);
-        lux = Math.max(0.0001, Math.min(100000, lux));
-        return lux;
+    convertAlarmState(value) {
+        const { SecuritySystemCurrentState } = this.Characteristic;
+        const alarmStateMappings = {
+            disarmed: SecuritySystemCurrentState.DISARMED,
+            armedHome: SecuritySystemCurrentState.STAY_ARM,
+            armedAway: SecuritySystemCurrentState.AWAY_ARM,
+            armedNight: SecuritySystemCurrentState.NIGHT_ARM,
+            intrusion: SecuritySystemCurrentState.ALARM_TRIGGERED,
+            "intrusion-home": SecuritySystemCurrentState.ALARM_TRIGGERED,
+            "intrusion-away": SecuritySystemCurrentState.ALARM_TRIGGERED,
+            "intrusion-night": SecuritySystemCurrentState.ALARM_TRIGGERED,
+        };
+
+        return alarmStateMappings[value] !== undefined ? alarmStateMappings[value] : SecuritySystemCurrentState.DISARMED;
     }
 
     /**
-     * Transform lock state from device to HomeKit
-     * @param {string} value - Device lock attribute value
-     * @returns {number} - HomeKit LockCurrentState characteristic value
+     * Converts HomeKit security system target state to Hubitat command
+     * @param {number} value - The HomeKit security system target state
+     * @returns {string} - The Hubitat command for the alarm system
      */
-    transformLockCurrentState(value) {
-        switch (value) {
-            case "locked":
-                return this.platform.Characteristic.LockCurrentState.SECURED;
-            case "unlocked":
-                return this.platform.Characteristic.LockCurrentState.UNSECURED;
-            case "jammed":
-                return this.platform.Characteristic.LockCurrentState.JAMMED;
-            default:
-                return this.platform.Characteristic.LockCurrentState.UNKNOWN;
+    convertAlarmCommand(value) {
+        const { SecuritySystemTargetState } = this.Characteristic;
+        const alarmCommandMappings = {
+            [SecuritySystemTargetState.DISARM]: "disarm",
+            [SecuritySystemTargetState.STAY_ARM]: "armHome",
+            [SecuritySystemTargetState.AWAY_ARM]: "armAway",
+            [SecuritySystemTargetState.NIGHT_ARM]: "armNight",
+        };
+
+        return alarmCommandMappings[value] || "disarm";
+    }
+
+    getSupportedButtonValues(accessory) {
+        const values = new Set();
+        const ProgrammableSwitchEvent = this.Characteristic.ProgrammableSwitchEvent;
+
+        if (accessory.context.deviceData.capabilities.PushableButton) {
+            values.add(ProgrammableSwitchEvent.SINGLE_PRESS);
         }
-    }
-
-    /**
-     * Transform target lock state from HomeKit to device
-     * @param {number} value - HomeKit LockTargetState characteristic value
-     * @returns {string} - Device lock command
-     */
-    transformLockTargetStateToDevice(value) {
-        return value === this.platform.Characteristic.LockTargetState.SECURED ? "lock" : "unlock";
-    }
-
-    /**
-     * Transform valve state from device to HomeKit
-     * @param {string} value - Device valve attribute value
-     * @returns {number} - HomeKit InUse characteristic value
-     */
-    transformValveInUse(value) {
-        return value === "open" ? this.platform.Characteristic.InUse.IN_USE : this.platform.Characteristic.InUse.NOT_IN_USE;
-    }
-
-    /**
-     * Transform thermostat mode from device to HomeKit
-     * @param {string} value - Device thermostatMode attribute value
-     * @returns {number} - HomeKit TargetHeatingCoolingState characteristic value
-     */
-    transformThermostatMode(value) {
-        switch (value.toLowerCase()) {
-            case "off":
-                return this.platform.Characteristic.TargetHeatingCoolingState.OFF;
-            case "heat":
-                return this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
-            case "cool":
-                return this.platform.Characteristic.TargetHeatingCoolingState.COOL;
-            case "auto":
-                return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
-            default:
-                return this.platform.Characteristic.TargetHeatingCoolingState.OFF;
+        if (accessory.context.deviceData.capabilities.DoubleTapableButton) {
+            values.add(ProgrammableSwitchEvent.DOUBLE_PRESS);
         }
-    }
-
-    /**
-     * Transform thermostat target mode from HomeKit to device
-     * @param {number} value - HomeKit TargetHeatingCoolingState characteristic value
-     * @returns {string} - Device thermostatMode command value
-     */
-    transformThermostatModeToDevice(value) {
-        switch (value) {
-            case this.platform.Characteristic.TargetHeatingCoolingState.OFF:
-                return "off";
-            case this.platform.Characteristic.TargetHeatingCoolingState.HEAT:
-                return "heat";
-            case this.platform.Characteristic.TargetHeatingCoolingState.COOL:
-                return "cool";
-            case this.platform.Characteristic.TargetHeatingCoolingState.AUTO:
-                return "auto";
-            default:
-                return "off";
+        if (accessory.context.deviceData.capabilities.HoldableButton) {
+            values.add(ProgrammableSwitchEvent.LONG_PRESS);
         }
-    }
 
-    /**
-     * Transform thermostat operating state from device to HomeKit
-     * @param {string} value - Device thermostatOperatingState attribute value
-     * @returns {number} - HomeKit CurrentHeatingCoolingState characteristic value
-     */
-    transformThermostatOperatingState(value) {
-        switch (value.toLowerCase()) {
-            case "heating":
-                return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
-            case "cooling":
-                return this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
-            case "idle":
-            case "off":
-                return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
-            default:
-                return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+        // Default if no specific capabilities
+        if (values.size === 0) {
+            values.add(ProgrammableSwitchEvent.SINGLE_PRESS);
+            values.add(ProgrammableSwitchEvent.LONG_PRESS);
         }
-    }
 
-    /**
-     * Transform thermostat target temperature from device to HomeKit
-     * @param {string|number} value - Device thermostatSetpoint attribute value
-     * @returns {number} - HomeKit TargetTemperature characteristic value
-     */
-    transformThermostatTargetTemperature(value) {
-        return this.transformTemperatureFromDevice(value);
+        return Array.from(values);
     }
-
-    /**
-     * Transform thermostat target temperature from HomeKit to device
-     * @param {number} value - HomeKit TargetTemperature characteristic value
-     * @returns {number} - Device thermostatSetpoint attribute value
-     */
-    transformThermostatTargetTemperatureToDevice(value) {
-        return this.transformTemperatureToDevice(value);
-    }
-
-    /**
-     * Transform fan speed from device to HomeKit (0-100)
-     * @param {string|number} value - Device level attribute value
-     * @returns {number} - HomeKit RotationSpeed characteristic value
-     */
-    transformFanSpeedFromDevice(value) {
-        return this.transformBrightnessFromDevice(value);
-    }
-
-    /**
-     * Transform fan speed from HomeKit to device
-     * @param {number} value - HomeKit RotationSpeed characteristic value
-     * @returns {number} - Device level attribute value
-     */
-    transformFanSpeedToDevice(value) {
-        return this.transformBrightnessToDevice(value);
-    }
-
-    /**
-     * Transform fan state from device to HomeKit
-     * @param {string} value - Device switch attribute value
-     * @returns {number} - HomeKit Active characteristic value
-     */
-    transformFanActiveState(value) {
-        return value === "on" ? this.platform.Characteristic.Active.ACTIVE : this.platform.Characteristic.Active.INACTIVE;
-    }
-
-    /**
-     * Transform window covering position from device to HomeKit (0-100)
-     * @param {string|number} value - Device position attribute value
-     * @returns {number} - HomeKit CurrentPosition characteristic value
-     */
-    transformWindowCoveringPosition(value) {
-        return Math.max(0, Math.min(100, parseInt(value)));
-    }
-
-    /**
-     * Transform window covering state from device to HomeKit
-     * @param {string} value - Device windowShade attribute value
-     * @returns {number} - HomeKit PositionState characteristic value
-     */
-    transformWindowCoveringState(value) {
-        switch (value.toLowerCase()) {
-            case "opening":
-                return this.platform.Characteristic.PositionState.INCREASING;
-            case "closing":
-                return this.platform.Characteristic.PositionState.DECREASING;
-            case "partially open":
-            case "open":
-            case "closed":
-                return this.platform.Characteristic.PositionState.STOPPED;
-            default:
-                return this.platform.Characteristic.PositionState.STOPPED;
-        }
-    }
-
-    /**
-     * Transform battery charging state from device to HomeKit
-     * @param {string} value - Device powerSource attribute value
-     * @returns {number} - HomeKit ChargingState characteristic value
-     */
-    transformChargingState(value) {
-        return value === "dc" ? this.platform.Characteristic.ChargingState.CHARGING : this.platform.Characteristic.ChargingState.NOT_CHARGING;
-    }
-
-    /**
-     * Transform PM2.5 density from device to HomeKit
-     * @param {string|number} value - Device pm25 attribute value
-     * @returns {number} - HomeKit PM2_5Density characteristic value
-     */
-    transformPM25Density(value) {
-        return parseFloat(value);
-    }
-
-    /**
-     * Transform Carbon Dioxide Level from device to HomeKit
-     * @param {string|number} value - Device carbonDioxide attribute value
-     * @returns {number} - HomeKit CarbonDioxideLevel characteristic value
-     */
-    transformCarbonDioxideLevel(value) {
-        return parseFloat(value);
-    }
-
-    // Add additional transformation methods as needed...
 }

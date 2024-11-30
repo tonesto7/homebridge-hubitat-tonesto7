@@ -127,7 +127,7 @@ preferences {
         'colorTemperature', 'contact', 'coolingSetpoint', 'door', 'doubleTapped', 'effectName', 'energy', 'fanMode',
         'fanState', 'fanTargetState', 'filterStatus', 'heatingSetpoint', 'held', 'hue', 'humidity', 'illuminance',
         'level', 'lightEffects', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power',
-        'powerSource', 'presence', 'pushed', 'saturation', 'smoke', 'speed', 'switch', 'supportedThermostatModes',
+        'powerSource', 'presence', 'pushed', 'saturation', 'securityKeypad', 'smoke', 'speed', 'switch', 'supportedThermostatModes',
         'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 'thermostatSetPoint',
         'valve', 'volume', 'water', 'windowShade',
     ],

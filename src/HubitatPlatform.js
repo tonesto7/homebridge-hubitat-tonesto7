@@ -6,7 +6,7 @@ import HubitatClient from "./HubitatClient.js";
 import HubitatAccessories from "./HubitatAccessories.js";
 import CommunityTypes from "./libs/CommunityTypes.js";
 import { WebServer } from "./WebServer.js";
-import { StateManager } from "./StateManager.js";
+// import { StateManager } from "./StateManager.js";
 import { LogManager } from "./LogManager.js";
 import { VersionManager } from "./VersionManager.js";
 import events from "events";
@@ -16,7 +16,7 @@ export default class HubitatPlatform {
         // Initialize managers
         this.logManager = new LogManager(log);
         this.configManager = new ConfigManager(config, api.user);
-        this.stateManager = new StateManager(this);
+        // this.stateManager = new StateManager(this);
         this.versionManager = new VersionManager(this);
 
         // Store API references
@@ -45,8 +45,9 @@ export default class HubitatPlatform {
         this.appEvts.setMaxListeners(50);
 
         // Initialize components
+        this.client = new HubitatClient(this);
         this.accessories = new HubitatAccessories(this);
-        this.client = new HubitatClient(this, this.accessories);
+        this.client.setAccessories(this.accessories);
         this.webServer = new WebServer(this);
         this.unknownCapabilities = [];
 
@@ -70,7 +71,7 @@ export default class HubitatPlatform {
             this.logManager.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
 
             // Initialize accessory states
-            await this.stateManager.initializeAccessoryStates(this.accessories.getAllAccessories());
+            // await this.stateManager.initializeAccessoryStates(this.accessories.getAllAccessories());
 
             // Setup refresh interval
             setInterval(this.refreshDevices.bind(this), this.config.polling_seconds * 1000);
@@ -109,7 +110,7 @@ export default class HubitatPlatform {
             await this.accessories.refreshDevices(resp.deviceList);
 
             // Update refresh timestamps
-            await this.stateManager.updateLastRefresh(this.accessories.getAllAccessories());
+            // await this.stateManager.updateLastRefresh(this.accessories.getAllAccessories());
 
             // Log completion
             this.logManager.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
@@ -144,7 +145,7 @@ export default class HubitatPlatform {
 
     async handleShutdown() {
         this.logManager.logNotice(`${platformDesc} Platform Shutdown`);
-        await this.stateManager.handleShutdown(this.accessories.getAllAccessories());
+        // await this.stateManager.handleShutdown(this.accessories.getAllAccessories());
     }
 
     validateConfig(config) {
@@ -174,11 +175,36 @@ export default class HubitatPlatform {
         this.logManager.logDebug(...args);
     }
 
-    // Expose utility methods
+    /**
+     * Sanitize a device name
+     * @param {string} name - The name to sanitize
+     * @returns {string} Sanitized name
+     */
     sanitizeName(name) {
-        return this.stateManager.sanitizeName(name);
+        if (!name) return "Unnamed Device";
+
+        let sanitized = name
+            .replace(/[^a-zA-Z0-9 ']/g, "")
+            .trim()
+            .replace(/^[^a-zA-Z0-9]+/, "")
+            .replace(/[^a-zA-Z0-9]+$/, "")
+            .replace(/\s{2,}/g, " ");
+
+        sanitized = sanitized.length === 0 ? "Unnamed Device" : sanitized;
+
+        if (name !== sanitized) {
+            this.logManager.logWarn(`Sanitized Name: "${name}" => "${sanitized}"`);
+        }
+
+        return sanitized;
     }
+
+    /**
+     * Convert a string to title case
+     * @param {string} str - The string to convert
+     * @returns {string} Title case string
+     */
     toTitleCase(str) {
-        return this.stateManager.toTitleCase(str);
+        return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     }
 }

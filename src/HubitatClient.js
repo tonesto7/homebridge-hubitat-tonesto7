@@ -4,17 +4,17 @@ import { platformName, platformDesc, pluginVersion } from "./StaticConfig.js";
 import axios from "axios";
 
 export default class HubitatClient {
-    constructor(platform, accessories) {
+    constructor(platform) {
         this.logManager = platform.logManager;
         this.versionManager = platform.versionManager;
         this.configManager = platform.configManager;
-        this.stateManager = platform.stateManager;
-        this.accessories = platform.accessories;
         this.appEvts = platform.appEvts;
 
         // Get initial config
         this.config = this.configManager.getConfig();
 
+        // Store a reference to the accessories object
+        this._accessories = null;
         // Client state
         this.clientState = {
             localErrorCount: 0,
@@ -30,6 +30,10 @@ export default class HubitatClient {
 
         // Register event listeners
         this.registerEventListeners();
+    }
+
+    setAccessories(accessories) {
+        this._accessories = accessories;
     }
 
     handleConfigUpdate(newConfig) {
@@ -130,7 +134,7 @@ export default class HubitatClient {
                     newVersion: versionCheck.newVersion,
                     version: pluginVersion,
                     isLocal: this.config.use_cloud ? "false" : "true",
-                    accCount: this.accessories.getAllAccessories().length || null,
+                    accCount: this._accessories.getAllAccessories().length || null,
                 },
                 timeout: 10000,
             });
