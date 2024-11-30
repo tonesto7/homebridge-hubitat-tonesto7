@@ -331,9 +331,11 @@ export default class HubitatAccessories {
 
             // Assign services and characteristics
             for (const svc of svcTypes) {
-                if (svc.name && svc.service) {
+                if (svc.name) {
                     this.logManager.logDebug(`${accessory.displayName} | Adding service: ${svc.name}`);
-                    this.deviceCharacteristics[svc.name](accessory, svc.service);
+                    this.deviceCharacteristics[svc.initFn](accessory);
+                } else {
+                    this.logManager.logWarn(`${accessory.displayName} | No service found for ${svc.name}`);
                 }
             }
 
@@ -384,9 +386,9 @@ export default class HubitatAccessories {
 
             // Reconfigure services and characteristics
             for (const svc of svcTypes) {
-                if (svc.name && svc.service) {
-                    this.logManager.logDebug(`${accessory.displayName} | Updating service: ${svc.name}`);
-                    this.deviceCharacteristics[svc.name](accessory, svc.service);
+                if (svc.name) {
+                    this.logManager.logGreen(`${accessory.displayName} | Updating service: ${svc.name}`);
+                    this.deviceCharacteristics[svc.initFn](accessory);
                 }
             }
 

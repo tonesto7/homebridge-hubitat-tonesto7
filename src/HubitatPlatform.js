@@ -6,7 +6,6 @@ import HubitatClient from "./HubitatClient.js";
 import HubitatAccessories from "./HubitatAccessories.js";
 import CommunityTypes from "./libs/CommunityTypes.js";
 import { WebServer } from "./WebServer.js";
-// import { StateManager } from "./StateManager.js";
 import { LogManager } from "./LogManager.js";
 import { VersionManager } from "./VersionManager.js";
 import events from "events";
@@ -16,7 +15,6 @@ export default class HubitatPlatform {
         // Initialize managers
         this.logManager = new LogManager(log);
         this.configManager = new ConfigManager(config, api.user);
-        // this.stateManager = new StateManager(this);
         this.versionManager = new VersionManager(this);
 
         // Store API references
@@ -70,9 +68,6 @@ export default class HubitatPlatform {
         try {
             this.logManager.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
 
-            // Initialize accessory states
-            // await this.stateManager.initializeAccessoryStates(this.accessories.getAllAccessories());
-
             // Setup refresh interval
             setInterval(this.refreshDevices.bind(this), this.config.polling_seconds * 1000);
 
@@ -109,9 +104,6 @@ export default class HubitatPlatform {
             // Refresh accessories
             await this.accessories.refreshDevices(resp.deviceList);
 
-            // Update refresh timestamps
-            // await this.stateManager.updateLastRefresh(this.accessories.getAllAccessories());
-
             // Log completion
             this.logManager.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
 
@@ -145,7 +137,6 @@ export default class HubitatPlatform {
 
     async handleShutdown() {
         this.logManager.logNotice(`${platformDesc} Platform Shutdown`);
-        // await this.stateManager.handleShutdown(this.accessories.getAllAccessories());
     }
 
     validateConfig(config) {
