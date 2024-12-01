@@ -49,7 +49,13 @@ export class CarbonMonoxide {
     }
 
     _getCoDetectedState(value) {
-        return value === "clear" ? this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+        switch (value) {
+            case "clear":
+            case "tested":
+                return this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL;
+            default:
+                return this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+        }
     }
 
     _getTamperedState(value) {

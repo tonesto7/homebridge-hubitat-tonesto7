@@ -7,7 +7,7 @@ export class CarbonDioxide {
         this.generateSrvcName = platform.generateSrvcName;
     }
 
-    static relevantAttributes = ["carbonDioxideMeasurement", "status", "tamper"];
+    static relevantAttributes = ["carbonDioxide", "status", "tamper"];
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring CO2 Sensor for ${accessory.displayName}`);
@@ -25,7 +25,7 @@ export class CarbonDioxide {
 
     _configureCo2Detected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonDioxideDetected, {
-            getHandler: () => this._getCo2DetectedState(devData.attributes.carbonDioxideMeasurement),
+            getHandler: () => this._getCo2DetectedState(devData.attributes.carbonDioxide),
             updateHandler: (value) => this._getCo2DetectedState(value),
             storeAttribute: "carbonDioxideMeasurement",
         });
@@ -33,7 +33,7 @@ export class CarbonDioxide {
 
     _configureCo2Level(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonDioxideLevel, {
-            getHandler: () => this._getCo2Level(devData.attributes.carbonDioxideMeasurement),
+            getHandler: () => this._getCo2Level(devData.attributes.carbonDioxidcarbonDioxideeMeasurement),
             updateHandler: (value) => this._getCo2Level(value),
             storeAttribute: "carbonDioxideMeasurement",
         });
@@ -92,7 +92,7 @@ export class CarbonDioxide {
         svc.getCharacteristic(this.Characteristic.StatusActive).updateValue(this._getActiveState(accessory.context.deviceData.status));
 
         switch (attribute) {
-            case "carbonDioxideMeasurement":
+            case "carbonDioxide":
                 svc.getCharacteristic(this.Characteristic.CarbonDioxideLevel).updateValue(this._getCo2Level(value));
                 break;
             case "tamper":
