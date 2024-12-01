@@ -96,6 +96,7 @@ export default class HubitatClient {
     }
 
     async sendHubitatCommand(devData, cmd, params = []) {
+        console.log("sendHubitatCommand", cmd, params);
         try {
             this.logManager.logNotice(`Sending Device Command: ${cmd}${params.length ? ` | Params: ${JSON.stringify(params)}` : ""} | ` + `Name: (${devData.name}) | DeviceID: (${devData.deviceid})`);
 

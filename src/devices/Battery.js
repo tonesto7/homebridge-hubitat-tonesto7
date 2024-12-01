@@ -4,11 +4,14 @@ export class Battery {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
+        this.generateSrvcName = platform.generateSrvcName;
     }
+
+    static relevantAttributes = ["battery", "powerSource"];
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Battery for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.Battery);
+        const svc = accessory.getOrAddService(this.Service.Battery, this.generateSrvcName(accessory.displayName, "Battery"));
         const devData = accessory.context.deviceData;
 
         this._configureBatteryLevel(accessory, svc, devData);
@@ -21,23 +24,16 @@ export class Battery {
 
     _configureBatteryLevel(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.BatteryLevel, {
-            getHandler: () => {
-                const level = parseInt(devData.attributes.battery);
-                return this._clampValue(level, 0, 100);
-            },
-            updateHandler: (value) => this._clampValue(value, 0, 100),
+            getHandler: () => this._getBatteryLevel(devData.attributes.battery),
+            updateHandler: (value) => this._getBatteryLevel(value),
             storeAttribute: "battery",
         });
     }
 
     _configureStatusLowBattery(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusLowBattery, {
-            getHandler: () => {
-                return devData.attributes.battery < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-            },
-            updateHandler: (value) => {
-                return value < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
-            },
+            getHandler: () => this._getLowBatteryStatus(devData.attributes.battery),
+            updateHandler: (value) => this._getLowBatteryStatus(value),
             storeAttribute: "battery",
         });
     }
@@ -48,6 +44,18 @@ export class Battery {
             updateHandler: (value) => this._getChargingState(value),
             storeAttribute: "powerSource",
         });
+    }
+
+    _getBatteryLevel(value) {
+        if (!value || isNaN(value)) return 0;
+        value = parseFloat(value);
+        return this._clampValue(value, 0, 100);
+    }
+
+    _getLowBatteryStatus(value) {
+        if (!value || isNaN(value)) return this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+        value = parseFloat(value);
+        return value < 20 ? this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : this.Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
     }
 
     _getChargingState(source) {
@@ -65,5 +73,26 @@ export class Battery {
 
     _clampValue(value, min, max) {
         return Math.min(Math.max(value, min), max);
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`Battery | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!Battery.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.Battery, this.generateSrvcName(accessory.displayName, "Battery"));
+        if (!svc) return;
+
+        switch (attribute) {
+            case "battery":
+                svc.getCharacteristic(this.Characteristic.BatteryLevel).updateValue(this._getBatteryLevel(value));
+                break;
+            case "powerSource":
+                svc.getCharacteristic(this.Characteristic.ChargingState).updateValue(this._getChargingState(value));
+                break;
+            default:
+                this.logManager.logWarn(`Battery | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }

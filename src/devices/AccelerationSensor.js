@@ -5,11 +5,14 @@ export class AccelerationSensor {
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
         this.CommunityTypes = platform.CommunityTypes;
+        this.generateSrvcName = platform.generateSrvcName;
     }
+
+    static relevantAttributes = ["acceleration", "status", "tamper"];
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Acceleration Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.MotionSensor);
+        const svc = accessory.getOrAddService(this.Service.MotionSensor, this.generateSrvcName(accessory.displayName, "Acceleration"));
         const devData = accessory.context.deviceData;
 
         this._configureMotionDetected(accessory, svc, devData);
@@ -22,8 +25,8 @@ export class AccelerationSensor {
 
     _configureMotionDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.MotionDetected, {
-            getHandler: () => devData.attributes.acceleration === "active",
-            updateHandler: (value) => value === "active",
+            getHandler: () => this._getMotionDetected(devData.attributes.acceleration),
+            updateHandler: (value) => this._getMotionDetected(value),
             storeAttribute: "acceleration",
         });
     }
@@ -32,9 +35,9 @@ export class AccelerationSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => {
                 const status = devData.status;
-                return status !== "OFFLINE" && status !== "INACTIVE";
+                return this._getStatusActive(status);
             },
-            updateHandler: (value) => value !== "OFFLINE" && value !== "INACTIVE",
+            updateHandler: (value) => this._getStatusActive(value),
             storeAttribute: "status",
         });
     }
@@ -43,11 +46,51 @@ export class AccelerationSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => {
-                return devData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+                return this._getStatusTampered(devData.attributes.tamper);
             },
-            updateHandler: (value) => value === "detected",
+            updateHandler: (value) => this._getStatusTampered(value),
             storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
+    }
+
+    _getMotionDetected(value) {
+        return value === "active";
+    }
+
+    _getStatusActive(value) {
+        return value !== "OFFLINE" && value !== "INACTIVE";
+    }
+
+    _getStatusTampered(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        if (!AccelerationSensor.relevantAttributes.includes(attribute)) return;
+
+        this.logManager.logInfo(`AccelerationSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+
+        const svc = accessory.getService(this.Service.Lightbulb);
+        if (!svc) {
+            this.logManager.logWarn(`AccelerationSensor | ${accessory.displayName} | No service found`);
+            return;
+        }
+
+        svc.getCharacteristic(this.Characteristic.StatusActive).updateValue(this._getStatusActive(accessory.context.deviceData.status));
+
+        switch (attribute) {
+            case "acceleration":
+                svc.getCharacteristic(this.Characteristic.MotionDetected).updateValue(this._getMotionDetected(value));
+                break;
+            case "tamper":
+                svc.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this._getStatusTampered(value));
+                break;
+
+            default:
+                this.logManager.logWarn(`AccelerationSensor | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }

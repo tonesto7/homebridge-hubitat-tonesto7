@@ -5,11 +5,14 @@ export class AirPurifier {
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
         this.CommunityTypes = platform.CommunityTypes;
+        this.generateSrvcName = platform.generateSrvcName;
     }
+
+    static relevantAttributes = ["switch", "fanMode", "tamper"];
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Air Purifier for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.AirPurifier);
+        const svc = accessory.getOrAddService(this.Service.AirPurifier, this.generateSrvcName(accessory.displayName, "Air Purifier"));
         const devData = accessory.context.deviceData;
 
         this._configureActive(accessory, svc, devData);
@@ -23,13 +26,13 @@ export class AirPurifier {
     _configureActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Active, {
             getHandler: () => {
-                return devData.attributes.switch === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+                return this._getActiveState(devData.attributes.switch);
             },
             setHandler: (value) => {
                 accessory.sendCommand(value ? "on" : "off");
             },
             updateHandler: (value) => {
-                return value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+                return this._getActiveState(value);
             },
             storeAttribute: "switch",
         });
@@ -38,36 +41,84 @@ export class AirPurifier {
     _configureCurrentAirPurifierState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentAirPurifierState, {
             getHandler: () => {
-                return devData.attributes.switch === "on" ? this.Characteristic.CurrentAirPurifierState.PURIFYING_AIR : this.Characteristic.CurrentAirPurifierState.INACTIVE;
+                return this._getAirPurifierState(devData.attributes.switch);
             },
             updateHandler: (value) => {
-                return value === "on" ? this.Characteristic.CurrentAirPurifierState.PURIFYING_AIR : this.Characteristic.CurrentAirPurifierState.INACTIVE;
+                return this._getAirPurifierState(value);
             },
             storeAttribute: "switch",
         });
     }
 
     _configureFanOscillationMode(accessory, svc, devData) {
-        const modeMappings = {
-            low: this.CommunityTypes.FanOscillationMode.LOW,
-            medium: this.CommunityTypes.FanOscillationMode.MEDIUM,
-            high: this.CommunityTypes.FanOscillationMode.HIGH,
-            sleep: this.CommunityTypes.FanOscillationMode.SLEEP,
-        };
-
         accessory.getOrAddCharacteristic(svc, this.CommunityTypes.FanOscillationMode, {
             getHandler: () => {
-                const val = devData.attributes.fanMode;
-                return modeMappings[val] || this.CommunityTypes.FanOscillationMode.SLEEP;
+                return this._getFanOscillationMode(devData.attributes.fanMode);
             },
             setHandler: (value) => {
-                const reverseModeMappings = Object.fromEntries(Object.entries(modeMappings).map(([k, v]) => [v, k]));
-                accessory.sendCommand("setFanMode", [reverseModeMappings[value]]);
+                const cmd = this._getFanOscillationModeCmd(value);
+                accessory.sendCommand("setFanMode", cmd);
             },
             updateHandler: (value) => {
-                return modeMappings[value] || this.CommunityTypes.FanOscillationMode.SLEEP;
+                return this._getFanOscillationMode(value);
             },
             storeAttribute: "fanMode",
         });
+    }
+
+    _getActiveState(value) {
+        return value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+    }
+
+    _getAirPurifierState(value) {
+        return value === "on" ? this.Characteristic.CurrentAirPurifierState.PURIFYING_AIR : this.Characteristic.CurrentAirPurifierState.INACTIVE;
+    }
+
+    _getFanOscillationMode(value) {
+        switch (value) {
+            case "low":
+                return this.CommunityTypes.FanOscillationMode.LOW;
+            case "medium":
+                return this.CommunityTypes.FanOscillationMode.MEDIUM;
+            case "high":
+                return this.CommunityTypes.FanOscillationMode.HIGH;
+            default:
+                return this.CommunityTypes.FanOscillationMode.SLEEP;
+        }
+    }
+
+    _getFanOscillationModeCmd(value) {
+        switch (value) {
+            case this.CommunityTypes.FanOscillationMode.LOW:
+                return "low";
+            case this.CommunityTypes.FanOscillationMode.MEDIUM:
+                return "medium";
+            case this.CommunityTypes.FanOscillationMode.HIGH:
+                return "high";
+            default:
+                return "sleep";
+        }
+    }
+
+    // Handle attribute updates
+    async handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`AirPurifier | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!AirPurifier.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.AirPurifier);
+        if (!svc) {
+            this.logManager.logWarn(`AirPurifier | ${accessory.displayName} | No service found`);
+            return;
+        }
+
+        switch (attribute) {
+            case "switch":
+                svc.getCharacteristic(this.Characteristic.Active).updateValue(this._getActiveState(value));
+                break;
+            case "fanMode":
+                svc.getCharacteristic(this.CommunityTypes.FanOscillationMode).updateValue(this._getFanOscillationMode(value));
+                break;
+        }
     }
 }

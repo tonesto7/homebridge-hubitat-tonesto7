@@ -3,9 +3,10 @@
 import chalk from "chalk";
 
 export class LogManager {
-    constructor(log, config = {}) {
+    constructor(log, debug = false, config = {}) {
         this.log = log;
         this.config = config;
+        this.debug = debug;
         this.chalk = chalk;
 
         // Default log configuration if none provided
@@ -126,7 +127,7 @@ export class LogManager {
      * @param {...*} args - Additional arguments
      */
     logDebug(message, ...args) {
-        if (!this.logConfig.debug) return;
+        if (!this.logConfig.debug && !this.debug) return;
         this.log.debug(this.chalk.gray(this.formatMessage(message, ...args)));
     }
 

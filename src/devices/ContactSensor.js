@@ -1,14 +1,18 @@
 // devices/ContactSensor.js
+
 export class ContactSensor {
     constructor(platform) {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
+        this.generateSrvcName = platform.generateSrvcName;
     }
 
+    static relevantAttributes = ["contact", "status", "tamper"];
+
     configure(accessory) {
-        console.log(`Configuring Contact Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.ContactSensor);
+        this.logManager.logDebug(`Configuring Contact Sensor for ${accessory.displayName}`);
+        const svc = accessory.getOrAddService(this.Service.ContactSensor, this.generateSrvcName(accessory.displayName, "Contact"));
         const devData = accessory.context.deviceData;
 
         this._configureContactState(accessory, svc, devData);
@@ -21,20 +25,16 @@ export class ContactSensor {
 
     _configureContactState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.ContactSensorState, {
-            getHandler: () => {
-                return devData.attributes.contact === "closed" ? this.Characteristic.ContactSensorState.CONTACT_DETECTED : this.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-            },
-            updateHandler: (value) => {
-                return value === "closed" ? this.Characteristic.ContactSensorState.CONTACT_DETECTED : this.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
-            },
+            getHandler: () => this._getContactState(devData.attributes.contact),
+            updateHandler: (value) => this._getContactState(value),
             storeAttribute: "contact",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
-            getHandler: () => devData.status !== "OFFLINE" && devData.status !== "INACTIVE",
-            updateHandler: (value) => value !== "OFFLINE" && value !== "INACTIVE",
+            getHandler: () => this._getActiveState(devData.status),
+            updateHandler: (value) => this._getActiveState(value),
             storeAttribute: "status",
         });
     }
@@ -42,14 +42,45 @@ export class ContactSensor {
     _configureStatusTampered(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
-            getHandler: () => {
-                return devData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
-            },
-            updateHandler: (value) => {
-                return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
-            },
+            getHandler: () => this._getTamperedState(devData.attributes.tamper),
+            updateHandler: (value) => this._getTamperedState(value),
             storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
+    }
+
+    _getContactState(value) {
+        return value === "closed" ? this.Characteristic.ContactSensorState.CONTACT_DETECTED : this.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED;
+    }
+
+    _getTamperedState(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    }
+
+    _getActiveState(value) {
+        return value !== "OFFLINE" && value !== "INACTIVE";
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`ContactSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!ContactSensor.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.ContactSensor, this.generateSrvcName(accessory.displayName, "Contact"));
+        if (!svc) return;
+
+        svc.getCharacteristic(this.Characteristic.StatusActive).updateValue(this._getActiveState(accessory.context.deviceData.status));
+
+        switch (attribute) {
+            case "contact":
+                svc.getCharacteristic(this.Characteristic.ContactSensorState).updateValue(this._getContactState(value));
+                break;
+            case "tamper":
+                svc.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this._getTamperedState(value));
+                break;
+            default:
+                this.logManager.logWarn(`ContactSensor | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }

@@ -4,14 +4,17 @@ export class CarbonMonoxide {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
+        this.generateSrvcName = platform.generateSrvcName;
     }
 
+    static relevantAttributes = ["carbonMonoxide", "status", "tamper"];
+
     configure(accessory) {
-        this.logManager.logDebug(`Configuring Carbon Monoxide Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.CarbonMonoxideSensor);
+        this.logManager.logDebug(`Configuring CO Sensor for ${accessory.displayName}`);
+        const svc = accessory.getOrAddService(this.Service.CarbonMonoxideSensor, this.generateSrvcName(accessory.displayName, "CO"));
         const devData = accessory.context.deviceData;
 
-        this._configureDetected(accessory, svc, devData);
+        this._configureCoDetected(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
@@ -19,22 +22,18 @@ export class CarbonMonoxide {
         return accessory;
     }
 
-    _configureDetected(accessory, svc, devData) {
+    _configureCoDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonMonoxideDetected, {
-            getHandler: () => {
-                return devData.attributes.carbonMonoxide === "clear" ? this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-            },
-            updateHandler: (value) => {
-                return value === "clear" ? this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
-            },
+            getHandler: () => this._getCoDetectedState(devData.attributes.carbonMonoxide),
+            updateHandler: (value) => this._getCoDetectedState(value),
             storeAttribute: "carbonMonoxide",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
-            getHandler: () => devData.status !== "OFFLINE" && devData.status !== "INACTIVE",
-            updateHandler: (value) => value !== "OFFLINE" && value !== "INACTIVE",
+            getHandler: () => this._getActiveState(devData.status),
+            updateHandler: (value) => this._getActiveState(value),
             storeAttribute: "status",
         });
     }
@@ -42,14 +41,45 @@ export class CarbonMonoxide {
     _configureStatusTampered(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
-            getHandler: () => {
-                return devData.attributes.tamper === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
-            },
-            updateHandler: (value) => {
-                return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
-            },
+            getHandler: () => this._getTamperedState(devData.attributes.tamper),
+            updateHandler: (value) => this._getTamperedState(value),
             storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
+    }
+
+    _getCoDetectedState(value) {
+        return value === "clear" ? this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_NORMAL : this.Characteristic.CarbonMonoxideDetected.CO_LEVELS_ABNORMAL;
+    }
+
+    _getTamperedState(value) {
+        return value === "detected" ? this.Characteristic.StatusTampered.TAMPERED : this.Characteristic.StatusTampered.NOT_TAMPERED;
+    }
+
+    _getActiveState(value) {
+        return value !== "OFFLINE" && value !== "INACTIVE";
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`CarbonMonoxide | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!CarbonMonoxide.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.CarbonMonoxideSensor, this.generateSrvcName(accessory.displayName, "CO"));
+        if (!svc) return;
+
+        svc.getCharacteristic(this.Characteristic.StatusActive).updateValue(this._getActiveState(accessory.context.deviceData.status));
+
+        switch (attribute) {
+            case "carbonMonoxide":
+                svc.getCharacteristic(this.Characteristic.CarbonMonoxideDetected).updateValue(this._getCoDetectedState(value));
+                break;
+            case "tamper":
+                svc.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this._getTamperedState(value));
+                break;
+            default:
+                this.logManager.logWarn(`CarbonMonoxide | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }

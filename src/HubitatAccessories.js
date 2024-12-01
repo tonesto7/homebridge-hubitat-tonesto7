@@ -1,14 +1,46 @@
 // HubitatAccessories.js
 
-import { platformName } from "./StaticConfig.js";
-import DeviceCharacteristics from "./DeviceCharacteristics.js";
-import Transforms from "./Transforms.js";
+import { platformName, pluginVersion } from "./StaticConfig.js";
+
+import { AccelerationSensor } from "./devices/AccelerationSensor.js";
+import { AirPurifier } from "./devices/AirPurifier.js";
+import { AirQuality } from "./devices/AirQuality.js";
+import { AlarmSystem } from "./devices/AlarmSystem.js";
+import { Battery } from "./devices/Battery.js";
+import { Button } from "./devices/Button.js";
+import { CarbonDioxide } from "./devices/CarbonDioxide.js";
+import { CarbonMonoxide } from "./devices/CarbonMonoxide.js";
+import { ContactSensor } from "./devices/ContactSensor.js";
+import { EnergyMeter } from "./devices/EnergyMeter.js";
+import { Fan } from "./devices/Fan.js";
+import { FilterMaintenance } from "./devices/FilterMaintenance.js";
+import { GarageDoor } from "./devices/GarageDoor.js";
+import { Humidifier } from "./devices/Humidifier.js";
+import { HumiditySensor } from "./devices/HumiditySensor.js";
+import { IlluminanceSensor } from "./devices/IlluminanceSensor.js";
+import { LeakSensor } from "./devices/LeakSensor.js";
+import { Light } from "./devices/Light.js";
+import { Lock } from "./devices/Lock.js";
+import { MotionSensor } from "./devices/MotionSensor.js";
+import { Outlet } from "./devices/Outlet.js";
+import { PowerMeter } from "./devices/PowerMeter.js";
+import { PresenceSensor } from "./devices/PresenceSensor.js";
+import { SmokeDetector } from "./devices/SmokeDetector.js";
+import { Speaker } from "./devices/Speaker.js";
+import { Switch } from "./devices/Switch.js";
+import { TemperatureSensor } from "./devices/TemperatureSensor.js";
+import { Thermostat } from "./devices/Thermostat.js";
+import { Valve } from "./devices/Valve.js";
+import { VirtualMode } from "./devices/VirtualMode.js";
+import { VirtualPiston } from "./devices/VirtualPiston.js";
+import { WindowCovering } from "./devices/WindowCovering.js";
 
 export default class HubitatAccessories {
     constructor(platform) {
         this.platformName = platformName;
 
         this.sanitizeName = platform.sanitizeName;
+        this.toTitleCase = platform.toTitleCase;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
         this.CommunityTypes = platform.CommunityTypes;
@@ -19,9 +51,6 @@ export default class HubitatAccessories {
         this.client = platform.client;
         this.api = platform.api;
         this.config = platform.config;
-
-        this.transforms = new Transforms(platform);
-        this.deviceCharacteristics = new DeviceCharacteristics(platform, this);
 
         // Initialize accessory cache and utilities
         this._cachedAccessories = new Map();
@@ -45,6 +74,42 @@ export default class HubitatAccessories {
             setThermostatMode: { delay: 600, trailing: true },
         };
 
+        // Initialize device handlers
+        this.deviceHandlers = {
+            accelerationSensor: new AccelerationSensor(platform),
+            airPurifier: new AirPurifier(platform),
+            airQuality: new AirQuality(platform),
+            alarmSystem: new AlarmSystem(platform),
+            button: new Button(platform),
+            carbonDioxide: new CarbonDioxide(platform),
+            carbonMonoxide: new CarbonMonoxide(platform),
+            battery: new Battery(platform),
+            contactSensor: new ContactSensor(platform),
+            energyMeter: new EnergyMeter(platform),
+            fan: new Fan(platform),
+            filterMaintenance: new FilterMaintenance(platform),
+            garageDoor: new GarageDoor(platform),
+            humidifier: new Humidifier(platform),
+            humiditySensor: new HumiditySensor(platform),
+            illuminanceSensor: new IlluminanceSensor(platform),
+            leakSensor: new LeakSensor(platform),
+            light: new Light(platform),
+            lock: new Lock(platform),
+            motionSensor: new MotionSensor(platform),
+            outlet: new Outlet(platform),
+            powerMeter: new PowerMeter(platform),
+            presenceSensor: new PresenceSensor(platform),
+            smokeDetector: new SmokeDetector(platform),
+            speaker: new Speaker(platform),
+            switch: new Switch(platform),
+            temperatureSensor: new TemperatureSensor(platform),
+            thermostat: new Thermostat(platform),
+            valve: new Valve(platform),
+            virtualMode: new VirtualMode(platform),
+            virtualPiston: new VirtualPiston(platform),
+            windowCovering: new WindowCovering(platform),
+        };
+
         // Initialize device data
         this.deviceData = [];
     }
@@ -54,164 +119,134 @@ export default class HubitatAccessories {
             {
                 name: "windowCovering",
                 test: (accessory) => accessory.hasCapability("WindowShade"),
-                initFn: "windowCovering",
             },
             {
                 name: "light",
                 test: (accessory) =>
                     accessory.hasCapability("Switch") &&
                     (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")) || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl")),
-                initFn: "light",
             },
             {
                 name: "airPurifier",
                 test: (accessory) => accessory.hasCapability("custom.airPurifierOperationMode"),
                 disable: true,
-                initFn: "airPurifier",
             },
             {
                 name: "garageDoor",
                 test: (accessory) => accessory.hasCapability("GarageDoorControl"),
-                initFn: "garageDoor",
             },
             {
                 name: "lock",
                 test: (accessory) => accessory.hasCapability("Lock"),
-                initFn: "lock",
             },
             {
                 name: "valve",
                 test: (accessory) => accessory.hasCapability("Valve"),
-                initFn: "valve",
             },
             {
                 name: "speaker",
                 test: (accessory) => accessory.hasCapability("Speaker"),
-                initFn: "speaker",
             },
             {
                 name: "filterMaintenance",
                 test: (accessory) => accessory.hasCapability("FilterStatus") && accessory.hasAttribute("filterStatus"),
-                initFn: "filterMaintenance",
             },
             {
                 name: "fan",
                 test: (accessory) => ["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) || (this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed"),
-                initFn: "fan",
+                excludeCapabilities: ["Thermostat", "ThermostatOperatingState"],
             },
             {
                 name: "virtualMode",
                 test: (accessory) => accessory.hasCapability("Mode"),
-                initFn: "virtualMode",
             },
             {
                 name: "virtualPiston",
                 test: (accessory) => accessory.hasCapability("Piston"),
-                initFn: "virtualPiston",
             },
             {
                 name: "button",
                 test: (accessory) => ["Button", "DoubleTapableButton", "HoldableButton", "PushableButton"].some((cap) => accessory.hasCapability(cap)),
-                initFn: "button",
             },
             {
                 name: "outlet",
                 test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch") && !["LightBulb", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)),
-                initFn: "outlet",
             },
             {
                 name: "switchDevice",
                 test: (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")),
                 excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl"],
                 excludeAttributes: ["position", "level", "windowShade"],
-                initFn: "switchDevice",
             },
             {
                 name: "smokeDetector",
                 test: (accessory) => accessory.hasCapability("SmokeDetector") && accessory.hasAttribute("smoke"),
-                initFn: "smokeDetector",
             },
             {
                 name: "carbonMonoxide",
                 test: (accessory) => accessory.hasCapability("CarbonMonoxideDetector") && accessory.hasAttribute("carbonMonoxide"),
-                initFn: "carbonMonoxide",
             },
             {
                 name: "carbonDioxide",
                 test: (accessory) => accessory.hasCapability("CarbonDioxideMeasurement") && accessory.hasAttribute("carbonDioxide"),
-                initFn: "carbonDioxide",
             },
             {
                 name: "motionSensor",
                 test: (accessory) => accessory.hasCapability("MotionSensor"),
-                initFn: "motionSensor",
             },
             {
                 name: "accelerationSensor",
                 test: (accessory) => accessory.hasCapability("AccelerationSensor"),
-                initFn: "accelerationSensor",
             },
             {
                 name: "leakSensor",
                 test: (accessory) => accessory.hasCapability("WaterSensor"),
-                initFn: "leakSensor",
             },
             {
                 name: "presenceSensor",
                 test: (accessory) => accessory.hasCapability("PresenceSensor"),
-                initFn: "presenceSensor",
             },
             {
                 name: "humiditySensor",
                 test: (accessory) => accessory.hasCapability("RelativeHumidityMeasurement") && accessory.hasAttribute("humidity") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState"),
-                initFn: "humiditySensor",
             },
             {
                 name: "temperatureSensor",
                 test: (accessory) => accessory.hasCapability("TemperatureMeasurement") && !["Thermostat", "ThermostatOperatingState"].some((cap) => accessory.hasCapability(cap)) && !accessory.hasAttribute("thermostatOperatingState"),
-                initFn: "temperatureSensor",
             },
             {
                 name: "illuminanceSensor",
                 test: (accessory) => accessory.hasCapability("IlluminanceMeasurement"),
-                initFn: "illuminanceSensor",
             },
             {
                 name: "contactSensor",
                 test: (accessory) => accessory.hasCapability("ContactSensor") && !accessory.hasCapability("GarageDoorControl"),
-                initFn: "contactSensor",
             },
             {
                 name: "airQuality",
                 test: (accessory) => accessory.hasCapability("airQuality") || accessory.hasCapability("AirQuality"),
-                initFn: "airQuality",
             },
             {
                 name: "battery",
                 test: (accessory) => accessory.hasCapability("Battery"),
-                initFn: "battery",
             },
             {
                 name: "energyMeter",
                 test: (accessory) => accessory.hasCapability("EnergyMeter"),
                 disable: true,
-                initFn: "energyMeter",
             },
             {
                 name: "powerMeter",
                 test: (accessory) => accessory.hasCapability("PowerMeter"),
                 disable: true,
-                initFn: "powerMeter",
             },
             {
                 name: "thermostat",
                 test: (accessory) => accessory.hasCapability("Thermostat") || accessory.hasCapability("ThermostatOperatingState") || accessory.hasAttribute("thermostatOperatingState"),
-                initFn: "thermostat",
             },
             {
                 name: "alarmSystem",
                 test: (accessory) => accessory.hasAttribute("alarmSystemStatus"),
-                initFn: "alarmSystem",
             },
         ].sort((a, b) => {
             if (a.onlyOnNoGrps && !b.onlyOnNoGrps) return 1;
@@ -241,7 +276,10 @@ export default class HubitatAccessories {
             const hasExcludedCapability = deviceTest.excludeCapabilities?.some((cap) => deviceWrapper.hasCapability(cap));
             const hasExcludedAttribute = deviceTest.excludeAttributes?.some((attr) => deviceWrapper.hasAttribute(attr));
 
-            if (hasExcludedCapability || hasExcludedAttribute) continue;
+            if (hasExcludedCapability || hasExcludedAttribute) {
+                this.logManager.logDebug(`${accessory.displayName} excluded from ${deviceTest.name} due to ` + `${hasExcludedCapability ? "capabilities" : "attributes"}`);
+                continue;
+            }
 
             if (deviceTest.test(deviceWrapper)) {
                 if (deviceTest.excludeDevTypes && deviceTest.excludeDevTypes.some((type) => matchedTypes.some((match) => match.name === type))) {
@@ -250,7 +288,6 @@ export default class HubitatAccessories {
 
                 matchedTypes.push({
                     name: deviceTest.name,
-                    initFn: deviceTest.initFn,
                 });
             }
         }
@@ -258,60 +295,60 @@ export default class HubitatAccessories {
         if (matchedTypes.length === 0) {
             this.logManager.logWarn(`No device types matched for ${accessory.displayName}`);
         } else {
-            this.logManager.logWarn(`${accessory.displayName} | Devices Types Matched: ${matchedTypes.map((t) => t.name).join(", ")}`);
+            // this.logManager.logWarn(`${accessory.displayName} | Devices Types Matched: ${matchedTypes.map((t) => t.name).join(", ")}`);
         }
 
         return matchedTypes;
     }
 
-    /**
-     * Process device updates from the platform
-     * @param {Object} devices - Object containing device data
-     */
-    async processDeviceUpdates(devices) {
+    async processHubitatDevices(deviceList) {
         try {
-            this.logManager.logDebug("Processing device updates...");
-            // Check if devices is an object with deviceList property
-            const deviceList = Array.isArray(devices) ? devices : devices?.deviceList || [];
+            this.logManager.logDebug("Processing Hubitat devices...");
 
-            for (const device of deviceList) {
-                if (this._cachedAccessories.has(device.deviceid)) {
-                    await this.updateAccessory(device);
-                } else {
-                    await this.addAccessory(device);
-                }
-            }
-            this.logManager.logDebug("Device updates processed.");
-        } catch (error) {
-            this.logManager.logError("Error processing device updates:", error);
-        }
-    }
+            // Create sets for diffing
+            const existingDeviceIds = new Set(this._cachedAccessories.keys());
+            const incomingDeviceIds = new Set(deviceList.map((d) => d.deviceid));
 
-    /**
-     * Refresh devices by fetching data from the platform
-     */
-    async refreshDevices() {
-        try {
-            this.logManager.logDebug("Refreshing devices...");
-            const response = await this.client.getDevices();
-            if (response) {
-                // Store device data
-                this.deviceData = response.deviceList || [];
-                // Process updates
-                await this.processDeviceUpdates(response);
-                this.logManager.logDebug("Devices refreshed.");
-            } else {
-                this.logManager.logError("No response received when refreshing devices");
+            // Determine devices to add, update, and remove
+            const toCreate = deviceList.filter((d) => !existingDeviceIds.has(d.deviceid));
+            const toUpdate = deviceList.filter((d) => existingDeviceIds.has(d.deviceid));
+            const toRemove = Array.from(this._cachedAccessories.values()).filter((a) => !incomingDeviceIds.has(a.context.deviceData.deviceid));
+
+            // Log changes
+            this.logManager.logWarn(`Devices to Remove: (${toRemove.length}) ${toRemove.map((a) => a.displayName).join(", ")}`);
+            this.logManager.logInfo(`Devices to Update: (${toUpdate.length})`);
+            this.logManager.logGreen(`Devices to Create: (${toCreate.length}) ${toCreate.map((d) => d.name).join(", ")}`);
+
+            // Process removals
+            for (const accessory of toRemove) {
+                this.removeAccessory(accessory);
             }
+
+            // Process updates
+            for (const device of toUpdate) {
+                await this.updateAccessory(device);
+            }
+
+            // Process additions
+            for (const device of toCreate) {
+                await this.addAccessory(device);
+            }
+
+            // Log statistics
+            // this.logDeviceStatistics();
+            this.logManager.logInfo(`Device Cache Size: (${this._cachedAccessories.size})`);
+
+            return true;
         } catch (error) {
-            this.logManager.logError("Error refreshing devices:", error);
+            this.logManager.logError("Error processing Hubitat devices:", error);
+            return false;
         }
     }
 
     // Add accessory
     async addAccessory(device) {
         try {
-            const accessory = new this.api.platformAccessory(device.name, this.api.hap.uuid.generate(device.deviceid.toString()));
+            let accessory = new this.api.platformAccessory(device.name, this.api.hap.uuid.generate(device.deviceid.toString()));
             accessory.context.deviceData = device;
             accessory.context.lastUpdate = new Date().toLocaleString();
             accessory.context.deviceGroups = [];
@@ -328,16 +365,20 @@ export default class HubitatAccessories {
 
             // Determine device types
             const svcTypes = this.determineDeviceTypes(accessory);
+            accessory.context.deviceTypes = svcTypes.map((type) => type.name);
 
             // Assign services and characteristics
             for (const svc of svcTypes) {
                 if (svc.name) {
                     this.logManager.logDebug(`${accessory.displayName} | Adding service: ${svc.name}`);
-                    this.deviceCharacteristics[svc.initFn](accessory);
+                    this.deviceHandlers[svc.name].configure(accessory);
                 } else {
                     this.logManager.logWarn(`${accessory.displayName} | No service found for ${svc.name}`);
                 }
             }
+
+            // Set the primary service
+            this.setPrimaryService(accessory);
 
             // Add accessory to cache and platform
             this.addAccessoryToCache(accessory);
@@ -364,7 +405,7 @@ export default class HubitatAccessories {
     // Update accessory
     async updateAccessory(device) {
         try {
-            const accessory = this._cachedAccessories.get(device.deviceid);
+            let accessory = this._cachedAccessories.get(device.deviceid);
             if (!accessory) return;
 
             accessory.context.deviceData = device;
@@ -383,14 +424,22 @@ export default class HubitatAccessories {
 
             // Determine device types
             const svcTypes = this.determineDeviceTypes(accessory);
+            accessory.context.deviceTypes = svcTypes.map((type) => type.name);
 
             // Reconfigure services and characteristics
             for (const svc of svcTypes) {
                 if (svc.name) {
-                    this.logManager.logGreen(`${accessory.displayName} | Updating service: ${svc.name}`);
-                    this.deviceCharacteristics[svc.initFn](accessory);
+                    // this.logManager.logGreen(`${accessory.displayName} | Updating service: ${svc.name}`);
+                    if (this.deviceHandlers[svc.name]) {
+                        this.deviceHandlers[svc.name].configure(accessory);
+                    } else {
+                        this.logManager.logWarn(`${accessory.displayName} | No handler found for ${svc.name}`);
+                    }
                 }
             }
+
+            // Set the primary service
+            this.setPrimaryService(accessory);
 
             // Add accessory to cache
             this.addAccessoryToCache(accessory);
@@ -418,62 +467,31 @@ export default class HubitatAccessories {
      * @param {PlatformAccessory} accessory
      */
     configureAccessoryInformation(accessory) {
-        const infoService = accessory.getService(this.Service.AccessoryInformation);
+        accessory.displayName = this.sanitizeName(accessory.displayName);
+        const infoService = accessory.getOrAddService(this.Service.AccessoryInformation);
+        const devData = accessory.context.deviceData;
 
-        if (infoService) {
-            infoService.setCharacteristic(this.Characteristic.Manufacturer, accessory.context.manufacturer).setCharacteristic(this.Characteristic.Model, accessory.context.model).setCharacteristic(this.Characteristic.SerialNumber, accessory.context.serial).setCharacteristic(this.Characteristic.Name, this.sanitizeName(accessory.displayName));
+        infoService
+            .setCharacteristic(this.Characteristic.FirmwareRevision, devData.firmwareVersion)
+            .setCharacteristic(this.Characteristic.Manufacturer, devData.manufacturerName)
+            .setCharacteristic(this.Characteristic.Model, devData.modelName ? `${this.toTitleCase(devData.modelName)}` : "Unknown")
+            .setCharacteristic(this.Characteristic.Name, this.sanitizeName(devData.name))
+            .setCharacteristic(this.Characteristic.SerialNumber, "he_deviceid_" + devData.deviceid)
+            .setCharacteristic(this.Characteristic.HardwareRevision, pluginVersion);
 
-            // Handle Identify event
-            infoService.getCharacteristic(this.Characteristic.Identify).on("set", (value, callback) => {
-                this.logManager.logDebug(`${accessory.displayName} identified with value: ${value}`);
-                // Implement any custom identify behavior here
-                callback(null);
-            });
-        }
+        // Handle Identify event
+        const identifyChar = infoService.getCharacteristic(this.Characteristic.Identify);
+        identifyChar.removeAllListeners("set");
+
+        // Add new listener
+        identifyChar.on("set", (value, callback) => {
+            this.logManager.logDebug(`${accessory.displayName} identified with value: ${value}`);
+            // Implement any custom identify behavior here
+            callback(null);
+        });
     }
 
     bindAccessoryMethods(accessory) {
-        // Service management
-        accessory.getOrAddService = (service, name = undefined, subtype = undefined) => {
-            // Sanitize name and subtype for compatibility
-            if (name) {
-                const oldName = name;
-                name = name.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-                if (oldName !== name) {
-                    this.logManager.logWarn(`Service name sanitized from "${oldName}" to "${name}"`);
-                }
-            }
-            if (subtype) {
-                const oldSubtype = subtype;
-                subtype = subtype.replace(/[^a-zA-Z0-9]/g, "").trim();
-                if (oldSubtype !== subtype) {
-                    this.logManager.logWarn(`Service subtype sanitized from "${oldSubtype}" to "${subtype}"`);
-                }
-            }
-
-            // Find existing service
-            let existingService = subtype ? accessory.getServiceById(service, subtype) : accessory.getService(service);
-
-            // If service exists but name needs updating
-            if (existingService && name) {
-                const existingName = existingService.displayName;
-                if (existingName !== name) {
-                    this.logManager.logWarn(`Updating service name from "${existingName}" to "${name}"`);
-                    existingService.setCharacteristic(this.Characteristic.Name, name);
-                }
-            }
-
-            if (existingService) {
-                return existingService;
-            }
-
-            // Create new service
-            let newService = subtype ? new service(name || accessory.displayName, subtype) : new service(name || accessory.displayName);
-
-            accessory.addService(newService);
-            return newService;
-        };
-
         // Device attribute checks
         accessory.hasAttribute = (attr) => {
             return accessory.context.deviceData && accessory.context.deviceData.attributes && accessory.context.deviceData.attributes[attr];
@@ -553,6 +571,60 @@ export default class HubitatAccessories {
             }
         };
 
+        // Service management
+        accessory.getOrAddService = (service, name = undefined, subtype = undefined) => {
+            // Sanitize name and subtype for compatibility
+            if (name) {
+                const oldName = name;
+                name = name.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+                if (oldName !== name) {
+                    this.logManager.logWarn(`Service name sanitized from "${oldName}" to "${name}"`);
+                }
+            }
+            if (subtype) {
+                const oldSubtype = subtype;
+                subtype = subtype.replace(/[^a-zA-Z0-9]/g, "").trim();
+                if (oldSubtype !== subtype) {
+                    this.logManager.logWarn(`Service subtype sanitized from "${oldSubtype}" to "${subtype}"`);
+                }
+            }
+
+            // Find existing service
+            let existingService = subtype ? accessory.getServiceById(service, subtype) : accessory.getService(service);
+
+            // If service exists but name needs updating
+            if (existingService) {
+                // Handle Name characteristic for existing service
+                if (name) {
+                    // Add or update Name characteristic if name is provided
+                    if (!existingService.testCharacteristic(this.Characteristic.Name) || existingService.getCharacteristic(this.Characteristic.Name).value !== name) {
+                        existingService.setCharacteristic(this.Characteristic.Name, name);
+                    }
+                } else {
+                    // Remove Name characteristic if no name provided
+                    if (existingService.testCharacteristic(this.Characteristic.Name)) {
+                        existingService.removeCharacteristic(existingService.getCharacteristic(this.Characteristic.Name));
+                    }
+                }
+                return existingService;
+            }
+
+            if (existingService) {
+                return existingService;
+            }
+
+            // Create new service
+            let newService = subtype ? new service(name || accessory.displayName, subtype) : new service(name || accessory.displayName);
+
+            // Set Name characteristic if provided
+            if (name) {
+                newService.setCharacteristic(this.Characteristic.Name, name);
+            }
+
+            accessory.addService(newService);
+            return newService;
+        };
+
         accessory.getOrAddCharacteristic = (service, characteristicType, options = {}) => {
             const { preReqChk = null, getHandler = null, setHandler = null, updateHandler = null, props = {}, eventOnly = false, value = null, removeIfMissingPreReq = false, storeAttribute = null } = options;
 
@@ -606,59 +678,8 @@ export default class HubitatAccessories {
             return accessory.services.find((s) => s instanceof service && s.subtype === subtype);
         };
 
-        // Adaptive Lighting Functions
-        accessory.addAdaptiveLightingController = (_service) => {
-            const offset = this.config.adaptive_lighting_offset || 0;
-            const controlMode = this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC;
-            if (_service) {
-                accessory.adaptiveLightingController = new this.api.hap.AdaptiveLightingController(_service, { controllerMode: controlMode, customTemperatureAdjustment: offset });
-                accessory.adaptiveLightingController.on("update", (evt) => {
-                    this.logManager.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
-                });
-                accessory.adaptiveLightingController.on("disable", (evt) => {
-                    this.logManager.logDebug(`[${that.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
-                });
-                accessory.configureController(accessory.adaptiveLightingController);
-                this.logManager.logInfo(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${accessory.context.deviceData.name}]!!!`);
-            } else {
-                this.logManager.logError("Unable to add adaptiveLightingController because the required service parameter was missing...");
-            }
-        };
-
-        accessory.removeAdaptiveLightingController = () => {
-            if (accessory.adaptiveLightingController) {
-                this.logManager.logInfo(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${accessory.context.deviceData.name}]!!!`);
-                accessory.removeController(accessory.adaptiveLightingController);
-                delete accessory["adaptiveLightingController"];
-            }
-        };
-
-        accessory.getAdaptiveLightingController = () => {
-            return accessory.adaptiveLightingController || undefined;
-        };
-
-        accessory.isAdaptiveLightingActive = () => {
-            return accessory.adaptiveLightingController ? accessory.adaptiveLightingController.isAdaptiveLightingActive() : false;
-        };
-
-        accessory.getAdaptiveLightingData = () => {
-            if (accessory.adaptiveLightingController) {
-                return {
-                    isActive: accessory.adaptiveLightingController.disableAdaptiveLighting(),
-                    brightnessMultiplierRange: accessory.adaptiveLightingController.getAdaptiveLightingBrightnessMultiplierRange(),
-                    notifyIntervalThreshold: accessory.adaptiveLightingController.getAdaptiveLightingNotifyIntervalThreshold(),
-                    startTimeOfTransition: accessory.adaptiveLightingController.getAdaptiveLightingStartTimeOfTransition(),
-                    timeOffset: accessory.adaptiveLightingController.getAdaptiveLightingTimeOffset(),
-                    transitionCurve: accessory.adaptiveLightingController.getAdaptiveLightingTransitionCurve(),
-                    updateInterval: accessory.adaptiveLightingController.getAdaptiveLightingUpdateInterval(),
-                    transitionPoint: accessory.adaptiveLightingController.getCurrentAdaptiveLightingTransitionPoint(),
-                };
-            }
-            return undefined;
-        };
-
-        accessory.disableAdaptiveLighting = () => {
-            if (accessory.adaptiveLightingController) accessory.adaptiveLightingController.disableAdaptiveLighting();
+        accessory.cleanServiceDisplayName = (name, type) => {
+            return `${name} ${type}`.replace(/[^a-zA-Z0-9 ]/g, "").trim();
         };
     }
 
@@ -673,26 +694,83 @@ export default class HubitatAccessories {
 
             this.logManager.logAttributeChange(accessory.displayName, update.attribute, accessory.context.deviceData.attributes[update.attribute], update.value);
 
-            const storedItems = this.getAttributeStoreItem(update.attribute, update.deviceid);
-            if (!storedItems) return false;
-
+            // Update the device data
             accessory.context.deviceData.attributes[update.attribute] = update.value;
             accessory.context.lastUpdate = new Date().toLocaleString();
 
-            storedItems.forEach(({ characteristic, updateHandler }) => {
-                if (updateHandler) {
-                    const val = updateHandler(update.value);
-                    if (val !== null && val !== undefined) {
-                        characteristic.updateValue(val);
-                    }
+            // Handle attribute updates
+            const deviceTypes = accessory.context.deviceTypes || [];
+            for (const deviceType of deviceTypes) {
+                const handler = this.deviceHandlers[deviceType];
+                if (handler && typeof handler.handleAttributeUpdate === "function") {
+                    handler.handleAttributeUpdate(accessory, update);
                 }
-            });
+            }
 
             await this.addAccessoryToCache(accessory);
             return true;
         } catch (error) {
             this.logManager.logError(`Error in processDeviceAttributeUpdate:`, error);
             return false;
+        }
+    }
+
+    /**
+     * Sets the primary service for accessories with multiple services based on priority rules
+     * @param {PlatformAccessory} accessory - The accessory to configure primary service for
+     */
+    setPrimaryService(accessory) {
+        // Get all services except AccessoryInformation
+        const services = accessory.services.filter((service) => service.UUID !== this.Service.AccessoryInformation.UUID);
+
+        // If there's only one service or no services, no need to set primary
+        if (services.length <= 1) return;
+
+        // Define service map with service classes and priorities
+        const serviceMap = {
+            [this.Service.SecuritySystem.UUID]: { service: this.Service.SecuritySystem, priority: 100 },
+            [this.Service.Thermostat.UUID]: { service: this.Service.Thermostat, priority: 90 },
+            [this.Service.LockMechanism.UUID]: { service: this.Service.LockMechanism, priority: 80 },
+            [this.Service.GarageDoorOpener.UUID]: { service: this.Service.GarageDoorOpener, priority: 75 },
+            [this.Service.Valve.UUID]: { service: this.Service.Valve, priority: 74 },
+            [this.Service.Window.UUID]: { service: this.Service.Window, priority: 70 },
+            [this.Service.WindowCovering.UUID]: { service: this.Service.WindowCovering, priority: 65 },
+            [this.Service.Lightbulb.UUID]: { service: this.Service.Lightbulb, priority: 60 },
+            [this.Service.Speaker.UUID]: { service: this.Service.Speaker, priority: 58 },
+            [this.Service.Outlet.UUID]: { service: this.Service.Outlet, priority: 55 },
+            [this.Service.Switch.UUID]: { service: this.Service.Switch, priority: 50 },
+            [this.Service.Fanv2.UUID]: { service: this.Service.Fanv2, priority: 45 },
+            [this.Service.StatelessProgrammableSwitch.UUID]: { service: this.Service.StatelessProgrammableSwitch, priority: 42 },
+            [this.Service.MotionSensor.UUID]: { service: this.Service.MotionSensor, priority: 40 },
+            [this.Service.ContactSensor.UUID]: { service: this.Service.ContactSensor, priority: 35 },
+            [this.Service.OccupancySensor.UUID]: { service: this.Service.OccupancySensor, priority: 34 },
+            [this.Service.TemperatureSensor.UUID]: { service: this.Service.TemperatureSensor, priority: 30 },
+            [this.Service.HumiditySensor.UUID]: { service: this.Service.HumiditySensor, priority: 25 },
+            [this.Service.LightSensor.UUID]: { service: this.Service.LightSensor, priority: 24 },
+            [this.Service.LeakSensor.UUID]: { service: this.Service.LeakSensor, priority: 20 },
+            [this.Service.AirQualitySensor.UUID]: { service: this.Service.AirQualitySensor, priority: 18 },
+            [this.Service.CarbonMonoxideSensor.UUID]: { service: this.Service.CarbonMonoxideSensor, priority: 15 },
+            [this.Service.CarbonDioxideSensor.UUID]: { service: this.Service.CarbonDioxideSensor, priority: 10 },
+            [this.Service.Battery.UUID]: { service: this.Service.Battery, priority: 5 },
+        };
+
+        // Sort services by priority (highest first)
+        const sortedServices = services.sort((a, b) => {
+            const priorityA = serviceMap[a.UUID]?.priority || 0;
+            const priorityB = serviceMap[b.UUID]?.priority || 0;
+            return priorityB - priorityA;
+        });
+
+        // Set the highest priority service as primary
+        const primaryService = sortedServices[0];
+        const serviceDef = serviceMap[primaryService.UUID];
+
+        if (serviceDef) {
+            const service = accessory.getService(serviceDef.service);
+            if (service) {
+                service.setPrimaryService(true);
+                this.logManager.logDebug(`Setting primary service for ${accessory.displayName}: ` + `${service.constructor.name} (Priority: ${serviceDef.priority})`);
+            }
         }
     }
 
@@ -711,6 +789,32 @@ export default class HubitatAccessories {
 
     getAttributeStoreItem(attr, devId) {
         return this._attributeLookup[attr] ? this._attributeLookup[attr][devId] : null;
+    }
+
+    logDeviceStatistics() {
+        const deviceCount = this._cachedAccessories.size;
+        const deviceTypes = new Map();
+        const allDeviceTypes = new Set();
+
+        // Iterate through cached accessories
+        for (const accessory of this._cachedAccessories.values()) {
+            // Use stored device types from context
+            const types = accessory.context.deviceTypes || [];
+
+            // Count each device type
+            for (const typeName of types) {
+                deviceTypes.set(typeName, (deviceTypes.get(typeName) || 0) + 1);
+                allDeviceTypes.add(typeName);
+            }
+        }
+
+        // Log the statistics
+        // this.logManager.logTable("Device Statistics", {
+        //     "Total Devices": deviceCount,
+        //     "Device Types": Object.fromEntries(deviceTypes),
+        // });
+
+        this.logManager.logGreen(`${deviceCount} devices loaded and cached.`);
     }
 
     addAccessoryToCache(accessory) {

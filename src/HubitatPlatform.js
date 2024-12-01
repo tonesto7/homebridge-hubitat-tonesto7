@@ -13,7 +13,7 @@ import events from "events";
 export default class HubitatPlatform {
     constructor(log, config, api) {
         // Initialize managers
-        this.logManager = new LogManager(log);
+        this.logManager = new LogManager(log, api.debug);
         this.configManager = new ConfigManager(config, api.user);
         this.versionManager = new VersionManager(this);
 
@@ -42,6 +42,9 @@ export default class HubitatPlatform {
         this.appEvts = new events.EventEmitter();
         this.appEvts.setMaxListeners(50);
 
+        // Set max listeners for Identify characteristic
+        this.api.hap.Characteristic.Identify.setMaxListeners(50);
+
         // Initialize components
         this.client = new HubitatClient(this);
         this.accessories = new HubitatAccessories(this);
@@ -61,7 +64,7 @@ export default class HubitatPlatform {
         // Register platform
         api.on("didFinishLaunching", this.didFinishLaunching.bind(this));
         this.api.on("shutdown", this.handleShutdown.bind(this));
-        this.appEvts.emit("event:plugin_upd_status");
+        // this.appEvts.emit("event:plugin_upd_status");
     }
 
     async didFinishLaunching() {
@@ -73,6 +76,7 @@ export default class HubitatPlatform {
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
+            this.appEvts.emit("event:plugin_upd_status");
 
             // Initialize web server
             const webServerResult = await this.webServer.initialize();
@@ -101,11 +105,15 @@ export default class HubitatPlatform {
                 this.handleLocationUpdate(resp.location);
             }
 
-            // Refresh accessories
-            await this.accessories.refreshDevices(resp.deviceList);
+            // Process devices
+            await this.accessories.processHubitatDevices(resp.deviceList);
 
             // Log completion
             this.logManager.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
+
+            if (this.unknownCapabilities.length > 0) {
+                this.logManager.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
+            }
 
             if (src !== "First Launch") {
                 this.appEvts.emit("event:plugin_upd_status");
@@ -197,5 +205,13 @@ export default class HubitatPlatform {
      */
     toTitleCase(str) {
         return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    }
+
+    generateSrvcName(displayName, appendedStr) {
+        // check if the appendedStr is already in the displayName
+        if (displayName.includes(appendedStr)) {
+            return displayName;
+        }
+        return `${displayName} ${appendedStr}`;
     }
 }

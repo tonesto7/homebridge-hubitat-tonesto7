@@ -4,11 +4,13 @@ export class AlarmSystem {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
+        this.generateSrvcName = platform.generateSrvcName;
     }
 
+    static relevantAttributes = ["alarmSystemStatus"];
     configure(accessory) {
         this.logManager.logDebug(`Configuring Alarm System for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.SecuritySystem);
+        const svc = accessory.getOrAddService(this.Service.SecuritySystem, this.generateSrvcName(accessory.displayName, "Alarm System"));
         const devData = accessory.context.deviceData;
 
         this._configureCurrentState(accessory, svc, devData);
@@ -19,51 +21,87 @@ export class AlarmSystem {
     }
 
     _configureCurrentState(accessory, svc, devData) {
-        const currentStateMappings = {
-            disarmed: this.Characteristic.SecuritySystemCurrentState.DISARMED,
-            armedHome: this.Characteristic.SecuritySystemCurrentState.STAY_ARM,
-            armedAway: this.Characteristic.SecuritySystemCurrentState.AWAY_ARM,
-            armedNight: this.Characteristic.SecuritySystemCurrentState.NIGHT_ARM,
-            intrusion: this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,
-            "intrusion-home": this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,
-            "intrusion-away": this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,
-            "intrusion-night": this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,
-        };
-
         accessory.getOrAddCharacteristic(svc, this.Characteristic.SecuritySystemCurrentState, {
-            getHandler: () => {
-                const val = devData.attributes.alarmSystemStatus;
-                return currentStateMappings[val] || this.Characteristic.SecuritySystemCurrentState.DISARMED;
-            },
-            updateHandler: (value) => currentStateMappings[value] || this.Characteristic.SecuritySystemCurrentState.DISARMED,
+            getHandler: () => this._getSecuritySystemCurrentState(devData.attributes.alarmSystemStatus),
+            updateHandler: (value) => this._getSecuritySystemCurrentState(value),
             storeAttribute: "alarmSystemStatus",
         });
     }
 
     _configureTargetState(accessory, svc, devData) {
-        const targetStateMappings = {
-            disarmed: this.Characteristic.SecuritySystemTargetState.DISARM,
-            armedHome: this.Characteristic.SecuritySystemTargetState.STAY_ARM,
-            armedAway: this.Characteristic.SecuritySystemTargetState.AWAY_ARM,
-            armedNight: this.Characteristic.SecuritySystemTargetState.NIGHT_ARM,
-        };
-
         accessory.getOrAddCharacteristic(svc, this.Characteristic.SecuritySystemTargetState, {
-            getHandler: () => {
-                const val = devData.attributes.alarmSystemStatus;
-                return targetStateMappings[val] || this.Characteristic.SecuritySystemTargetState.DISARM;
-            },
+            getHandler: () => this._getSecuritySystemTargetState(devData.attributes.alarmSystemStatus),
             setHandler: (value) => {
-                const cmdMappings = {
-                    [this.Characteristic.SecuritySystemTargetState.DISARM]: "disarm",
-                    [this.Characteristic.SecuritySystemTargetState.STAY_ARM]: "armHome",
-                    [this.Characteristic.SecuritySystemTargetState.AWAY_ARM]: "armAway",
-                    [this.Characteristic.SecuritySystemTargetState.NIGHT_ARM]: "armNight",
-                };
-                accessory.sendCommand(cmdMappings[value] || "disarm");
+                const cmdStr = this._getSecuritySystemTargetStateCmd(value);
+                accessory.sendCommand(cmdStr);
             },
-            updateHandler: (value) => targetStateMappings[value] || this.Characteristic.SecuritySystemTargetState.DISARM,
+            updateHandler: (value) => this._getSecuritySystemTargetState(value),
             storeAttribute: "alarmSystemStatus",
         });
+    }
+
+    _getSecuritySystemCurrentState(value) {
+        switch (value) {
+            case "armedHome":
+                return this.Characteristic.SecuritySystemCurrentState.STAY_ARM;
+            case "armedNight":
+                return this.Characteristic.SecuritySystemCurrentState.NIGHT_ARM;
+            case "armedAway":
+                return this.Characteristic.SecuritySystemCurrentState.AWAY_ARM;
+            case "intrusion":
+            case "intrusion-home":
+            case "intrusion-away":
+            case "intrusion-night":
+                return this.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED;
+            default:
+                return this.Characteristic.SecuritySystemCurrentState.DISARMED;
+        }
+    }
+
+    _getSecuritySystemTargetState(value) {
+        switch (value) {
+            case "armedHome":
+            case "intrusion-home":
+                return this.Characteristic.SecuritySystemTargetState.STAY_ARM;
+            case "armedNight":
+            case "intrusion-night":
+                return this.Characteristic.SecuritySystemTargetState.NIGHT_ARM;
+            case "armedAway":
+            case "intrusion-away":
+                return this.Characteristic.SecuritySystemTargetState.AWAY_ARM;
+            default:
+                return this.Characteristic.SecuritySystemTargetState.DISARM;
+        }
+    }
+
+    _getSecuritySystemTargetStateCmd(value) {
+        switch (value) {
+            case this.Characteristic.SecuritySystemTargetState.STAY_ARM:
+                return "armHome";
+            case this.Characteristic.SecuritySystemTargetState.AWAY_ARM:
+                return "armAway";
+            case this.Characteristic.SecuritySystemTargetState.NIGHT_ARM:
+                return "armNight";
+            default:
+                return "disarm";
+        }
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`AlarmSystem | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!AlarmSystem.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.SecuritySystem, this.generateSrvcName(accessory.displayName, "Alarm System"));
+        if (!svc) return;
+
+        switch (attribute) {
+            case "alarmSystemStatus":
+                svc.getCharacteristic(this.Characteristic.SecuritySystemCurrentState).updateValue(this._getSecuritySystemCurrentState(value));
+                break;
+            default:
+                this.logManager.logWarn(`AlarmSystem | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }

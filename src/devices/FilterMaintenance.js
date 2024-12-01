@@ -4,11 +4,14 @@ export class FilterMaintenance {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
+        this.generateSrvcName = platform.generateSrvcName;
     }
+
+    static relevantAttributes = ["filterStatus"];
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Filter Maintenance for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.FilterMaintenance);
+        const svc = accessory.getOrAddService(this.Service.FilterMaintenance, this.generateSrvcName(accessory.displayName, "Filter"));
         const devData = accessory.context.deviceData;
 
         this._configureFilterChange(accessory, svc, devData);
@@ -20,17 +23,44 @@ export class FilterMaintenance {
 
     _configureFilterChange(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.FilterChangeIndication, {
-            getHandler: () => (devData.attributes.filterStatus === "replace" ? this.Characteristic.FilterChangeIndication.CHANGE_FILTER : this.Characteristic.FilterChangeIndication.FILTER_OK),
-            updateHandler: (value) => (value === "replace" ? this.Characteristic.FilterChangeIndication.CHANGE_FILTER : this.Characteristic.FilterChangeIndication.FILTER_OK),
+            getHandler: () => this._getFilterChangeIndication(devData.attributes.filterStatus),
+            updateHandler: (value) => this._getFilterChangeIndication(value),
             storeAttribute: "filterStatus",
         });
     }
 
     _configureFilterLife(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.FilterLifeLevel, {
-            getHandler: () => (devData.attributes.filterStatus === "replace" ? 0 : 100),
-            updateHandler: (value) => (value === "replace" ? 0 : 100),
+            getHandler: () => this._getFilterLifeLevel(devData.attributes.filterStatus),
+            updateHandler: (value) => this._getFilterLifeLevel(value),
             storeAttribute: "filterStatus",
         });
+    }
+
+    _getFilterChangeIndication(value) {
+        return value === "replace" ? this.Characteristic.FilterChangeIndication.CHANGE_FILTER : this.Characteristic.FilterChangeIndication.FILTER_OK;
+    }
+
+    _getFilterLifeLevel(value) {
+        if (!value) return 100;
+        return value === "replace" ? 0 : 100;
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`FilterMaintenance | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!FilterMaintenance.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.FilterMaintenance, this.generateSrvcName(accessory.displayName, "Filter"));
+        if (!svc) return;
+
+        switch (attribute) {
+            case "filterStatus":
+                svc.getCharacteristic(this.Characteristic.FilterChangeIndication).updateValue(this._getFilterChangeIndication(value));
+                break;
+            default:
+                this.logManager.logWarn(`FilterMaintenance | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }

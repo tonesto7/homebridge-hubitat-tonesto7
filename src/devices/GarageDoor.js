@@ -4,47 +4,85 @@ export class GarageDoor {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
+        this.generateSrvcName = platform.generateSrvcName;
     }
+
+    static relevantAttributes = ["door"];
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Garage Door for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.GarageDoorOpener);
+        const svc = accessory.getOrAddService(this.Service.GarageDoorOpener, this.generateSrvcName(accessory.displayName, "Garage Door"));
         const devData = accessory.context.deviceData;
 
         this._configureCurrentDoorState(accessory, svc, devData);
         this._configureTargetDoorState(accessory, svc, devData);
-        this._configureObstruction(accessory, svc);
+
+        svc.getCharacteristic(this.Characteristic.ObstructionDetected).updateValue(false);
 
         accessory.context.deviceGroups.push("garage_door");
         return accessory;
     }
 
     _configureCurrentDoorState(accessory, svc, devData) {
-        const currentDoorStateMappings = {
-            open: this.Characteristic.CurrentDoorState.OPEN,
-            opening: this.Characteristic.CurrentDoorState.OPENING,
-            closed: this.Characteristic.CurrentDoorState.CLOSED,
-            closing: this.Characteristic.CurrentDoorState.CLOSING,
-            unknown: this.Characteristic.CurrentDoorState.STOPPED,
-        };
-
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentDoorState, {
-            getHandler: () => currentDoorStateMappings[devData.attributes.door] || this.Characteristic.CurrentDoorState.STOPPED,
-            updateHandler: (value) => currentDoorStateMappings[value] || this.Characteristic.CurrentDoorState.STOPPED,
+            getHandler: () => this._getCurrentDoorState(devData.attributes.door),
+            updateHandler: (value) => this._getCurrentDoorState(value),
             storeAttribute: "door",
         });
     }
 
     _configureTargetDoorState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.TargetDoorState, {
-            getHandler: () => (devData.attributes.door === "closed" ? this.Characteristic.TargetDoorState.CLOSED : this.Characteristic.TargetDoorState.OPEN),
+            getHandler: () => this._getTargetDoorState(devData.attributes.door),
             setHandler: (value) => accessory.sendCommand(value === this.Characteristic.TargetDoorState.OPEN ? "open" : "close"),
-            updateHandler: (value) => (value === "closed" ? this.Characteristic.TargetDoorState.CLOSED : this.Characteristic.TargetDoorState.OPEN),
+            updateHandler: (value) => this._getTargetDoorState(value),
             storeAttribute: "door",
         });
     }
 
-    _configureObstruction(accessory, svc) {
-        accessory.getOrAddCharacteristic(svc, this.Characteristic.ObstructionDetected).updateValue(false);
+    _getCurrentDoorState(value) {
+        switch (value) {
+            case "open":
+                return this.Characteristic.CurrentDoorState.OPEN;
+            case "opening":
+                return this.Characteristic.CurrentDoorState.OPENING;
+            case "closed":
+                return this.Characteristic.CurrentDoorState.CLOSED;
+            case "closing":
+                return this.Characteristic.CurrentDoorState.CLOSING;
+            default:
+                return this.Characteristic.CurrentDoorState.STOPPED;
+        }
+    }
+
+    _getTargetDoorState(value) {
+        switch (value) {
+            case "closed":
+            case "closing":
+                return this.Characteristic.TargetDoorState.CLOSED;
+            case "open":
+            case "opening":
+                return this.Characteristic.TargetDoorState.OPEN;
+            default:
+                return this.Characteristic.TargetDoorState.OPEN;
+        }
+    }
+
+    // Handle attribute updates
+    handleAttributeUpdate(accessory, update) {
+        const { attribute, value } = update;
+        this.logManager.logInfo(`GarageDoor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        if (!GarageDoor.relevantAttributes.includes(attribute)) return;
+
+        const svc = accessory.getService(this.Service.GarageDoorOpener, this.generateSrvcName(accessory.displayName, "Garage Door"));
+        if (!svc) return;
+
+        switch (attribute) {
+            case "door":
+                svc.getCharacteristic(this.Characteristic.CurrentDoorState).updateValue(this._getCurrentDoorState(value));
+                break;
+            default:
+                this.logManager.logWarn(`GarageDoor | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
+        }
     }
 }
