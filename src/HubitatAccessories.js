@@ -173,7 +173,7 @@ export default class HubitatAccessories {
                 test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch") && !["LightBulb", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)),
             },
             {
-                name: "switchDevice",
+                name: "switch",
                 test: (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")),
                 excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl"],
                 excludeAttributes: ["position", "level", "windowShade"],
