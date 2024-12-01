@@ -66,6 +66,7 @@ export class IlluminanceSensor {
     }
 
     _clampValue(value, min, max) {
+        if (value === null || value === undefined || isNaN(value)) return min;
         return Math.min(Math.max(value, min), max);
     }
 

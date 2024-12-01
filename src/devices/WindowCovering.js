@@ -89,7 +89,7 @@ export class WindowCovering {
     }
 
     _clampValue(value, min, max) {
-        if (!value || isNaN(value)) return min;
+        if (value === null || value === undefined || isNaN(value)) return min;
         return Math.max(min, Math.min(value, max));
     }
 

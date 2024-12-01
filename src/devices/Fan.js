@@ -80,7 +80,8 @@ export class Fan {
     }
 
     _clampValue(value, min, max) {
-        if (!value || isNaN(value)) return min;
+        console.log(`Clamping fan value: ${value} between ${min} and ${max}`);
+        if (value === null || value === undefined || isNaN(value)) return min;
         return Math.min(Math.max(value, min), max);
     }
 

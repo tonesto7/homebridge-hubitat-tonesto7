@@ -101,7 +101,7 @@ export class TemperatureSensor {
     }
 
     _clampValue(value, min, max) {
-        if (!value || isNaN(value)) return min;
+        if (value === null || value === undefined || isNaN(value)) return min;
         return Math.min(Math.max(value, min), max);
     }
 
