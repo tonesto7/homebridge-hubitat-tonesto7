@@ -45,13 +45,13 @@ export class Fan {
 
     _configureRotationSpeed(accessory, svc, devData) {
         const spdSteps = this._getSpeedSteps(accessory);
-        const spdAttr = this._getSpeedAttribute(accessory);
-        const spdCmd = accessory.hasCommand("setSpeed") ? "setSpeed" : "setLevel";
+        const spdAttr = "level"; //this._getSpeedAttribute(accessory);
+        const spdCmd = "setLevel"; //accessory.hasCommand("setLevel") ? "setLevel" : "setSpeed";
 
         if (!spdAttr) return;
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.RotationSpeed, {
-            preReqChk: () => accessory.hasAttribute("level") || accessory.hasAttribute("speed"),
+            preReqChk: () => accessory.hasAttribute("level"), // || accessory.hasAttribute("speed"),
             getHandler: () => this._getRotationSpeed(devData.attributes[spdAttr]),
             setHandler: (value) => accessory.sendCommand(spdCmd, [parseInt(value)]),
             updateHandler: (value) => this._getRotationSpeed(value),
@@ -80,7 +80,6 @@ export class Fan {
     }
 
     _clampValue(value, min, max) {
-        console.log(`Clamping fan value: ${value} between ${min} and ${max}`);
         if (value === null || value === undefined || isNaN(value)) return min;
         return Math.min(Math.max(value, min), max);
     }
