@@ -90,7 +90,7 @@ export class AlarmSystem {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`AlarmSystem | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`AlarmSystem | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!AlarmSystem.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.SecuritySystem, this.generateSrvcName(accessory.displayName, "Alarm System"));

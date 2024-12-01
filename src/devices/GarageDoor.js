@@ -71,7 +71,7 @@ export class GarageDoor {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`GarageDoor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`GarageDoor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!GarageDoor.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.GarageDoorOpener, this.generateSrvcName(accessory.displayName, "Garage Door"));

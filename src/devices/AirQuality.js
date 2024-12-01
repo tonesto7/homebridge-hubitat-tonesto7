@@ -104,7 +104,7 @@ export class AirQuality {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`AirQuality | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`AirQuality | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!AirQuality.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.AirQualitySensor, this.generateSrvcName(accessory.displayName, "Air Quality"));

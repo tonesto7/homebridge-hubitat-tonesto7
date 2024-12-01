@@ -64,7 +64,7 @@ export class ContactSensor {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`ContactSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`ContactSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!ContactSensor.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.ContactSensor, this.generateSrvcName(accessory.displayName, "Contact"));

@@ -63,7 +63,7 @@ export class LeakSensor {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`LeakSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`LeakSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!LeakSensor.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.LeakSensor, this.generateSrvcName(accessory.displayName, "Leak"));

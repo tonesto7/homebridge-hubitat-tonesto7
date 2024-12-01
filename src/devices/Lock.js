@@ -61,7 +61,7 @@ export class Lock {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Lock | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Lock | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Lock.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.LockMechanism, this.generateSrvcName(accessory.displayName, "Lock"));

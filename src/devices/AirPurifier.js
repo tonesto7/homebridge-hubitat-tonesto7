@@ -103,7 +103,7 @@ export class AirPurifier {
     // Handle attribute updates
     async handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`AirPurifier | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`AirPurifier | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!AirPurifier.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.AirPurifier);

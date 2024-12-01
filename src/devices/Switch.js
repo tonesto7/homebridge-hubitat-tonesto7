@@ -32,7 +32,7 @@ export class Switch {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Switch | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Switch | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Switch.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.Switch, this.generateSrvcName(accessory.displayName, "Switch"));

@@ -318,7 +318,7 @@ export class Thermostat {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Thermostat | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Thermostat | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Thermostat.relevantAttributes.includes(attribute)) return;
 
         const tstatSvc = accessory.getService(this.Service.Thermostat, this.generateSrvcName(accessory.displayName, "Thermostat"));

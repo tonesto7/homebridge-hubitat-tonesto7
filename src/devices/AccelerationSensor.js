@@ -71,7 +71,7 @@ export class AccelerationSensor {
         const { attribute, value } = update;
         if (!AccelerationSensor.relevantAttributes.includes(attribute)) return;
 
-        this.logManager.logInfo(`AccelerationSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`AccelerationSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
 
         const svc = accessory.getService(this.Service.Lightbulb);
         if (!svc) {

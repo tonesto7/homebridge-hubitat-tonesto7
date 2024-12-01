@@ -496,19 +496,19 @@ export default class HubitatAccessories {
     bindAccessoryMethods(accessory) {
         // Device attribute checks
         accessory.hasAttribute = (attr) => {
-            return accessory.context.deviceData && accessory.context.deviceData.attributes && accessory.context.deviceData.attributes[attr];
+            return accessory.context.deviceData && accessory.context.deviceData.attributes && Object.keys(accessory.context.deviceData.attributes).includes(attr);
         };
 
         accessory.hasCommand = (cmd) => {
-            return accessory.context.deviceData && accessory.context.deviceData.commands && accessory.context.deviceData.commands[cmd];
+            return accessory.context.deviceData && accessory.context.deviceData.commands && Object.keys(accessory.context.deviceData.commands).includes(cmd);
         };
 
         accessory.hasCapability = (cap) => {
-            return accessory.context.deviceData && accessory.context.deviceData.capabilities && cap in accessory.context.deviceData.capabilities;
+            return accessory.context.deviceData && accessory.context.deviceData.capabilities && Object.keys(accessory.context.deviceData.capabilities).includes(cap);
         };
 
         accessory.hasDeviceFlag = (flag) => {
-            return accessory.context.deviceData.deviceflags && Object.keys(accessory.context.deviceData.deviceflags).includes(flag);
+            return accessory.context.deviceData.customflags && Object.keys(accessory.context.deviceData.customflags).includes(flag);
         };
 
         accessory.hasCharacteristic = (service, characteristic) => {

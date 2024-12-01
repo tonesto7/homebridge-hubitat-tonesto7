@@ -78,7 +78,7 @@ export class Battery {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Battery | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Battery | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Battery.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.Battery, this.generateSrvcName(accessory.displayName, "Battery"));

@@ -86,7 +86,7 @@ export class Button {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value, data } = update;
-        this.logManager.logInfo(`Button | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Button | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Button.relevantAttributes.includes(attribute)) return;
 
         switch (attribute) {

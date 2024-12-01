@@ -13,38 +13,39 @@ export class Light {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Light for ${accessory.displayName}`);
+        const devData = accessory.context.deviceData;
 
         // Configure main light service
         const svc = accessory.getOrAddService(this.Service.Lightbulb, this.generateSrvcName(accessory.displayName, "Light"));
 
-        this._configureOnOff(accessory, svc);
-        this._configureBrightness(accessory, svc);
-        this._configureColor(accessory, svc);
-        this._configureColorTemperature(accessory, svc);
+        this._configureOnOff(accessory, svc, devData);
+        this._configureBrightness(accessory, svc, devData);
+        this._configureColor(accessory, svc, devData);
+        this._configureColorTemperature(accessory, svc, devData);
         this._configureAdaptiveLighting(accessory, svc);
 
         // Configure effects if supported
         if (accessory.hasAttribute("lightEffects") && accessory.hasCommand("setEffect") && this.config.allow_led_effects_control) {
-            this._configureEffects(accessory);
+            this._configureEffects(accessory, devData);
         }
 
         accessory.context.deviceGroups.push("light_bulb");
         return accessory;
     }
 
-    _configureOnOff(accessory, svc) {
+    _configureOnOff(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
-            getHandler: () => this._getOnState(accessory.context.deviceData.attributes.switch),
+            getHandler: () => this._getOnState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
             updateHandler: (value) => this._getOnState(value),
             storeAttribute: "switch",
         });
     }
 
-    _configureBrightness(accessory, svc) {
+    _configureBrightness(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Brightness, {
-            preReqChk: () => accessory.hasAttribute("level"),
-            getHandler: () => this._transformBrightnessFromDevice(accessory.context.deviceData.attributes.level),
+            preReqChk: () => accessory.hasAttribute("level") && accessory.hasCommand("setLevel"),
+            getHandler: () => this._transformBrightnessFromDevice(devData.attributes.level),
             setHandler: (value) => accessory.sendCommand("setLevel", [this._transformBrightnessToDevice(value)]),
             updateHandler: (value) => this._transformBrightnessFromDevice(value),
             props: { minStep: 1, minValue: 0, maxValue: 100 },
@@ -53,10 +54,10 @@ export class Light {
         });
     }
 
-    _configureColor(accessory, svc) {
+    _configureColor(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Hue, {
             preReqChk: () => accessory.hasAttribute("hue") && accessory.hasCommand("setHue"),
-            getHandler: () => this._transformHueFromDevice(accessory.context.deviceData.attributes.hue),
+            getHandler: () => this._transformHueFromDevice(devData.attributes.hue),
             setHandler: (value) => accessory.sendCommand("setHue", [this._transformHueToDevice(value)]),
             updateHandler: (value) => this._transformHueFromDevice(value),
             props: { minValue: 0, maxValue: 360 },
@@ -66,7 +67,7 @@ export class Light {
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Saturation, {
             preReqChk: () => accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation"),
-            getHandler: () => accessory.context.deviceData.attributes.saturation,
+            getHandler: () => devData.attributes.saturation,
             setHandler: (value) => accessory.sendCommand("setSaturation", [value]),
             updateHandler: (value) => value,
             props: { minValue: 0, maxValue: 100 },
@@ -75,10 +76,10 @@ export class Light {
         });
     }
 
-    _configureColorTemperature(accessory, svc) {
+    _configureColorTemperature(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.ColorTemperature, {
             preReqChk: () => accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature"),
-            getHandler: () => this._kelvinToMired(accessory.context.deviceData.attributes.colorTemperature),
+            getHandler: () => this._kelvinToMired(devData.attributes.colorTemperature),
             setHandler: (value) => accessory.sendCommand("setColorTemperature", [this._miredToKelvin(value)]),
             updateHandler: (value) => this._kelvinToMired(value),
             props: { minValue: 140, maxValue: 500 },
@@ -150,7 +151,7 @@ export class Light {
         }
     };
 
-    _configureEffects(accessory) {
+    _configureEffects(accessory, devData) {
         const televisionService = accessory.getOrAddService(this.Service.Television, accessory.displayName + " Effects");
 
         // Basic TV characteristics
@@ -302,7 +303,7 @@ export class Light {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Light | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Light | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Light.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.Lightbulb, this.generateSrvcName(accessory.displayName, "Light"));

@@ -69,7 +69,7 @@ export class CarbonMonoxide {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`CarbonMonoxide | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`CarbonMonoxide | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!CarbonMonoxide.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.CarbonMonoxideSensor, this.generateSrvcName(accessory.displayName, "CO"));

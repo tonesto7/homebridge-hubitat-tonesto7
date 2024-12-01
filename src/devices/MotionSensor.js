@@ -63,7 +63,7 @@ export class MotionSensor {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`MotionSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`MotionSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!MotionSensor.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.MotionSensor, this.generateSrvcName(accessory.displayName, "Motion"));

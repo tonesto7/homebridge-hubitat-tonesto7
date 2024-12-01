@@ -34,7 +34,7 @@ export class EnergyMeter {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`EnergyMeter | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`EnergyMeter | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!EnergyMeter.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.CommunityTypes.KilowattHoursService, this.generateSrvcName(accessory.displayName, "Energy"));

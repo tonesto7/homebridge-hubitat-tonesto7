@@ -77,7 +77,7 @@ export class Speaker {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Speaker | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Speaker | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Speaker.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.Speaker, this.generateSrvcName(accessory.displayName, "Speaker"));

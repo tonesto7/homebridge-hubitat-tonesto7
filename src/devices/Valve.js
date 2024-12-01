@@ -52,7 +52,7 @@ export class Valve {
     // Handle attribute updates
     handleAttributeUpdate(accessory, update) {
         const { attribute, value } = update;
-        this.logManager.logInfo(`Valve | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
+        this.logManager.logDebug(`Valve | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
         if (!Valve.relevantAttributes.includes(attribute)) return;
 
         const svc = accessory.getService(this.Service.Valve, this.generateSrvcName(accessory.displayName, "Valve"));
