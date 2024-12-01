@@ -57,7 +57,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '3.0.0'
-//@Field static final String appModifiedFLD = '10-13-2024'
+//@Field static final String appModifiedFLD = '12-1-2024'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -127,9 +127,9 @@ preferences {
         'colorTemperature', 'contact', 'coolingSetpoint', 'door', 'doubleTapped', 'effectName', 'energy', 'fanMode',
         'fanState', 'fanTargetState', 'filterStatus', 'heatingSetpoint', 'held', 'hue', 'humidity', 'illuminance',
         'level', 'lightEffects', 'lock', 'motion', 'mute', 'numberOfButtons', 'outlet', 'pm25', 'position', 'power',
-        'powerSource', 'presence', 'pushed', 'saturation', 'securityKeypad', 'smoke', 'speed', 'switch', 'supportedThermostatModes',
-        'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState', 'thermostatSetPoint',
-        'valve', 'volume', 'water', 'windowShade',
+        'powerSource', 'presence', 'pushed', 'saturation', 'securityKeypad', 'smoke', 'speed', 'switch', 'supportedFanSpeeds',
+        'supportedThermostatModes', 'tamper', 'temperature', 'thermostatFanMode', 'thermostatMode', 'thermostatOperatingState',
+        'thermostatSetPoint', 'valve', 'volume', 'water', 'windowShade',
     ],
     capabilities: [
         'AccelerationSensor', 'Actuator', 'AirQuality', 'Alarm', 'AlarmSystemStatus', 'AudioMute', 'Battery', 'Bulb', 'Button',

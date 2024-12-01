@@ -153,7 +153,7 @@ export default class HubitatAccessories {
             },
             {
                 name: "fan",
-                test: (accessory) => ["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) || (this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || accessory.hasCommand("setSpeed") || accessory.hasAttribute("speed"),
+                test: (accessory) => ["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) || (this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || ["setSpeed", "setLevel"].some((cmd) => accessory.hasCommand(cmd)) || ["speed", "level"].some((attr) => accessory.hasAttribute(attr)),
                 excludeCapabilities: ["Thermostat", "ThermostatOperatingState"],
             },
             {
