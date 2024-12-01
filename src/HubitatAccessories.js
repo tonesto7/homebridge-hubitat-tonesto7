@@ -1,6 +1,6 @@
 // HubitatAccessories.js
 
-import { platformName, pluginVersion } from "./StaticConfig.js";
+import { platformName, pluginName, pluginVersion } from "./StaticConfig.js";
 
 import { AccelerationSensor } from "./devices/AccelerationSensor.js";
 import { AirPurifier } from "./devices/AirPurifier.js";
@@ -382,7 +382,7 @@ export default class HubitatAccessories {
 
             // Add accessory to cache and platform
             this.addAccessoryToCache(accessory);
-            this.api.registerPlatformAccessories(this.platformName, this.platformName, [accessory]);
+            this.api.registerPlatformAccessories(pluginName, platformName, [accessory]);
 
             return accessory;
         } catch (error) {
@@ -441,6 +441,8 @@ export default class HubitatAccessories {
             // Set the primary service
             this.setPrimaryService(accessory);
 
+            this.api.updatePlatformAccessories([accessory]);
+
             // Add accessory to cache
             this.addAccessoryToCache(accessory);
 
@@ -455,7 +457,7 @@ export default class HubitatAccessories {
     removeAccessory(accessory) {
         try {
             this.logManager.logWarn(`Removing accessory: ${accessory.displayName}`);
-            this.api.unregisterPlatformAccessories(this.platformName, this.platformName, [accessory]);
+            this.api.unregisterPlatformAccessories(pluginName, platformName, [accessory]);
             this.removeAccessoryFromCache(accessory);
         } catch (err) {
             this.logManager.logError(`Error removing accessory ${accessory.displayName}:`, err);
