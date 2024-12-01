@@ -30,9 +30,9 @@ export class Fan {
     _configureActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Active, {
             preReqChk: () => accessory.hasAttribute("switch"),
-            getHandler: () => (devData.attributes.switch === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE),
+            getHandler: () => this._getActiveState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
-            updateHandler: (value) => (value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE),
+            updateHandler: (value) => this._getActiveState(value),
             storeAttribute: "switch",
             removeIfMissingPreReq: true,
         });
@@ -41,8 +41,8 @@ export class Fan {
     _configureCurrentFanState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentFanState, {
             preReqChk: () => accessory.hasAttribute("switch"),
-            getHandler: () => (devData.attributes.switch === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE),
-            updateHandler: (value) => (value === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE),
+            getHandler: () => this._getCurrentFanState(devData.attributes.switch),
+            updateHandler: (value) => this._getCurrentFanState(value),
             storeAttribute: "switch",
             removeIfMissingPreReq: true,
         });
@@ -137,6 +137,14 @@ export class Fan {
         return supportedSpeeds[Math.min(index, supportedSpeeds.length - 1)];
     }
 
+    _getActiveState(value) {
+        return value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
+    }
+
+    _getCurrentFanState(value) {
+        return value === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE;
+    }
+
     _getLevelValue(value) {
         if (value === null || value === undefined || isNaN(value)) return 0;
         return Math.min(Math.max(parseInt(value), 0), 100);
@@ -152,7 +160,8 @@ export class Fan {
 
         switch (attribute) {
             case "switch":
-                svc.getCharacteristic(this.Characteristic.Active).updateValue(value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE);
+                svc.getCharacteristic(this.Characteristic.Active).updateValue(this._getActiveState(value));
+                svc.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this._getCurrentFanState(value));
                 break;
             case "speed": {
                 const supportedSpeeds = this._getSupportedSpeeds(accessory);
