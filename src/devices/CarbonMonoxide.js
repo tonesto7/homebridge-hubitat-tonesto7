@@ -11,7 +11,6 @@ export class CarbonMonoxide {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring CO Sensor for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "CO");
         const svc = accessory.getOrAddService(this.Service.CarbonMonoxideSensor, accessory.displayName, "co");
         const devData = accessory.context.deviceData;
 

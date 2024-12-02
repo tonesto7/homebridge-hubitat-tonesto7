@@ -8,8 +8,7 @@ export class Humidifier {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Humidifier for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Humidifier");
-        const svc = accessory.getOrAddService(this.Service.HumidifierDehumidifier, svcName);
+        const svc = accessory.getOrAddService(this.Service.HumidifierDehumidifier, accessory.displayName, "humidifier");
         const devData = accessory.context.deviceData;
 
         this._configureTargetState(accessory, svc);

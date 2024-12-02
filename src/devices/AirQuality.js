@@ -11,7 +11,6 @@ export class AirQuality {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Air Quality Sensor for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Air Quality");
         const svc = accessory.getOrAddService(this.Service.AirQualitySensor, accessory.displayName, "airQuality");
         const devData = accessory.context.deviceData;
 

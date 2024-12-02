@@ -12,7 +12,6 @@ export class AirPurifier {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Air Purifier for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Air Purifier");
         const svc = accessory.getOrAddService(this.Service.AirPurifier, accessory.displayName, "airPurifier");
         const devData = accessory.context.deviceData;
 

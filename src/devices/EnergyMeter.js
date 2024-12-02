@@ -12,7 +12,6 @@ export class EnergyMeter {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Energy Meter for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Energy");
         const svc = accessory.getOrAddService(this.CommunityTypes.KilowattHoursService, accessory.displayName, "energy");
         const devData = accessory.context.deviceData;
 
