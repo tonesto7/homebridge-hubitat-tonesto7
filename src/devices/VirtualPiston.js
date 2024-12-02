@@ -11,9 +11,7 @@ export class VirtualPiston {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Virtual Piston for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Piston");
-        const svc = accessory.getOrAddService(this.Service.Switch);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.Switch, accessory.displayName, "piston");
         const devData = accessory.context.deviceData;
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {

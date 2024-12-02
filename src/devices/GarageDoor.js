@@ -12,8 +12,7 @@ export class GarageDoor {
     configure(accessory) {
         this.logManager.logDebug(`Configuring Garage Door for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Garage Door");
-        const svc = accessory.getOrAddService(this.Service.GarageDoorOpener);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.GarageDoorOpener, accessory.displayName, "garageDoor");
         const devData = accessory.context.deviceData;
 
         this._configureCurrentDoorState(accessory, svc, devData);

@@ -13,9 +13,7 @@ export class Light {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Light for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Light");
-        const svc = accessory.getOrAddService(this.Service.Lightbulb);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.Lightbulb, accessory.displayName, "light");
         const devData = accessory.context.deviceData;
 
         this._configureOnOff(accessory, svc, devData);

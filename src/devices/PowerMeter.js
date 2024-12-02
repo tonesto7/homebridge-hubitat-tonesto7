@@ -12,9 +12,7 @@ export class PowerMeter {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Power Meter for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Power");
-        const svc = accessory.getOrAddService(this.CommunityTypes.WattService);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.CommunityTypes.WattService, accessory.displayName, "power");
         const devData = accessory.context.deviceData;
 
         accessory.getOrAddCharacteristic(svc, this.CommunityTypes.Watts, {

@@ -13,8 +13,7 @@ export class AccelerationSensor {
     configure(accessory) {
         this.logManager.logDebug(`Configuring Acceleration Sensor for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Acceleration");
-        const svc = accessory.getOrAddService(this.Service.MotionSensor);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.MotionSensor, accessory.displayName, "acceleration");
         const devData = accessory.context.deviceData;
 
         this._configureMotionDetected(accessory, svc, devData);

@@ -11,9 +11,7 @@ export class SmokeDetector {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Smoke Detector for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Smoke");
-        const svc = accessory.getOrAddService(this.Service.SmokeSensor);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.SmokeSensor, accessory.displayName, "smoke");
         const devData = accessory.context.deviceData;
 
         this._configureSmokeDetected(accessory, svc, devData);

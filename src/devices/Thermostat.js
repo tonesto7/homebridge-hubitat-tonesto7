@@ -11,9 +11,7 @@ export class Thermostat {
     static relevantAttributes = ["temperature", "thermostatOperatingState", "thermostatMode", "coolingSetpoint", "heatingSetpoint", "thermostatFanMode", "humidity"];
     configure(accessory) {
         this.logManager.logDebug(`Configuring Thermostat for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Thermostat");
-        const svc = accessory.getOrAddService(this.Service.Thermostat);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.Thermostat, accessory.displayName, "thermostat");
 
         // Configure characteristics
         this._configureCurrentTemp(accessory, svc);

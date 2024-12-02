@@ -12,9 +12,7 @@ export class TemperatureSensor {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Temperature Sensor for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Temperature");
-        const svc = accessory.getOrAddService(this.Service.TemperatureSensor);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.TemperatureSensor, accessory.displayName, "temperature");
         const devData = accessory.context.deviceData;
 
         this._configureCurrentTemperature(accessory, svc, devData);

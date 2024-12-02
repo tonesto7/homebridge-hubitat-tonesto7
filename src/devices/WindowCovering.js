@@ -11,9 +11,7 @@ export class WindowCovering {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Window Covering for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Shade");
-        const svc = accessory.getOrAddService(this.Service.WindowCovering);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.WindowCovering, accessory.displayName, "shade");
         const devData = accessory.context.deviceData;
         const positionAttr = accessory.hasCommand("setPosition") ? "position" : "level";
 

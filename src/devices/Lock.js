@@ -11,9 +11,7 @@ export class Lock {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Lock for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Lock");
-        const svc = accessory.getOrAddService(this.Service.LockMechanism);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.LockMechanism, accessory.displayName, "lock");
         const devData = accessory.context.deviceData;
 
         this._configureCurrentState(accessory, svc, devData);

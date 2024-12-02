@@ -11,8 +11,7 @@ export class AlarmSystem {
     configure(accessory) {
         this.logManager.logDebug(`Configuring Alarm System for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Alarm System");
-        const svc = accessory.getOrAddService(this.Service.SecuritySystem);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.SecuritySystem, accessory.displayName, "alarmSystem");
         const devData = accessory.context.deviceData;
 
         this._configureCurrentState(accessory, svc, devData);

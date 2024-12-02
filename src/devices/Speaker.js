@@ -13,9 +13,7 @@ export class Speaker {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Speaker for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Speaker");
-        const svc = accessory.getOrAddService(this.Service.Speaker);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.Speaker, accessory.displayName, "speaker");
         const devData = accessory.context.deviceData;
 
         this.isSonos = devData.manufacturerName === "Sonos";

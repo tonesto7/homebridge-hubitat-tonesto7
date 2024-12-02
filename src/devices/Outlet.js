@@ -11,9 +11,7 @@ export class Outlet {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Outlet for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Outlet");
-        const svc = accessory.getOrAddService(this.Service.Outlet);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.Outlet, accessory.displayName, "outlet");
         const devData = accessory.context.deviceData;
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {

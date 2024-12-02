@@ -11,9 +11,7 @@ export class VirtualMode {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Virtual Mode for ${accessory.displayName}`);
-        const svcName = this.generateSrvcName(accessory.displayName, "Mode");
-        const svc = accessory.getOrAddService(this.Service.Switch);
-        svc.setCharacteristic(this.Characteristic.Name, svcName);
+        const svc = accessory.getOrAddService(this.Service.Switch, accessory.displayName, "mode");
         const devData = accessory.context.deviceData;
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
