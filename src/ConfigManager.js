@@ -17,11 +17,8 @@ export default class ConfigManager {
     }
 
     isConfigValid() {
-        // check all of these:  config === undefined || config === null || config.app_url_local === undefined || config.app_url_local === null || config.app_url_cloud === undefined || config.app_url_cloud === null || config.app_id === undefined || config.app_id === null
-        if (this.config === undefined || this.config === null || this.config.app_url_local === undefined || this.config.app_url_local === null || this.config.app_url_cloud === undefined || this.config.app_url_cloud === null || this.config.app_id === undefined || this.config.app_id === null) {
-            return false;
-        }
-        return true;
+        const requiredFields = ["app_url_local", "app_url_cloud", "app_id"];
+        return this.config != null && requiredFields.every((field) => this.config[field] != null);
     }
 
     /**

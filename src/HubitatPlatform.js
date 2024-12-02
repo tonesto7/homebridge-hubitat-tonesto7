@@ -145,7 +145,8 @@ export default class HubitatPlatform {
     }
 
     validateConfig(config) {
-        return !config || !config.app_url_local || !config.app_url_cloud || !config.app_id;
+        const requiredFields = ["app_url_local", "app_url_cloud", "app_id"];
+        return config != null && requiredFields.every((field) => config[field] != null);
     }
 
     // Expose logging methods for backwards compatibility
