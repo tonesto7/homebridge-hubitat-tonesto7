@@ -20,7 +20,6 @@ export class Valve {
         // Valve Type (defaults to 0 - Generic Valve)
         svc.setCharacteristic(this.Characteristic.ValveType, 0);
 
-        accessory.context.deviceGroups.push("valve");
         return accessory;
     }
 

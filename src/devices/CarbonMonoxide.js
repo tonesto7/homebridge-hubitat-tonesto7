@@ -18,7 +18,6 @@ export class CarbonMonoxide {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("carbon_monoxide");
         return accessory;
     }
 

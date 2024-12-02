@@ -19,7 +19,6 @@ export class GarageDoor {
 
         svc.getCharacteristic(this.Characteristic.ObstructionDetected).updateValue(false);
 
-        accessory.context.deviceGroups.push("garage_door");
         return accessory;
     }
 

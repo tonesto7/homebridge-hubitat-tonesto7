@@ -22,7 +22,6 @@ export class Speaker {
         this._configureVolume(accessory, svc, devData);
         this._configureMute(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("speaker_device");
         return accessory;
     }
 

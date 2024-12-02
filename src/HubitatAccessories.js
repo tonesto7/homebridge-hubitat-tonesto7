@@ -122,9 +122,7 @@ export default class HubitatAccessories {
             },
             {
                 name: "light",
-                test: (accessory) =>
-                    accessory.hasCapability("Switch") &&
-                    (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || (this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")) || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl")),
+                test: (accessory) => accessory.hasCapability("Switch") && (accessory.hasCapability("LightBulb") || accessory.hasCapability("Bulb") || accessory.hasLightLabel() || ["saturation", "hue", "colorTemperature"].some((attr) => accessory.hasAttribute(attr)) || accessory.hasCapability("ColorControl")),
             },
             {
                 name: "airPurifier",
@@ -153,8 +151,7 @@ export default class HubitatAccessories {
             },
             {
                 name: "fan",
-                test: (accessory) => ["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) || (this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan")) || ["setSpeed"].some((cmd) => accessory.hasCommand(cmd)) || ["speed"].some((attr) => accessory.hasAttribute(attr)),
-                excludeCapabilities: ["Thermostat", "ThermostatOperatingState"],
+                test: (accessory) => (["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && ((accessory.hasCommand("setSpeed") && accessory.hasAttribute("speed")) || (accessory.hasAttribute("level") && accessory.hasCommand("setLevel")))) || accessory.hasFanLabel(),
             },
             {
                 name: "virtualMode",
@@ -170,12 +167,13 @@ export default class HubitatAccessories {
             },
             {
                 name: "outlet",
-                test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch") && !["LightBulb", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)),
+                test: (accessory) => accessory.hasCapability("Outlet") && accessory.hasCapability("Switch"),
+                excludeCapabilities: ["LightBulb", "Bulb", "Button", "Fan", "FanControl"],
             },
             {
                 name: "switch",
-                test: (accessory) => accessory.hasCapability("Switch") && !["LightBulb", "Outlet", "Bulb", "Button", "Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && !(this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light")),
-                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl"],
+                test: (accessory) => accessory.hasCapability("Switch") && !accessory.hasLightLabel(),
+                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl", "Fan", "FanControl", "LightBulb", "Bulb", "Outlet", "Button"],
                 excludeAttributes: ["position", "level", "windowShade"],
             },
             {
@@ -265,6 +263,8 @@ export default class HubitatAccessories {
             hasCapability: (capability) => accessory.context.deviceData.capabilities && Object.keys(accessory.context.deviceData.capabilities).includes(capability),
             hasAttribute: (attribute) => accessory.context.deviceData.attributes && Object.keys(accessory.context.deviceData.attributes).includes(attribute),
             hasCommand: (command) => accessory.context.deviceData.commands && Object.keys(accessory.context.deviceData.commands).includes(command),
+            hasLightLabel: () => this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"),
+            hasFanLabel: () => this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan"),
             context: accessory.context,
         };
 
@@ -351,11 +351,7 @@ export default class HubitatAccessories {
             let accessory = new this.api.platformAccessory(device.name, this.api.hap.uuid.generate(device.deviceid.toString()));
             accessory.context.deviceData = device;
             accessory.context.lastUpdate = new Date().toLocaleString();
-            accessory.context.deviceGroups = [];
             accessory.context.uuid = accessory.UUID;
-            accessory.context.manufacturer = device.manufacturerName || "Unknown";
-            accessory.context.model = device.modelName || "Unknown";
-            accessory.context.serial = device.serialNumber || device.zigbeeId || device.deviceNetworkId || device.id || "Unknown";
 
             // Bind accessory methods
             this.bindAccessoryMethods(accessory);
@@ -408,13 +404,12 @@ export default class HubitatAccessories {
             let accessory = this._cachedAccessories.get(device.deviceid);
             if (!accessory) return;
 
+            // Reset active services tracking
+            accessory.activeServices = new Set();
+
+            // Update device data
             accessory.context.deviceData = device;
             accessory.context.lastUpdate = new Date().toLocaleString();
-            accessory.context.deviceGroups = [];
-
-            accessory.context.manufacturer = device.manufacturerName || "Unknown";
-            accessory.context.model = device.modelName || "Unknown";
-            accessory.context.serial = device.serialNumber || device.zigbeeId || device.deviceNetworkId || device.id || "Unknown";
 
             // Bind accessory methods
             this.bindAccessoryMethods(accessory);
@@ -437,6 +432,9 @@ export default class HubitatAccessories {
                     }
                 }
             }
+
+            // Clean up unused services
+            this.cleanupUnusedServices(accessory);
 
             // Set the primary service
             this.setPrimaryService(accessory);
@@ -494,7 +492,9 @@ export default class HubitatAccessories {
     }
 
     bindAccessoryMethods(accessory) {
-        // Device attribute checks
+        // Set of active services
+        accessory.activeServices = new Set();
+
         accessory.hasAttribute = (attr) => {
             return accessory.context.deviceData && accessory.context.deviceData.attributes && Object.keys(accessory.context.deviceData.attributes).includes(attr);
         };
@@ -510,6 +510,9 @@ export default class HubitatAccessories {
         accessory.hasDeviceFlag = (flag) => {
             return accessory.context.deviceData.customflags && Object.keys(accessory.context.deviceData.customflags).includes(flag);
         };
+
+        accessory.hasLightLabel = () => this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light");
+        accessory.hasFanLabel = () => this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan");
 
         accessory.hasCharacteristic = (service, characteristic) => {
             const existingService = accessory.getService(service);
@@ -591,6 +594,10 @@ export default class HubitatAccessories {
                 }
             }
 
+            // Track this service as active
+            const serviceId = subtype ? `${service.UUID} ${subtype}` : service.UUID;
+            accessory.activeServices.add(serviceId);
+
             // Find existing service
             let existingService = subtype ? accessory.getServiceById(service, subtype) : accessory.getService(service);
 
@@ -608,10 +615,6 @@ export default class HubitatAccessories {
                         existingService.removeCharacteristic(existingService.getCharacteristic(this.Characteristic.Name));
                     }
                 }
-                return existingService;
-            }
-
-            if (existingService) {
                 return existingService;
             }
 
@@ -683,6 +686,27 @@ export default class HubitatAccessories {
         accessory.cleanServiceDisplayName = (name, type) => {
             return `${name} ${type}`.replace(/[^a-zA-Z0-9 ]/g, "").trim();
         };
+    }
+
+    cleanupUnusedServices(accessory) {
+        // Always keep AccessoryInformation service
+        const infoServiceUUID = this.Service.AccessoryInformation.UUID;
+
+        // Get all current services except AccessoryInformation
+        const currentServices = accessory.services.filter((service) => service.UUID !== infoServiceUUID);
+
+        // Remove services that weren't used in this update
+        for (const service of currentServices) {
+            const serviceId = service.subtype ? `${service.UUID} ${service.subtype}` : service.UUID;
+
+            if (!accessory.activeServices.has(serviceId)) {
+                this.logManager.logWarn(`Removing unused service from ${accessory.displayName}: ` + `${service.constructor.name}${service.subtype ? ` (${service.subtype})` : ""}`);
+                accessory.removeService(service);
+            }
+        }
+
+        // Clean up the tracking Set
+        delete accessory.activeServices;
     }
 
     // Process device attribute update

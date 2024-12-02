@@ -19,7 +19,6 @@ export class ContactSensor {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("contact_sensor");
         return accessory;
     }
 

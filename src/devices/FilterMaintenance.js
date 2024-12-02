@@ -17,7 +17,6 @@ export class FilterMaintenance {
         this._configureFilterChange(accessory, svc, devData);
         this._configureFilterLife(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("filter_maintenance");
         return accessory;
     }
 

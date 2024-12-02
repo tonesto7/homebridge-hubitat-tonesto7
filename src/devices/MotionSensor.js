@@ -18,7 +18,6 @@ export class MotionSensor {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("motion_sensor");
         return accessory;
     }
 

@@ -60,7 +60,6 @@ export class Button {
             accessory.getOrAddCharacteristic(btnService, this.Characteristic.ServiceLabelIndex).updateValue(btnNum);
         }
 
-        accessory.context.deviceGroups.push("button");
         return accessory;
     }
 

@@ -31,7 +31,6 @@ export class Thermostat {
             this._configureFan(accessory);
         }
 
-        accessory.context.deviceGroups.push("thermostat");
         return accessory;
     }
 

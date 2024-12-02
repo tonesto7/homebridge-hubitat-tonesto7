@@ -22,7 +22,6 @@ export class AirQuality {
         this._configurePM25Density(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("air_quality");
         return accessory;
     }
 

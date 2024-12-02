@@ -16,7 +16,6 @@ export class Humidifier {
         this._configureActive(accessory, svc, devData);
         this._configureWaterLevel(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("humidifier");
         return accessory;
     }
 

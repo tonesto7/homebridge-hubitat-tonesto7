@@ -21,7 +21,6 @@ export class PowerMeter {
             storeAttribute: "power",
         });
 
-        accessory.context.deviceGroups.push("power_meter");
         return accessory;
     }
 

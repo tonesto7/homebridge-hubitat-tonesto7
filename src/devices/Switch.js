@@ -21,7 +21,6 @@ export class Switch {
             storeAttribute: "switch",
         });
 
-        accessory.context.deviceGroups.push("switch");
         return accessory;
     }
 

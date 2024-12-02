@@ -18,7 +18,6 @@ export class HumiditySensor {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("humidity_sensor");
         return accessory;
     }
 

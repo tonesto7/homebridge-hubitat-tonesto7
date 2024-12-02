@@ -19,7 +19,6 @@ export class TemperatureSensor {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("temperature_sensor");
         return accessory;
     }
 
@@ -52,8 +51,8 @@ export class TemperatureSensor {
 
     _getCurrentTemperature(value) {
         const props = this._getTemperatureProps();
-        if (!value || isNaN(value)) {
-            this.logManager.logWarn(`Invalid temperature value: ${value}`);
+        if (value === null || value === undefined || isNaN(value)) {
+            this.logManager.logWarn(`TemperatureSensor | ${accessory.displayName} | Invalid temperature value: ${value}`);
             return props.minValue;
         }
 

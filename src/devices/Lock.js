@@ -17,7 +17,6 @@ export class Lock {
         this._configureCurrentState(accessory, svc, devData);
         this._configureTargetState(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("lock");
         return accessory;
     }
 

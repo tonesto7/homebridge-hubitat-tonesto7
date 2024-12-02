@@ -18,7 +18,6 @@ export class SmokeDetector {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("smoke_detector");
         return accessory;
     }
 

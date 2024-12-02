@@ -20,7 +20,6 @@ export class WindowCovering {
         this._configurePositionState(accessory, svc, devData);
         this._configureObstruction(accessory, svc);
 
-        accessory.context.deviceGroups.push("window_shade");
         return accessory;
     }
 

@@ -25,7 +25,6 @@ export class VirtualMode {
             storeAttribute: "switch",
         });
 
-        accessory.context.deviceGroups.push("virtual_mode");
         return accessory;
     }
 

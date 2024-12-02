@@ -21,7 +21,6 @@ export class EnergyMeter {
             storeAttribute: "energy",
         });
 
-        accessory.context.deviceGroups.push("energy_meter");
         return accessory;
     }
 

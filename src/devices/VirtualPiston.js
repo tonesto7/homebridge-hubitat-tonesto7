@@ -28,7 +28,6 @@ export class VirtualPiston {
             storeAttribute: "switch",
         });
 
-        accessory.context.deviceGroups.push("virtual_piston");
         return accessory;
     }
 

@@ -23,7 +23,6 @@ export class Fan {
             this._configureLevelControl(accessory, svc, devData);
         }
 
-        accessory.context.deviceGroups.push("fan");
         return accessory;
     }
 

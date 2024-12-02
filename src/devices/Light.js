@@ -29,7 +29,6 @@ export class Light {
             this._configureEffects(accessory, devData);
         }
 
-        accessory.context.deviceGroups.push("light_bulb");
         return accessory;
     }
 

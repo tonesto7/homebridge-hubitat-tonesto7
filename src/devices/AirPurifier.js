@@ -19,7 +19,6 @@ export class AirPurifier {
         this._configureCurrentAirPurifierState(accessory, svc, devData);
         this._configureFanOscillationMode(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("air_purifier");
         return accessory;
     }
 

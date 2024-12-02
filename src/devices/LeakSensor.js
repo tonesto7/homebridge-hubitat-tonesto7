@@ -18,7 +18,6 @@ export class LeakSensor {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("water_sensor");
         return accessory;
     }
 

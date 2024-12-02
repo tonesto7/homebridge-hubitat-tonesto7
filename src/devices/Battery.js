@@ -18,7 +18,6 @@ export class Battery {
         this._configureStatusLowBattery(accessory, svc, devData);
         this._configureChargingState(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("battery");
         return accessory;
     }
 

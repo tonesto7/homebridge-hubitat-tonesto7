@@ -19,7 +19,6 @@ export class AccelerationSensor {
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
-        accessory.context.deviceGroups.push("acceleration_sensor");
         return accessory;
     }
 
