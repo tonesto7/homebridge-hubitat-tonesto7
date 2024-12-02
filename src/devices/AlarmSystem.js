@@ -22,8 +22,6 @@ export class AlarmSystem {
     _configureCurrentState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.SecuritySystemCurrentState, {
             getHandler: () => this._getSecuritySystemCurrentState(devData.attributes.alarmSystemStatus),
-            updateHandler: (value) => this._getSecuritySystemCurrentState(value),
-            storeAttribute: "alarmSystemStatus",
         });
     }
 
@@ -34,8 +32,6 @@ export class AlarmSystem {
                 const cmdStr = this._getSecuritySystemTargetStateCmd(value);
                 accessory.sendCommand(cmdStr);
             },
-            updateHandler: (value) => this._getSecuritySystemTargetState(value),
-            storeAttribute: "alarmSystemStatus",
         });
     }
 

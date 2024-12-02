@@ -23,17 +23,13 @@ export class IlluminanceSensor {
     _configureAmbientLight(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentAmbientLightLevel, {
             getHandler: () => this._getCurrentAmbientLightLevel(devData.attributes.illuminance),
-            updateHandler: (value) => this._getCurrentAmbientLightLevel(value),
             props: this._getCurrentAmbientLightLevelProps(),
-            storeAttribute: "illuminance",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActiveState(devData.status),
-            updateHandler: (value) => this._getStatusActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class IlluminanceSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

@@ -25,17 +25,13 @@ export class TemperatureSensor {
     _configureCurrentTemperature(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentTemperature, {
             getHandler: () => this._getCurrentTemperature(devData.attributes.temperature),
-            updateHandler: (value) => this._getCurrentTemperature(value),
             props: this._getTemperatureProps(),
-            storeAttribute: "temperature",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getActiveState(devData.status),
-            updateHandler: (value) => this._getActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -43,8 +39,6 @@ export class TemperatureSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

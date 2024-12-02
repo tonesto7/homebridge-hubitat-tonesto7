@@ -36,8 +36,6 @@ export class Light {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => this._getOnState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
-            updateHandler: (value) => this._getOnState(value),
-            storeAttribute: "switch",
         });
     }
 
@@ -46,9 +44,7 @@ export class Light {
             preReqChk: () => accessory.hasAttribute("level") && accessory.hasCommand("setLevel"),
             getHandler: () => this._transformBrightnessFromDevice(devData.attributes.level),
             setHandler: (value) => accessory.sendCommand("setLevel", [this._transformBrightnessToDevice(value)]),
-            updateHandler: (value) => this._transformBrightnessFromDevice(value),
             props: { minStep: 1, minValue: 0, maxValue: 100 },
-            storeAttribute: "level",
             removeIfMissingPreReq: true,
         });
     }
@@ -58,9 +54,7 @@ export class Light {
             preReqChk: () => accessory.hasAttribute("hue") && accessory.hasCommand("setHue"),
             getHandler: () => this._transformHueFromDevice(devData.attributes.hue),
             setHandler: (value) => accessory.sendCommand("setHue", [this._transformHueToDevice(value)]),
-            updateHandler: (value) => this._transformHueFromDevice(value),
             props: { minValue: 0, maxValue: 360 },
-            storeAttribute: "hue",
             removeIfMissingPreReq: true,
         });
 
@@ -68,9 +62,7 @@ export class Light {
             preReqChk: () => accessory.hasAttribute("saturation") && accessory.hasCommand("setSaturation"),
             getHandler: () => devData.attributes.saturation,
             setHandler: (value) => accessory.sendCommand("setSaturation", [value]),
-            updateHandler: (value) => value,
             props: { minValue: 0, maxValue: 100 },
-            storeAttribute: "saturation",
             removeIfMissingPreReq: true,
         });
     }
@@ -80,9 +72,7 @@ export class Light {
             preReqChk: () => accessory.hasAttribute("colorTemperature") && accessory.hasCommand("setColorTemperature"),
             getHandler: () => this._kelvinToMired(devData.attributes.colorTemperature),
             setHandler: (value) => accessory.sendCommand("setColorTemperature", [this._miredToKelvin(value)]),
-            updateHandler: (value) => this._kelvinToMired(value),
             props: { minValue: 140, maxValue: 500 },
-            storeAttribute: "colorTemperature",
             removeIfMissingPreReq: true,
         });
     }
@@ -100,12 +90,12 @@ export class Light {
                     this.logManager.logDebug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
                 });
                 accessory.adaptiveLightingController.on("disable", (evt) => {
-                    this.logManager.logDebug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Disabled Event: `, evt);
+                    this.logManager.logDebug(`${accessory.displayName} | Adaptive Lighting Controller Disabled Event: `, evt);
                 });
                 accessory.configureController(accessory.adaptiveLightingController);
-                this.logManager.logInfo(`Adaptive Lighting Supported... Assigning Adaptive Lighting Controller to [${accessory.context.deviceData.name}]!!!`);
+                this.logManager.logInfo(`${accessory.displayName} | Adaptive Lighting Supported... Assigning Adaptive Lighting Controller`);
             } else {
-                this.logManager.logError("Unable to add adaptiveLightingController because the required service parameter was missing...");
+                this.logManager.logError(`${accessory.displayName} | Unable to add adaptiveLightingController because the required service parameter was missing...`);
             }
         } else if (!canUseAL && this._getAdaptiveLightingController(accessory)) {
             this._removeAdaptiveLightingController(accessory);
@@ -126,6 +116,17 @@ export class Light {
 
     _isAdaptiveLightingActive = (accessory) => {
         return accessory.adaptiveLightingController ? accessory.adaptiveLightingController.isAdaptiveLightingActive() : false;
+    };
+
+    _pauseAdaptiveLighting = (accessory, manualControl = false) => {
+        const offWhenOn = this.config.adaptive_lighting_off_when_on || false;
+        const hasController = accessory.adaptiveLightingController ? true : false;
+        const isActive = this._isAdaptiveLightingActive(accessory);
+
+        if (hasController && isActive && manualControl && offWhenOn) {
+            this._disableAdaptiveLighting(accessory);
+            this.logManager.logInfo(`${accessory.displayName} | Adaptive Lighting disabled due to manual control`);
+        }
     };
 
     // _getAdaptiveLightingData = (accessory) => {
@@ -160,8 +161,6 @@ export class Light {
 
         accessory.getOrAddCharacteristic(televisionService, this.Characteristic.ConfiguredName, {
             getHandler: () => `${accessory.displayName} Effects`,
-            updateHandler: () => `${accessory.displayName} Effects`,
-            storeAttribute: "name",
         });
 
         // Active state
@@ -181,11 +180,6 @@ export class Light {
                     }
                 }
             },
-            updateHandler: () => {
-                const effectState = this._getCurrentEffect(accessory);
-                return effectState.isActive ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE;
-            },
-            storeAttribute: "effectName",
         });
 
         // Effect Selection
@@ -196,12 +190,6 @@ export class Light {
                 return effectNumber ? parseInt(effectNumber) : 0;
             },
             setHandler: (value) => accessory.sendCommand("setEffect", [value]),
-            updateHandler: () => {
-                const effectState = this._getCurrentEffect(accessory);
-                const effectNumber = Object.entries(effectState.effects).find(([_, name]) => name === effectState.name)?.[0];
-                return effectNumber ? parseInt(effectNumber) : 0;
-            },
-            storeAttribute: "effectName",
         });
 
         // Required Remote Key characteristic
@@ -213,11 +201,6 @@ export class Light {
         // Handle lightEffects attribute updates to rebuild input sources when effects change
         accessory.getOrAddCharacteristic(televisionService, this.Characteristic.Name, {
             getHandler: () => `${accessory.displayName} Effects`,
-            updateHandler: () => {
-                this._updateEffects(accessory, televisionService);
-                return `${accessory.displayName} Effects`;
-            },
-            storeAttribute: "lightEffects",
         });
     }
 

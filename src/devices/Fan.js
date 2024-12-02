@@ -31,8 +31,6 @@ export class Fan {
             preReqChk: () => accessory.hasAttribute("switch"),
             getHandler: () => this._getActiveState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
-            updateHandler: (value) => this._getActiveState(value),
-            storeAttribute: "switch",
             removeIfMissingPreReq: true,
         });
     }
@@ -41,8 +39,6 @@ export class Fan {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentFanState, {
             preReqChk: () => accessory.hasAttribute("switch"),
             getHandler: () => this._getCurrentFanState(devData.attributes.switch),
-            updateHandler: (value) => this._getCurrentFanState(value),
-            storeAttribute: "switch",
             removeIfMissingPreReq: true,
         });
     }
@@ -58,13 +54,11 @@ export class Fan {
                 const speedString = this._rotationSpeedToSpeed(value, supportedSpeeds);
                 return accessory.sendCommand("setSpeed", [speedString]);
             },
-            updateHandler: (value) => this._speedToRotationSpeed(value, supportedSpeeds),
             props: {
                 minStep: Math.floor(100 / (supportedSpeeds.length - 1)),
                 minValue: 0,
                 maxValue: 100,
             },
-            storeAttribute: "speed",
         });
     }
 

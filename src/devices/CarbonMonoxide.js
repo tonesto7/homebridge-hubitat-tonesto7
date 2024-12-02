@@ -24,16 +24,12 @@ export class CarbonMonoxide {
     _configureCoDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonMonoxideDetected, {
             getHandler: () => this._getCoDetectedState(devData.attributes.carbonMonoxide),
-            updateHandler: (value) => this._getCoDetectedState(value),
-            storeAttribute: "carbonMonoxide",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getActiveState(devData.status),
-            updateHandler: (value) => this._getActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class CarbonMonoxide {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

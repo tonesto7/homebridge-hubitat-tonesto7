@@ -40,20 +40,6 @@ export class Button {
                 props: { validValues },
                 eventOnly: true,
                 getHandler: () => null,
-                updateHandler: (value) => {
-                    // Value would be 'pushed', 'held', 'doubleTapped'
-                    switch (value) {
-                        case "pushed":
-                            return this.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS;
-                        case "held":
-                            return this.Characteristic.ProgrammableSwitchEvent.LONG_PRESS;
-                        case "doubleTapped":
-                            return this.Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS;
-                        default:
-                            return null;
-                    }
-                },
-                storeAttribute: "button",
             });
 
             // Add ServiceLabelIndex characteristic

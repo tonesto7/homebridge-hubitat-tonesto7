@@ -26,9 +26,7 @@ export class WindowCovering {
     _configureCurrentPosition(accessory, svc, devData, positionAttr) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentPosition, {
             getHandler: () => this._getCurrentPosition(devData.attributes[positionAttr]),
-            updateHandler: (value) => this._getCurrentPosition(value),
             props: this._getCoveringProps(),
-            storeAttribute: positionAttr,
         });
     }
 
@@ -43,16 +41,12 @@ export class WindowCovering {
                     accessory.sendCommand(accessory.hasCommand("setPosition") ? "setPosition" : "setLevel", [v]);
                 }
             },
-            updateHandler: (value) => (value <= 2 ? 0 : value >= 98 ? 100 : value),
-            storeAttribute: positionAttr,
         });
     }
 
     _configurePositionState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.PositionState, {
             getHandler: () => this._getPositionState(devData.attributes.windowShade),
-            updateHandler: (value) => this._getPositionState(value),
-            storeAttribute: "windowShade",
         });
     }
 
@@ -105,15 +99,10 @@ export class WindowCovering {
             case "windowShade":
                 svc.getCharacteristic(this.Characteristic.PositionState).updateValue(this._getPositionState(value));
                 break;
-
             case "position":
-                svc.getCharacteristic(this.Characteristic.CurrentPosition).updateValue(this._getCurrentPosition(value));
-                break;
-
             case "level":
                 svc.getCharacteristic(this.Characteristic.CurrentPosition).updateValue(this._getCurrentPosition(value));
                 break;
-
             default:
                 this.logManager.logWarn(`WindowCovering | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
         }

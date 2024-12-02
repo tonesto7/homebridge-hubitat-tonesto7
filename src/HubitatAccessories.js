@@ -54,7 +54,7 @@ export default class HubitatAccessories {
 
         // Initialize accessory cache and utilities
         this._cachedAccessories = new Map();
-        this._attributeLookup = {};
+
         this._buttonMap = {};
         this._commandTimers = new Map();
         this._lastCommandTimes = new Map();
@@ -631,7 +631,7 @@ export default class HubitatAccessories {
         };
 
         accessory.getOrAddCharacteristic = (service, characteristicType, options = {}) => {
-            const { preReqChk = null, getHandler = null, setHandler = null, updateHandler = null, props = {}, eventOnly = false, value = null, removeIfMissingPreReq = false, storeAttribute = null } = options;
+            const { preReqChk = null, getHandler = null, setHandler = null, props = {}, eventOnly = false, value = null, removeIfMissingPreReq = false, storeAttribute = null } = options;
 
             if (preReqChk && !preReqChk()) {
                 if (removeIfMissingPreReq) {
@@ -671,10 +671,6 @@ export default class HubitatAccessories {
                 characteristic.updateValue(value);
             }
 
-            if (storeAttribute) {
-                this.storeCharacteristicItem(storeAttribute, accessory.context.deviceData.deviceid, characteristic, updateHandler);
-            }
-
             return characteristic;
         };
 
@@ -702,6 +698,30 @@ export default class HubitatAccessories {
             if (!accessory.activeServices.has(serviceId)) {
                 this.logManager.logWarn(`Removing unused service from ${accessory.displayName}: ` + `${service.constructor.name}${service.subtype ? ` (${service.subtype})` : ""}`);
                 accessory.removeService(service);
+            } else {
+                // Service is active, clean up unused characteristics
+                // const characteristics = service.characteristics.slice(); // Create a copy to avoid modification during iteration
+                // for (const characteristic of characteristics) {
+                //     // Skip mandatory characteristics
+                //     if (service.constructor.MANDATORY_CHARACTERISTICS && service.constructor.MANDATORY_CHARACTERISTICS.includes(characteristic.constructor)) {
+                //         continue;
+                //     }
+                //     // Skip Name characteristic if service has a name
+                //     if (characteristic.constructor === this.Characteristic.Name && service.displayName !== accessory.displayName) {
+                //         continue;
+                //     }
+                //     // Skip event-only characteristics
+                //     if (characteristic.eventOnlyCharacteristic) {
+                //         continue;
+                //     }
+                //     // Skip characteristics that have listeners
+                //     if ((characteristic._events.get && characteristic._events.get.length > 0) || (characteristic._events.set && characteristic._events.set.length > 0)) {
+                //         continue;
+                //     }
+                //     // Remove characteristic if it reaches this point
+                //     this.logManager.logWarn(`Removing unused characteristic from ${accessory.displayName} ` + `${service.constructor.name}: ${characteristic.constructor.name}`);
+                //     service.removeCharacteristic(characteristic);
+                // }
             }
         }
 
@@ -798,23 +818,6 @@ export default class HubitatAccessories {
                 this.logManager.logDebug(`Setting primary service for ${accessory.displayName}: ` + `${service.constructor.name} (Priority: ${serviceDef.priority})`);
             }
         }
-    }
-
-    storeCharacteristicItem(attr, devId, char, updateHandler) {
-        if (!this._attributeLookup[attr]) {
-            this._attributeLookup[attr] = {};
-        }
-        if (!this._attributeLookup[attr][devId]) {
-            this._attributeLookup[attr][devId] = [];
-        }
-        this._attributeLookup[attr][devId].push({
-            characteristic: char,
-            updateHandler: updateHandler,
-        });
-    }
-
-    getAttributeStoreItem(attr, devId) {
-        return this._attributeLookup[attr] ? this._attributeLookup[attr][devId] : null;
     }
 
     logDeviceStatistics() {

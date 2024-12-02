@@ -35,9 +35,7 @@ export class Speaker {
                     this.logManager.logError(`Invalid volume value: ${value}`);
                 }
             },
-            updateHandler: (value) => this._getVolume(value),
             props: this._getVolumeProps(),
-            storeAttribute: this.levelAttr,
         });
     }
 
@@ -46,8 +44,6 @@ export class Speaker {
             preReqChk: () => accessory.hasCapability("AudioMute"),
             getHandler: () => this._getMuteState(devData.attributes.mute),
             setHandler: (value) => accessory.sendCommand(value ? "mute" : "unmute"),
-            updateHandler: (value) => this._getMuteState(value),
-            storeAttribute: "mute",
         });
     }
 

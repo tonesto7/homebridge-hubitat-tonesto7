@@ -25,8 +25,6 @@ export class GarageDoor {
     _configureCurrentDoorState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentDoorState, {
             getHandler: () => this._getCurrentDoorState(devData.attributes.door),
-            updateHandler: (value) => this._getCurrentDoorState(value),
-            storeAttribute: "door",
         });
     }
 
@@ -34,8 +32,6 @@ export class GarageDoor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.TargetDoorState, {
             getHandler: () => this._getTargetDoorState(devData.attributes.door),
             setHandler: (value) => accessory.sendCommand(value === this.Characteristic.TargetDoorState.OPEN ? "open" : "close"),
-            updateHandler: (value) => this._getTargetDoorState(value),
-            storeAttribute: "door",
         });
     }
 

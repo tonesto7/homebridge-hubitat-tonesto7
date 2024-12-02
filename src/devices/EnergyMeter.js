@@ -17,8 +17,6 @@ export class EnergyMeter {
 
         accessory.getOrAddCharacteristic(svc, this.CommunityTypes.KilowattHours, {
             getHandler: () => this._getEnergyValue(devData.attributes.energy),
-            updateHandler: (value) => this._getEnergyValue(value),
-            storeAttribute: "energy",
         });
 
         return accessory;

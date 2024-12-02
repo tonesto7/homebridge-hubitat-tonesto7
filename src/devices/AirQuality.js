@@ -28,24 +28,18 @@ export class AirQuality {
     _configureAirQuality(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.AirQuality, {
             getHandler: () => this._getAirQualityState(devData.attributes.airQualityIndex),
-            updateHandler: (value) => this._getAirQualityState(value),
-            storeAttribute: "airQualityIndex",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActive(devData.status),
-            updateHandler: (value) => this._getStatusActive(value),
-            storeAttribute: "status",
         });
     }
 
     _configureStatusLowBattery(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusLowBattery, {
             getHandler: () => this._getStatusLowBattery(devData.attributes.battery),
-            updateHandler: (value) => this._getStatusLowBattery(value),
-            storeAttribute: "battery",
         });
     }
 
@@ -53,8 +47,6 @@ export class AirQuality {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.PM2_5Density, {
             preReqChk: () => accessory.hasAttribute("pm25"),
             getHandler: () => this._getPM25Density(devData.attributes.pm25),
-            updateHandler: (value) => this._getPM25Density(value),
-            storeAttribute: "pm25",
             removeIfMissingPreReq: true,
         });
     }
@@ -63,8 +55,6 @@ export class AirQuality {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getStatusTampered(devData.attributes.tamper),
-            updateHandler: (value) => this._getStatusTampered(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

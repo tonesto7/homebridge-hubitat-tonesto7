@@ -26,8 +26,6 @@ export class Valve {
     _configureInUse(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.InUse, {
             getHandler: () => this._getInUseState(devData.attributes.valve),
-            updateHandler: (value) => this._getInUseState(value),
-            storeAttribute: "valve",
         });
     }
 
@@ -35,8 +33,6 @@ export class Valve {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Active, {
             getHandler: () => this._getActiveState(devData.attributes.valve),
             setHandler: (value) => accessory.sendCommand(value ? "open" : "close"),
-            updateHandler: (value) => this._getActiveState(value),
-            storeAttribute: "valve",
         });
     }
 

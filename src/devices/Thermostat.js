@@ -39,8 +39,7 @@ export class Thermostat {
         const maxCurrentTemp = 100; // 212°F
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentTemperature, {
             getHandler: () => this._clampValue(this._convertToHomeKitTemp(accessory.context.deviceData.attributes.temperature), minCurrentTemp, maxCurrentTemp),
-            updateHandler: (value) => this._clampValue(this._convertToHomeKitTemp(value), maxCurrentTemp, maxCurrentTemp),
-            storeAttribute: "temperature",
+            props: { minValue: minCurrentTemp, maxValue: maxCurrentTemp },
         });
     }
 
@@ -59,16 +58,13 @@ export class Thermostat {
                     accessory.sendCommand(command, [temp]);
                 }
             },
-            updateHandler: (value) => this._clampValue(this._convertToHomeKitTemp(value), minTargetTemp, maxTargetTemp),
-            storeAttribute: "thermostatSetpoint",
+            props: { minValue: minTargetTemp, maxValue: maxTargetTemp },
         });
     }
 
     _configureCurrentState(accessory, svc) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentHeatingCoolingState, {
             getHandler: () => this._getCurrentState(accessory.context.deviceData.attributes.thermostatOperatingState),
-            updateHandler: (value) => this._getCurrentState(value),
-            storeAttribute: "thermostatOperatingState",
         });
     }
 
@@ -80,9 +76,7 @@ export class Thermostat {
                 const mode = this._convertHomeKitModeToHubitat(value);
                 accessory.sendCommand("setThermostatMode", [mode]);
             },
-            updateHandler: (value) => this._getTargetState(value),
             props: { validValues: validModes },
-            storeAttribute: "thermostatMode",
         });
     }
 
@@ -96,8 +90,7 @@ export class Thermostat {
         if (accessory.hasCapability("RelativeHumidityMeasurement")) {
             accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentRelativeHumidity, {
                 getHandler: () => this._clampValue(accessory.context.deviceData.attributes.humidity, minHumidity, maxHumidity),
-                updateHandler: (value) => this._clampValue(value, minHumidity, maxHumidity),
-                storeAttribute: "humidity",
+                props: { minValue: minHumidity, maxValue: maxHumidity },
             });
         }
     }
@@ -115,8 +108,7 @@ export class Thermostat {
                 const temp = this._convertFromHomeKitTemp(this._clampValue(value, minCoolingThresholdCelcius, maxCoolingThresholdCelcius));
                 accessory.sendCommand("setCoolingSetpoint", [temp]);
             },
-            updateHandler: (value) => this._clampValue(this._convertToHomeKitTemp(value), minCoolingThresholdCelcius, maxCoolingThresholdCelcius),
-            storeAttribute: "coolingSetpoint",
+            props: { minValue: minCoolingThresholdCelcius, maxValue: maxCoolingThresholdCelcius },
         });
 
         // Heating Threshold (0-25°C)
@@ -131,8 +123,7 @@ export class Thermostat {
                 const temp = this._convertFromHomeKitTemp(this._clampValue(value, minHeatingThresholdCelcius, maxHeatingThresholdCelcius));
                 accessory.sendCommand("setHeatingSetpoint", [temp]);
             },
-            updateHandler: (value) => this._clampValue(this._convertToHomeKitTemp(value), minHeatingThresholdCelcius, maxHeatingThresholdCelcius),
-            storeAttribute: "heatingSetpoint",
+            props: { minValue: minHeatingThresholdCelcius, maxValue: maxHeatingThresholdCelcius },
         });
     }
 
@@ -142,21 +133,15 @@ export class Thermostat {
         accessory.getOrAddCharacteristic(fanSvc, this.Characteristic.Active, {
             getHandler: () => this._getFanActive(accessory.context.deviceData.attributes.thermostatFanMode),
             setHandler: (value) => accessory.sendCommand(value === this.Characteristic.Active.ACTIVE ? "fanOn" : "fanAuto"),
-            updateHandler: (value) => this._getFanActive(value),
-            storeAttribute: "thermostatFanMode",
         });
 
         accessory.getOrAddCharacteristic(fanSvc, this.Characteristic.CurrentFanState, {
             getHandler: () => this._getCurrentFanState(accessory.context.deviceData.attributes.thermostatFanMode),
-            updateHandler: (value) => this._getCurrentFanState(value),
-            storeAttribute: "thermostatFanMode",
         });
 
         accessory.getOrAddCharacteristic(fanSvc, this.Characteristic.TargetFanState, {
             getHandler: () => this._getTargetFanState(accessory.context.deviceData.attributes.thermostatFanMode),
             setHandler: (value) => accessory.sendCommand(value === this.Characteristic.TargetFanState.AUTO ? "fanAuto" : "fanOn"),
-            updateHandler: (value) => this._getTargetFanState(value),
-            storeAttribute: "thermostatFanMode",
         });
     }
 

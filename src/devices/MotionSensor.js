@@ -24,16 +24,12 @@ export class MotionSensor {
     _configureMotionDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.MotionDetected, {
             getHandler: () => this._getMotionState(devData.attributes.motion),
-            updateHandler: (value) => this._getMotionState(value),
-            storeAttribute: "motion",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActiveState(devData.status),
-            updateHandler: (value) => this._getStatusActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class MotionSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

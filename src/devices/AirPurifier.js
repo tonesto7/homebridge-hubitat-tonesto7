@@ -30,10 +30,6 @@ export class AirPurifier {
             setHandler: (value) => {
                 accessory.sendCommand(value ? "on" : "off");
             },
-            updateHandler: (value) => {
-                return this._getActiveState(value);
-            },
-            storeAttribute: "switch",
         });
     }
 
@@ -42,10 +38,6 @@ export class AirPurifier {
             getHandler: () => {
                 return this._getAirPurifierState(devData.attributes.switch);
             },
-            updateHandler: (value) => {
-                return this._getAirPurifierState(value);
-            },
-            storeAttribute: "switch",
         });
     }
 
@@ -58,10 +50,6 @@ export class AirPurifier {
                 const cmd = this._getFanOscillationModeCmd(value);
                 accessory.sendCommand("setFanMode", cmd);
             },
-            updateHandler: (value) => {
-                return this._getFanOscillationMode(value);
-            },
-            storeAttribute: "fanMode",
         });
     }
 

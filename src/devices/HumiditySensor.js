@@ -24,16 +24,12 @@ export class HumiditySensor {
     _configureCurrentHumidity(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentRelativeHumidity, {
             getHandler: () => this._getCurrentHumidity(devData.attributes.humidity),
-            updateHandler: (value) => this._getCurrentHumidity(value),
-            storeAttribute: "humidity",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActiveState(devData.status),
-            updateHandler: (value) => this._getStatusActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class HumiditySensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

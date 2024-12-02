@@ -25,24 +25,18 @@ export class CarbonDioxide {
     _configureCo2Detected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonDioxideDetected, {
             getHandler: () => this._getCo2DetectedState(devData.attributes.carbonDioxide),
-            updateHandler: (value) => this._getCo2DetectedState(value),
-            storeAttribute: "carbonDioxideMeasurement",
         });
     }
 
     _configureCo2Level(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonDioxideLevel, {
             getHandler: () => this._getCo2Level(devData.attributes.carbonDioxidcarbonDioxideeMeasurement),
-            updateHandler: (value) => this._getCo2Level(value),
-            storeAttribute: "carbonDioxideMeasurement",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getActiveState(devData.status),
-            updateHandler: (value) => this._getActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -50,8 +44,6 @@ export class CarbonDioxide {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

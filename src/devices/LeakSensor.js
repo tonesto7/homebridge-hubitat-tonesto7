@@ -24,16 +24,12 @@ export class LeakSensor {
     _configureLeakDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.LeakDetected, {
             getHandler: () => this._getLeakState(devData.attributes.water),
-            updateHandler: (value) => this._getLeakState(value),
-            storeAttribute: "water",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActiveState(devData.status),
-            updateHandler: (value) => this._getStatusActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class LeakSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

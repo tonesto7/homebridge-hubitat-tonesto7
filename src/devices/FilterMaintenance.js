@@ -23,16 +23,12 @@ export class FilterMaintenance {
     _configureFilterChange(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.FilterChangeIndication, {
             getHandler: () => this._getFilterChangeIndication(devData.attributes.filterStatus),
-            updateHandler: (value) => this._getFilterChangeIndication(value),
-            storeAttribute: "filterStatus",
         });
     }
 
     _configureFilterLife(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.FilterLifeLevel, {
             getHandler: () => this._getFilterLifeLevel(devData.attributes.filterStatus),
-            updateHandler: (value) => this._getFilterLifeLevel(value),
-            storeAttribute: "filterStatus",
         });
     }
 

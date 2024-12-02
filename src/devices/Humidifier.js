@@ -32,8 +32,6 @@ export class Humidifier {
     _configureHumidity(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentRelativeHumidity, {
             getHandler: () => this._clampValue(parseFloat(devData.attributes.humidity), 0, 100),
-            updateHandler: (value) => this._clampValue(value, 0, 100),
-            storeAttribute: "humidity",
         });
     }
 
@@ -41,16 +39,12 @@ export class Humidifier {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.Active, {
             getHandler: () => (devData.attributes.switch === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
-            updateHandler: (value) => (value === "on" ? this.Characteristic.Active.ACTIVE : this.Characteristic.Active.INACTIVE),
-            storeAttribute: "switch",
         });
     }
 
     _configureWaterLevel(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.WaterLevel, {
             getHandler: () => this._clampValue(parseFloat(devData.attributes.waterLevel), 0, 100),
-            updateHandler: (value) => this._clampValue(value, 0, 100),
-            storeAttribute: "waterLevel",
         });
     }
 

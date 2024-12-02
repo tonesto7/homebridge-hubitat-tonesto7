@@ -24,16 +24,12 @@ export class PresenceSensor {
     _configureOccupancyDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.OccupancyDetected, {
             getHandler: () => this._getPresenceState(devData.attributes.presence),
-            updateHandler: (value) => this._getPresenceState(value),
-            storeAttribute: "presence",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActiveState(devData.status),
-            updateHandler: (value) => this._getStatusActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class PresenceSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

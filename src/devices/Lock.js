@@ -23,8 +23,6 @@ export class Lock {
     _configureCurrentState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.LockCurrentState, {
             getHandler: () => this._getLockCurrentState(devData.attributes.lock),
-            updateHandler: (value) => this._getLockCurrentState(value),
-            storeAttribute: "lock",
         });
     }
 
@@ -32,8 +30,6 @@ export class Lock {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.LockTargetState, {
             getHandler: () => this._getLockTargetState(devData.attributes.lock),
             setHandler: (value) => accessory.sendCommand(value === this.Characteristic.LockTargetState.SECURED ? "lock" : "unlock"),
-            updateHandler: (value) => this._getLockTargetState(value),
-            storeAttribute: "lock",
         });
     }
 

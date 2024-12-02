@@ -25,7 +25,6 @@ export class VirtualPiston {
                     }, 1000);
                 }
             },
-            storeAttribute: "switch",
         });
 
         return accessory;

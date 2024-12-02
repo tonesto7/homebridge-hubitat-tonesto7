@@ -25,16 +25,12 @@ export class ContactSensor {
     _configureContactState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.ContactSensorState, {
             getHandler: () => this._getContactState(devData.attributes.contact),
-            updateHandler: (value) => this._getContactState(value),
-            storeAttribute: "contact",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getActiveState(devData.status),
-            updateHandler: (value) => this._getActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -42,8 +38,6 @@ export class ContactSensor {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

@@ -21,8 +21,6 @@ export class VirtualMode {
                     accessory.sendCommand("mode");
                 }
             },
-            updateHandler: (value) => this._getOnState(value),
-            storeAttribute: "switch",
         });
 
         return accessory;

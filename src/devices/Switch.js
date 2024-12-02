@@ -17,8 +17,6 @@ export class Switch {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => this._getOnState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
-            updateHandler: (value) => this._getOnState(value),
-            storeAttribute: "switch",
         });
 
         return accessory;

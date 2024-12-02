@@ -24,16 +24,12 @@ export class SmokeDetector {
     _configureSmokeDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.SmokeDetected, {
             getHandler: () => this._getSmokeState(devData.attributes.smoke),
-            updateHandler: (value) => this._getSmokeState(value),
-            storeAttribute: "smoke",
         });
     }
 
     _configureStatusActive(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusActive, {
             getHandler: () => this._getStatusActiveState(devData.status),
-            updateHandler: (value) => this._getStatusActiveState(value),
-            storeAttribute: "status",
         });
     }
 
@@ -41,8 +37,6 @@ export class SmokeDetector {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusTampered, {
             preReqChk: () => accessory.hasCapability("TamperAlert"),
             getHandler: () => this._getTamperedState(devData.attributes.tamper),
-            updateHandler: (value) => this._getTamperedState(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

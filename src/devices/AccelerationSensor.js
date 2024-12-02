@@ -25,8 +25,6 @@ export class AccelerationSensor {
     _configureMotionDetected(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.MotionDetected, {
             getHandler: () => this._getMotionDetected(devData.attributes.acceleration),
-            updateHandler: (value) => this._getMotionDetected(value),
-            storeAttribute: "acceleration",
         });
     }
 
@@ -36,8 +34,6 @@ export class AccelerationSensor {
                 const status = devData.status;
                 return this._getStatusActive(status);
             },
-            updateHandler: (value) => this._getStatusActive(value),
-            storeAttribute: "status",
         });
     }
 
@@ -47,8 +43,6 @@ export class AccelerationSensor {
             getHandler: () => {
                 return this._getStatusTampered(devData.attributes.tamper);
             },
-            updateHandler: (value) => this._getStatusTampered(value),
-            storeAttribute: "tamper",
             removeIfMissingPreReq: true,
         });
     }

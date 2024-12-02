@@ -24,24 +24,18 @@ export class Battery {
     _configureBatteryLevel(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.BatteryLevel, {
             getHandler: () => this._getBatteryLevel(devData.attributes.battery),
-            updateHandler: (value) => this._getBatteryLevel(value),
-            storeAttribute: "battery",
         });
     }
 
     _configureStatusLowBattery(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.StatusLowBattery, {
             getHandler: () => this._getLowBatteryStatus(devData.attributes.battery),
-            updateHandler: (value) => this._getLowBatteryStatus(value),
-            storeAttribute: "battery",
         });
     }
 
     _configureChargingState(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.ChargingState, {
             getHandler: () => this._getChargingState(devData.attributes.powerSource),
-            updateHandler: (value) => this._getChargingState(value),
-            storeAttribute: "powerSource",
         });
     }
 

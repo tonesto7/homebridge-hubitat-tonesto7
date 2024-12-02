@@ -17,14 +17,10 @@ export class Outlet {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => this._getOnState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
-            updateHandler: (value) => this._getOnState(value),
-            storeAttribute: "switch",
         });
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.OutletInUse, {
             getHandler: () => this._getInUseState(devData.attributes.switch),
-            updateHandler: (value) => this._getInUseState(value),
-            storeAttribute: "switch",
         });
 
         return accessory;

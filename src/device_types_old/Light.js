@@ -320,6 +320,7 @@ export default class Light extends HubitatBaseAccessory {
 
     // Value Transformations
     transformBrightnessFromDevice(value) {
+        if (value === null || value === undefined || isNaN(value)) this.logManager.logWarn(`Invalid brightness value: ${value}`);
         if (this.config.round_levels) {
             if (value < 5) return 0;
             if (value > 95) return 100;

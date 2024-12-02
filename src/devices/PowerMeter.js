@@ -17,8 +17,6 @@ export class PowerMeter {
 
         accessory.getOrAddCharacteristic(svc, this.CommunityTypes.Watts, {
             getHandler: () => this._getPowerValue(devData.attributes.power),
-            updateHandler: (value) => this._getPowerValue(value),
-            storeAttribute: "power",
         });
 
         return accessory;
