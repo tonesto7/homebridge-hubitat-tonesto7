@@ -11,6 +11,31 @@ export default class ConfigManager {
         this.platformConfig = platformConfig;
         this.eventEmitter = new events.EventEmitter();
 
+        // Default values for all config options
+        this.defaults = {
+            polling_seconds: 900,
+            excluded_attributes: [],
+            excluded_capabilities: [],
+            update_method: "direct",
+            round_levels: true,
+            direct_port: 8000,
+            validateTokenId: false,
+            consider_fan_by_name: true,
+            consider_light_by_name: false,
+            adaptive_lighting: true,
+            adaptive_lighting_off_when_on: false,
+            adaptive_lighting_offset: undefined,
+            allow_led_effects_control: true,
+            temperature_unit: "F",
+            logConfig: {
+                debug: false,
+                showChanges: true,
+            },
+        };
+
+        // Properties that should not be saved to config.json
+        this.excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method", "direct_port", "direct_ip"];
+
         // Load initial config
         this.config = this.normalizeConfig(platformConfig);
         // console.log("Initial Config:", this.config);
@@ -34,32 +59,55 @@ export default class ConfigManager {
      * @returns {Object} - The normalized configuration object.
      */
     normalizeConfig(config) {
-        return {
-            app_url_local: config.app_url_local,
-            app_url_cloud: config.app_url_cloud,
-            app_id: config.app_id,
-            access_token: config.access_token,
-            use_cloud: config.use_cloud === true,
-            polling_seconds: config.polling_seconds || 900,
-            excluded_attributes: config.excluded_attributes || [],
-            excluded_capabilities: config.excluded_capabilities || [],
-            update_method: config.update_method || "direct",
-            round_levels: config.round_levels !== false,
-            direct_port: config.direct_port || this.findDirectPort(config) || 8000,
-            direct_ip: config.direct_ip ? config.direct_ip : this.getIPAddress(),
-            validateTokenId: config.validateTokenId === true,
-            consider_fan_by_name: config.consider_fan_by_name !== false,
-            consider_light_by_name: config.consider_light_by_name === true,
-            adaptive_lighting: config.adaptive_lighting !== false,
-            adaptive_lighting_off_when_on: config.adaptive_lighting_off_when_on === true,
-            adaptive_lighting_offset: config.adaptive_lighting !== false && config.adaptive_lighting_offset !== undefined ? config.adaptive_lighting_offset : undefined,
-            allow_led_effects_control: config.allow_led_effects_control !== false,
-            temperature_unit: config.temperature_unit || "F",
-            logConfig: {
-                debug: config.logConfig ? config.logConfig.debug === true : false,
-                showChanges: config.logConfig ? config.logConfig.showChanges === true : true,
-            },
+        // Start with all defaults
+        const normalized = { ...this.defaults };
+
+        // Add required fields
+        normalized.app_url_local = config.app_url_local;
+        normalized.app_url_cloud = config.app_url_cloud;
+        normalized.app_id = config.app_id;
+        normalized.access_token = config.access_token;
+
+        // Special cases that need computation
+        normalized.direct_ip = config.direct_ip || this.getIPAddress();
+        normalized.direct_port = config.direct_port || this.findDirectPort(config) || this.defaults.direct_port;
+
+        // Override any defaults with provided config values
+        for (const [key, value] of Object.entries(config)) {
+            if (value !== undefined) {
+                if (key === "logConfig") {
+                    normalized.logConfig = {
+                        debug: config.logConfig?.debug === true,
+                        showChanges: config.logConfig?.showChanges !== false,
+                    };
+                } else {
+                    normalized[key] = value;
+                }
+            }
+        }
+
+        // Handle boolean flags consistently
+        const booleanFlags = {
+            use_cloud: false,
+            validateTokenId: false,
+            consider_fan_by_name: true,
+            consider_light_by_name: false,
+            adaptive_lighting: true,
+            adaptive_lighting_off_when_on: false,
+            allow_led_effects_control: true,
+            round_levels: true,
         };
+
+        for (const [key, defaultValue] of Object.entries(booleanFlags)) {
+            normalized[key] = normalized[key] === undefined ? defaultValue : normalized[key] === true;
+        }
+
+        // Special case for adaptive lighting offset
+        if (!normalized.adaptive_lighting) {
+            normalized.adaptive_lighting_offset = undefined;
+        }
+
+        return normalized;
     }
 
     /**
@@ -68,22 +116,29 @@ export default class ConfigManager {
      * @param {Object} newConfig - The new configuration values.
      */
     updateConfig(newConfig) {
-        // Merge new config values
+        const updatedFields = {};
 
-        const excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method", "direct_port", "direct_ip"];
-        excludeProperties.forEach((prop) => {
-            if (newConfig[prop]) {
-                delete newConfig[prop];
-            }
+        // Filter out excluded properties
+        const configToUpdate = { ...newConfig };
+        this.excludeProperties.forEach((prop) => {
+            delete configToUpdate[prop];
         });
 
-        Object.assign(this.config, newConfig);
+        // Only process changed fields
+        for (const [key, value] of Object.entries(configToUpdate)) {
+            if (JSON.stringify(this.config[key]) !== JSON.stringify(value)) {
+                updatedFields[key] = value;
+                this.config[key] = value;
+            }
+        }
 
-        // Persist changes to config.json
-        this.saveConfig();
+        // Only save if there were actual changes
+        if (Object.keys(updatedFields).length > 0) {
+            this.saveConfig();
+            this.eventEmitter.emit("configUpdated", this.config);
+        }
 
-        // Emit an event to notify listeners of the update
-        this.eventEmitter.emit("configUpdated", this.config);
+        return updatedFields;
     }
 
     /**
@@ -102,11 +157,8 @@ export default class ConfigManager {
             // Create a copy of the current config
             const configToSave = { ...this.config };
 
-            // Properties to exclude from saving
-            const excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method", "direct_port", "direct_ip"];
-
             // Remove excluded properties from the config to save
-            excludeProperties.forEach((prop) => {
+            this.excludeProperties.forEach((prop) => {
                 if (configToSave[prop]) {
                     delete configToSave[prop];
                 }
