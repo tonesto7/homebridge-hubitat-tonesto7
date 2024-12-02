@@ -58,7 +58,8 @@ export default class ConfigManager {
         if (this.isLegacyConfig(platformConfig)) {
             this.config = this.upgradeLegacyConfig(platformConfig);
             // Save the upgraded config
-            this.saveConfig();
+            const excludeProps = ["excluded_attributes", "excluded_capabilities", "update_method"];
+            this.saveConfig(excludeProps);
         } else {
             this.config = this.applyDefaults(platformConfig);
         }
@@ -89,8 +90,8 @@ export default class ConfigManager {
                 access_token: oldConfig.access_token,
                 use_cloud: oldConfig.use_cloud,
                 validateTokenId: oldConfig.validateTokenId,
-                direct_ip: oldConfig.direct_ip || this.getIPAddress(),
-                direct_port: oldConfig.direct_port || this.findDirectPort(oldConfig),
+                direct_ip: oldConfig.direct_ip ? oldConfig.direct_ip : this.getIPAddress(),
+                direct_port: this.findDirectPort(oldConfig),
                 polling_seconds: oldConfig.polling_seconds,
             },
             devices: {
@@ -176,7 +177,7 @@ export default class ConfigManager {
             ...this.config.client,
             ...updates,
         };
-        this.saveConfig();
+        this.saveConfig(this.excludeProperties);
         this.eventEmitter.emit("configUpdated", this.config);
     }
 
@@ -185,7 +186,7 @@ export default class ConfigManager {
             ...this.config.devices,
             ...updates,
         };
-        this.saveConfig();
+        this.saveConfig(this.excludeProperties);
         this.eventEmitter.emit("configUpdated", this.config);
     }
 
@@ -194,7 +195,7 @@ export default class ConfigManager {
             ...this.config.preferences,
             ...updates,
         };
-        this.saveConfig();
+        this.saveConfig(this.excludeProperties);
         this.eventEmitter.emit("configUpdated", this.config);
     }
 
@@ -203,7 +204,7 @@ export default class ConfigManager {
             ...this.config.features,
             ...updates,
         };
-        this.saveConfig();
+        this.saveConfig(this.excludeProperties);
         this.eventEmitter.emit("configUpdated", this.config);
     }
 
@@ -212,7 +213,7 @@ export default class ConfigManager {
             ...this.config.logging,
             ...updates,
         };
-        this.saveConfig();
+        this.saveConfig(this.excludeProperties);
         this.eventEmitter.emit("configUpdated", this.config);
     }
 
@@ -226,7 +227,7 @@ export default class ConfigManager {
         }
 
         current[last] = value;
-        this.saveConfig();
+        this.saveConfig(this.excludeProperties);
         this.eventEmitter.emit("configUpdated", this.config);
     }
 
@@ -245,12 +246,12 @@ export default class ConfigManager {
                     this.config[key] = value;
                 }
             });
-            this.saveConfig();
+            this.saveConfig(this.excludeProperties);
             this.eventEmitter.emit("configUpdated", this.config);
         }
     }
 
-    saveConfig() {
+    saveConfig(excludeProps) {
         try {
             const configPath = this.homebridge.configPath();
             const configFile = fs.readFileSync(configPath, "utf8");
@@ -275,10 +276,10 @@ export default class ConfigManager {
             const configToSave = JSON.parse(JSON.stringify(this.config));
 
             // Remove excluded properties
-            this.excludeProperties.forEach((prop) => {
+            excludeProps.forEach((prop) => {
                 const sections = ["client", "devices", "preferences"];
                 sections.forEach((section) => {
-                    if (configToSave[section]?.[prop]) {
+                    if (configToSave[section] && prop in configToSave[section]) {
                         delete configToSave[section][prop];
                     }
                 });
@@ -314,12 +315,25 @@ export default class ConfigManager {
     }
 
     findDirectPort(rawConfig) {
-        console.log("Finding direct port...");
-        let port = (rawConfig && rawConfig.direct_port) || 8000;
-        if (port) {
-            port = portFinderSync.getPort(port);
+        // console.log("Finding available direct port...");
+        const basePort = (rawConfig && rawConfig.direct_port) || 8000;
+        // portFinderSync.getPort will automatically find the next available port
+        // if the specified port is in use
+        const availablePort = portFinderSync.getPort(basePort);
+        if (availablePort !== basePort) {
+            console.log(`Port ${basePort} was in use, using port ${availablePort} instead`);
         }
-        return port;
+        return availablePort;
+    }
+
+    async updateDirectPort() {
+        const newPort = this.findDirectPort(this.config);
+        if (newPort !== this.config.client.direct_port) {
+            this.updateClientConfig({
+                direct_port: newPort,
+            });
+        }
+        return newPort;
     }
 
     getConfig() {

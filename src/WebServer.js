@@ -27,7 +27,7 @@ export class WebServer {
         try {
             const clientConfig = this.config.client;
             const ip = clientConfig.direct_ip;
-            const port = clientConfig.direct_port;
+            const port = await this.configManager.updateDirectPort();
             this.logManager.logInfo("WebServer Initiated...");
 
             this.configureMiddleware();
