@@ -154,7 +154,7 @@ export class WebServer {
         let updates = {};
         for (const [bodyKey, configKey] of Object.entries(preferenceMappings)) {
             if (body[bodyKey] !== undefined && this.config[configKey] !== body[bodyKey]) {
-                this.logManager.logInfo(`${this.platformName} Updated ${configKey} Preference | ` + `Before: ${this.config[configKey]} | Now: ${body[bodyKey]}`);
+                this.logManager.logInfo(`${platformName} Updated ${configKey} Preference | ` + `Before: ${this.config[configKey]} | Now: ${body[bodyKey]}`);
                 updates[configKey] = bodyKey.includes("lighting") || bodyKey.includes("by_name") ? body[bodyKey] === true : body[bodyKey];
             }
         }

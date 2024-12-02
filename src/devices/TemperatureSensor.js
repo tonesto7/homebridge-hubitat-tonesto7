@@ -24,7 +24,7 @@ export class TemperatureSensor {
 
     _configureCurrentTemperature(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CurrentTemperature, {
-            getHandler: () => this._getCurrentTemperature(devData.attributes.temperature),
+            getHandler: () => this._getCurrentTemperature(accessory, devData.attributes.temperature),
             props: this._getTemperatureProps(),
         });
     }
@@ -43,10 +43,10 @@ export class TemperatureSensor {
         });
     }
 
-    _getCurrentTemperature(value) {
+    _getCurrentTemperature(accessory, value) {
         const props = this._getTemperatureProps();
         if (value === null || value === undefined || isNaN(value)) {
-            this.logManager.logWarn(`TemperatureSensor | _getCurrentTemperature | Invalid temperature value: ${value} | Returning ${props.minValue}`);
+            this.logManager.logWarn(`TemperatureSensor | ${accessory.displayName} | _getCurrentTemperature | Invalid temperature value: ${value} | Returning ${props.minValue}`);
             return props.minValue;
         }
 
@@ -114,7 +114,7 @@ export class TemperatureSensor {
 
         switch (attribute) {
             case "temperature":
-                svc.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this._getCurrentTemperature(value));
+                svc.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this._getCurrentTemperature(accessory, value));
                 break;
             case "tamper":
                 svc.getCharacteristic(this.Characteristic.StatusTampered).updateValue(this._getTamperedState(value));
