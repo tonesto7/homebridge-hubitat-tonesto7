@@ -660,8 +660,9 @@ export default class HubitatAccessories {
         };
 
         accessory.getOrAddCharacteristic = (service, characteristicType, options = {}) => {
-            const { preReqChk = null, getHandler = null, setHandler = null, props = {}, eventOnly = false, value = null, removeIfMissingPreReq = false, storeAttribute = null } = options;
+            const { preReqChk = null, getHandler = null, setHandler = null, props = {}, eventOnly = false, value = null, removeIfMissingPreReq = false } = options;
 
+            // Check prerequisites
             if (preReqChk && !preReqChk()) {
                 if (removeIfMissingPreReq) {
                     service.removeCharacteristic(characteristicType);
@@ -669,14 +670,29 @@ export default class HubitatAccessories {
                 return null;
             }
 
+            // Get or add the characteristic
             let characteristic = service.getCharacteristic(characteristicType) || service.addCharacteristic(characteristicType);
 
+            // Track this characteristic as active for this service
+            const serviceId = service.subtype ? `${service.UUID} ${service.subtype}` : service.UUID;
+
+            if (!accessory._activeCharacteristics) {
+                accessory._activeCharacteristics = new Map();
+            }
+            if (!accessory._activeCharacteristics.has(serviceId)) {
+                accessory._activeCharacteristics.set(serviceId, new Set());
+            }
+            accessory._activeCharacteristics.get(serviceId).add(characteristic.UUID);
+
+            // Set properties if provided
             if (Object.keys(props).length) {
                 characteristic.setProps(props);
             }
 
+            // Mark as event-only if specified
             characteristic.eventOnlyCharacteristic = eventOnly;
 
+            // Set up get handler
             if (getHandler) {
                 if (characteristic._events.get) {
                     characteristic.removeListener("get", characteristic._events.get);
@@ -686,6 +702,7 @@ export default class HubitatAccessories {
                 });
             }
 
+            // Set up set handler
             if (setHandler) {
                 if (characteristic._events.set) {
                     characteristic.removeListener("set", characteristic._events.set);
@@ -696,6 +713,7 @@ export default class HubitatAccessories {
                 });
             }
 
+            // Set initial value if provided
             if (value !== null) {
                 characteristic.updateValue(value);
             }
@@ -717,6 +735,9 @@ export default class HubitatAccessories {
         // Always keep AccessoryInformation service
         const infoServiceUUID = this.Service.AccessoryInformation.UUID;
 
+        // Create sets for active characteristics by service
+        const activeCharacteristics = new Map();
+
         // Get all current services except AccessoryInformation
         const currentServices = accessory.services.filter((service) => service.UUID !== infoServiceUUID);
 
@@ -729,33 +750,38 @@ export default class HubitatAccessories {
                 accessory.removeService(service);
             } else {
                 // Service is active, clean up unused characteristics
-                // const characteristics = service.characteristics.slice(); // Create a copy to avoid modification during iteration
-                // for (const characteristic of characteristics) {
-                //     // Skip mandatory characteristics
-                //     if (service.constructor.MANDATORY_CHARACTERISTICS && service.constructor.MANDATORY_CHARACTERISTICS.includes(characteristic.constructor)) {
-                //         continue;
-                //     }
-                //     // Skip Name characteristic if service has a name
-                //     if (characteristic.constructor === this.Characteristic.Name && service.displayName !== accessory.displayName) {
-                //         continue;
-                //     }
-                //     // Skip event-only characteristics
-                //     if (characteristic.eventOnlyCharacteristic) {
-                //         continue;
-                //     }
-                //     // Skip characteristics that have listeners
-                //     if ((characteristic._events.get && characteristic._events.get.length > 0) || (characteristic._events.set && characteristic._events.set.length > 0)) {
-                //         continue;
-                //     }
-                //     // Remove characteristic if it reaches this point
-                //     this.logManager.logWarn(`Removing unused characteristic from ${accessory.displayName} ` + `${service.constructor.name}: ${characteristic.constructor.name}`);
-                //     service.removeCharacteristic(characteristic);
-                // }
+                const characteristics = service.characteristics.slice();
+
+                for (const characteristic of characteristics) {
+                    // Skip if it's one of these cases:
+                    if (
+                        // Mandatory characteristic
+                        service.constructor.MANDATORY_CHARACTERISTICS?.includes(characteristic.constructor) ||
+                        // Name characteristic for named service
+                        (characteristic.constructor === this.Characteristic.Name && service.displayName !== accessory.displayName) ||
+                        // Event-only characteristic
+                        characteristic.eventOnlyCharacteristic ||
+                        // Has active listeners
+                        characteristic._events.get?.length > 0 ||
+                        characteristic._events.set?.length > 0 ||
+                        // Is tracked as active
+                        activeCharacteristics.get(serviceId)?.has(characteristic.UUID)
+                    ) {
+                        continue;
+                    }
+
+                    // If we get here, the characteristic is unused
+                    this.logManager.logDebug(`Removing unused characteristic ${characteristic.constructor.name} ` + `from ${accessory.displayName} ${service.constructor.name}`);
+                    service.removeCharacteristic(characteristic);
+                }
             }
         }
 
-        // Clean up the tracking Set
-        delete accessory.activeServices;
+        // Clean up tracking
+        if (accessory.activeServices) {
+            delete accessory.activeServices;
+        }
+        activeCharacteristics.clear();
     }
 
     // Process device attribute update
