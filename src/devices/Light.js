@@ -93,7 +93,7 @@ export class Light {
                     this.logManager.logDebug(`${accessory.displayName} | Adaptive Lighting Controller Disabled Event: `, evt);
                 });
                 accessory.configureController(accessory.adaptiveLightingController);
-                this.logManager.logInfo(`${accessory.displayName} | Adaptive Lighting Supported... Assigning Adaptive Lighting Controller`);
+                this.logManager.logInfo(`Adaptive Lighting Supported | Assigning Adaptive Lighting Controller to ${accessory.displayName}`);
             } else {
                 this.logManager.logError(`${accessory.displayName} | Unable to add adaptiveLightingController because the required service parameter was missing...`);
             }
@@ -104,7 +104,7 @@ export class Light {
 
     _removeAdaptiveLightingController = (accessory) => {
         if (accessory.adaptiveLightingController) {
-            this.logManager.logInfo(`Adaptive Lighting Not Supported... Removing Adaptive Lighting Controller from [${accessory.context.deviceData.name}]!!!`);
+            this.logManager.logInfo(`Adaptive Lighting Not Supported | Removing Adaptive Lighting Controller from ${accessory.displayName}!!!`);
             accessory.removeController(accessory.adaptiveLightingController);
             delete accessory["adaptiveLightingController"];
         }

@@ -46,7 +46,7 @@ export class TemperatureSensor {
     _getCurrentTemperature(value) {
         const props = this._getTemperatureProps();
         if (value === null || value === undefined || isNaN(value)) {
-            this.logManager.logWarn(`TemperatureSensor | ${accessory.displayName} | Invalid temperature value: ${value}`);
+            this.logManager.logWarn(`TemperatureSensor | _getCurrentTemperature | Invalid temperature value: ${value} | Returning ${props.minValue}`);
             return props.minValue;
         }
 
@@ -79,22 +79,27 @@ export class TemperatureSensor {
     }
 
     _convertToHomeKitTemp(temp) {
-        if (!temp || isNaN(temp)) return 0;
-        // If temp is in F, convert to C for HomeKit
-        if (this.tempUnit === "F") {
-            return (temp - 32) / 1.8;
+        if (temp === null || temp === undefined || isNaN(temp)) {
+            this.logManager.logWarn(`TemperatureSensor | _convertToHomeKitTemp | Invalid value: ${temp} | Returning 0`);
+            return 0;
         }
-        // If temp is already in C, just return it
-        return temp;
+        // If temp is in F, convert to C for HomeKit
+        return this.tempUnit === "F" ? (temp - 32) / 1.8 : temp;
     }
 
     _convertFromHomeKitTemp(temp) {
-        if (!temp || isNaN(temp)) return null;
+        if (temp === null || temp === undefined || isNaN(temp)) {
+            this.logManager.logWarn(`TemperatureSensor | _convertFromHomeKitTemp | Invalid value: ${temp} | Returning null`);
+            return null;
+        }
         return this.tempUnit === "F" ? temp * 1.8 + 32 : temp;
     }
 
     _clampValue(value, min, max) {
-        if (value === null || value === undefined || isNaN(value)) return min;
+        if (value === null || value === undefined || isNaN(value)) {
+            this.logManager.logWarn(`TemperatureSensor | _clampValue | Invalid value: ${value} | Returning ${min}`);
+            return min;
+        }
         return Math.min(Math.max(value, min), max);
     }
 
