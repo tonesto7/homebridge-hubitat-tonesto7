@@ -53,8 +53,9 @@ export default class ConfigManager {
         // Properties that should not be saved to config.json
         this.excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method"];
 
-        // Track the active port
+        // Track the active port and IP
         this.activePort = null;
+        this.activeIP = null;
 
         // First check if config is in old format and needs upgrade
         if (this.isLegacyConfig(platformConfig)) {
@@ -339,7 +340,7 @@ export default class ConfigManager {
 
     // Updated method to get active IP
     getActiveIP() {
-        return this.config.client.static_ip || this.getIPAddress();
+        return this.config.client.static_ip || this.activeIP || this.getIPAddress();
     }
 
     getConfig() {
@@ -363,7 +364,8 @@ export default class ConfigManager {
             for (let i = 0; i < iface.length; i++) {
                 const alias = iface[i];
                 if (alias.family === "IPv4" && alias.address !== "127.0.0.1" && !alias.internal) {
-                    console.log("Local IP Address:", alias.address);
+                    // console.log("Local IP Address:", alias.address);
+                    this.activeIP = alias.address;
                     return alias.address;
                 }
             }

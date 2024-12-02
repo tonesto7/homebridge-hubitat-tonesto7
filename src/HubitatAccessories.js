@@ -151,7 +151,9 @@ export default class HubitatAccessories {
             },
             {
                 name: "fan",
-                test: (accessory) => (["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && ((accessory.hasCommand("setSpeed") && accessory.hasAttribute("speed")) || (accessory.hasAttribute("level") && accessory.hasCommand("setLevel")))) || accessory.hasFanLabel(),
+                test: (accessory) =>
+                    (["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && ((accessory.hasCommand("setSpeed") && accessory.hasAttribute("speed")) || (accessory.hasAttribute("level") && accessory.hasCommand("setLevel")))) ||
+                    (accessory.hasFanLabel() && accessory.hasCapability("Switch") && (accessory.hasAttribute("switch") || accessory.hasAttribute("level"))),
             },
             {
                 name: "virtualMode",
@@ -281,12 +283,6 @@ export default class HubitatAccessories {
         const attributesSet = new Set(Object.keys(accessory.context.deviceData.attributes || {}));
         const commandsSet = new Set(Object.keys(accessory.context.deviceData.commands || {}));
         const nameLower = accessory.context.deviceData.name.toLowerCase();
-
-        if (this.config.devices.consider_fan_by_name && nameLower.includes("fan")) {
-            console.log(
-                `${accessory.displayName} | considerFanByName: ${this.config.devices.consider_fan_by_name} | nameIncludesFan: ${nameLower.includes("fan")} | hasFanCap: ${capabilitiesSet.has("Fan")} | hasFanControl: ${capabilitiesSet.has("FanControl")} | hasSwitchCap: ${capabilitiesSet.has("Switch")} | hasSwitchAttr: ${attributesSet.has("switch")} | Result: ${this.config.devices.consider_fan_by_name && nameLower.includes("fan") && !capabilitiesSet.has("Fan") && !capabilitiesSet.has("FanControl") && capabilitiesSet.has("Switch") && attributesSet.has("switch")}`,
-            );
-        }
 
         const deviceWrapper = {
             hasCapability: (capability) => capabilitiesSet.has(capability),
