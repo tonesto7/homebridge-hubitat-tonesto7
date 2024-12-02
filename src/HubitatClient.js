@@ -9,40 +9,32 @@ export default class HubitatClient {
         this.versionManager = platform.versionManager;
         this.configManager = platform.configManager;
         this.appEvts = platform.appEvts;
-
-        // Get initial config
         this.config = this.configManager.getConfig();
-
-        // Store a reference to the accessories object
         this._accessories = null;
-        // Client state
-        this.clientState = {
-            localErrorCount: 0,
-            localDisabled: false,
-            logSocketClients: [],
-            eventSocketClients: [],
-            communicationBreakCommand: "off",
-            hubIp: null,
+
+        // Command batching state
+        this.commandState = {
+            queue: [],
+            batchTimer: null,
+            timers: new Map(),
+            lastExecutions: new Map(),
+            batchSize: 10,
+            batchDelay: 50,
+            maxBatchDelay: 200,
         };
 
-        // Subscribe to configuration updates
-        this.configManager.onConfigUpdate(this.handleConfigUpdate.bind(this));
+        // Retry configuration
+        this.retryConfig = {
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 10000,
+            failures: new Map(),
+            failureThreshold: 5,
+            resetTimeout: 60000,
+        };
 
         // Register event listeners
         this.registerEventListeners();
-
-        // Add retry configuration
-        this.retryConfig = {
-            maxRetries: 3,
-            baseDelay: 1000, // 1 second
-            maxDelay: 10000, // 10 seconds
-            // Track consecutive failures per endpoint
-            failureCounts: new Map(),
-            // Circuit breaker thresholds
-            failureThreshold: 5,
-            resetTimeout: 60000, // 1 minute
-            circuitBreakers: new Map(),
-        };
     }
 
     setAccessories(accessories) {
@@ -71,37 +63,92 @@ export default class HubitatClient {
         await this.sendStartDirect();
     }
 
-    updateGlobals(hubIp, useCloud = false) {
-        this.logManager.logNotice(`Updating Global Values | HubIP: ${hubIp} | UsingCloud: ${useCloud}`);
-        this.clientState.hubIp = hubIp;
-        this.config.use_cloud = useCloud === true;
-    }
+    async processBatch() {
+        if (!this.commandState.queue.length) return;
 
-    isNonRetryableError(error) {
-        // Don't retry client errors (except 429 Too Many Requests)
-        return error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429;
-    }
+        const commands = this.commandState.queue.splice(0, this.commandState.batchSize);
+        this.commandState.batchTimer = null;
 
-    isCircuitBroken(endpoint) {
-        const breaker = this.retryConfig.circuitBreakers.get(endpoint);
-        if (!breaker) return false;
+        try {
+            const formattedCommands = commands.map((cmd) => ({
+                deviceId: cmd.devData.deviceid,
+                command: cmd.command,
+                params: Array.isArray(cmd.params) ? cmd.params : [cmd.params],
+            }));
 
-        if (Date.now() - breaker.tripTime >= this.retryConfig.resetTimeout) {
-            // Reset circuit breaker after timeout
-            this.retryConfig.circuitBreakers.delete(endpoint);
-            this.retryConfig.failureCounts.set(endpoint, 0);
-            return false;
+            await this.makeRequest({
+                method: "post",
+                endpoint: "deviceCmds",
+                data: { commands: formattedCommands },
+                additionalHeaders: {
+                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
+                    evttype: "hkCommand",
+                },
+                timeout: 5000,
+            });
+        } catch (error) {
+            this.handleError("processBatch", error);
+            // Fall back to individual commands
+            for (const cmd of commands) {
+                await this.sendSingleCommand(cmd.devData, cmd.command, cmd.params);
+            }
         }
 
-        return true;
+        // Process remaining queue if any
+        if (this.commandState.queue.length) {
+            this.scheduleBatchProcessing();
+        }
     }
 
-    tripCircuitBreaker(endpoint) {
-        this.retryConfig.circuitBreakers.set(endpoint, {
-            tripTime: Date.now(),
-        });
+    async sendSingleCommand(devData, cmd, params) {
+        try {
+            await this.makeRequest({
+                method: "post",
+                endpoint: "deviceCmd",
+                data: {
+                    deviceId: devData.deviceid,
+                    command: cmd,
+                    params: params,
+                },
+                additionalHeaders: {
+                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
+                    evttype: "hkCommand",
+                },
+                timeout: 5000,
+            });
+            return true;
+        } catch (error) {
+            this.handleError("sendSingleCommand", error);
+            return false;
+        }
+    }
 
-        this.logManager.logError(`Circuit breaker tripped for endpoint ${endpoint}. ` + `Will retry after ${this.retryConfig.resetTimeout / 1000} seconds`);
+    async sendHubitatCommand(devData, cmd, params = []) {
+        try {
+            this.logManager.logNotice(`Queueing Device Command: ${cmd}${params.length ? ` | Params: ${JSON.stringify(params)}` : ""} | ` + `Name: (${devData.name}) | DeviceID: (${devData.deviceid})`);
+
+            // Add command to batch queue
+            this.commandState.queue.push({ devData, command: cmd, params });
+            this.commandState.lastExecutions.set(cmd, Date.now());
+
+            // If queue reaches batch size, process immediately
+            if (this.commandState.queue.length >= this.commandState.batchSize) {
+                await this.processBatch();
+            } else {
+                this.scheduleBatchProcessing();
+            }
+
+            return true;
+        } catch (error) {
+            this.handleError("sendHubitatCommand", error);
+            return false;
+        }
+    }
+
+    scheduleBatchProcessing() {
+        if (this.commandState.batchTimer) return;
+
+        this.commandState.batchTimer = setTimeout(() => this.processBatch(), Math.min(this.commandState.batchDelay, this.commandState.maxBatchDelay));
     }
 
     handleError(source, error) {
@@ -132,6 +179,50 @@ export default class HubitatClient {
         this.logManager.logDebug(`${source} Full Error: ${JSON.stringify(error)}`);
     }
 
+    async makeRequest({ method, endpoint, data = null, additionalHeaders = {}, timeout = 10000 }) {
+        const baseUrl = this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local;
+        const failures = this.retryConfig.failures.get(endpoint) || 0;
+
+        if (failures >= this.retryConfig.failureThreshold) {
+            if (Date.now() - (this.retryConfig.failures.get(`${endpoint}_time`) || 0) < this.retryConfig.resetTimeout) {
+                throw new Error(`Too many failures for endpoint: ${endpoint}`);
+            }
+            this.retryConfig.failures.delete(endpoint);
+            this.retryConfig.failures.delete(`${endpoint}_time`);
+        }
+
+        for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
+            try {
+                const response = await axios({
+                    method,
+                    url: `${baseUrl}${this.config.app_id}/${endpoint}`,
+                    params: { access_token: this.config.access_token },
+                    headers: {
+                        "Content-Type": "application/json",
+                        isLocal: !this.config.use_cloud,
+                        ...additionalHeaders,
+                    },
+                    data,
+                    timeout,
+                });
+
+                this.retryConfig.failures.delete(endpoint);
+                return response;
+            } catch (error) {
+                if (this.isNonRetryableError(error) || attempt === this.retryConfig.maxRetries) {
+                    this.retryConfig.failures.set(endpoint, failures + 1);
+                    this.retryConfig.failures.set(`${endpoint}_time`, Date.now());
+                    throw error;
+                }
+                await new Promise((resolve) => setTimeout(resolve, Math.min(this.retryConfig.baseDelay * Math.pow(2, attempt), this.retryConfig.maxDelay)));
+            }
+        }
+    }
+
+    isNonRetryableError(error) {
+        return error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429;
+    }
+
     async getDevices() {
         try {
             const response = await this.makeRequest({
@@ -143,33 +234,6 @@ export default class HubitatClient {
         } catch (error) {
             this.handleError("getDevices", error);
             return undefined;
-        }
-    }
-
-    async sendHubitatCommand(devData, cmd, params = []) {
-        console.log("sendHubitatCommand", cmd, params);
-        try {
-            this.logManager.logNotice(`Sending Device Command: ${cmd}${params.length ? ` | Params: ${JSON.stringify(params)}` : ""} | ` + `Name: (${devData.name}) | DeviceID: (${devData.deviceid})`);
-
-            await this.makeRequest({
-                method: "post",
-                endpoint: "deviceCmd",
-                data: {
-                    deviceId: devData.deviceid,
-                    command: cmd,
-                    params: params,
-                },
-                additionalHeaders: {
-                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
-                    evttype: "hkCommand",
-                },
-                timeout: 5000,
-            });
-
-            return true;
-        } catch (error) {
-            this.handleError("sendHubitatCommand", error);
-            return false;
         }
     }
 
@@ -228,72 +292,17 @@ export default class HubitatClient {
         }
     }
 
-    // Helper method to centralize request creation
-    async makeRequest({ method, endpoint, data = null, additionalHeaders = {}, timeout = 10000 }) {
-        const baseUrl = this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local;
-
-        // Check circuit breaker
-        if (this.isCircuitBroken(endpoint)) {
-            throw new Error(`Circuit breaker open for endpoint: ${endpoint}`);
+    dispose() {
+        if (this.commandState.batchTimer) {
+            clearTimeout(this.commandState.batchTimer);
         }
-
-        const headers = {
-            "Content-Type": "application/json",
-            isLocal: this.config.use_cloud ? "false" : "true",
-            ...additionalHeaders,
-        };
-
-        let lastError;
-        let retryCount = 0;
-
-        while (retryCount <= this.retryConfig.maxRetries) {
-            try {
-                const response = await axios({
-                    method,
-                    url: `${baseUrl}${this.config.app_id}/${endpoint}`,
-                    params: { access_token: this.config.access_token },
-                    headers,
-                    data,
-                    timeout,
-                });
-
-                // Reset failure count on success
-                this.retryConfig.failureCounts.set(endpoint, 0);
-                return response;
-            } catch (error) {
-                lastError = error;
-
-                // Don't retry certain errors
-                if (this.isNonRetryableError(error)) {
-                    this.handleError(endpoint, error);
-                    throw error;
-                }
-
-                // Increment failure count
-                const failures = (this.retryConfig.failureCounts.get(endpoint) || 0) + 1;
-                this.retryConfig.failureCounts.set(endpoint, failures);
-
-                // Check if we should trip circuit breaker
-                if (failures >= this.retryConfig.failureThreshold) {
-                    this.tripCircuitBreaker(endpoint);
-                    throw new Error(`Circuit breaker tripped for endpoint: ${endpoint}`);
-                }
-
-                if (retryCount === this.retryConfig.maxRetries) {
-                    this.handleError(endpoint, error);
-                    throw error;
-                }
-
-                // Calculate delay with exponential backoff and jitter
-                const delay = Math.min(this.retryConfig.baseDelay * Math.pow(2, retryCount) + Math.random() * 1000, this.retryConfig.maxDelay);
-
-                this.logManager.logDebug(`Request failed, retrying in ${Math.round(delay)}ms (attempt ${retryCount + 1}/${this.retryConfig.maxRetries})`);
-
-                await new Promise((resolve) => setTimeout(resolve, delay));
-                retryCount++;
-            }
+        for (const timer of this.commandState.timers.values()) {
+            clearTimeout(timer);
         }
-
-        throw lastError;
+        this.commandState.queue = [];
+        this.commandState.timers.clear();
+        this.commandState.lastExecutions.clear();
+        this.appEvts.removeAllListeners();
+        this.logManager.logDebug("HubitatClient disposed");
     }
 }

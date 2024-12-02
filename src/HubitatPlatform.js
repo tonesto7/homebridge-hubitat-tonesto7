@@ -142,6 +142,7 @@ export default class HubitatPlatform {
 
     async handleShutdown() {
         this.logManager.logNotice(`${platformDesc} Platform Shutdown`);
+        this.client.dispose();
     }
 
     validateConfig(config) {

@@ -1699,6 +1699,24 @@ def deviceCommand() {
     return processCmd(body.deviceId as String, body.command as String, body.params as List ?: [])
 }
 
+def deviceCommands() {
+    def body = request?.JSON
+    if (!body?.commands || !(body.commands in List)) {
+        return [status: 400, message: 'Missing or invalid commands array']
+    }
+
+    def results = []
+    body.commands.each { cmd ->
+        def result = processCmd(
+            cmd.deviceId as String,
+            cmd.command as String,
+            cmd.params as List ?: []
+        )
+        results << result
+    }
+
+    return results
+}
 
 private processCmd(String devId, String command, List params) {
     Long execDt = wnow()
@@ -2450,6 +2468,7 @@ mappings {
     path('/location')                       { action: [GET: 'renderLocation']       }
     path('/pluginStatus')                   { action: [POST: 'pluginStatus']        }
     path('/deviceCmd')                      { action: [POST: 'deviceCommand']       }
+    path('/deviceCmds')                     { action: [POST: 'deviceCommands']      }
     path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }
     path('/startDirect/:ip/:port/:version') { action: [POST: 'enableDirectUpdates'] }
 }
