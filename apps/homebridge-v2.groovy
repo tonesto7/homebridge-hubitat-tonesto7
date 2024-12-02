@@ -973,7 +973,7 @@ def capFilterPage() {
 }
 
 def attrFilterPage() {
-    return dynamicPage(name: 'attrFilterPage', title: 'CustomAttribute Filtering', install: false, uninstall: false) {
+    return dynamicPage(name: 'attrFilterPage', title: 'Custom Attribute Filtering', install: false, uninstall: false) {
         appCssOverrideUI()
         section(sectHead('Custom Attributes')) {
             paragraph spanSmBldBr('Description:', sCLRGRY) + spanSmBr('This input allows you to define custom attributes per device or globally to prevent subsciption events and/or the addition of unwanted characteristics in devices under HomeKit', sCLRGRY) +
