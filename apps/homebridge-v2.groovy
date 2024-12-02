@@ -57,7 +57,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '3.0.0'
-//@Field static final String appModifiedFLD = '12-1-2024'
+//@Field static final String appModifiedFLD = '12-2-2024'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -359,6 +359,7 @@ def deviceSelectPage() {
             input 'fan3SpdList', sCAP_SW, title: inTS("Fans (3 Speeds): (${fan3SpdList ? fan3SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'fan4SpdList', sCAP_SW, title: inTS("Fans (4 Speeds): (${fan4SpdList ? fan4SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'fan5SpdList', sCAP_SW, title: inTS("Fans (5 Speeds): (${fan5SpdList ? fan5SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'fan6SpdList', sCAP_SW, title: inTS("Fans (6 Speeds): (${fan6SpdList ? fan6SpdList.size() : 0} Selected)", 'fan_on'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
 
         section(sectHead('Create Devices for Modes in HomeKit?')) {
@@ -872,17 +873,18 @@ def deviceFilterEditPage(params) {
 private String getDeviceFiltersDesc() {
     String desc = ''
     state.deviceFiltersMap.each { String devId, Map filterData ->
-        String devName = filterData.name
-        int attrCount = filterData.attributes?.size() ?: 0
-        int capCount = filterData.capabilities?.size() ?: 0
-        int cmdCount = filterData.commands?.size() ?: 0
+        desc += spanSmBld("${filterData.name}", sCLR4D9) + lineBr()
 
-        List<String> counts = []
-        if (attrCount > 0) { counts.add("ATTR: ${attrCount}") }
-        if (capCount > 0) { counts.add("CAP: ${capCount}") }
-        if (cmdCount > 0) { counts.add("CMD: ${cmdCount}") }
-        if (counts.size() > 0) {
-            desc += spanSmBr("${devName}: [${counts.join(', ')}]", sCLR4D9)
+        if (filterData.attributes?.size()) {
+            desc += spanSm(" ${sBULLET} Attributes: [${filterData.attributes.join(', ')}]", sCLR4D9) + lineBr()
+        }
+
+        if (filterData.capabilities?.size()) {
+            desc += spanSm(" ${sBULLET} Capabilities: [${filterData.capabilities.join(', ')}]", sCLR4D9) + lineBr()
+        }
+
+        if (filterData.commands?.size()) {
+            desc += spanSm(" ${sBULLET} Commands: [${filterData.commands.join(', ')}]", sCLR4D9) + lineBr()
         }
     }
     return desc
@@ -953,11 +955,11 @@ def capFilterPage() {
         }
 
         section(sectHead('Custom Capabilities')) {
-            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom capabilities per device and/or globally to prevent unwanted characteristics in devices under HomeKit', sCLRGRY) +
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSmBr('This input allows you to define custom capabilities per device and/or globally to prevent unwanted characteristics in devices under HomeKit', sCLRGRY) +
                 spanSmBr('There are 2 ways to format the data:', sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out a specific device capabilities wrap the item in brackets like [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement]", sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out an capabilities from all devices don't use brackets", sCLRGRY) +
-                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") +
+                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)", sCLRGRY) +
                 spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
                 spanSmBr('Here is an example of mixing per-device and global filters: [device_id1:Battery,TemperatureMeasurement], [device_id2:AccelerationSensor,IlluminanceMeasurement], SwitchLevel', sCLRORG)
             input 'customCapFilters', 'textarea', title: inTS('Enter custom capabilities', 'filter'), description: 'Enter the filters using the format mentioned above...',  submitOnChange: true, required: false
@@ -971,14 +973,14 @@ def capFilterPage() {
 }
 
 def attrFilterPage() {
-    return dynamicPage(name: 'attrFilterPage', title: 'Attribute Filtering', install: false, uninstall: false) {
+    return dynamicPage(name: 'attrFilterPage', title: 'CustomAttribute Filtering', install: false, uninstall: false) {
         appCssOverrideUI()
         section(sectHead('Custom Attributes')) {
-            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSm('This input allows you to define custom attributes per device or globally to prevent subsciption events and/or the addition of unwanted characteristics in devices under HomeKit', sCLRGRY) +
+            paragraph spanSmBldBr('Description:', sCLRGRY) + spanSmBr('This input allows you to define custom attributes per device or globally to prevent subsciption events and/or the addition of unwanted characteristics in devices under HomeKit', sCLRGRY) +
                 spanSmBr('There are 2 ways to format the data:', sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out a specific device attributes wrap the item in brackets like [device_id1:speed,switch], [device_id2:temperature,motion]", sCLRGRY) +
                 spanSmBr(" ${sBULLET} To filter out an attribute from all devices don't use brackets", sCLRGRY) +
-                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)") +
+                spanSmBr(" ${sBULLET} Make sure to separate each type (per-device and global) with a comma (,)", sCLRGRY) +
                 spanSmBr(" ${sBULLET} Use the Device Debug page to see if your filter is working...", sCLRGRY) +
                 spanSmBr('Here is an example of mixing per-device and global filters: [device_id1:speed,switch], [device_id2:temperature,motion], temperature', sCLRORG)
             input 'customAttrFilters', 'textarea', title: inTS('Enter custom attributes', 'filter'), description: 'Enter the filters using the format mentioned above...',  submitOnChange: true, required: false
@@ -1515,7 +1517,7 @@ def getSecurityDevice() {
 @CompileStatic
 Map getDeviceFlags(device) {
     Map<String, Integer> opts = [:]
-    [fan3SpdList: 'fan_3_spd', fan4SpdList: 'fan_4_spd', fan5SpdList: 'fan_5_spd',
+    [fan3SpdList: 'fan_3_spd', fan4SpdList: 'fan_4_spd', fan5SpdList: 'fan_5_spd', fan6SpdList: 'fan_6_spd',
      lightNoAlList: 'light_no_al'].each { String k, String v ->
         if (isDeviceInInput(k, gtDevId(device))) {
             opts[v] = 1
@@ -2007,14 +2009,16 @@ static Map<String,String> deviceSettingKeys() {
     ] + fanSettingKeys() +
     [
         'speakerList': 'Speaker Devices', 'shadesList': 'Window Shade Devices', 'securityKeypadsList': 'Security Keypad Devices',
-        'garageList': 'Garage Door Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat (HeatOnly) Devices', 'tstatCoolList': 'T-Stat (CoolOnly) Devices',
-        'sensorList': 'Sensor Devices', 'switchList': 'Switch Devices', 'deviceList': 'Other Devices', 'lockTestList': 'Lock Devices',
+        'garageList': 'Garage Door Devices', 'tstatList': 'T-Stat Devices', 'tstatFanList': 'T-Stat + Fan Devices', 'tstatHeatList': 'T-Stat (HeatOnly) Devices', 
+        'tstatCoolList': 'T-Stat (CoolOnly) Devices', 'sensorList': 'Sensor Devices', 'switchList': 'Switch Devices', 'deviceList': 'Other Devices',
+        'lockTestList': 'Lock Devices',
     ]
 }
 
 static Map<String,String> fanSettingKeys() {
     return [
         'fanList': 'Fan Devices', 'fan3SpdList': 'Fans (3Spd) Devices', 'fan4SpdList': 'Fans (4Spd) Devices', 'fan5SpdList': 'Fans (5Spd) Devices',
+        'fan6SpdList': 'Fans (6Spd) Devices',
     ]
 }
 
