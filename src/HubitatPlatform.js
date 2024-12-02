@@ -129,9 +129,8 @@ export default class HubitatPlatform {
                 temperature_unit: location.temperature_scale,
             });
         }
-        if (location.hubIP) {
+        if (location.use_cloud !== undefined) {
             this.configManager.updateClientConfig({
-                direct_ip: location.hubIP,
                 use_cloud: location.use_cloud === true,
             });
         }

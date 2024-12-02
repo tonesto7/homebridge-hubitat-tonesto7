@@ -20,8 +20,7 @@ export default class ConfigManager {
                 access_token: undefined,
                 use_cloud: false,
                 validateTokenId: false,
-                direct_ip: undefined,
-                direct_port: 8000,
+                static_ip: undefined,
                 polling_seconds: 900,
             },
             devices: {
@@ -52,14 +51,16 @@ export default class ConfigManager {
         };
 
         // Properties that should not be saved to config.json
-        this.excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method", "direct_port", "direct_ip"];
+        this.excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method"];
+
+        // Track the active port
+        this.activePort = null;
 
         // First check if config is in old format and needs upgrade
         if (this.isLegacyConfig(platformConfig)) {
             this.config = this.upgradeLegacyConfig(platformConfig);
             // Save the upgraded config
-            const excludeProps = ["excluded_attributes", "excluded_capabilities", "update_method"];
-            this.saveConfig(excludeProps);
+            this.saveConfig();
         } else {
             this.config = this.applyDefaults(platformConfig);
         }
@@ -90,8 +91,7 @@ export default class ConfigManager {
                 access_token: oldConfig.access_token,
                 use_cloud: oldConfig.use_cloud,
                 validateTokenId: oldConfig.validateTokenId,
-                direct_ip: oldConfig.direct_ip ? oldConfig.direct_ip : this.getIPAddress(),
-                direct_port: this.findDirectPort(oldConfig),
+                static_ip: oldConfig.direct_ip,
                 polling_seconds: oldConfig.polling_seconds,
             },
             devices: {
@@ -251,7 +251,7 @@ export default class ConfigManager {
         }
     }
 
-    saveConfig(excludeProps) {
+    saveConfig() {
         try {
             const configPath = this.homebridge.configPath();
             const configFile = fs.readFileSync(configPath, "utf8");
@@ -276,7 +276,7 @@ export default class ConfigManager {
             const configToSave = JSON.parse(JSON.stringify(this.config));
 
             // Remove excluded properties
-            excludeProps.forEach((prop) => {
+            this.excludeProperties.forEach((prop) => {
                 const sections = ["client", "devices", "preferences"];
                 sections.forEach((section) => {
                     if (configToSave[section] && prop in configToSave[section]) {
@@ -314,26 +314,32 @@ export default class ConfigManager {
         }
     }
 
-    findDirectPort(rawConfig) {
-        // console.log("Finding available direct port...");
-        const basePort = (rawConfig && rawConfig.direct_port) || 8000;
-        // portFinderSync.getPort will automatically find the next available port
-        // if the specified port is in use
-        const availablePort = portFinderSync.getPort(basePort);
-        if (availablePort !== basePort) {
-            console.log(`Port ${basePort} was in use, using port ${availablePort} instead`);
+    async findAvailablePort() {
+        try {
+            const basePort = 8000;
+            this.activePort = portFinderSync.getPort(basePort);
+            if (this.activePort !== basePort) {
+                console.log(`Port ${basePort} was in use, using port ${this.activePort} instead`);
+            }
+            return this.activePort;
+        } catch (error) {
+            console.error("Error finding available port:", error);
+            throw error;
         }
-        return availablePort;
     }
 
-    async updateDirectPort() {
-        const newPort = this.findDirectPort(this.config);
-        if (newPort !== this.config.client.direct_port) {
-            this.updateClientConfig({
-                direct_port: newPort,
-            });
-        }
-        return newPort;
+    getActivePort() {
+        return this.activePort;
+    }
+
+    // New method to determine if using static IP
+    isUsingStaticIP() {
+        return !!this.config.client.static_ip;
+    }
+
+    // Updated method to get active IP
+    getActiveIP() {
+        return this.config.client.static_ip || this.getIPAddress();
     }
 
     getConfig() {
@@ -348,8 +354,9 @@ export default class ConfigManager {
         this.eventEmitter.on("configUpdated", listener);
     }
 
+    // Get the local IP address
     getIPAddress() {
-        console.log("Getting local IP address...");
+        // console.log("Getting local IP address...");
         const interfaces = os.networkInterfaces();
         for (const devName in interfaces) {
             const iface = interfaces[devName];

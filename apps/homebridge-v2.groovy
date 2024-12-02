@@ -1359,8 +1359,8 @@ private void appCleanup() {
     List<String> removeItems = ['hubPlatform', 'cmdHistory', 'evtHistory', 'tsDtMap', 'lastMode', 'pollBlocked', 'devchanges', 'subscriptionRenewed']
     if (state.directIP && state.directPort) { // old cleanup
         state.pluginDetails = [
-            directIP: state.directIP,
-            directPort: state.directPort
+            pluginIP: state.directIP,
+            pluginPort: state.directPort
         ]
         removeItems.push('directIP')
         removeItems.push('directPort')
@@ -2289,7 +2289,7 @@ String getServerAddress() {
     String sv; sv = getTsVal(sSVR)
     if (sv == sNULL) {
         Map pluginDetails = (Map)gtState('pluginDetails') ?: [:]
-        sv = "${pluginDetails.directIP}:${pluginDetails.directPort}".toString()
+        sv = "${pluginDetails.pluginIP}:${pluginDetails.pluginPort}".toString()
         updTsVal(sSVR, sv)
         updTsVal(sDBG, getBoolSetting('showDebugLogs').toString())
         updTsVal(sEVT, getBoolSetting('showEventLogs').toString())
@@ -2305,7 +2305,7 @@ String getPluginStatusDesc() {
     if (pluginDetails && pluginDetails.keySet().size() > 0) {
         out += spanSmBld('Plugin:', sCLRGRY) + spanSmBr(' (Online)', sCLRGRN)
         out += state?.pluginDetails?.version ? spanSmBld(" ${sBULLET} Version:", sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
-        out += pluginDetails?.directIP && pluginDetails?.directPort ? spanSmBld(" ${sBULLET} Server IP:", sCLRGRY) + spanSmBr(" ${pluginDetails?.directIP}:${pluginDetails?.directPort}", sCLRGRY) : sBLANK
+        out += pluginDetails?.pluginIP && pluginDetails?.pluginPort ? spanSmBld(" ${sBULLET} Server IP:", sCLRGRY) + spanSmBr(" ${pluginDetails?.pluginIP}:${pluginDetails?.pluginPort}", sCLRGRY) : sBLANK
 
         // Include the lastCheckin Timestamp to local date/time
         Long lastCheckin = state?.pluginDetails?.lastCheckin ?: 0
@@ -2435,7 +2435,7 @@ void updateServicePrefs(Boolean isLocal=false) {
         app_version: appVersionFLD,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
         validateTokenId: getBoolSetting('validate_token'),
-        local_hub_ip: ((List)location?.hubs)[0]?.localIP
+        // local_hub_ip: ((List)location?.hubs)[0]?.localIP
     ], 'updateServicePrefs', getBoolSetting('showDebugLogs'))
 }
 
@@ -2448,17 +2448,17 @@ def pluginStatus() {
     compressedRender contentType: sAPPJSON, data: resultJson
 }
 
-def enableDirectUpdates() {
-    logTrace('Plugin called enableDirectUpdates()')
-    // log.trace "enableDirectUpdates: ($params)"
+def registerPluginForUpdates() {
+    logTrace('Plugin called registerPluginForUpdates()')
+    def body = request.JSON
     state.pluginDetails = [
-        directIP: params?.ip,
-        directPort: params?.port,
-        version: params?.version ?: null,
+        pluginIP: body?.pluginIp,
+        pluginPort: body?.pluginPort,
+        version: body?.pluginVersion ?: null,
         lastCheckin: wnow()
     ]
     remTsVal(sSVR)
-    updCodeVerMap('plugin', (String)params?.version ?: sNULL)
+    updCodeVerMap('plugin', (String)body?.pluginVersion ?: sNULL)
     activateDirectUpdates()
     updTsVal('lastDirectUpdsEnabled')
     String resultJson = new JsonOutput().toJson([status: 'OK'])
@@ -2474,7 +2474,7 @@ mappings {
     path('/deviceCmd')                      { action: [POST: 'deviceCommand']       }
     path('/deviceCmds')                     { action: [POST: 'deviceCommands']      }
     path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }
-    path('/startDirect/:ip/:port/:version') { action: [POST: 'enableDirectUpdates'] }
+    path('/registerPluginForUpdates')       { action: [POST: 'registerPluginForUpdates'] }
 }
 
 /**********************************************

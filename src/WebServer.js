@@ -25,9 +25,8 @@ export class WebServer {
 
     async initialize() {
         try {
-            const clientConfig = this.config.client;
-            const ip = clientConfig.direct_ip;
-            const port = await this.configManager.updateDirectPort();
+            const ip = this.configManager.getActiveIP();
+            const port = await this.configManager.findAvailablePort();
             this.logManager.logInfo("WebServer Initiated...");
 
             this.configureMiddleware();
@@ -151,7 +150,7 @@ export class WebServer {
         const preferenceMappings = {
             use_cloud: ["client", "use_cloud"],
             validateTokenId: ["client", "validateTokenId"],
-            local_hub_ip: ["client", "direct_ip"],
+            // local_hub_ip: ["client", "direct_ip"],
             consider_fan_by_name: ["devices", "consider_fan_by_name"],
             consider_light_by_name: ["devices", "consider_light_by_name"],
             adaptive_lighting: ["features", "adaptive_lighting", "enabled"],

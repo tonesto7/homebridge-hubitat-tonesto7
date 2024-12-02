@@ -48,18 +48,10 @@
                         "type": "string",
                         "required": true
                     },
-                    "direct_ip": {
-                        "title": "Direct IP",
-                        "description": "Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.",
+                    "static_ip": {
+                        "title": "Static IP",
+                        "description": "Most installations won't need this, but if for any reason the plugin can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.",
                         "type": "string",
-                        "required": false
-                    },
-                    "direct_port": {
-                        "title": "Direct Port",
-                        "description": "This is the port that the plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address. (This is now a dynamic port selection)",
-                        "type": "integer",
-                        "maximum": 65535,
-                        "default": 8000,
                         "required": false
                     },
                     "polling_seconds": {

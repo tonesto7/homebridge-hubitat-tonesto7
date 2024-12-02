@@ -66,7 +66,7 @@ export default class HubitatClient {
     }
 
     async handleStartDirect() {
-        await this.sendStartDirect();
+        await this.registerForDirectUpdates();
     }
 
     async processBatch() {
@@ -272,28 +272,31 @@ export default class HubitatClient {
         }
     }
 
-    async sendStartDirect() {
+    async registerForDirectUpdates() {
         try {
-            this.logManager.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.config.client.use_cloud === true})`);
+            this.logManager.logInfo(`Registering Plugin for Updates with Hubitat Endpoint | UsingCloud: (${this.config.client.use_cloud === true})`);
+
+            const ip = this.configManager.getActiveIP();
+            const port = this.configManager.getActivePort();
 
             const response = await this.makeRequest({
                 method: "post",
-                endpoint: `startDirect/${this.config.client.direct_ip}/${this.config.client.direct_port}/${pluginVersion}`,
+                endpoint: `registerPluginForUpdates`,
                 data: {
-                    ip: this.config.client.direct_ip,
-                    port: this.config.client.direct_port,
-                    version: pluginVersion,
+                    pluginIp: ip,
+                    pluginPort: port,
+                    pluginVersion: pluginVersion,
                 },
                 timeout: 10000,
             });
 
             if (response.data) {
-                this.logManager.logDebug(`sendStartDirect Resp: ${JSON.stringify(response.data)}`);
+                this.logManager.logDebug(`registerForDirectUpdates Resp: ${JSON.stringify(response.data)}`);
                 return response.data;
             }
             return null;
         } catch (error) {
-            this.handleError("sendStartDirect", error);
+            this.handleError("registerForDirectUpdates", error);
             return undefined;
         }
     }
