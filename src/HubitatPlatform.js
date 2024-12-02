@@ -33,7 +33,7 @@ export default class HubitatPlatform {
 
         // Validate config
         if (this.validateConfig(this.config)) {
-            this.logManager.log(`${platformName} Plugin is not Configured | Skipping...`);
+            this.logManager.logError(`${platformName} Plugin Config is missing required fields | Skipping...`);
             return;
         }
 
@@ -145,8 +145,7 @@ export default class HubitatPlatform {
     }
 
     validateConfig(config) {
-        const requiredFields = ["app_url_local", "app_url_cloud", "app_id"];
-        return config != null && requiredFields.every((field) => config[field] != null);
+        return !config || !config.app_url_local || !config.app_url_cloud || !config.app_id;
     }
 
     // Expose logging methods for backwards compatibility

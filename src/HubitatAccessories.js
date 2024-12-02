@@ -259,22 +259,46 @@ export default class HubitatAccessories {
      * @returns {Array} - Array of device types with their services
      */
     determineDeviceTypes(accessory) {
+        // Create a cache key from capabilities, attributes, commands and name
+        const cacheKey = JSON.stringify({
+            capabilities: accessory.context.deviceData.capabilities,
+            attributes: accessory.context.deviceData.attributes,
+            commands: accessory.context.deviceData.commands,
+            name: accessory.context.deviceData.name,
+            config: {
+                consider_light_by_name: this.config.consider_light_by_name,
+                consider_fan_by_name: this.config.consider_fan_by_name,
+            },
+        });
+
+        // Check if we have cached results for this configuration
+        if (accessory.context._deviceTypesCache?.key === cacheKey) {
+            return accessory.context._deviceTypesCache.types;
+        }
+
+        // Create device wrapper with memoized functions
+        const capabilitiesSet = new Set(Object.keys(accessory.context.deviceData.capabilities || {}));
+        const attributesSet = new Set(Object.keys(accessory.context.deviceData.attributes || {}));
+        const commandsSet = new Set(Object.keys(accessory.context.deviceData.commands || {}));
+        const nameLower = accessory.context.deviceData.name.toLowerCase();
+
         const deviceWrapper = {
-            hasCapability: (capability) => accessory.context.deviceData.capabilities && Object.keys(accessory.context.deviceData.capabilities).includes(capability),
-            hasAttribute: (attribute) => accessory.context.deviceData.attributes && Object.keys(accessory.context.deviceData.attributes).includes(attribute),
-            hasCommand: (command) => accessory.context.deviceData.commands && Object.keys(accessory.context.deviceData.commands).includes(command),
-            hasLightLabel: () => this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light"),
-            hasFanLabel: () => this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan"),
+            hasCapability: (capability) => capabilitiesSet.has(capability),
+            hasAttribute: (attribute) => attributesSet.has(attribute),
+            hasCommand: (command) => commandsSet.has(command),
+            hasLightLabel: () => this.config.consider_light_by_name && nameLower.includes("light"),
+            hasFanLabel: () => this.config.consider_fan_by_name && nameLower.includes("fan"),
             context: accessory.context,
         };
 
         const matchedTypes = [];
+        const matchedSet = new Set();
 
         for (const deviceTest of this.deviceTypeTests) {
             if (deviceTest.disable) continue;
 
-            const hasExcludedCapability = deviceTest.excludeCapabilities?.some((cap) => deviceWrapper.hasCapability(cap));
-            const hasExcludedAttribute = deviceTest.excludeAttributes?.some((attr) => deviceWrapper.hasAttribute(attr));
+            const hasExcludedCapability = deviceTest.excludeCapabilities?.some((cap) => capabilitiesSet.has(cap));
+            const hasExcludedAttribute = deviceTest.excludeAttributes?.some((attr) => attributesSet.has(attr));
 
             if (hasExcludedCapability || hasExcludedAttribute) {
                 this.logManager.logDebug(`${accessory.displayName} excluded from ${deviceTest.name} due to ` + `${hasExcludedCapability ? "capabilities" : "attributes"}`);
@@ -282,21 +306,23 @@ export default class HubitatAccessories {
             }
 
             if (deviceTest.test(deviceWrapper)) {
-                if (deviceTest.excludeDevTypes && deviceTest.excludeDevTypes.some((type) => matchedTypes.some((match) => match.name === type))) {
+                if (deviceTest.excludeDevTypes?.some((type) => matchedSet.has(type))) {
                     continue;
                 }
-
-                matchedTypes.push({
-                    name: deviceTest.name,
-                });
+                matchedTypes.push({ name: deviceTest.name });
+                matchedSet.add(deviceTest.name);
             }
         }
 
         if (matchedTypes.length === 0) {
             this.logManager.logWarn(`No device types matched for ${accessory.displayName}`);
-        } else {
-            // this.logManager.logWarn(`${accessory.displayName} | Devices Types Matched: ${matchedTypes.map((t) => t.name).join(", ")}`);
         }
+
+        // Cache the results
+        accessory.context._deviceTypesCache = {
+            key: cacheKey,
+            types: matchedTypes,
+        };
 
         return matchedTypes;
     }
@@ -403,6 +429,9 @@ export default class HubitatAccessories {
         try {
             let accessory = this._cachedAccessories.get(device.deviceid);
             if (!accessory) return;
+
+            // Clear the device types cache since it may be stale
+            delete accessory.context._deviceTypesCache;
 
             // Reset active services tracking
             accessory.activeServices = new Set();
