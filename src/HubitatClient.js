@@ -30,6 +30,19 @@ export default class HubitatClient {
 
         // Register event listeners
         this.registerEventListeners();
+
+        // Add retry configuration
+        this.retryConfig = {
+            maxRetries: 3,
+            baseDelay: 1000, // 1 second
+            maxDelay: 10000, // 10 seconds
+            // Track consecutive failures per endpoint
+            failureCounts: new Map(),
+            // Circuit breaker thresholds
+            failureThreshold: 5,
+            resetTimeout: 60000, // 1 minute
+            circuitBreakers: new Map(),
+        };
     }
 
     setAccessories(accessories) {
@@ -64,21 +77,59 @@ export default class HubitatClient {
         this.config.use_cloud = useCloud === true;
     }
 
+    isNonRetryableError(error) {
+        // Don't retry client errors (except 429 Too Many Requests)
+        return error.response?.status >= 400 && error.response?.status < 500 && error.response?.status !== 429;
+    }
+
+    isCircuitBroken(endpoint) {
+        const breaker = this.retryConfig.circuitBreakers.get(endpoint);
+        if (!breaker) return false;
+
+        if (Date.now() - breaker.tripTime >= this.retryConfig.resetTimeout) {
+            // Reset circuit breaker after timeout
+            this.retryConfig.circuitBreakers.delete(endpoint);
+            this.retryConfig.failureCounts.set(endpoint, 0);
+            return false;
+        }
+
+        return true;
+    }
+
+    tripCircuitBreaker(endpoint) {
+        this.retryConfig.circuitBreakers.set(endpoint, {
+            tripTime: Date.now(),
+        });
+
+        this.logManager.logError(`Circuit breaker tripped for endpoint ${endpoint}. ` + `Will retry after ${this.retryConfig.resetTimeout / 1000} seconds`);
+    }
+
     handleError(source, error) {
         const errorMap = {
             401: "Hubitat Token Error",
             403: "Hubitat Authentication Error",
+            429: "Too Many Requests - Rate Limited",
+            500: "Hubitat Server Error",
+            502: "Bad Gateway",
+            503: "Service Unavailable",
+            504: "Gateway Timeout",
         };
 
-        if (error.status && errorMap[error.status]) {
-            this.logManager.logError(`${source} Error | ${errorMap[error.status]}: ${error.response} | Message: ${error.message}`);
+        let errorMessage = "";
+
+        if (error.response?.status) {
+            errorMessage = errorMap[error.response.status] || `HTTP Error ${error.response.status}`;
+        } else if (error.code === "ECONNABORTED") {
+            errorMessage = "Request Timeout";
         } else if (error.message?.startsWith("getaddrinfo EAI_AGAIN")) {
-            this.logManager.logError(`${source} Error | Possible Internet/Network/DNS Error | Unable to reach the uri | Message ${error.message}`);
+            errorMessage = "DNS Resolution Failed - Check Network Connection";
         } else {
-            this.logManager.logError(`${source} ${error.response?.defined !== undefined ? error.response : "Connection failure"} | Message: ${error.message}`);
+            errorMessage = error.message || "Unknown Error";
         }
 
-        this.logManager.logDebug(`${source} ${JSON.stringify(error)}`);
+        this.logManager.logError(`${source} Error | ${errorMessage} | ` + `Details: ${error.response?.data || error.message}`);
+
+        this.logManager.logDebug(`${source} Full Error: ${JSON.stringify(error)}`);
     }
 
     async getDevices() {
@@ -181,19 +232,68 @@ export default class HubitatClient {
     async makeRequest({ method, endpoint, data = null, additionalHeaders = {}, timeout = 10000 }) {
         const baseUrl = this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local;
 
+        // Check circuit breaker
+        if (this.isCircuitBroken(endpoint)) {
+            throw new Error(`Circuit breaker open for endpoint: ${endpoint}`);
+        }
+
         const headers = {
             "Content-Type": "application/json",
             isLocal: this.config.use_cloud ? "false" : "true",
             ...additionalHeaders,
         };
 
-        return await axios({
-            method,
-            url: `${baseUrl}${this.config.app_id}/${endpoint}`,
-            params: { access_token: this.config.access_token },
-            headers,
-            data,
-            timeout,
-        });
+        let lastError;
+        let retryCount = 0;
+
+        while (retryCount <= this.retryConfig.maxRetries) {
+            try {
+                const response = await axios({
+                    method,
+                    url: `${baseUrl}${this.config.app_id}/${endpoint}`,
+                    params: { access_token: this.config.access_token },
+                    headers,
+                    data,
+                    timeout,
+                });
+
+                // Reset failure count on success
+                this.retryConfig.failureCounts.set(endpoint, 0);
+                return response;
+            } catch (error) {
+                lastError = error;
+
+                // Don't retry certain errors
+                if (this.isNonRetryableError(error)) {
+                    this.handleError(endpoint, error);
+                    throw error;
+                }
+
+                // Increment failure count
+                const failures = (this.retryConfig.failureCounts.get(endpoint) || 0) + 1;
+                this.retryConfig.failureCounts.set(endpoint, failures);
+
+                // Check if we should trip circuit breaker
+                if (failures >= this.retryConfig.failureThreshold) {
+                    this.tripCircuitBreaker(endpoint);
+                    throw new Error(`Circuit breaker tripped for endpoint: ${endpoint}`);
+                }
+
+                if (retryCount === this.retryConfig.maxRetries) {
+                    this.handleError(endpoint, error);
+                    throw error;
+                }
+
+                // Calculate delay with exponential backoff and jitter
+                const delay = Math.min(this.retryConfig.baseDelay * Math.pow(2, retryCount) + Math.random() * 1000, this.retryConfig.maxDelay);
+
+                this.logManager.logDebug(`Request failed, retrying in ${Math.round(delay)}ms (attempt ${retryCount + 1}/${this.retryConfig.maxRetries})`);
+
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                retryCount++;
+            }
+        }
+
+        throw lastError;
     }
 }
