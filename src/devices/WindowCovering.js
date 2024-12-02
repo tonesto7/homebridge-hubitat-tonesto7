@@ -11,16 +11,22 @@ export class WindowCovering {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Window Covering for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.WindowCovering, this.generateSrvcName(accessory.displayName, "Shade"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Shade");
+        const svc = accessory.getOrAddService(this.Service.WindowCovering);
         const devData = accessory.context.deviceData;
         const positionAttr = accessory.hasCommand("setPosition") ? "position" : "level";
 
+        this._updateSvcName(svc, svcName);
         this._configureCurrentPosition(accessory, svc, devData, positionAttr);
         this._configureTargetPosition(accessory, svc, devData, positionAttr);
         this._configurePositionState(accessory, svc, devData);
         this._configureObstruction(accessory, svc);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureCurrentPosition(accessory, svc, devData, positionAttr) {

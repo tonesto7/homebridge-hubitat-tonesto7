@@ -13,14 +13,19 @@ export class AirPurifier {
     configure(accessory) {
         this.logManager.logDebug(`Configuring Air Purifier for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Air Purifier");
-        const svc = accessory.getOrAddService(this.Service.AirPurifier, svcName);
+        const svc = accessory.getOrAddService(this.Service.AirPurifier);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureActive(accessory, svc, devData);
         this._configureCurrentAirPurifierState(accessory, svc, devData);
         this._configureFanOscillationMode(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureActive(accessory, svc, devData) {

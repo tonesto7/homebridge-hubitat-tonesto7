@@ -11,8 +11,11 @@ export class VirtualMode {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Virtual Mode for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.Switch, this.generateSrvcName(accessory.displayName, "Mode"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Mode");
+        const svc = accessory.getOrAddService(this.Service.Switch);
         const devData = accessory.context.deviceData;
+
+        this._updateSvcName(svc, svcName);
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => this._getOnState(devData.attributes.switch),
@@ -24,6 +27,10 @@ export class VirtualMode {
         });
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _getOnState(value) {

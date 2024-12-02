@@ -11,15 +11,24 @@ export class Switch {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Switch for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.Switch, this.generateSrvcName(accessory.displayName, "Switch"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Switch");
+        const svc = accessory.getOrAddService(this.Service.Switch);
         const devData = accessory.context.deviceData;
 
+        this._configureOn(accessory, svc, devData);
+
+        return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
+    }
+
+    _configureOn(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => this._getOnState(devData.attributes.switch),
             setHandler: (value) => accessory.sendCommand(value ? "on" : "off"),
         });
-
-        return accessory;
     }
 
     _getOnState(value) {

@@ -15,11 +15,16 @@ export class MotionSensor {
         const svc = accessory.getOrAddService(this.Service.MotionSensor, svcName);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureMotionDetected(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureMotionDetected(accessory, svc, devData) {

@@ -13,14 +13,19 @@ export class ContactSensor {
     configure(accessory) {
         this.logManager.logDebug(`Configuring Contact Sensor for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Contact");
-        const svc = accessory.getOrAddService(this.Service.ContactSensor, svcName);
+        const svc = accessory.getOrAddService(this.Service.ContactSensor);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureContactState(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureContactState(accessory, svc, devData) {

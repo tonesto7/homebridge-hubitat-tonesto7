@@ -11,8 +11,11 @@ export class VirtualPiston {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Virtual Piston for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.Switch, this.generateSrvcName(accessory.displayName, "Piston"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Piston");
+        const svc = accessory.getOrAddService(this.Service.Switch);
         const devData = accessory.context.deviceData;
+
+        this._updateSvcName(svc, svcName);
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => false,
@@ -28,6 +31,10 @@ export class VirtualPiston {
         });
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     // Handle attribute updates

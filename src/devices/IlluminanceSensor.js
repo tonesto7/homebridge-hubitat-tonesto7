@@ -10,14 +10,20 @@ export class IlluminanceSensor {
     static relevantAttributes = ["illuminance", "status", "tamper"];
     configure(accessory) {
         this.logManager.logDebug(`Configuring Illuminance Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.LightSensor, this.generateSrvcName(accessory.displayName, "Illuminance"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Illuminance");
+        const svc = accessory.getOrAddService(this.Service.LightSensor);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureAmbientLight(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureAmbientLight(accessory, svc, devData) {

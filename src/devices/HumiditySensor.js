@@ -11,14 +11,20 @@ export class HumiditySensor {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Humidity Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.HumiditySensor, this.generateSrvcName(accessory.displayName, "Humidity"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Humidity");
+        const svc = accessory.getOrAddService(this.Service.HumiditySensor);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureCurrentHumidity(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureCurrentHumidity(accessory, svc, devData) {

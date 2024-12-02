@@ -11,13 +11,19 @@ export class FilterMaintenance {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Filter Maintenance for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.FilterMaintenance, this.generateSrvcName(accessory.displayName, "Filter"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Filter");
+        const svc = accessory.getOrAddService(this.Service.FilterMaintenance);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureFilterChange(accessory, svc, devData);
         this._configureFilterLife(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureFilterChange(accessory, svc, devData) {

@@ -12,14 +12,21 @@ export class EnergyMeter {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Energy Meter for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.CommunityTypes.KilowattHoursService, this.generateSrvcName(accessory.displayName, "Energy"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Energy");
+        const svc = accessory.getOrAddService(this.CommunityTypes.KilowattHoursService);
         const devData = accessory.context.deviceData;
+
+        this._updateSvcName(svc, svcName);
 
         accessory.getOrAddCharacteristic(svc, this.CommunityTypes.KilowattHours, {
             getHandler: () => this._getEnergyValue(devData.attributes.energy),
         });
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _getEnergyValue(value) {

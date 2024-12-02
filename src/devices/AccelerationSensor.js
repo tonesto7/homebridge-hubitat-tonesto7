@@ -13,14 +13,19 @@ export class AccelerationSensor {
     configure(accessory) {
         this.logManager.logDebug(`Configuring Acceleration Sensor for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Acceleration");
-        const svc = accessory.getOrAddService(this.Service.MotionSensor, svcName);
+        const svc = accessory.getOrAddService(this.Service.MotionSensor);
         const devData = accessory.context.deviceData;
 
+        this._updateSvcName(svc, svcName);
         this._configureMotionDetected(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
+    }
+
+    _updateSvcName(svc, svcName) {
+        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureMotionDetected(accessory, svc, devData) {
