@@ -284,7 +284,7 @@ export default class HubitatAccessories {
 
         if (this.config.devices.consider_fan_by_name && nameLower.includes("fan")) {
             console.log(
-                `${accessory.displayName} | isFanByName: ${this.config.devices.consider_fan_by_name && nameLower.includes("fan") && !capabilitiesSet.has("Fan") && !capabilitiesSet.has("FanControl") && capabilitiesSet.has("Switch") && attributesSet.has("switch")} | name includes fan: ${nameLower.includes("fan")} | hasFanCap: ${capabilitiesSet.has("Fan")} | hasFanControl: ${capabilitiesSet.has("FanControl")} | hasSwitchCap: ${capabilitiesSet.has("Switch")} | hasSwitchAttr: ${attributesSet.has("switch")}`,
+                `${accessory.displayName} | considerFanByName: ${this.config.devices.consider_fan_by_name} | nameIncludesFan: ${nameLower.includes("fan")} | hasFanCap: ${capabilitiesSet.has("Fan")} | hasFanControl: ${capabilitiesSet.has("FanControl")} | hasSwitchCap: ${capabilitiesSet.has("Switch")} | hasSwitchAttr: ${attributesSet.has("switch")} | Result: ${this.config.devices.consider_fan_by_name && nameLower.includes("fan") && !capabilitiesSet.has("Fan") && !capabilitiesSet.has("FanControl") && capabilitiesSet.has("Switch") && attributesSet.has("switch")}`,
             );
         }
 

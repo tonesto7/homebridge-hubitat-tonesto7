@@ -284,10 +284,20 @@ export default class ConfigManager {
                 });
             });
 
+            // Preserve existing platform, name, and _bridge properties
+            const preservedProperties = {
+                platform: fullConfig.platforms[platformIndex].platform,
+                name: fullConfig.platforms[platformIndex].name,
+            };
+
+            // Only include _bridge if it exists in the original config
+            if (fullConfig.platforms[platformIndex]._bridge) {
+                preservedProperties._bridge = fullConfig.platforms[platformIndex]._bridge;
+            }
+
             // Replace the old platform config with the new one, keeping platform and name at root
             fullConfig.platforms[platformIndex] = {
-                platform: this.platformConfig.platform,
-                name: this.platformConfig.name,
+                ...preservedProperties,
                 ...configToSave,
             };
 
