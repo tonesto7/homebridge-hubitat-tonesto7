@@ -64,7 +64,6 @@ export default class HubitatPlatform {
         // Register platform
         api.on("didFinishLaunching", this.didFinishLaunching.bind(this));
         this.api.on("shutdown", this.handleShutdown.bind(this));
-        // this.appEvts.emit("event:plugin_upd_status");
     }
 
     async didFinishLaunching() {
@@ -76,7 +75,7 @@ export default class HubitatPlatform {
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
-            this.appEvts.emit("event:plugin_upd_status");
+            // this.appEvts.emit("event:plugin_upd_status");
 
             // Initialize web server
             const webServerResult = await this.webServer.initialize();
@@ -115,9 +114,7 @@ export default class HubitatPlatform {
                 this.logManager.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
             }
 
-            if (src !== "First Launch") {
-                this.appEvts.emit("event:plugin_upd_status");
-            }
+            this.appEvts.emit("event:plugin_upd_status");
 
             return true;
         } catch (ex) {
