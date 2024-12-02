@@ -11,7 +11,8 @@ export class Battery {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Battery for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.Battery, this.generateSrvcName(accessory.displayName, "Battery"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Battery");
+        const svc = accessory.getOrAddService(this.Service.Battery, svcName);
         const devData = accessory.context.deviceData;
 
         this._configureBatteryLevel(accessory, svc, devData);

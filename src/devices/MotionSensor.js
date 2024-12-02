@@ -11,7 +11,8 @@ export class MotionSensor {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Motion Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.MotionSensor, this.generateSrvcName(accessory.displayName, "Motion"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Motion");
+        const svc = accessory.getOrAddService(this.Service.MotionSensor, svcName);
         const devData = accessory.context.deviceData;
 
         this._configureMotionDetected(accessory, svc, devData);

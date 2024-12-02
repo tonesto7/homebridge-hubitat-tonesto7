@@ -12,7 +12,8 @@ export class ContactSensor {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Contact Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.ContactSensor, this.generateSrvcName(accessory.displayName, "Contact"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Contact");
+        const svc = accessory.getOrAddService(this.Service.ContactSensor, svcName);
         const devData = accessory.context.deviceData;
 
         this._configureContactState(accessory, svc, devData);

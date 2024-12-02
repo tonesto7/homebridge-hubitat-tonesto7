@@ -11,7 +11,8 @@ export class PresenceSensor {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Presence Sensor for ${accessory.displayName}`);
-        const svc = accessory.getOrAddService(this.Service.OccupancySensor, this.generateSrvcName(accessory.displayName, "Presence"));
+        const svcName = this.generateSrvcName(accessory.displayName, "Presence");
+        const svc = accessory.getOrAddService(this.Service.OccupancySensor, svcName);
         const devData = accessory.context.deviceData;
 
         this._configureOccupancyDetected(accessory, svc, devData);
