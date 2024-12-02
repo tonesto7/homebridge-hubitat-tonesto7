@@ -13,18 +13,14 @@ export class Battery {
         this.logManager.logDebug(`Configuring Battery for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Battery");
         const svc = accessory.getOrAddService(this.Service.Battery);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
-        this._updateSvcName(svc, svcName);
         this._configureBatteryLevel(accessory, svc, devData);
         this._configureStatusLowBattery(accessory, svc, devData);
         this._configureChargingState(accessory, svc, devData);
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureBatteryLevel(accessory, svc, devData) {

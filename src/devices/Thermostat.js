@@ -13,8 +13,7 @@ export class Thermostat {
         this.logManager.logDebug(`Configuring Thermostat for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Thermostat");
         const svc = accessory.getOrAddService(this.Service.Thermostat);
-
-        this._updateSvcName(svc, svcName);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
 
         // Configure characteristics
         this._configureCurrentTemp(accessory, svc);
@@ -35,10 +34,6 @@ export class Thermostat {
         }
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureCurrentTemp(accessory, svc) {

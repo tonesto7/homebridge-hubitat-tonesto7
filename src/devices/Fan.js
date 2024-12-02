@@ -12,9 +12,9 @@ export class Fan {
         this.logManager.logDebug(`Configuring Fan for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Fan");
         const svc = accessory.getOrAddService(this.Service.Fanv2);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
-        this._updateSvcName(svc, svcName);
         this._configureActive(accessory, svc, devData);
         this._configureCurrentFanState(accessory, svc, devData);
 
@@ -26,10 +26,6 @@ export class Fan {
         }
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureActive(accessory, svc, devData) {

@@ -15,9 +15,9 @@ export class Light {
         this.logManager.logDebug(`Configuring Light for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Light");
         const svc = accessory.getOrAddService(this.Service.Lightbulb);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
-        this._updateSvcName(svc, svcName);
         this._configureOnOff(accessory, svc, devData);
         this._configureBrightness(accessory, svc, devData);
         this._configureColor(accessory, svc, devData);
@@ -30,10 +30,6 @@ export class Light {
         }
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureOnOff(accessory, svc, devData) {

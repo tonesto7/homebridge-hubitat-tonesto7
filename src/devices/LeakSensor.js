@@ -13,18 +13,14 @@ export class LeakSensor {
         this.logManager.logDebug(`Configuring Leak Sensor for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Leak");
         const svc = accessory.getOrAddService(this.Service.LeakSensor);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
-        this._updateSvcName(svc, svcName);
         this._configureLeakDetected(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureLeakDetected(accessory, svc, devData) {

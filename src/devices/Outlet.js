@@ -13,9 +13,8 @@ export class Outlet {
         this.logManager.logDebug(`Configuring Outlet for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Outlet");
         const svc = accessory.getOrAddService(this.Service.Outlet);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
-
-        this._updateSvcName(svc, svcName);
 
         accessory.getOrAddCharacteristic(svc, this.Characteristic.On, {
             getHandler: () => this._getOnState(devData.attributes.switch),
@@ -27,10 +26,6 @@ export class Outlet {
         });
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _getOnState(value) {

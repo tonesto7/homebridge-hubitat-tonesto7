@@ -13,9 +13,9 @@ export class Valve {
         this.logManager.logDebug(`Configuring Valve for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Valve");
         const svc = accessory.getOrAddService(this.Service.Valve);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
-        this._updateSvcName(svc, svcName);
         this._configureInUse(accessory, svc, devData);
         this._configureActive(accessory, svc, devData);
 
@@ -23,10 +23,6 @@ export class Valve {
         svc.setCharacteristic(this.Characteristic.ValveType, 0);
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureInUse(accessory, svc, devData) {

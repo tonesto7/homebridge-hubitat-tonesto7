@@ -13,11 +13,11 @@ export class AirQuality {
         this.logManager.logDebug(`Configuring Air Quality Sensor for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Air Quality");
         const svc = accessory.getOrAddService(this.Service.AirQualitySensor);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
         svc.setCharacteristic(this.Characteristic.StatusFault, this.Characteristic.StatusFault.NO_FAULT);
 
-        this._updateSvcName(svc, svcName);
         this._configureAirQuality(accessory, svc, devData);
         this._configureStatusActive(accessory, svc, devData);
         this._configureStatusLowBattery(accessory, svc, devData);
@@ -25,10 +25,6 @@ export class AirQuality {
         this._configureStatusTampered(accessory, svc, devData);
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureAirQuality(accessory, svc, devData) {

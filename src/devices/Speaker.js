@@ -15,20 +15,16 @@ export class Speaker {
         this.logManager.logDebug(`Configuring Speaker for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Speaker");
         const svc = accessory.getOrAddService(this.Service.Speaker);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
         this.isSonos = devData.manufacturerName === "Sonos";
         this.levelAttr = this.isSonos || accessory.hasAttribute("volume") ? "volume" : accessory.hasAttribute("level") ? "level" : undefined;
 
-        this._updateSvcName(svc, svcName);
         this._configureVolume(accessory, svc, devData);
         this._configureMute(accessory, svc, devData);
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureVolume(accessory, svc, devData) {

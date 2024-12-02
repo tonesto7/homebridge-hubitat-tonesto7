@@ -13,15 +13,12 @@ export class Switch {
         this.logManager.logDebug(`Configuring Switch for ${accessory.displayName}`);
         const svcName = this.generateSrvcName(accessory.displayName, "Switch");
         const svc = accessory.getOrAddService(this.Service.Switch);
+        svc.setCharacteristic(this.Characteristic.Name, svcName);
         const devData = accessory.context.deviceData;
 
         this._configureOn(accessory, svc, devData);
 
         return accessory;
-    }
-
-    _updateSvcName(svc, svcName) {
-        svc.getOrAddCharacteristic(this.Characteristic.Name).updateValue(svcName);
     }
 
     _configureOn(accessory, svc, devData) {
