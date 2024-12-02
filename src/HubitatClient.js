@@ -35,6 +35,12 @@ export default class HubitatClient {
 
         // Register event listeners
         this.registerEventListeners();
+
+        // Subscribe to config updates
+        this.configManager.onConfigUpdate((newConfig) => {
+            this.config = newConfig;
+            this.logManager.logDebug("HubitatClient config updated");
+        });
     }
 
     setAccessories(accessories) {
@@ -81,7 +87,7 @@ export default class HubitatClient {
                 endpoint: "deviceCmds",
                 data: { commands: formattedCommands },
                 additionalHeaders: {
-                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
+                    evtsource: `Homebridge_${platformName}_${this.config.client.app_id}`,
                     evttype: "hkCommand",
                 },
                 timeout: 5000,
@@ -111,7 +117,7 @@ export default class HubitatClient {
                     params: params,
                 },
                 additionalHeaders: {
-                    evtsource: `Homebridge_${platformName}_${this.config.app_id}`,
+                    evtsource: `Homebridge_${platformName}_${this.config.client.app_id}`,
                     evttype: "hkCommand",
                 },
                 timeout: 5000,
@@ -180,7 +186,7 @@ export default class HubitatClient {
     }
 
     async makeRequest({ method, endpoint, data = null, additionalHeaders = {}, timeout = 10000 }) {
-        const baseUrl = this.config.use_cloud ? this.config.app_url_cloud : this.config.app_url_local;
+        const baseUrl = this.config.client.use_cloud ? this.config.client.app_url_cloud : this.config.client.app_url_local;
         const failures = this.retryConfig.failures.get(endpoint) || 0;
 
         if (failures >= this.retryConfig.failureThreshold) {
@@ -195,11 +201,11 @@ export default class HubitatClient {
             try {
                 const response = await axios({
                     method,
-                    url: `${baseUrl}${this.config.app_id}/${endpoint}`,
-                    params: { access_token: this.config.access_token },
+                    url: `${baseUrl}${this.config.client.app_id}/${endpoint}`,
+                    params: { access_token: this.config.client.access_token },
                     headers: {
                         "Content-Type": "application/json",
-                        isLocal: !this.config.use_cloud,
+                        isLocal: !this.config.client.use_cloud,
                         ...additionalHeaders,
                     },
                     data,
@@ -249,7 +255,7 @@ export default class HubitatClient {
                     hasUpdate: versionCheck.hasUpdate,
                     newVersion: versionCheck.newVersion,
                     version: pluginVersion,
-                    isLocal: this.config.use_cloud ? "false" : "true",
+                    isLocal: this.config.client.use_cloud ? "false" : "true",
                     accCount: this._accessories.getAllAccessories().length || null,
                 },
                 timeout: 10000,
@@ -268,14 +274,14 @@ export default class HubitatClient {
 
     async sendStartDirect() {
         try {
-            this.logManager.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.config.use_cloud === true})`);
+            this.logManager.logInfo(`Sending StartDirect Request to ${platformDesc} | UsingCloud: (${this.config.client.use_cloud === true})`);
 
             const response = await this.makeRequest({
                 method: "post",
-                endpoint: `startDirect/${this.config.direct_ip}/${this.config.direct_port}/${pluginVersion}`,
+                endpoint: `startDirect/${this.config.client.direct_ip}/${this.config.client.direct_port}/${pluginVersion}`,
                 data: {
-                    ip: this.config.direct_ip,
-                    port: this.config.direct_port,
+                    ip: this.config.client.direct_ip,
+                    port: this.config.client.direct_port,
                     version: pluginVersion,
                 },
                 timeout: 10000,

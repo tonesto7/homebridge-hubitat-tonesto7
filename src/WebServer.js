@@ -15,12 +15,19 @@ export class WebServer {
         this.homebridge = platform.homebridge;
         this.accessories = platform.accessories;
         this.appEvts = platform.appEvts;
+
+        // Subscribe to config updates
+        this.configManager.onConfigUpdate((newConfig) => {
+            this.config = newConfig;
+            this.logManager.logDebug("WebServer config updated");
+        });
     }
 
     async initialize() {
         try {
-            const ip = this.configManager.getConfigValue("direct_ip");
-            const port = this.configManager.getConfigValue("direct_port");
+            const clientConfig = this.config.client;
+            const ip = clientConfig.direct_ip;
+            const port = clientConfig.direct_port;
             this.logManager.logInfo("WebServer Initiated...");
 
             this.configureMiddleware();
@@ -142,20 +149,25 @@ export class WebServer {
         }
 
         const preferenceMappings = {
-            use_cloud: "use_cloud",
-            validateTokenId: "validateTokenId",
-            local_hub_ip: "direct_ip",
-            consider_fan_by_name: "consider_fan_by_name",
-            consider_light_by_name: "consider_light_by_name",
-            adaptive_lighting: "adaptive_lighting",
-            adaptive_lighting_off_when_on: "adaptive_lighting_off_when_on",
+            use_cloud: ["client", "use_cloud"],
+            validateTokenId: ["client", "validateTokenId"],
+            local_hub_ip: ["client", "direct_ip"],
+            consider_fan_by_name: ["devices", "consider_fan_by_name"],
+            consider_light_by_name: ["devices", "consider_light_by_name"],
+            adaptive_lighting: ["features", "adaptive_lighting", "enabled"],
+            adaptive_lighting_off_when_on: ["features", "adaptive_lighting", "off_when_on"],
         };
 
         let updates = {};
-        for (const [bodyKey, configKey] of Object.entries(preferenceMappings)) {
-            if (body[bodyKey] !== undefined && this.config[configKey] !== body[bodyKey]) {
-                this.logManager.logInfo(`${platformName} Updated ${configKey} Preference | ` + `Before: ${this.config[configKey]} | Now: ${body[bodyKey]}`);
-                updates[configKey] = bodyKey.includes("lighting") || bodyKey.includes("by_name") ? body[bodyKey] === true : body[bodyKey];
+        for (const [bodyKey, configPath] of Object.entries(preferenceMappings)) {
+            if (body[bodyKey] !== undefined) {
+                const currentValue = configPath.reduce((obj, key) => obj[key], this.config);
+                const newValue = bodyKey.includes("lighting") || bodyKey.includes("by_name") ? body[bodyKey] === true : body[bodyKey];
+
+                if (currentValue !== newValue) {
+                    this.logManager.logInfo(`${platformName} Updated ${configPath.join(".")} Preference | ` + `Before: ${currentValue} | Now: ${newValue}`);
+                    updates[configPath.join(".")] = newValue;
+                }
             }
         }
 
@@ -198,7 +210,7 @@ export class WebServer {
 
             this.accessories.processDeviceAttributeUpdate(newChange).then((success) => {
                 res.send({
-                    evtSource: `Homebridge_${platformName}_${this.config.app_id}`,
+                    evtSource: `Homebridge_${platformName}_${this.config.client.app_id}`,
                     evtType: "attrUpdStatus",
                     evtDevice: body.change_name,
                     evtAttr: body.change_attribute,
@@ -207,7 +219,7 @@ export class WebServer {
             });
         } else {
             res.send({
-                evtSource: `Homebridge_${platformName}_${this.config.app_id}`,
+                evtSource: `Homebridge_${platformName}_${this.config.client.app_id}`,
                 evtType: "attrUpdStatus",
                 evtDevice: body.change_name,
                 evtAttr: body.change_attribute,
@@ -217,10 +229,10 @@ export class WebServer {
     }
 
     isValidRequestor(access_token, app_id, src) {
-        if (this.config.validateTokenId !== true) {
+        if (this.config.client.validateTokenId !== true) {
             return true;
         }
-        if (app_id && access_token && this.config.app_id && this.config.access_token && access_token === this.config.access_token && parseInt(app_id) === parseInt(this.config.app_id)) {
+        if (app_id && access_token && this.config.client.app_id && this.config.client.access_token && access_token === this.config.client.access_token && parseInt(app_id) === parseInt(this.config.client.app_id)) {
             return true;
         }
         this.logManager.logError(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);

@@ -30,7 +30,7 @@ export class VersionManager {
      * @private
      */
     _isCacheValid() {
-        return this._lastCheckTime && Date.now() - this._lastCheckTime < this.cacheDirection && this._lastCheckResult;
+        return this._lastCheckTime && Date.now() - this._lastCheckTime < this.cacheDuration && this._lastCheckResult;
     }
 
     /**

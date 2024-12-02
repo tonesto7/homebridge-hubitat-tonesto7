@@ -13,8 +13,8 @@ import events from "events";
 export default class HubitatPlatform {
     constructor(log, config, api) {
         // Initialize managers
-        this.logManager = new LogManager(log, api.debug);
         this.configManager = new ConfigManager(config, api.user);
+        this.logManager = new LogManager(log, api.debug, this.configManager);
         this.versionManager = new VersionManager(this);
 
         // Store API references
@@ -32,7 +32,7 @@ export default class HubitatPlatform {
         this.config = this.configManager.getConfig();
 
         // Validate config
-        if (this.validateConfig(this.config)) {
+        if (!this.configManager.isConfigValid()) {
             this.logManager.logError(`${platformName} Plugin Config is missing required fields | Skipping...`);
             return;
         }
@@ -71,7 +71,7 @@ export default class HubitatPlatform {
             this.logManager.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
 
             // Setup refresh interval
-            setInterval(this.refreshDevices.bind(this), this.config.polling_seconds * 1000);
+            setInterval(this.refreshDevices.bind(this), this.config.client.polling_seconds * 1000);
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
@@ -125,10 +125,12 @@ export default class HubitatPlatform {
 
     handleLocationUpdate(location) {
         if (location.temperature_scale) {
-            this.configManager.updateTempUnit(location.temperature_scale);
+            this.configManager.updatePreferencesConfig({
+                temperature_unit: location.temperature_scale,
+            });
         }
         if (location.hubIP) {
-            this.configManager.updateConfig({
+            this.configManager.updateClientConfig({
                 direct_ip: location.hubIP,
                 use_cloud: location.use_cloud === true,
             });
@@ -143,10 +145,6 @@ export default class HubitatPlatform {
     async handleShutdown() {
         this.logManager.logNotice(`${platformDesc} Platform Shutdown`);
         this.client.dispose();
-    }
-
-    validateConfig(config) {
-        return !config || !config.app_url_local || !config.app_url_cloud || !config.app_id;
     }
 
     // Expose logging methods for backwards compatibility

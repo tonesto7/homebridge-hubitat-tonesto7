@@ -11,23 +11,41 @@ export default class ConfigManager {
         this.platformConfig = platformConfig;
         this.eventEmitter = new events.EventEmitter();
 
-        // Default values for all config options
+        // Define new nested structure for defaults
         this.defaults = {
-            polling_seconds: 900,
-            excluded_attributes: [],
-            excluded_capabilities: [],
-            update_method: "direct",
-            round_levels: true,
-            direct_port: 8000,
-            validateTokenId: false,
-            consider_fan_by_name: true,
-            consider_light_by_name: false,
-            adaptive_lighting: true,
-            adaptive_lighting_off_when_on: false,
-            adaptive_lighting_offset: undefined,
-            allow_led_effects_control: true,
-            temperature_unit: "F",
-            logConfig: {
+            client: {
+                app_id: undefined,
+                app_url_local: undefined,
+                app_url_cloud: undefined,
+                access_token: undefined,
+                use_cloud: false,
+                validateTokenId: false,
+                direct_ip: undefined,
+                direct_port: 8000,
+                polling_seconds: 900,
+            },
+            devices: {
+                excluded_attributes: [],
+                excluded_capabilities: [],
+                round_levels: true,
+                consider_fan_by_name: true,
+                consider_light_by_name: false,
+            },
+            features: {
+                adaptive_lighting: {
+                    enabled: true,
+                    off_when_on: false,
+                    offset: undefined,
+                },
+                led_effects: {
+                    enabled: true,
+                },
+            },
+            preferences: {
+                temperature_unit: "F",
+                update_method: "direct",
+            },
+            logging: {
                 debug: false,
                 showChanges: true,
             },
@@ -36,169 +54,255 @@ export default class ConfigManager {
         // Properties that should not be saved to config.json
         this.excludeProperties = ["excluded_attributes", "excluded_capabilities", "update_method", "direct_port", "direct_ip"];
 
-        // Load initial config
-        this.config = this.normalizeConfig(platformConfig);
-        // console.log("Initial Config:", this.config);
+        // First check if config is in old format and needs upgrade
+        if (this.isLegacyConfig(platformConfig)) {
+            this.config = this.upgradeLegacyConfig(platformConfig);
+            // Save the upgraded config
+            this.saveConfig();
+        } else {
+            this.config = this.applyDefaults(platformConfig);
+        }
     }
 
     isConfigValid() {
-        // check all of these:  config === undefined || config === null || config.app_url_local === undefined || config.app_url_local === null || config.app_url_cloud === undefined || config.app_url_cloud === null || config.app_id === undefined || config.app_id === null
-        if (this.config === undefined || this.config === null || this.config.app_url_local === undefined || this.config.app_url_local === null || this.config.app_url_cloud === undefined || this.config.app_url_cloud === null || this.config.app_id === undefined || this.config.app_id === null) {
-            return false;
-        }
-        return true;
-
-        // const requiredFields = ["app_url_local", "app_url_cloud", "app_id"];
-        // return this.config !== null && requiredFields.every((field) => this.config[field] !== undefined && this.config[field] !== null);
+        const client = this.config.client;
+        return client && client.app_id && client.app_url_local && client.app_url_cloud;
     }
 
-    /**
-     * Normalizes and validates the configuration.
-     *
-     * @param {Object} config - The raw configuration from Homebridge.
-     * @returns {Object} - The normalized configuration object.
-     */
-    normalizeConfig(config) {
-        // Start with all defaults
-        const normalized = { ...this.defaults };
+    // Helper to detect if config is in old format
+    isLegacyConfig(config) {
+        // Check if config has any of the old top-level properties
+        const legacyProps = ["app_id", "app_url_local", "app_url_cloud", "access_token", "polling_seconds", "round_levels", "adaptive_lighting"];
+        return legacyProps.some((prop) => config.hasOwnProperty(prop));
+    }
 
-        // Add required fields
-        normalized.app_url_local = config.app_url_local;
-        normalized.app_url_cloud = config.app_url_cloud;
-        normalized.app_id = config.app_id;
-        normalized.access_token = config.access_token;
+    // Convert old flat config to new nested structure
+    upgradeLegacyConfig(oldConfig) {
+        console.log("Upgrading legacy config format to new structure...");
 
-        // Special cases that need computation
-        normalized.direct_ip = config.direct_ip || this.getIPAddress();
-        normalized.direct_port = config.direct_port || this.findDirectPort(config) || this.defaults.direct_port;
-
-        // Override any defaults with provided config values
-        for (const [key, value] of Object.entries(config)) {
-            if (value !== undefined) {
-                if (key === "logConfig") {
-                    normalized.logConfig = {
-                        debug: config.logConfig?.debug === true,
-                        showChanges: config.logConfig?.showChanges !== false,
-                    };
-                } else {
-                    normalized[key] = value;
-                }
-            }
-        }
-
-        // Handle boolean flags consistently
-        const booleanFlags = {
-            use_cloud: false,
-            validateTokenId: false,
-            consider_fan_by_name: true,
-            consider_light_by_name: false,
-            adaptive_lighting: true,
-            adaptive_lighting_off_when_on: false,
-            allow_led_effects_control: true,
-            round_levels: true,
+        // Create new config structure from old flat config
+        const newConfig = {
+            client: {
+                app_id: oldConfig.app_id,
+                app_url_local: oldConfig.app_url_local,
+                app_url_cloud: oldConfig.app_url_cloud,
+                access_token: oldConfig.access_token,
+                use_cloud: oldConfig.use_cloud,
+                validateTokenId: oldConfig.validateTokenId,
+                direct_ip: oldConfig.direct_ip || this.getIPAddress(),
+                direct_port: oldConfig.direct_port || this.findDirectPort(oldConfig),
+                polling_seconds: oldConfig.polling_seconds,
+            },
+            devices: {
+                excluded_attributes: oldConfig.excluded_attributes,
+                excluded_capabilities: oldConfig.excluded_capabilities,
+                round_levels: oldConfig.round_levels,
+                consider_fan_by_name: oldConfig.consider_fan_by_name,
+                consider_light_by_name: oldConfig.consider_light_by_name,
+            },
+            features: {
+                adaptive_lighting: {
+                    enabled: oldConfig.adaptive_lighting,
+                    off_when_on: oldConfig.adaptive_lighting_off_when_on,
+                    offset: oldConfig.adaptive_lighting_offset,
+                },
+                led_effects: {
+                    enabled: oldConfig.allow_led_effects_control,
+                },
+            },
+            preferences: {
+                temperature_unit: oldConfig.temperature_unit,
+                update_method: oldConfig.update_method,
+            },
+            logging: {
+                debug: oldConfig.logConfig?.debug,
+                showChanges: oldConfig.logConfig?.showChanges,
+            },
         };
 
-        for (const [key, defaultValue] of Object.entries(booleanFlags)) {
-            normalized[key] = normalized[key] === undefined ? defaultValue : normalized[key] === true;
-        }
+        // console.log("New config:", newConfig);
 
-        // Special case for adaptive lighting offset
-        if (!normalized.adaptive_lighting) {
-            normalized.adaptive_lighting_offset = undefined;
-        }
-
-        return normalized;
+        // Apply defaults to ensure all properties exist
+        return this.applyDefaults(newConfig);
     }
 
-    /**
-     * Updates the configuration with new values and persists them to the config file.
-     *
-     * @param {Object} newConfig - The new configuration values.
-     */
-    updateConfig(newConfig) {
-        const updatedFields = {};
+    // Apply defaults to ensure all required properties exist
+    applyDefaults(config) {
+        const result = {};
 
-        // Filter out excluded properties
-        const configToUpdate = { ...newConfig };
-        this.excludeProperties.forEach((prop) => {
-            delete configToUpdate[prop];
-        });
-
-        // Only process changed fields
-        for (const [key, value] of Object.entries(configToUpdate)) {
-            if (JSON.stringify(this.config[key]) !== JSON.stringify(value)) {
-                updatedFields[key] = value;
-                this.config[key] = value;
+        // Recursive helper to merge defaults
+        const mergeDefaults = (target, source, defaults) => {
+            for (const key in defaults) {
+                if (typeof defaults[key] === "object" && !Array.isArray(defaults[key])) {
+                    // Create nested object if it doesn't exist
+                    target[key] = {};
+                    // Merge recursively for nested objects
+                    mergeDefaults(target[key], (source && source[key]) || {}, defaults[key]);
+                } else {
+                    // For non-objects, use source value if it exists, otherwise use default
+                    target[key] = source && source[key] !== undefined ? source[key] : defaults[key];
+                }
             }
+        };
+
+        mergeDefaults(result, config, this.defaults);
+        return result;
+    }
+
+    // Helper methods to access nested config
+    getClientConfig() {
+        return this.config.client;
+    }
+
+    getDevicesConfig() {
+        return this.config.devices;
+    }
+
+    getFeaturesConfig() {
+        return this.config.features;
+    }
+
+    getPreferencesConfig() {
+        return this.config.preferences;
+    }
+
+    getLoggingConfig() {
+        return this.config.logging;
+    }
+
+    // Update methods for specific sections
+    updateClientConfig(updates) {
+        this.config.client = {
+            ...this.config.client,
+            ...updates,
+        };
+        this.saveConfig();
+        this.eventEmitter.emit("configUpdated", this.config);
+    }
+
+    updateDevicesConfig(updates) {
+        this.config.devices = {
+            ...this.config.devices,
+            ...updates,
+        };
+        this.saveConfig();
+        this.eventEmitter.emit("configUpdated", this.config);
+    }
+
+    updatePreferencesConfig(updates) {
+        this.config.preferences = {
+            ...this.config.preferences,
+            ...updates,
+        };
+        this.saveConfig();
+        this.eventEmitter.emit("configUpdated", this.config);
+    }
+
+    updateFeaturesConfig(updates) {
+        this.config.features = {
+            ...this.config.features,
+            ...updates,
+        };
+        this.saveConfig();
+        this.eventEmitter.emit("configUpdated", this.config);
+    }
+
+    updateLoggingConfig(updates) {
+        this.config.logging = {
+            ...this.config.logging,
+            ...updates,
+        };
+        this.saveConfig();
+        this.eventEmitter.emit("configUpdated", this.config);
+    }
+
+    updateNestedConfig(path, value) {
+        let current = this.config;
+        const parts = path.split(".");
+        const last = parts.pop();
+
+        for (const part of parts) {
+            current = current[part] = current[part] || {};
         }
 
-        // Only save if there were actual changes
-        if (Object.keys(updatedFields).length > 0) {
+        current[last] = value;
+        this.saveConfig();
+        this.eventEmitter.emit("configUpdated", this.config);
+    }
+
+    // Generic update method that accepts dot notation paths
+    updateConfig(updates) {
+        if (typeof updates === "string") {
+            const [path, value] = updates.split("=");
+            this.updateNestedConfig(path, value);
+        } else {
+            // Handle object updates
+            Object.entries(updates).forEach(([key, value]) => {
+                if (key.includes(".")) {
+                    this.updateNestedConfig(key, value);
+                } else {
+                    // Handle top-level updates
+                    this.config[key] = value;
+                }
+            });
             this.saveConfig();
             this.eventEmitter.emit("configUpdated", this.config);
         }
-
-        return updatedFields;
     }
 
-    /**
-     * Saves the current configuration back to the Homebridge config.json file.
-     * Completely excludes specific properties from being saved.
-     */
     saveConfig() {
-        const configPath = this.homebridge.configPath();
-        const configFile = fs.readFileSync(configPath, "utf8");
-        const config = JSON.parse(configFile);
+        try {
+            const configPath = this.homebridge.configPath();
+            const configFile = fs.readFileSync(configPath, "utf8");
+            const fullConfig = JSON.parse(configFile);
 
-        // Find the platform config
-        const platformConfig = config.platforms.find((x) => x.name === this.platformConfig.name && x.app_id === this.config.app_id);
-
-        if (platformConfig) {
-            // Create a copy of the current config
-            const configToSave = { ...this.config };
-
-            // Remove excluded properties from the config to save
-            this.excludeProperties.forEach((prop) => {
-                if (configToSave[prop]) {
-                    delete configToSave[prop];
+            // Find the platform config in the platforms array
+            const platformIndex = fullConfig.platforms.findIndex((x) => {
+                // For old config structure
+                if (x.app_id) {
+                    return x.name === this.platformConfig.name && x.app_id === this.config.client.app_id;
                 }
+                // For new config structure
+                return x.name === this.platformConfig.name && x.client?.app_id === this.config.client.app_id;
             });
 
-            // Update the platform config with the filtered configuration
-            Object.assign(platformConfig, configToSave);
+            if (platformIndex === -1) {
+                console.error("Platform configuration not found in config.json");
+                return;
+            }
+
+            // Create a copy of the current config
+            const configToSave = JSON.parse(JSON.stringify(this.config));
+
+            // Remove excluded properties
+            this.excludeProperties.forEach((prop) => {
+                const sections = ["client", "devices", "preferences"];
+                sections.forEach((section) => {
+                    if (configToSave[section]?.[prop]) {
+                        delete configToSave[section][prop];
+                    }
+                });
+            });
+
+            // Replace the old platform config with the new one, keeping platform and name at root
+            fullConfig.platforms[platformIndex] = {
+                platform: this.platformConfig.platform,
+                name: this.platformConfig.name,
+                ...configToSave,
+            };
 
             // Write the updated config back to file
-            fs.writeFileSync(configPath, JSON.stringify(config, null, 4), "utf8");
-        } else {
-            // Handle the case where the platform config is not found or app_id doesn't match
-            console.error("Platform configuration not found or app_id does not match in config.json");
+            fs.writeFileSync(configPath, JSON.stringify(fullConfig, null, 4), "utf8");
+
+            // Emit the config updated event
+            this.eventEmitter.emit("configUpdated", this.config);
+
+            // console.log("Config saved successfully");
+        } catch (error) {
+            console.error("Error saving config:", error);
         }
     }
 
-    /**
-     * Loads the configuration from the Homebridge config.json file.
-     */
-    loadConfig() {
-        const configPath = this.homebridge.configPath();
-        const configFile = fs.readFileSync(configPath, "utf8");
-        const config = JSON.parse(configFile);
-
-        // Find the platform config
-        const platformConfig = config.platforms.find((x) => x.name === this.platformConfig.name && x.app_id === this.platformConfig.app_id);
-
-        if (platformConfig) {
-            this.config = this.normalizeConfig(platformConfig);
-        } else {
-            // Handle the case where the platform config is not found or app_id doesn't match
-            console.error("Platform configuration not found or app_id does not match in config.json");
-        }
-    }
-
-    /**
-     * Finds an available port for direct communication.
-     *
-     * @returns {number} - The available direct port.
-     */
     findDirectPort(rawConfig) {
         console.log("Finding direct port...");
         let port = (rawConfig && rawConfig.direct_port) || 8000;
@@ -208,11 +312,6 @@ export default class ConfigManager {
         return port;
     }
 
-    /**
-     * Gets the current configuration.
-     *
-     * @returns {Object} - The current configuration.
-     */
     getConfig() {
         return { ...this.config }; // Return a copy to prevent accidental mutations
     }
@@ -221,23 +320,12 @@ export default class ConfigManager {
         return this.config[key];
     }
 
-    /**
-     * Registers a listener for configuration updates.
-     *
-     * @param {Function} listener - The listener function to be called on updates.
-     */
     onConfigUpdate(listener) {
         this.eventEmitter.on("configUpdated", listener);
     }
 
-    /**
-     * Utility method to get the local IP address.
-     *
-     * @returns {string} - The local IP address.
-     */
     getIPAddress() {
         console.log("Getting local IP address...");
-        // Implement method to get local IP address
         const interfaces = os.networkInterfaces();
         for (const devName in interfaces) {
             const iface = interfaces[devName];
@@ -252,23 +340,13 @@ export default class ConfigManager {
         return "0.0.0.0";
     }
 
-    /**
-     * Retrieves the temperature unit.
-     *
-     * @returns {string} The temperature unit.
-     */
     getTempUnit() {
-        return this.config.temperature_unit;
+        return this.config.preferences.temperature_unit;
     }
 
-    /**
-     * Updates the temperature unit.
-     *
-     * @param {string} unit - The new temperature unit ('F' or 'C').
-     */
     updateTempUnit(unit) {
         if (unit && (unit === "F" || unit === "C")) {
-            this.updateConfig({ temperature_unit: unit });
+            this.updateNestedConfig("preferences.temperature_unit", unit);
         } else {
             console.error("Invalid temperature unit:", unit);
         }

@@ -3,29 +3,30 @@
 import chalk from "chalk";
 
 export class LogManager {
-    constructor(log, debug = false, config = {}) {
+    constructor(log, debug = false, configManager) {
         this.log = log;
-        this.config = config;
-        this.debug = debug;
-        this.chalk = chalk;
 
-        // Default log configuration if none provided
-        this.logConfig = config.logConfig || {
-            debug: false,
+        this.config = configManager.getConfig();
+        this.debug = debug;
+
+        this.updateLoggingConfig(this.config.logging);
+
+        // Subscribe to config updates
+        configManager.onConfigUpdate((newConfig) => {
+            this.config = newConfig;
+            this.updateLoggingConfig(newConfig.logging);
+        });
+    }
+
+    updateLoggingConfig(loggingConfig) {
+        this.logConfig = {
+            debug: loggingConfig?.debug || false,
             info: true,
             warn: true,
             notice: true,
             error: true,
+            showChanges: loggingConfig?.showChanges !== false,
         };
-    }
-
-    /**
-     * Update log configuration
-     * @param {Object} newConfig - New logging configuration
-     */
-    updateConfig(newConfig) {
-        this.config = newConfig;
-        this.logConfig = newConfig.logConfig || this.logConfig;
     }
 
     /**
@@ -58,7 +59,7 @@ export class LogManager {
      */
     logAlert(message, ...args) {
         if (!this.logConfig.notice) return;
-        this.log.info(this.chalk.yellow(this.formatMessage(message, ...args)));
+        this.log.info(chalk.yellow(this.formatMessage(message, ...args)));
     }
 
     /**
@@ -68,7 +69,7 @@ export class LogManager {
      */
     logGreen(message, ...args) {
         if (!this.logConfig.notice) return;
-        this.log.info(this.chalk.green(this.formatMessage(message, ...args)));
+        this.log.info(chalk.green(this.formatMessage(message, ...args)));
     }
 
     /**
@@ -78,7 +79,7 @@ export class LogManager {
      */
     logNotice(message, ...args) {
         if (!this.logConfig.notice) return;
-        this.log.info(this.chalk.blueBright(this.formatMessage(message, ...args)));
+        this.log.info(chalk.blueBright(this.formatMessage(message, ...args)));
     }
 
     /**
@@ -88,7 +89,7 @@ export class LogManager {
      */
     logWarn(message, ...args) {
         if (!this.logConfig.warn) return;
-        this.log.warn(this.chalk.hex("#FFA500").bold(this.formatMessage(message, ...args)));
+        this.log.warn(chalk.hex("#FFA500").bold(this.formatMessage(message, ...args)));
     }
 
     /**
@@ -100,13 +101,13 @@ export class LogManager {
     logError(message, error, ...args) {
         if (!this.logConfig.error) return;
 
-        this.log.error(this.chalk.bold.red(this.formatMessage(message, ...args)));
+        this.log.error(chalk.bold.red(this.formatMessage(message, ...args)));
 
         if (error) {
             if (error instanceof Error) {
-                this.log.error(this.chalk.red(error.stack || error.message));
+                this.log.error(chalk.red(error.stack || error.message));
             } else {
-                this.log.error(this.chalk.red(error));
+                this.log.error(chalk.red(error));
             }
         }
     }
@@ -118,7 +119,7 @@ export class LogManager {
      */
     logInfo(message, ...args) {
         if (!this.logConfig.info) return;
-        this.log.info(this.chalk.white(this.formatMessage(message, ...args)));
+        this.log.info(chalk.white(this.formatMessage(message, ...args)));
     }
 
     /**
@@ -128,11 +129,11 @@ export class LogManager {
      */
     logDebug(message, ...args) {
         if (!this.logConfig.debug && !this.debug) return;
-        this.log.debug(this.chalk.gray(this.formatMessage(message, ...args)));
+        this.log.debug(chalk.gray(this.formatMessage(message, ...args)));
     }
 
     logAttributeChange(deviceName, attribute, previousValue, newValue) {
-        this.logInfo(`${this.chalk.hex("#FFA500")("Device Event")}: ` + `(${this.chalk.blueBright(deviceName)}) ` + `[${this.chalk.yellow.bold(attribute ? attribute.toUpperCase() : "unknown")}] ` + `changed from ${this.chalk.green(previousValue)} to ${this.chalk.green(newValue)}`);
+        this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: ` + `(${chalk.blueBright(deviceName)}) ` + `[${chalk.yellow.bold(attribute ? attribute.toUpperCase() : "unknown")}] ` + `changed from ${chalk.green(previousValue)} to ${chalk.green(newValue)}`);
     }
 
     /**

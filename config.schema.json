@@ -4,156 +4,196 @@
     "singular": true,
     "footerDisplay": "If you need help or have issues visit: [issues](https://github.com/tonesto7/homebridge-hubitat-tonesto7/issues)",
     "schema": {
-        "name": {
-            "title": "Name",
-            "description": "This should default to Hubitat-v2",
-            "type": "string",
-            "default": "Hubitat-v2",
-            "required": true
-        },
-        "app_url_local": {
-            "title": "App Url Local",
-            "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
-            "type": "string",
-            "required": true
-        },
-        "app_url_cloud": {
-            "title": "App Url Cloud",
-            "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
-            "type": "string",
-            "required": true
-        },
-        "use_cloud": {
-            "title": "Use Cloud Endpoint instead of local?",
-            "description": "This will enable the plugin to communicate with the hubitat app via the cloud url.  (Mostly useful for troubleshooting local communication issues via ports)",
-            "type": "boolean",
-            "required": true,
-            "default": false
-        },
-        "app_id": {
-            "title": "App ID",
-            "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
-            "type": "integer",
-            "required": true
-        },
-        "access_token": {
-            "title": "App Token",
-            "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
-            "type": "string",
-            "required": true
-        },
-        "direct_ip": {
-            "title": "Direct IP",
-            "description": "Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.",
-            "type": "string",
-            "required": false
-        },
-        "direct_port": {
-            "title": "Direct Port",
-            "description": "This is the port that the plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address. (This is now a dynamic port selection)",
-            "type": "integer",
-            "maximum": 65535,
-            "default": 8000,
-            "required": false
-        },
-        "polling_seconds": {
-            "title": "Polling Seconds}",
-            "description": "This is defines how often the plugin will poll the hub on it's own for updated devices and states (This is only used to just make sure everything is in sync state wise.  More than once every hour is not recommended)",
-            "type": "integer",
-            "maximum": 86400,
-            "minimum": 60,
-            "default": 3600,
-            "required": false
-        },
-        "temperature_unit": {
-            "title": "Define Temperature Unit",
-            "type": "string",
-            "default": "F",
-            "oneOf": [
-                {
-                    "title": "Fahrenheit",
-                    "enum": ["F"]
-                },
-                {
-                    "title": "Celcius",
-                    "enum": ["C"]
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "description": "This should default to Hubitat-v2",
+                "type": "string",
+                "default": "Hubitat-v2",
+                "required": true
+            },
+            "client": {
+                "type": "object",
+                "title": "Client Configuration",
+                "properties": {
+                    "app_url_local": {
+                        "title": "App Url Local",
+                        "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
+                        "type": "string",
+                        "required": true
+                    },
+                    "app_url_cloud": {
+                        "title": "App Url Cloud",
+                        "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
+                        "type": "string",
+                        "required": true
+                    },
+                    "use_cloud": {
+                        "title": "Use Cloud Endpoint instead of local?",
+                        "description": "This will enable the plugin to communicate with the hubitat app via the cloud url. (Mostly useful for troubleshooting local communication issues via ports)",
+                        "type": "boolean",
+                        "required": true,
+                        "default": false
+                    },
+                    "app_id": {
+                        "title": "App ID",
+                        "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
+                        "type": "integer",
+                        "required": true
+                    },
+                    "access_token": {
+                        "title": "App Token",
+                        "description": "To get this information, open Homebridge App under Hubitat UI, and tap on 'View Generated Config for HomeBridge'",
+                        "type": "string",
+                        "required": true
+                    },
+                    "direct_ip": {
+                        "title": "Direct IP",
+                        "description": "Most installations won't need this, but if for any reason it can't identify your ip address correctly, use this setting to force the IP presented to Hubitat for the hub to send to.",
+                        "type": "string",
+                        "required": false
+                    },
+                    "direct_port": {
+                        "title": "Direct Port",
+                        "description": "This is the port that the plugin will listen on for traffic from your hub. Make sure your firewall allows incoming traffic on this port from your hub's IP address. (This is now a dynamic port selection)",
+                        "type": "integer",
+                        "maximum": 65535,
+                        "default": 8000,
+                        "required": false
+                    },
+                    "polling_seconds": {
+                        "title": "Polling Seconds",
+                        "description": "This is defines how often the plugin will poll the hub on it's own for updated devices and states (This is only used to just make sure everything is in sync state wise. More than once every hour is not recommended)",
+                        "type": "integer",
+                        "maximum": 86400,
+                        "minimum": 60,
+                        "default": 900,
+                        "required": false
+                    },
+                    "validateTokenId": {
+                        "title": "Validate App Endpoint Access Token and AppID?",
+                        "description": "This will help secure your plugin by validating that the plugin is receiving data from the correct Hubitat App if you have multiple instances of the App.",
+                        "type": "boolean",
+                        "required": true,
+                        "default": false
+                    }
                 }
-            ]
-        },
-        "round_levels": {
-            "title": "Round Levels?",
-            "description": "Round levels <3% to 0% and >97% to 100%",
-            "type": "boolean",
-            "required": false,
-            "default": true
-        },
-        "adaptive_lighting": {
-            "title": "Support Adaptive Lighting?",
-            "description": "Adaptive Lighting Description: https://appleinsider.com/articles/20/11/08/how-to-use-homekit-adaptive-lighting-that-adjust-your-lights-throughout-the-day.",
-            "type": "boolean",
-            "required": false,
-            "default": true
-        },
-        "adaptive_lighting_off_when_on": {
-            "title": "Disable Adaptive Lighting when device is on?",
-            "description": "When enabled, Adaptive Lighting will be disabled when the device is turned on manually.",
-            "type": "boolean",
-            "required": false,
-            "default": true
-        },
-        "adaptive_lighting_offset": {
-            "title": "Adaptive Lighting (ColorTemp in Mired) Offset",
-            "description": "For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.",
-            "type": "integer",
-            "minimum": -100,
-            "maximum": 100,
-            "default": 0,
-            "required": false
-        },
-        "allow_led_effects_control": {
-            "title": "Allow LED Effects Control?",
-            "description": "If enabled, the plugin will allow control of LED effects for devices that support them.",
-            "type": "boolean",
-            "required": false,
-            "default": true
-        },
-        "consider_fan_by_name": {
-            "title": "Assign Device as Fan when Device has the word Fan in the Name?",
-            "description": "By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.",
-            "type": "boolean",
-            "required": false,
-            "default": true
-        },
-        "consider_light_by_name": {
-            "title": "Assign Device as Light when Device has the word Light in the Name?",
-            "description": "By default the plugin will not identify a Light device by using a devices label, and whether it has Light in the label.",
-            "type": "boolean",
-            "required": false,
-            "default": false
-        },
-        "validateTokenId": {
-            "title": "Validate App Endpoint Access Token and AppID?",
-            "description": "This will help secure your plugin by validating that the plugin is receiving data from the correct Hubitat App if you have multiple instances of the App.",
-            "type": "boolean",
-            "required": true,
-            "default": false
-        },
-        "logConfig": {
-            "type": "object",
-            "properties": {
-                "debug": {
-                    "title": "Enable Debug logging?",
-                    "description": "This will show just about every log output available.",
-                    "type": "boolean",
-                    "required": false,
-                    "default": false
-                },
-                "showChanges": {
-                    "title": "Show Device Events in the Logs?",
-                    "description": "This will log device event changes received by Hubitat.",
-                    "type": "boolean",
-                    "required": false,
-                    "default": true
+            },
+            "devices": {
+                "type": "object",
+                "title": "Device Settings",
+                "properties": {
+                    "round_levels": {
+                        "title": "Round Levels?",
+                        "description": "Round levels <3% to 0% and >97% to 100%",
+                        "type": "boolean",
+                        "required": false,
+                        "default": true
+                    },
+                    "consider_fan_by_name": {
+                        "title": "Assign Device as Fan when Device has the word Fan in the Name?",
+                        "description": "By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.",
+                        "type": "boolean",
+                        "required": false,
+                        "default": true
+                    },
+                    "consider_light_by_name": {
+                        "title": "Assign Device as Light when Device has the word Light in the Name?",
+                        "description": "By default the plugin will not identify a Light device by using a devices label, and whether it has Light in the label.",
+                        "type": "boolean",
+                        "required": false,
+                        "default": false
+                    }
+                }
+            },
+            "features": {
+                "type": "object",
+                "title": "Feature Settings",
+                "properties": {
+                    "adaptive_lighting": {
+                        "type": "object",
+                        "title": "Adaptive Lighting Settings",
+                        "properties": {
+                            "enabled": {
+                                "title": "Support Adaptive Lighting?",
+                                "description": "Adaptive Lighting Description: https://appleinsider.com/articles/20/11/08/how-to-use-homekit-adaptive-lighting-that-adjust-your-lights-throughout-the-day.",
+                                "type": "boolean",
+                                "required": false,
+                                "default": true
+                            },
+                            "off_when_on": {
+                                "title": "Disable Adaptive Lighting when device is on?",
+                                "description": "When enabled, Adaptive Lighting will be disabled when the device is turned on manually.",
+                                "type": "boolean",
+                                "required": false,
+                                "default": false
+                            },
+                            "offset": {
+                                "title": "Adaptive Lighting (ColorTemp in Mired) Offset",
+                                "description": "For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.",
+                                "type": "integer",
+                                "minimum": -100,
+                                "maximum": 100,
+                                "default": 0,
+                                "required": false
+                            }
+                        }
+                    },
+                    "led_effects": {
+                        "type": "object",
+                        "title": "LED Effects Settings",
+                        "properties": {
+                            "enabled": {
+                                "title": "Allow LED Effects Control?",
+                                "description": "If enabled, the plugin will allow control of LED effects for devices that support them.",
+                                "type": "boolean",
+                                "required": false,
+                                "default": true
+                            }
+                        }
+                    }
+                }
+            },
+            "preferences": {
+                "type": "object",
+                "title": "Preferences",
+                "properties": {
+                    "temperature_unit": {
+                        "title": "Define Temperature Unit",
+                        "type": "string",
+                        "default": "F",
+                        "oneOf": [
+                            {
+                                "title": "Fahrenheit",
+                                "enum": ["F"]
+                            },
+                            {
+                                "title": "Celcius",
+                                "enum": ["C"]
+                            }
+                        ]
+                    }
+                }
+            },
+            "logging": {
+                "type": "object",
+                "title": "Logging Settings",
+                "properties": {
+                    "debug": {
+                        "title": "Enable Debug logging?",
+                        "description": "This will show just about every log output available.",
+                        "type": "boolean",
+                        "required": false,
+                        "default": false
+                    },
+                    "showChanges": {
+                        "title": "Show Device Events in the Logs?",
+                        "description": "This will log device event changes received by Hubitat.",
+                        "type": "boolean",
+                        "required": false,
+                        "default": true
+                    }
                 }
             }
         }

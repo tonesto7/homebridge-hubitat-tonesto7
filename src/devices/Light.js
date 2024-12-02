@@ -23,7 +23,7 @@ export class Light {
         this._configureAdaptiveLighting(accessory, svc);
 
         // Configure effects if supported
-        if (accessory.hasAttribute("lightEffects") && accessory.hasCommand("setEffect") && this.config.allow_led_effects_control) {
+        if (accessory.hasAttribute("lightEffects") && accessory.hasCommand("setEffect") && this.config.features.led_effects.enabled) {
             this._configureEffects(accessory, devData);
         }
 
@@ -77,10 +77,10 @@ export class Light {
 
     // Adaptive Lighting Functions
     _configureAdaptiveLighting = (accessory, svc) => {
-        const canUseAL = accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature") && this.config.adaptive_lighting !== false && !accessory.hasDeviceFlag("light_no_al");
+        const canUseAL = accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature") && this.config.features.adaptive_lighting.enabled !== false && !accessory.hasDeviceFlag("light_no_al");
 
         if (canUseAL && !this._getAdaptiveLightingController(accessory)) {
-            const offset = this.config.adaptive_lighting_offset || 0;
+            const offset = this.config.features.adaptive_lighting.offset || 0;
             const controlMode = this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC;
             if (svc) {
                 accessory.adaptiveLightingController = new this.api.hap.AdaptiveLightingController(svc, { controllerMode: controlMode, customTemperatureAdjustment: offset });
@@ -117,7 +117,7 @@ export class Light {
     };
 
     _pauseAdaptiveLighting = (accessory, manualControl = false) => {
-        const offWhenOn = this.config.adaptive_lighting_off_when_on || false;
+        const offWhenOn = this.config.features.adaptive_lighting.off_when_on || false;
         const hasController = accessory.adaptiveLightingController ? true : false;
         const isActive = this._isAdaptiveLightingActive(accessory);
 
@@ -253,7 +253,7 @@ export class Light {
     }
 
     _transformBrightnessFromDevice(value) {
-        if (this.config.round_levels) {
+        if (this.config.devices.round_levels) {
             if (value < 5) return 0;
             if (value > 95) return 100;
         }

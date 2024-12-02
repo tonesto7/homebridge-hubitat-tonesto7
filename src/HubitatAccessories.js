@@ -266,8 +266,8 @@ export default class HubitatAccessories {
             commands: accessory.context.deviceData.commands,
             name: accessory.context.deviceData.name,
             config: {
-                consider_light_by_name: this.config.consider_light_by_name,
-                consider_fan_by_name: this.config.consider_fan_by_name,
+                consider_light_by_name: this.config.devices.consider_light_by_name,
+                consider_fan_by_name: this.config.devices.consider_fan_by_name,
             },
         });
 
@@ -282,12 +282,18 @@ export default class HubitatAccessories {
         const commandsSet = new Set(Object.keys(accessory.context.deviceData.commands || {}));
         const nameLower = accessory.context.deviceData.name.toLowerCase();
 
+        if (this.config.devices.consider_fan_by_name && nameLower.includes("fan")) {
+            console.log(
+                `${accessory.displayName} | isFanByName: ${this.config.devices.consider_fan_by_name && nameLower.includes("fan") && !capabilitiesSet.has("Fan") && !capabilitiesSet.has("FanControl") && capabilitiesSet.has("Switch") && attributesSet.has("switch")} | name includes fan: ${nameLower.includes("fan")} | hasFanCap: ${capabilitiesSet.has("Fan")} | hasFanControl: ${capabilitiesSet.has("FanControl")} | hasSwitchCap: ${capabilitiesSet.has("Switch")} | hasSwitchAttr: ${attributesSet.has("switch")}`,
+            );
+        }
+
         const deviceWrapper = {
             hasCapability: (capability) => capabilitiesSet.has(capability),
             hasAttribute: (attribute) => attributesSet.has(attribute),
             hasCommand: (command) => commandsSet.has(command),
-            hasLightLabel: () => this.config.consider_light_by_name && nameLower.includes("light"),
-            hasFanLabel: () => this.config.consider_fan_by_name && nameLower.includes("fan"),
+            hasLightLabel: () => this.config.devices.consider_light_by_name && nameLower.includes("light"),
+            hasFanLabel: () => this.config.devices.consider_fan_by_name && nameLower.includes("fan"),
             context: accessory.context,
         };
 
@@ -540,8 +546,8 @@ export default class HubitatAccessories {
             return accessory.context.deviceData.customflags && Object.keys(accessory.context.deviceData.customflags).includes(flag);
         };
 
-        accessory.hasLightLabel = () => this.config.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light");
-        accessory.hasFanLabel = () => this.config.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan");
+        accessory.hasLightLabel = () => this.config.devices.consider_light_by_name && accessory.context.deviceData.name.toLowerCase().includes("light");
+        accessory.hasFanLabel = () => this.config.devices.consider_fan_by_name && accessory.context.deviceData.name.toLowerCase().includes("fan");
 
         accessory.hasCharacteristic = (service, characteristic) => {
             const existingService = accessory.getService(service);
