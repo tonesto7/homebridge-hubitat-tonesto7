@@ -32,8 +32,8 @@ export default class HubitatClient {
             timers: new Map(),
             lastExecutions: new Map(),
             batchSize: 10,
-            batchDelay: 50,
-            maxBatchDelay: 200,
+            batchDelay: 25,
+            maxBatchDelay: 100,
         };
 
         // Retry configuration
