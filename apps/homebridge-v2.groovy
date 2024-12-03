@@ -248,7 +248,7 @@ def mainPage() {
         }
         clearTestDeviceItems()
     }
-}
+    }
 
 def supportPage() {
     return dynamicPage(name: 'supportPage', title: sBLANK, install: false, uninstall: false) {
@@ -443,9 +443,9 @@ private String getSelectedDeviceDescs() {
         desc += spanSmBld('Devices Selected:')  + spanSmBr(" (${devCnt})")
         desc += (devCnt > 149) ? lineBr() + spanSmBld('NOTICE: ', sCLRRED) + spanSmBr('Homebridge only allows 149 Devices per HomeKit Bridge!!!', sCLRRED) : sBLANK
         desc += inputFooter(sTTM)
-    }
+        }
     return desc
-}
+    }
 
 private void resetCapFilters() {
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') }.collect { (String)it.key }
@@ -481,10 +481,10 @@ private String getCapFilterDesc() {
             desc += spanSmBldBr('Exclude These Sensors:', sCLR4D9)
             settings.sensorAllowTemp.sort { it.displayName }.each { dev ->
                 desc += spanSmBr("${sBULLET} ${dev.displayName}", sCLR4D9)
-            }
-            desc += lineBr()
         }
+            desc += lineBr()
     }
+}
 
     // Handle other capability removals
     List<String> remKeys = ((Map<String,Object>)settings).findAll { ((String)it.key).startsWith('remove') && it.value != null }.collect { (String)it.key }
@@ -494,10 +494,10 @@ private String getCapFilterDesc() {
             desc += spanSmBldBr("${capName}:", sCLR4D9)
             settings[k].sort { it.displayName }.each { dev ->
                 desc += spanSmBr("${sBULLET} ${dev.displayName}", sCLR4D9)
-            }
-            desc += lineBr()
         }
+            desc += lineBr()
     }
+}
 
     // Handle custom capability filters
     Map cFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
@@ -1065,6 +1065,16 @@ def appInfoSect() {
     section(sectH3TS((String)app.name, tStr, getAppImg('hb_tonesto7'), '#76AF04')) {
         Map minUpdMap = getMinVerUpdsRequired()
         List codeUpdItems = codeUpdateItems(true)
+        Map healthStatus = analyzePluginHealth()
+
+        if (!healthStatus.isOk) {
+            isNote = true
+            String str = spanSmBldBr('Plugin Health Issues:', sCLRRED)
+            healthStatus.messages.each { msg -> 
+                str += spanSmBr("  ${sBULLET} ${msg}", sCLRRED)
+            }
+            paragraph str
+        }
         if (bIs(minUpdMap, 'updRequired') && ((List)minUpdMap.updItems).size() > 0) {
             isNote = true
             String str3
@@ -1329,6 +1339,11 @@ private void healthCheck(Boolean ui=false) {
     Integer lastUpd = getLastTsValSecs('lastActTs')
     Integer evtLogSec = getLastTsValSecs(sEVTLOGEN, 0)
     Integer dbgLogSec = getLastTsValSecs(sDBGLOGEN, 0)
+
+    if (!ui) {
+        checkPluginHealth()
+    }
+
     // log.debug "evtLogSec: $evtLogSec | dbgLogSec: $dbgLogSec"
     if (!ui && lastUpd > 14400) { remTsVal(sSVR) }
 
@@ -1793,8 +1808,8 @@ private void changeMode(String modeId, Boolean shw) {
             /* groovylint-disable-next-line UnnecessarySetter */
             setLocationMode(mode.name)
         } else { logError("Unable to find a matching mode for the id: ${modeId}") }
+        }
     }
-}
 
 private runPiston(String rtId, Boolean shw) {
     if (rtId) {
@@ -1813,6 +1828,86 @@ private runPiston(String rtId, Boolean shw) {
 
 void endPiston(evt) {
     changeHandler([deviceId:evt.id , name: 'webCoRE', value: 'pistonExecuted', displayName: evt.name, date: new Date()])
+}
+
+private void checkPluginHealth() {
+    String server = getServerAddress()
+    if (server == sCLN || server == sNLCLN) { return }
+    
+    // Analyze current health status
+    Map healthStatus = analyzePluginHealth()
+    if (!healthStatus.isOk) {
+        healthStatus.messages.each { String msg ->
+            logWarn("Plugin Health Check: ${msg}")
+        }
+    }
+    
+    // Attempt to contact plugin
+    sendHttpPost('healthCheck', [
+        app_id: gtAppId(),
+        access_token: getTsVal(sATK),
+        app_version: appVersionFLD,
+        hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone)
+    ], 'pluginHealthCheck', getBoolSetting('showDebugLogs'))
+}
+
+// Plugin Health Status Methods
+
+def healthStatus() {
+    logTrace('Plugin called healthStatus()')
+    def body = request?.JSON
+    if (body) {
+        state.pluginDetails = state.pluginDetails ?: [:]
+        state.pluginDetails.lastCheckin = now()
+        state.pluginDetails.pluginHealth = body
+    }
+    String resultJson = new JsonOutput().toJson([
+        status: 'OK',
+        hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone),
+        appVersion: appVersionFLD,
+        deviceCount: getDeviceCnt()
+    ])
+    compressedRender contentType: sAPPJSON, data: resultJson
+}
+
+private Map analyzePluginHealth() {
+    Map result = [
+        isOk: false,
+        messages: []
+    ]
+
+    Map pluginDetails = state.pluginDetails ?: [:]
+    Long lastCheckin = pluginDetails.lastCheckin ?: 0
+
+    // Check if plugin has ever connected
+    if (!lastCheckin) {
+        result.messages.push('Plugin has never connected to Hubitat')
+        return result
+    }
+
+    // Check time since last communication
+    Long diffMs = now() - lastCheckin
+    Long diffMins = diffMs / 60000
+    Long diffHours = diffMins / 60
+
+    if (diffHours > 24) {
+        result.messages.push("Plugin hasn't communicated in ${Math.round(diffHours/24)} days")
+    } else if (diffHours > 1) {
+        result.messages.push("Plugin hasn't communicated in ${diffHours} hours")
+    } else if (diffMins > 30) {
+        result.messages.push("Plugin hasn't communicated in ${diffMins} minutes")
+    }
+
+    // Check memory usage warning if available
+    if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
+        Double memoryUsagePercent = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB) * 100
+        if (memoryUsagePercent > 85) {
+            result.messages.push("Plugin memory usage is high: ${pluginDetails.memory.heapUsedMB}MB/${pluginDetails.memory.heapTotalMB}MB (${Math.round(memoryUsagePercent)}%)")
+        }
+    }
+
+    result.isOk = result.messages.size() == 0
+    return result
 }
 
 def deviceAttribute() {
@@ -1966,7 +2061,7 @@ Map<String,Object> deviceAttributeList(device) {
         } catch (ignored) {
             [(attr): null]
         }
-    }
+}
 
     // Remove attributes that are not supported by the device
     if (!isDeviceInInput('pushableButtonList', devid)) { atts.remove('pushed') }
@@ -2255,12 +2350,12 @@ def changeHandler(evt) {
                 change_date     : send.evtDate,
                 // device_unavailable     : deviceUnavailable,
                 app_id          : gtAppId(),
-                access_token    : getTsVal(sATK)
+                access_token    : (String)state.accessToken //getTsVal(sATK)
             ], sEVTUPD, evtLog)
             logEvt([name: send.evtAttr, value: send.evtValue, device: send.evtDeviceName, execTime: wnow() - execDt])
         }
     }
-}
+    }
 
 void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, String contentType = sAPPJSON) {
     String server = getServerAddress()
@@ -2304,7 +2399,20 @@ String getPluginStatusDesc() {
     String out = spanSmBld('App Version:', sCLRGRY) + spanSmBr(" v${appVersionFLD}", sCLRGRY)
     if (pluginDetails && pluginDetails.keySet().size() > 0) {
         out += spanSmBld('Plugin:', sCLRGRY) + spanSmBr(' (Online)', sCLRGRN)
-        out += state?.pluginDetails?.version ? spanSmBld(" ${sBULLET} Version:", sCLRGRY) + spanSmBr(" v${state?.pluginDetails?.version}", sCLRGRY) : sBLANK
+
+        // Include PluginMemory Usage if available
+        if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
+            String memColor = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB > 0.85) ? sCLRORG : sCLRGRY
+            out += spanSmBld(" ${sBULLET} Memory Usage:", sCLRGRY) + spanSmBr(" ${pluginDetails.memory.heapUsedMB}MB/${pluginDetails.memory.heapTotalMB}MB", memColor)
+        }
+
+        // Include Plugin Uptime if available
+        if (pluginDetails?.uptime?.formatted) {
+            out += spanSmBld(" ${sBULLET} Uptime:", sCLRGRY) + spanSmBr(" ${pluginDetails.uptime.formatted}", sCLRGRY)
+        }
+
+        // Include Version and IP:Port if available
+        out += pluginDetails?.version ? spanSmBld(" ${sBULLET} Version:", sCLRGRY) + spanSmBr(" v${pluginDetails?.version}", sCLRGRY) : sBLANK
         out += pluginDetails?.pluginIP && pluginDetails?.pluginPort ? spanSmBld(" ${sBULLET} Server IP:", sCLRGRY) + spanSmBr(" ${pluginDetails?.pluginIP}:${pluginDetails?.pluginPort}", sCLRGRY) : sBLANK
 
         // Include the lastCheckin Timestamp to local date/time
@@ -2440,7 +2548,7 @@ void updateServicePrefs(Boolean isLocal=false) {
         app_version: appVersionFLD,
         use_cloud: getBoolSetting('use_cloud_endpoint'),
         validateTokenId: getBoolSetting('validate_token'),
-        // local_hub_ip: ((List)location?.hubs)[0]?.localIP
+    // local_hub_ip: ((List)location?.hubs)[0]?.localIP
     ], 'updateServicePrefs', getBoolSetting('showDebugLogs'))
 }
 
@@ -2448,11 +2556,14 @@ def pluginStatus() {
     logTrace('Plugin called... pluginStatus()')
     def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
-
-    // update plugin details properties accCount and isLocal and add them to the state.pluginDetails object. If they don't exist, add them.
+    
+    // Update plugin details
     Map pluginDetails = state.pluginDetails ?: [:]
     pluginDetails.accCount = body?.accCount ?: null
     pluginDetails.isLocal = body?.isLocal ?: false
+    pluginDetails.memory = body?.memory ?: null
+    pluginDetails.uptime = body?.uptime ?: null
+    pluginDetails.lastCheckin = now()
     state.pluginDetails = pluginDetails
 
     if (body?.version) { updCodeVerMap('plugin', (String)body?.version) }
@@ -2467,7 +2578,9 @@ def registerPluginForUpdates() {
         pluginIP: body?.pluginIp,
         pluginPort: body?.pluginPort,
         version: body?.pluginVersion ?: null,
-        lastCheckin: wnow()
+        memory: body?.memory ?: null,
+        uptime: body?.uptime ?: null,
+        lastCheckin: now()
     ]
     remTsVal(sSVR)
     updCodeVerMap('plugin', (String)body?.pluginVersion ?: sNULL)
@@ -2483,6 +2596,7 @@ mappings {
     path('/deviceDebug')                    { action: [GET: 'viewDeviceDebug']      }
     path('/location')                       { action: [GET: 'renderLocation']       }
     path('/pluginStatus')                   { action: [POST: 'pluginStatus']        }
+    path('/healthStatus')                   { action: [POST: 'healthStatus']        }
     path('/deviceCmd')                      { action: [POST: 'deviceCommand']       }
     path('/deviceCmds')                     { action: [POST: 'deviceCommands']      }
     path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }

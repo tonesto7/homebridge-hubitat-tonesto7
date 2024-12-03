@@ -12,6 +12,8 @@ export default class HubitatClient {
         this.config = this.configManager.getConfig();
         this._accessories = null;
 
+        this.getHealthMetrics = platform.getHealthMetrics;
+
         // Command batching state
         this.commandState = {
             queue: [],
@@ -238,6 +240,7 @@ export default class HubitatClient {
             const versionCheck = await this.versionManager.checkVersion();
             this.logManager.logBrightBlue(`Sending Plugin Status to Hubitat | Version: [${versionCheck.hasUpdate && versionCheck.newVersion ? "New Version: " + versionCheck.newVersion : "Up-to-date"}]`);
 
+            const metrics = this.getHealthMetrics();
             const response = await this.makeRequest({
                 method: "post",
                 endpoint: "pluginStatus",
@@ -247,6 +250,8 @@ export default class HubitatClient {
                     version: pluginVersion,
                     isLocal: this.config.client.use_cloud ? "false" : "true",
                     accCount: this._accessories.getAllAccessories().length || null,
+                    memory: metrics.memory,
+                    uptime: metrics.uptime,
                 },
                 timeout: 10000,
             });
@@ -268,14 +273,17 @@ export default class HubitatClient {
 
             const ip = this.configManager.getActiveIP();
             const port = this.configManager.getActivePort();
+            const metrics = this.getHealthMetrics();
 
             const response = await this.makeRequest({
                 method: "post",
-                endpoint: `registerPluginForUpdates`,
+                endpoint: "registerPluginForUpdates",
                 data: {
                     pluginIp: ip,
                     pluginPort: port,
                     pluginVersion: pluginVersion,
+                    memory: metrics.memory,
+                    uptime: metrics.uptime,
                 },
                 timeout: 10000,
             });

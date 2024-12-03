@@ -16,6 +16,7 @@
 - [NEW] Device commands will now be batched and queued efficiently.
 - [NEW] Automatic retry system when operations fail.
 - [NEW] Better error handling and recovery mechanisms.
+- [NEW] Support for plugin health checks from the app which sends metrics to the hubitat app and displays in the app header.
 - [NEW] More thorough attribute checking.
 - [NEW] Object cleanup during plugin shutdown process.
 - [UPDATE] Entire code base has been restructured using ES modules for improved performance and maintainability.

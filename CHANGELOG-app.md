@@ -6,6 +6,7 @@
 - [NEW] Added configurable polling_seconds option (default: 900 seconds)
 - [NEW] Added lightEffects capability support
 - [NEW] Added CSS styling overrides for improved UI experience
+- [NEW] Added plugin health checks with plugin metrics to app header with alerts if plugin is not responding or is running low on memory.
 - [UPDATE] Enhanced device name sanitization with new sanitizeName() function
 - [UPDATE] Improved device capability filtering with per-device controls
 - [UPDATE] Reorganized settings pages for better navigation

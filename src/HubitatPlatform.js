@@ -146,6 +146,24 @@ export default class HubitatPlatform {
         this.client.dispose();
     }
 
+    getHealthMetrics() {
+        const memory = process.memoryUsage();
+        const uptime = process.uptime();
+
+        return {
+            memory: {
+                heapUsed: memory.heapUsed,
+                heapTotal: memory.heapTotal,
+                heapUsedMB: Math.round(memory.heapUsed / (1024 * 1024)),
+                heapTotalMB: Math.round(memory.heapTotal / (1024 * 1024)),
+            },
+            uptime: {
+                seconds: uptime,
+                formatted: uptime > 86400 ? `${Math.round(uptime / 86400)}d` : uptime > 3600 ? `${Math.round(uptime / 3600)}h` : `${Math.round(uptime / 60)}m`,
+            },
+        };
+    }
+
     /**
      * Sanitize a device name
      * @param {string} name - The name to sanitize

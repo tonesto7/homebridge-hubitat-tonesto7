@@ -15,7 +15,7 @@ export class WebServer {
         this.homebridge = platform.homebridge;
         this.accessories = platform.accessories;
         this.appEvts = platform.appEvts;
-
+        this.getHealthMetrics = platform.getHealthMetrics;
         // Subscribe to config updates
         this.configManager.onConfigUpdate((newConfig) => {
             this.config = newConfig;
@@ -59,6 +59,7 @@ export class WebServer {
         this.setupDebugRoutes();
         this.setupConfigurationRoutes();
         this.setupDeviceRoutes();
+        this.setupHealthRoutes();
     }
 
     setupBasicRoutes() {
@@ -78,6 +79,7 @@ export class WebServer {
 
         webApp.get("/pluginTest", (req, res) => {
             this.logManager.logInfo(`${platformName} Plugin Test Request Received...`);
+            const metrics = this.getHealthMetrics();
             res.status(200).send(
                 JSON.stringify(
                     {
@@ -89,6 +91,8 @@ export class WebServer {
                             platform_desc: platformDesc,
                             version: this.platform.versionManager.getVersion(),
                             config: this.configManager.getConfig(),
+                            memory: metrics.memory,
+                            uptime: metrics.uptime.formatted,
                         },
                     },
                     null,
@@ -150,7 +154,6 @@ export class WebServer {
         const preferenceMappings = {
             use_cloud: ["client", "use_cloud"],
             validateTokenId: ["client", "validateTokenId"],
-            // local_hub_ip: ["client", "direct_ip"],
             consider_fan_by_name: ["devices", "consider_fan_by_name"],
             consider_light_by_name: ["devices", "consider_light_by_name"],
             adaptive_lighting: ["features", "adaptive_lighting", "enabled"],
@@ -236,5 +239,35 @@ export class WebServer {
         }
         this.logManager.logError(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
         return false;
+    }
+
+    setupHealthRoutes() {
+        webApp.post("/healthCheck", this.handleHealthCheck.bind(this));
+    }
+
+    async handleHealthCheck(req, res) {
+        const body = JSON.parse(JSON.stringify(req.body));
+        if (body && this.isValidRequestor(body.access_token, body.app_id, "healthCheck")) {
+            try {
+                // Get plugin health data
+                const metrics = this.getHealthMetrics();
+                const healthData = {
+                    status: "OK",
+                    pluginVersion: this.platform.versionManager.getVersion(),
+                    nodeVersion: process.version,
+                    uptime: metrics.uptime.formatted,
+                    memory: metrics.memory,
+                    timestamp: new Date().toISOString(),
+                    hubDateTime: body.hubDateTime,
+                };
+
+                res.send({ status: "OK", data: healthData });
+            } catch (ex) {
+                this.logManager.logError("HealthCheck Exception:", ex.message);
+                res.send({ status: "Failed", message: ex.message });
+            }
+        } else {
+            res.send({ status: "Failed: Missing access_token or app_id" });
+        }
     }
 }
