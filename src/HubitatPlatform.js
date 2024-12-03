@@ -14,7 +14,7 @@ export default class HubitatPlatform {
     constructor(log, config, api) {
         // Initialize managers
         this.configManager = new ConfigManager(config, api.user);
-        this.logManager = new LogManager(log, api.debug, this.configManager);
+        this.logManager = new LogManager(log, this.configManager);
         this.versionManager = new VersionManager(this);
 
         // Store API references
@@ -75,12 +75,12 @@ export default class HubitatPlatform {
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
-            // this.appEvts.emit("event:plugin_upd_status");
+            // this.appEvts.emit("event:update_plugin_status");
 
             // Initialize web server
             const webServerResult = await this.webServer.initialize();
             if (webServerResult?.status === "OK") {
-                this.appEvts.emit("event:plugin_start_direct");
+                this.appEvts.emit("event:register_for_direct_updates");
             }
         } catch (err) {
             this.logManager.logError("Platform Initialization Error:", err);
@@ -111,10 +111,10 @@ export default class HubitatPlatform {
             this.logManager.logAlert(`Total Initialization Time: (${Math.round((new Date() - starttime) / 1000)} seconds)`);
 
             if (this.unknownCapabilities.length > 0) {
-                this.logManager.logNotice(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
+                this.logManager.logBrightBlue(`Unknown Capabilities: ${JSON.stringify(this.unknownCapabilities)}`);
             }
 
-            this.appEvts.emit("event:plugin_upd_status");
+            this.appEvts.emit("event:update_plugin_status");
 
             return true;
         } catch (ex) {
@@ -142,31 +142,8 @@ export default class HubitatPlatform {
     }
 
     async handleShutdown() {
-        this.logManager.logNotice(`${platformDesc} Platform Shutdown`);
+        this.logManager.logBrightBlue(`${platformDesc} Platform Shutdown`);
         this.client.dispose();
-    }
-
-    // Expose logging methods for backwards compatibility
-    logAlert(...args) {
-        this.logManager.logAlert(...args);
-    }
-    logGreen(...args) {
-        this.logManager.logGreen(...args);
-    }
-    logNotice(...args) {
-        this.logManager.logNotice(...args);
-    }
-    logWarn(...args) {
-        this.logManager.logWarn(...args);
-    }
-    logError(...args) {
-        this.logManager.logError(...args);
-    }
-    logInfo(...args) {
-        this.logManager.logInfo(...args);
-    }
-    logDebug(...args) {
-        this.logManager.logDebug(...args);
     }
 
     /**

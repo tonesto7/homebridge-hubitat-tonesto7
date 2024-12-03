@@ -47,25 +47,16 @@ export default class HubitatClient {
         this._accessories = accessories;
     }
 
-    handleConfigUpdate(newConfig) {
-        this.config = newConfig;
-    }
-
     registerEventListeners() {
-        this.appEvts.on("event:device_command", this.handleDeviceCommand.bind(this));
-        this.appEvts.on("event:plugin_upd_status", this.handleUpdateStatus.bind(this));
-        this.appEvts.on("event:plugin_start_direct", this.handleStartDirect.bind(this));
+        this.appEvts.on("event:update_plugin_status", this.handleUpdatePluginStatus.bind(this));
+        this.appEvts.on("event:register_for_direct_updates", this.handleRegisterForDirectUpdates.bind(this));
     }
 
-    async handleDeviceCommand(devData, cmd, vals) {
-        await this.sendHubitatCommand(devData, cmd, vals);
+    async handleUpdatePluginStatus() {
+        await this.updatePluginStatus();
     }
 
-    async handleUpdateStatus() {
-        await this.sendUpdateStatus();
-    }
-
-    async handleStartDirect() {
+    async handleRegisterForDirectUpdates() {
         await this.registerForDirectUpdates();
     }
 
@@ -131,7 +122,7 @@ export default class HubitatClient {
 
     async sendHubitatCommand(devData, cmd, params = []) {
         try {
-            this.logManager.logNotice(`Queueing Device Command: ${cmd}${params.length ? ` | Params: ${JSON.stringify(params)}` : ""} | ` + `Name: (${devData.name}) | DeviceID: (${devData.deviceid})`);
+            this.logManager.logBrightBlue(`Queueing Device Command: ${cmd}${params.length ? ` | Params: ${JSON.stringify(params)}` : ""} | ` + `Name: (${devData.name}) | DeviceID: (${devData.deviceid})`);
 
             // Add command to batch queue
             this.commandState.queue.push({ devData, command: cmd, params });
@@ -181,7 +172,6 @@ export default class HubitatClient {
         }
 
         this.logManager.logError(`${source} Error | ${errorMessage} | ` + `Details: ${error.response?.data || error.message}`);
-
         this.logManager.logDebug(`${source} Full Error: ${JSON.stringify(error)}`);
     }
 
@@ -243,10 +233,10 @@ export default class HubitatClient {
         }
     }
 
-    async sendUpdateStatus() {
+    async updatePluginStatus() {
         try {
             const versionCheck = await this.versionManager.checkVersion();
-            this.logManager.logNotice(`Sending Plugin Status to Hubitat | Version: [${versionCheck.hasUpdate && versionCheck.newVersion ? "New Version: " + versionCheck.newVersion : "Up-to-date"}]`);
+            this.logManager.logBrightBlue(`Sending Plugin Status to Hubitat | Version: [${versionCheck.hasUpdate && versionCheck.newVersion ? "New Version: " + versionCheck.newVersion : "Up-to-date"}]`);
 
             const response = await this.makeRequest({
                 method: "post",
@@ -262,12 +252,12 @@ export default class HubitatClient {
             });
 
             if (response.data) {
-                this.logManager.logDebug(`sendUpdateStatus Resp: ${JSON.stringify(response.data)}`);
+                this.logManager.logDebug(`updatePluginStatus Resp: ${JSON.stringify(response.data)}`);
                 return response.data;
             }
             return null;
         } catch (error) {
-            this.handleError("sendUpdateStatus", error);
+            this.handleError("updatePluginStatus", error);
             return undefined;
         }
     }

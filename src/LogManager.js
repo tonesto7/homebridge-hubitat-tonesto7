@@ -3,12 +3,9 @@
 import chalk from "chalk";
 
 export class LogManager {
-    constructor(log, debug = false, configManager) {
+    constructor(log, configManager) {
         this.log = log;
-
         this.config = configManager.getConfig();
-        this.debug = debug;
-
         this.updateLoggingConfig(this.config.logging);
 
         // Subscribe to config updates
@@ -21,10 +18,6 @@ export class LogManager {
     updateLoggingConfig(loggingConfig) {
         this.logConfig = {
             debug: loggingConfig?.debug || false,
-            info: true,
-            warn: true,
-            notice: true,
-            error: true,
             showChanges: loggingConfig?.showChanges !== false,
         };
     }
@@ -32,153 +25,100 @@ export class LogManager {
     /**
      * Format a log message with optional args
      * @private
-     * @param {string} message - The message to format
-     * @param {Array} args - Additional arguments
-     * @returns {string} Formatted message
      */
     formatMessage(message, ...args) {
-        let formattedMessage = message;
-        if (args && args.length) {
-            if (args[0] instanceof Error) {
-                formattedMessage += ` ${args[0].stack || args[0].message}`;
-            } else {
-                try {
-                    formattedMessage += " " + args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ");
-                } catch (e) {
-                    formattedMessage += " " + args.join(" ");
-                }
-            }
+        if (!args?.length) return message;
+
+        if (args[0] instanceof Error) {
+            return `${message} ${args[0].stack || args[0].message}`;
         }
-        return formattedMessage;
-    }
 
-    /**
-     * Log an alert message (yellow)
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
-    logAlert(message, ...args) {
-        if (!this.logConfig.notice) return;
-        this.log.info(chalk.yellow(this.formatMessage(message, ...args)));
-    }
-
-    /**
-     * Log a success message (green)
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
-    logGreen(message, ...args) {
-        if (!this.logConfig.notice) return;
-        this.log.info(chalk.green(this.formatMessage(message, ...args)));
-    }
-
-    /**
-     * Log a notice message (blue)
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
-    logNotice(message, ...args) {
-        if (!this.logConfig.notice) return;
-        this.log.info(chalk.blueBright(this.formatMessage(message, ...args)));
-    }
-
-    /**
-     * Log a warning message (orange)
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
-    logWarn(message, ...args) {
-        if (!this.logConfig.warn) return;
-        this.log.warn(chalk.hex("#FFA500").bold(this.formatMessage(message, ...args)));
-    }
-
-    /**
-     * Log an error message (red)
-     * @param {string} message - Message to log
-     * @param {Error|string} [error] - Optional error object or message
-     * @param {...*} args - Additional arguments
-     */
-    logError(message, error, ...args) {
-        if (!this.logConfig.error) return;
-
-        this.log.error(chalk.bold.red(this.formatMessage(message, ...args)));
-
-        if (error) {
-            if (error instanceof Error) {
-                this.log.error(chalk.red(error.stack || error.message));
-            } else {
-                this.log.error(chalk.red(error));
-            }
+        try {
+            return `${message} ${args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ")}`;
+        } catch (e) {
+            return `${message} ${args.join(" ")}`;
         }
     }
 
-    /**
-     * Log an info message (white)
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
+    // Native Homebridge logging methods
     logInfo(message, ...args) {
-        if (!this.logConfig.info) return;
-        this.log.info(chalk.white(this.formatMessage(message, ...args)));
-    }
-
-    /**
-     * Log a debug message (gray)
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
-    logDebug(message, ...args) {
-        if (!this.logConfig.debug && !this.debug) return;
-        this.log.debug(chalk.gray(this.formatMessage(message, ...args)));
-    }
-
-    logAttributeChange(deviceName, attribute, previousValue, newValue) {
-        this.logInfo(`${chalk.hex("#FFA500")("Device Event")}: ` + `(${chalk.blueBright(deviceName)}) ` + `[${chalk.yellow.bold(attribute ? attribute.toUpperCase() : "unknown")}] ` + `changed from ${chalk.green(previousValue)} to ${chalk.green(newValue)}`);
-    }
-
-    /**
-     * Log a message with the base logger
-     * @param {string} message - Message to log
-     * @param {...*} args - Additional arguments
-     */
-    log(message, ...args) {
         this.log.info(this.formatMessage(message, ...args));
     }
 
-    /**
-     * Create a prefixed logger for a specific component
-     * @param {string} prefix - Prefix for log messages
-     * @returns {Object} Prefixed logger methods
-     */
-    createPrefixedLogger(prefix) {
-        const prefixedMethods = {};
-        const logMethods = ["log", "logAlert", "logGreen", "logNotice", "logWarn", "logError", "logInfo", "logDebug"];
-
-        for (const method of logMethods) {
-            prefixedMethods[method] = (message, ...args) => {
-                this[method](`[${prefix}] ${message}`, ...args);
-            };
-        }
-
-        return prefixedMethods;
+    logWarn(message, ...args) {
+        this.log.warn(this.formatMessage(message, ...args));
     }
 
-    /**
-     * Create a scoped logger for a device
-     * @param {string} deviceName - Name of the device
-     * @returns {Object} Scoped logger methods
-     */
-    createDeviceLogger(deviceName) {
-        return this.createPrefixedLogger(deviceName);
+    logError(message, ...args) {
+        this.log.error(this.formatMessage(message, ...args));
+    }
+
+    logDebug(message, ...args) {
+        if (this.logConfig.debug) {
+            // Simulate debug logging through info when config debug is true
+            this.log.info(chalk.gray(this.formatMessage(message, ...args)));
+        } else {
+            this.log.debug(this.formatMessage(message, ...args));
+        }
+    }
+
+    logSuccess(message, ...args) {
+        this.log.info(chalk.green(this.formatMessage(message, ...args)));
+    }
+
+    // Additional color methods not provided by Homebridge
+    logBlue(message, ...args) {
+        this.log.info(chalk.blue(this.formatMessage(message, ...args)));
+    }
+
+    logBrightBlue(message, ...args) {
+        this.log.info(chalk.blueBright(this.formatMessage(message, ...args)));
+    }
+
+    logMagenta(message, ...args) {
+        this.log.info(chalk.magenta(this.formatMessage(message, ...args)));
+    }
+
+    logBrightMagenta(message, ...args) {
+        this.log.info(chalk.magentaBright(this.formatMessage(message, ...args)));
+    }
+
+    logCyan(message, ...args) {
+        this.log.info(chalk.cyan(this.formatMessage(message, ...args)));
+    }
+
+    logBrightCyan(message, ...args) {
+        this.log.info(chalk.cyanBright(this.formatMessage(message, ...args)));
+    }
+
+    // Special purpose logging methods
+    logAlert(message, ...args) {
+        this.log.warn(this.formatMessage(message, ...args));
+    }
+
+    logGreen(message, ...args) {
+        this.log.info(chalk.green(this.formatMessage(message, ...args)));
+    }
+
+    logOrange(message, ...args) {
+        this.log.info(chalk.hex("#FFA500")(this.formatMessage(message, ...args)));
+    }
+
+    logSuccess(message, ...args) {
+        this.log.success(this.formatMessage(message, ...args));
+    }
+
+    logAttributeChange(deviceName, attribute, previousValue, newValue) {
+        if (!this.logConfig.showChanges) return;
+
+        this.log.info(`${chalk.hex("#FFA500")("Device Event")}: ` + `(${chalk.blueBright(deviceName)}) ` + `[${chalk.yellow.bold(attribute ? attribute.toUpperCase() : "unknown")}] ` + `changed from ${chalk.green(previousValue)} to ${chalk.green(newValue)}`);
     }
 
     /**
      * Log an object as a formatted table
-     * @param {string} title - Table title
-     * @param {Object} data - Data to display
      */
     logTable(title, data) {
-        if (!this.logConfig.debug) return;
+        if (!this.logConfig.debug && !this.nativeDebug) return;
 
         this.logDebug(title);
         this.logDebug("=".repeat(50));
@@ -193,9 +133,6 @@ export class LogManager {
 
     /**
      * Log execution time of an async function
-     * @param {string} label - Label for the timing log
-     * @param {Function} fn - Async function to time
-     * @returns {Promise} Result of the async function
      */
     async logExecutionTime(label, fn) {
         const start = process.hrtime();

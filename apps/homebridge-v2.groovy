@@ -2319,6 +2319,11 @@ String getPluginStatusDesc() {
         Boolean useCloud = getBoolSetting('use_cloud_endpoint')
         out += spanSmBld(" ${sBULLET} Cloud Endpoint:", sCLRGRY) + spanSmBr(" ${useCloud ? 'Enabled' : 'Disabled'}", sCLRGRY)
 
+        // Include Accessory Count
+        if (pluginDetails?.accCount) {
+            out += spanSmBld(" ${sBULLET} Accessory Count:", sCLRGRY) + spanSmBr(" ${pluginDetails.accCount ?: 0}", sCLRGRY)
+        }
+
         // Include Temperature Unit
         String tempUnit = getStrSetting('temp_unit') ?: location?.temperatureScale
         out += spanSmBld(" ${sBULLET} Temperature Unit:", sCLRGRY) + spanSmBr(" ${tempUnit}", sCLRGRY)
@@ -2443,6 +2448,13 @@ def pluginStatus() {
     logTrace('Plugin called... pluginStatus()')
     def body = request?.JSON
     state.pluginUpdates = [hasUpdate: (body?.hasUpdate == true), newVersion: (body?.newVersion ?: null)]
+
+    // update plugin details properties accCount and isLocal and add them to the state.pluginDetails object. If they don't exist, add them.
+    Map pluginDetails = state.pluginDetails ?: [:]
+    pluginDetails.accCount = body?.accCount ?: null
+    pluginDetails.isLocal = body?.isLocal ?: false
+    state.pluginDetails = pluginDetails
+
     if (body?.version) { updCodeVerMap('plugin', (String)body?.version) }
     String resultJson = new JsonOutput().toJson([status: 'OK'])
     compressedRender contentType: sAPPJSON, data: resultJson

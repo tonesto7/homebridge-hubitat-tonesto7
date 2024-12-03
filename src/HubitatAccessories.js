@@ -343,9 +343,15 @@ export default class HubitatAccessories {
             const toRemove = Array.from(this._cachedAccessories.values()).filter((a) => !incomingDeviceIds.has(a.context.deviceData.deviceid));
 
             // Log changes
-            this.logManager.logWarn(`Devices to Remove: (${toRemove.length}) ${toRemove.map((a) => a.displayName).join(", ")}`);
+            this.logManager.logWarn(
+                `Devices to Remove: (${toRemove.length}):`,
+                toRemove.map((a) => a.displayName),
+            );
             this.logManager.logInfo(`Devices to Update: (${toUpdate.length})`);
-            this.logManager.logGreen(`Devices to Create: (${toCreate.length}) ${toCreate.map((d) => d.name).join(", ")}`);
+            this.logManager.logSuccess(
+                `Devices to Create: (${toCreate.length}):`,
+                toCreate.map((d) => d.name),
+            );
 
             // Process removals
             for (const accessory of toRemove) {
@@ -874,7 +880,7 @@ export default class HubitatAccessories {
         //     "Device Types": Object.fromEntries(deviceTypes),
         // });
 
-        this.logManager.logGreen(`${deviceCount} devices loaded and cached.`);
+        this.logManager.logSuccess(`${deviceCount} devices loaded and cached.`);
     }
 
     addAccessoryToCache(accessory) {

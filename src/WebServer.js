@@ -69,7 +69,7 @@ export class WebServer {
         webApp.post("/initial", (req, res) => {
             const body = JSON.parse(JSON.stringify(req.body));
             if (body && this.isValidRequestor(body.access_token, body.app_id, "initial")) {
-                this.logManager.logGreen(`${platformName} Hub Communication Established`);
+                this.logManager.logSuccess(`${platformName} Hub Communication Established`);
                 res.send({ status: "OK" });
             } else {
                 res.send({ status: "Failed: Missing access_token or app_id" });
@@ -180,7 +180,7 @@ export class WebServer {
     handleDeviceRefresh(req, res) {
         const body = JSON.parse(JSON.stringify(req.body));
         if (body && this.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
-            this.logManager.logGreen(`Received request from ${platformName} to refresh devices`);
+            this.logManager.logSuccess(`Received request from ${platformName} to refresh devices`);
             this.platform.refreshDevices("Hubitat App Requested");
             res.send({ status: "OK" });
         } else {
