@@ -1,6 +1,6 @@
 // HubitatPlatform.js
 
-import { pluginName, platformName, platformDesc } from "./StaticConfig.js";
+import { platformName, platformDesc } from "./StaticConst.js";
 import ConfigManager from "./ConfigManager.js";
 import HubitatClient from "./HubitatClient.js";
 import HubitatAccessories from "./HubitatAccessories.js";

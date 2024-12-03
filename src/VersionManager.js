@@ -2,7 +2,7 @@
 
 import { exec } from "child_process";
 import { compare, validate } from "compare-versions";
-import { pluginVersion, packageName } from "./StaticConfig.js";
+import { pluginVersion, packageName } from "./StaticConst.js";
 
 export class VersionManager {
     constructor(platform) {

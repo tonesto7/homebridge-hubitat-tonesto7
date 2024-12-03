@@ -1,6 +1,6 @@
 // HubitatClient.js
 
-import { platformName, platformDesc, pluginVersion } from "./StaticConfig.js";
+import { platformName, platformDesc, pluginVersion } from "./StaticConst.js";
 import axios from "axios";
 
 export default class HubitatClient {

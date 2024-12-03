@@ -1,6 +1,6 @@
 // HubitatAccessories.js
 
-import { platformName, pluginName, pluginVersion } from "./StaticConfig.js";
+import { platformName, pluginName, pluginVersion } from "./StaticConst.js";
 
 import { AccelerationSensor } from "./devices/AccelerationSensor.js";
 import { AirPurifier } from "./devices/AirPurifier.js";

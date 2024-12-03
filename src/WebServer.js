@@ -1,6 +1,6 @@
 // platform/WebServer.js
 
-import { pluginName, platformName, platformDesc } from "./StaticConfig.js";
+import { pluginName, platformName, platformDesc } from "./StaticConst.js";
 import express from "express";
 import bodyParser from "body-parser";
 
