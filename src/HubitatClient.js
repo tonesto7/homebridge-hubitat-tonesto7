@@ -1,18 +1,29 @@
-// HubitatClient.js
+/**
+ * @file HubitatClient.js
+ * @description Manages communication with the Hubitat hub and handles command batching
+ */
 
 import { platformName, platformDesc, pluginVersion } from "./StaticConst.js";
 import axios from "axios";
 
 export default class HubitatClient {
+    /**
+     * @param {Object} params
+     * @param {LogManager} params.logManager - Logger instance
+     * @param {VersionManager} params.versionManager - Version manager instance
+     * @param {ConfigManager} params.configManager - Config manager instance
+     * @param {EventEmitter} params.appEvts - Event emitter instance
+     * @param {Function} params.getHealthMetrics - Function to get health metrics
+     * @param {Function} params.getAccessoryCount - Function to get accessory count
+     */
     constructor(platform) {
         this.logManager = platform.logManager;
         this.versionManager = platform.versionManager;
         this.configManager = platform.configManager;
         this.appEvts = platform.appEvts;
-        this.config = this.configManager.getConfig();
-        this._accessories = null;
-
         this.getHealthMetrics = platform.getHealthMetrics;
+        this.getAllCachedAccessories = platform.getAllCachedAccessories.bind(platform);
+        this.config = this.configManager.getConfig();
 
         // Command batching state
         this.commandState = {
@@ -43,10 +54,6 @@ export default class HubitatClient {
             this.config = newConfig;
             this.logManager.logDebug("HubitatClient config updated");
         });
-    }
-
-    setAccessories(accessories) {
-        this._accessories = accessories;
     }
 
     registerEventListeners() {
@@ -249,7 +256,7 @@ export default class HubitatClient {
                     newVersion: versionCheck.newVersion,
                     version: pluginVersion,
                     isLocal: this.config.client.use_cloud ? "false" : "true",
-                    accCount: this._accessories.getAllAccessories().length || null,
+                    accCount: this.getAllCachedAccessories().length || null,
                     memory: metrics.memory,
                     uptime: metrics.uptime,
                 },

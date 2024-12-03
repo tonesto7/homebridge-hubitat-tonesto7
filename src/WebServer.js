@@ -8,14 +8,18 @@ const webApp = express();
 
 export class WebServer {
     constructor(platform) {
-        this.platform = platform;
+        // this.platform = platform;
         this.logManager = platform.logManager;
         this.configManager = platform.configManager;
+        this.versionManager = platform.versionManager;
         this.config = platform.config;
         this.homebridge = platform.homebridge;
-        this.accessories = platform.accessories;
         this.appEvts = platform.appEvts;
         this.getHealthMetrics = platform.getHealthMetrics;
+        this.getAllCachedAccessories = platform.getAllCachedAccessories.bind(platform);
+        this.processDeviceAttributeUpdate = platform.processDeviceAttributeUpdate.bind(platform);
+        this.refreshDevices = platform.refreshDevices.bind(platform);
+
         // Subscribe to config updates
         this.configManager.onConfigUpdate((newConfig) => {
             this.config = newConfig;
@@ -89,7 +93,7 @@ export class WebServer {
                             name: pluginName,
                             platform_name: platformName,
                             platform_desc: platformDesc,
-                            version: this.platform.versionManager.getVersion(),
+                            version: this.versionManager.getVersion(),
                             config: this.configManager.getConfig(),
                             memory: metrics.memory,
                             uptime: metrics.uptime.formatted,
@@ -106,7 +110,7 @@ export class WebServer {
         webApp.get("/debugOpts", (req, res) => {
             this.logManager.logInfo(`${platformName} Debug Option Request(${req.query.option})...`);
             if (req.query?.option) {
-                const accs = this.accessories.getAllAccessoriesFromCache();
+                const accs = this.getAllCachedAccessories();
                 switch (req.query.option) {
                     case "allAccData":
                         res.send(JSON.stringify(accs));
@@ -184,7 +188,7 @@ export class WebServer {
         const body = JSON.parse(JSON.stringify(req.body));
         if (body && this.isValidRequestor(body.access_token, body.app_id, "refreshDevices")) {
             this.logManager.logSuccess(`Received request from ${platformName} to refresh devices`);
-            this.platform.refreshDevices("Hubitat App Requested");
+            this.refreshDevices("Hubitat App Requested");
             res.send({ status: "OK" });
         } else {
             this.logManager.logError(`Unable to start device refresh because we didn't receive a valid access_token and app_id`);
@@ -210,7 +214,7 @@ export class WebServer {
                 date: body.change_date,
             };
 
-            this.accessories.processDeviceAttributeUpdate(newChange).then((success) => {
+            this.processDeviceAttributeUpdate(newChange).then((success) => {
                 res.send({
                     evtSource: `Homebridge_${platformName}_${this.config.client.app_id}`,
                     evtType: "attrUpdStatus",
@@ -253,7 +257,7 @@ export class WebServer {
                 const metrics = this.getHealthMetrics();
                 const healthData = {
                     status: "OK",
-                    pluginVersion: this.platform.versionManager.getVersion(),
+                    pluginVersion: this.versionManager.getVersion(),
                     nodeVersion: process.version,
                     uptime: metrics.uptime.formatted,
                     memory: metrics.memory,

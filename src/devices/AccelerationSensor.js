@@ -66,7 +66,7 @@ export class AccelerationSensor {
 
         this.logManager.logDebug(`AccelerationSensor | ${accessory.displayName} | Attribute update: ${attribute} = ${value}`);
 
-        const svc = accessory.getService(this.Service.Lightbulb);
+        const svc = accessory.getService(this.Service.MotionSensor);
         if (!svc) {
             this.logManager.logWarn(`AccelerationSensor | ${accessory.displayName} | No service found`);
             return;
