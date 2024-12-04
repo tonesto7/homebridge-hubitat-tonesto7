@@ -23,7 +23,7 @@ export default class HubitatPlatform {
      */
     constructor(log, config, api) {
         // Initialize core managers
-        this.configManager = new ConfigManager(config, api.user);
+        this.configManager = new ConfigManager(config, api.user, log);
         this.logManager = new LogManager(log, this.configManager);
         this.versionManager = new VersionManager(this);
 

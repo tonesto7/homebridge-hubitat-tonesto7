@@ -6,8 +6,9 @@ import os from "os";
 import portFinderSync from "portfinder-sync";
 
 export default class ConfigManager {
-    constructor(platformConfig, homebridge) {
+    constructor(platformConfig, homebridge, log) {
         this.homebridge = homebridge;
+        this.log = log;
         this.platformConfig = platformConfig;
         this.eventEmitter = new events.EventEmitter();
 
@@ -311,7 +312,7 @@ export default class ConfigManager {
 
             // console.log("Config saved successfully");
         } catch (error) {
-            console.error("Error saving config:", error);
+            this.log.error("Error saving config:", error);
         }
     }
 
@@ -320,11 +321,11 @@ export default class ConfigManager {
             const basePort = 8000;
             this.activePort = portFinderSync.getPort(basePort);
             if (this.activePort !== basePort) {
-                console.log(`Port ${basePort} was in use, using port ${this.activePort} instead`);
+                this.log.info(`Auto-assigned port ${basePort} was in use, using port ${this.activePort} instead`);
             }
             return this.activePort;
         } catch (error) {
-            console.error("Error finding available port:", error);
+            this.log.error("Error finding available port:", error);
             throw error;
         }
     }
@@ -381,7 +382,7 @@ export default class ConfigManager {
         if (unit && (unit === "F" || unit === "C")) {
             this.updateNestedConfig("preferences.temperature_unit", unit);
         } else {
-            console.error("Invalid temperature unit:", unit);
+            this.log.error("Invalid temperature unit:", unit);
         }
     }
 }
