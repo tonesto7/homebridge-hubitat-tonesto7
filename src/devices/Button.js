@@ -4,7 +4,6 @@ export class Button {
         this.logManager = platform.logManager;
         this.Service = platform.Service;
         this.Characteristic = platform.Characteristic;
-        this._buttonMap = new Map();
     }
 
     static relevantAttributes = ["button", "numberOfButtons"];
@@ -82,9 +81,6 @@ export class Button {
                 const svc = accessory.getService(this.Service.StatelessProgrammableSwitch, `${accessory.context.deviceData.deviceid} Button ${buttonNumber}`);
                 if (!svc) return;
 
-                const characteristic = svc.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent);
-                if (!characteristic) return;
-
                 let eventValue;
                 switch (value) {
                     case "pushed":
@@ -99,7 +95,7 @@ export class Button {
                     default:
                         return;
                 }
-                characteristic.updateValue(eventValue);
+                svc.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent).updateValue(eventValue);
                 break;
             case "numberOfButtons":
                 const buttonCount = Math.min(Math.max(value, 1), 10);
