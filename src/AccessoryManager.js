@@ -148,8 +148,8 @@ export class AccessoryManager {
             {
                 name: "fan",
                 test: (accessory) =>
-                    (["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && ((accessory.hasCommand("setSpeed") && accessory.hasAttribute("speed")) || (accessory.hasAttribute("level") && accessory.hasCommand("setLevel")))) ||
-                    (accessory.hasFanLabel() && accessory.hasCapability("Switch") && (accessory.hasAttribute("switch") || accessory.hasAttribute("level"))),
+                    // Complex fan control
+                    (["Fan", "FanControl"].some((cap) => accessory.hasCapability(cap)) && this.deviceHandlers.fan.hasSpeedControl(accessory)) || (accessory.hasFanLabel() && accessory.hasCapability("Switch")),
             },
             {
                 name: "virtualMode",
@@ -541,6 +541,7 @@ export class AccessoryManager {
             hasCommand: (command) => commandsSet.has(command),
             hasLightLabel: () => this.config.devices.consider_light_by_name && nameLower.includes("light"),
             hasFanLabel: () => this.config.devices.consider_fan_by_name && nameLower.includes("fan"),
+            hasSpeedControl: () => (attributesSet.has("speed") && commandsSet.has("setSpeed")) || (attributesSet.has("level") && commandsSet.has("setLevel")),
             context: accessory.context,
         };
 

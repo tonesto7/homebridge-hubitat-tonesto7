@@ -10,20 +10,30 @@ export class Fan {
 
     configure(accessory) {
         this.logManager.logDebug(`Configuring Fan for ${accessory.displayName}`);
+        // this.logManager.logInfo(`Attributes: ${JSON.stringify(accessory.context.deviceData.attributes)}`);
+        // this.logManager.logInfo(`Commands: ${JSON.stringify(accessory.context.deviceData.commands)}`);
+        // this.logManager.logInfo(`Capabilities: ${JSON.stringify(accessory.context.deviceData.capabilities)}`);
         const svc = accessory.getOrAddService(this.Service.Fanv2, accessory.displayName, "fan");
         const devData = accessory.context.deviceData;
 
+        // Always configure basic on/off functionality
         this._configureActive(accessory, svc, devData);
         this._configureCurrentFanState(accessory, svc, devData);
 
-        // Configure rotation speed based on supported attributes
-        if (accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed")) {
-            this._configureSpeedControl(accessory, svc, devData);
-        } else if (accessory.hasAttribute("level")) {
-            this._configureLevelControl(accessory, svc, devData);
+        // Only add speed controls for devices that support it
+        if (this.hasSpeedControl(accessory)) {
+            if (accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed")) {
+                this._configureSpeedControl(accessory, svc, devData);
+            } else if (accessory.hasAttribute("level")) {
+                this._configureLevelControl(accessory, svc, devData);
+            }
         }
 
         return accessory;
+    }
+
+    hasSpeedControl(accessory) {
+        return (accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed")) || (accessory.hasAttribute("level") && accessory.hasCommand("setLevel"));
     }
 
     _configureActive(accessory, svc, devData) {
@@ -135,7 +145,7 @@ export class Fan {
     }
 
     _getCurrentFanState(value) {
-        return value === "on" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE;
+        return value === "on" || value === "auto" ? this.Characteristic.CurrentFanState.BLOWING_AIR : this.Characteristic.CurrentFanState.IDLE;
     }
 
     _getLevelValue(value) {
