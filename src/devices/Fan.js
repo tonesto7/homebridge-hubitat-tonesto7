@@ -21,13 +21,13 @@ export class Fan {
         this._configureCurrentFanState(accessory, svc, devData);
 
         // Only add speed controls for devices that support it
-        if (this.hasSpeedControl(accessory)) {
-            if (accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed")) {
-                this._configureSpeedControl(accessory, svc, devData);
-            } else if (accessory.hasAttribute("level")) {
-                this._configureLevelControl(accessory, svc, devData);
-            }
+        // if (this.hasSpeedControl(accessory)) {
+        // if (accessory.hasAttribute("speed") && accessory.hasCommand("setSpeed")) {
+        // this._configureSpeedControl(accessory, svc, devData);
+        if (accessory.hasAttribute("level")) {
+            this._configureLevelControl(accessory, svc, devData);
         }
+        // }
 
         return accessory;
     }
@@ -167,9 +167,9 @@ export class Fan {
                 svc.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this._getCurrentFanState(value));
                 break;
             case "speed": {
-                const supportedSpeeds = this._getSupportedSpeeds(accessory);
-                svc.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this._speedToRotationSpeed(value, supportedSpeeds));
-                break;
+                // const supportedSpeeds = this._getSupportedSpeeds(accessory);
+                // svc.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this._speedToRotationSpeed(value, supportedSpeeds));
+                // break;
             }
             case "level":
                 svc.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this._getLevelValue(value));
