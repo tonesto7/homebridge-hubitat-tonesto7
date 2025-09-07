@@ -1,6 +1,8 @@
-const { pluginName, platformName } = require("./libs/Constants"),
-    hePlatform = require("./HE_Platform");
+// index.js
 
-module.exports = (homebridge) => {
-    homebridge.registerPlatform(pluginName, platformName, hePlatform, true);
-};
+import { pluginName, platformName } from "./StaticConst.js";
+import HubitatPlatform from "./HubitatPlatform.js";
+
+export default function (homebridge) {
+    homebridge.registerPlatform(pluginName, platformName, HubitatPlatform);
+}
