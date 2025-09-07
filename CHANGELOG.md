@@ -1,4 +1,4 @@
-## _**v3.0.0**_ (12-02-2024)
+## _**v3.0.0**_ (9-07-2025)
 
 - [NEW] Modular system with 30+ specialized device handlers (see src/devices).
 - [NEW] Centralized configuration management restructured for better performance, reliability, and clarity.

@@ -1,4 +1,4 @@
-## _**v3.0.0**_ (12-02-2024)
+## _**v3.0.0**_ (9-07-2025)
 
 - [NEW] Added device filter management pages for granular device capability control
 - [NEW] Added fan6SpdList support for enhanced fan control options
