@@ -3,7 +3,6 @@
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
 import express from "express";
 import bodyParser from "body-parser";
-import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 
 const webApp = express();
@@ -28,18 +27,14 @@ export class WebServer {
             this.logManager.logDebug("WebServer config updated");
         });
 
-        // Add rate limiter configuration
-        this.limiter = rateLimit({
-            windowMs: 15 * 60 * 1000, // 15 minutes
-            max: 100, // limit each IP to 100 requests per windowMs
-            message: "Too many requests from this IP, please try again later.",
-        });
-
-        this.updateLimiter = rateLimit({
-            windowMs: 1 * 60 * 1000, // 1 minute
-            max: 30, // limit updates to 30 per minute
-            message: "Too many update requests, please slow down.",
-        });
+        // Initialize device update queue for handling updates
+        this.updateQueue = [];
+        this.isProcessingQueue = false;
+        this.maxQueueSize = 1000; // Maximum number of updates to queue
+        this.batchSize = 15; // Process updates in batches of 15
+        this.batchDelay = 100; // 100ms delay between batches
+        this.collectionDelay = 10; // Small delay to collect simultaneous updates
+        this.batchTimer = null;
     }
 
     async initialize() {
@@ -75,9 +70,6 @@ export class WebServer {
     configureMiddleware() {
         webApp.use(bodyParser.urlencoded({ extended: false }));
         webApp.use(bodyParser.json());
-
-        // Add general rate limiting
-        webApp.use(this.limiter);
 
         // Add CORS headers
         webApp.use((req, res, next) => {
@@ -243,14 +235,16 @@ export class WebServer {
                 date: body.change_date,
             };
 
-            this.processDeviceAttributeUpdate(newChange).then((success) => {
-                res.send({
-                    evtSource: `Homebridge_${platformName}_${this.config.client.app_id}`,
-                    evtType: "attrUpdStatus",
-                    evtDevice: body.change_name,
-                    evtAttr: body.change_attribute,
-                    evtStatus: success ? "OK" : "Failed",
-                });
+            // Add to queue instead of processing immediately
+            this.queueDeviceUpdate(newChange);
+            
+            // Send immediate response to Hubitat
+            res.send({
+                evtSource: `Homebridge_${platformName}_${this.config.client.app_id}`,
+                evtType: "attrUpdStatus",
+                evtDevice: body.change_name,
+                evtAttr: body.change_attribute,
+                evtStatus: "Queued",
             });
         } else {
             res.send({
@@ -261,6 +255,54 @@ export class WebServer {
                 evtStatus: "Failed",
             });
         }
+    }
+
+    queueDeviceUpdate(update) {
+        // Add update to queue if not at max capacity
+        if (this.updateQueue.length < this.maxQueueSize) {
+            this.updateQueue.push(update);
+            
+            // If not processing and no timer set, start batch processing after collection delay
+            if (!this.isProcessingQueue && !this.batchTimer) {
+                this.batchTimer = setTimeout(() => {
+                    this.batchTimer = null;
+                    this.processBatchUpdates();
+                }, this.collectionDelay);
+            }
+        } else {
+            this.logManager.logWarn(`Update queue full (${this.maxQueueSize}), dropping update for ${update.name}`);
+        }
+    }
+
+    async processBatchUpdates() {
+        if (this.isProcessingQueue || this.updateQueue.length === 0) {
+            return;
+        }
+
+        this.isProcessingQueue = true;
+
+        while (this.updateQueue.length > 0) {
+            // Take a batch of updates (up to batchSize)
+            const batch = this.updateQueue.splice(0, this.batchSize);
+            
+            this.logManager.logDebug(`Processing batch of ${batch.length} device updates (${this.updateQueue.length} remaining)`);
+            
+            // Process this batch in parallel
+            const promises = batch.map(update => 
+                this.processDeviceAttributeUpdate(update).catch(error => {
+                    this.logManager.logError(`Failed to process update for ${update.name}:`, error);
+                })
+            );
+            
+            await Promise.all(promises);
+            
+            // If more updates remain, wait before processing next batch
+            if (this.updateQueue.length > 0) {
+                await new Promise(resolve => setTimeout(resolve, this.batchDelay));
+            }
+        }
+        
+        this.isProcessingQueue = false;
     }
 
     isValidRequestor(access_token, app_id, src) {

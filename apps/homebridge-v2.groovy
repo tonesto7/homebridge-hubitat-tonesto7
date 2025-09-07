@@ -56,13 +56,13 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '3.0.0'
-//@Field static final String appModifiedFLD = '12-2-2024'
+@Field static final String appVersionFLD  = '3.0.1'
+//@Field static final String appModifiedFLD = '9-7-2025'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
 @Field static final Boolean devModeFLD    = false
-@Field static final Map minVersionsFLD    = [plugin: 291]
+@Field static final Map minVersionsFLD    = [plugin: 301]
 @Field static final String sNULL          = (String) null
 @Field static final String sBLANK         = ''
 @Field static final String sSPACE         = ' '
@@ -316,13 +316,7 @@ def deviceSelectPage() {
             input 'addSecurityDevice', sBOOL, title: inTS("Allow ${getAlarmSystemName()} Control in HomeKit?", 'alarm_home'), required: false, defaultValue: true, submitOnChange: true
         }
 
-        section(sectHead('All Other Devices')) {
-            input 'sensorList', 'capability.sensor', title: inTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", 'sensors'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'switchList', sCAP_SW, title: inTS("Switches: (${switchList ? switchList.size() : 0} Selected)", sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-            input 'deviceList', 'capability.*', title: inTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
-        }
-
-        section(sectHead('Define Specific Categories')) {
+        section(sectHead('Select Devices by Category')) {
             // paragraph spanSmBldBr('Description:', sCLR4D9) +
 
             String paraDesc = spanSmBldBr('NOTE: ') + spanSmBldBr(" ${sBULLET} Please do not select a device more than once in the inputs below")
@@ -338,6 +332,13 @@ def deviceSelectPage() {
             input 'shadesList', 'capability.windowShade', title: inTS("Window Shades: (${shadesList ? shadesList.size() : 0} Selected)", 'window_shade'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
             input 'securityKeypadsList', 'capability.securityKeypad', title: inTS("Security Keypads: (${securityKeypadsList ? securityKeypadsList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
         }
+        
+        section(sectHead('Additional Devices')) {
+            input 'sensorList', 'capability.sensor', title: inTS("Sensors: (${sensorList ? sensorList.size() : 0} Selected)", 'sensors'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'switchList', sCAP_SW, title: inTS("Switches: (${switchList ? switchList.size() : 0} Selected)", sSW), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+            input 'deviceList', 'capability.*', title: inTS("Others: (${deviceList ? deviceList.size() : 0} Selected)", 'devices2'), description: inputFooter(sTTS, sCLRGRY, true), multiple: true, submitOnChange: true, required: false
+        }
+        
         section(sectHead('Buttons')) {
             if (pushableButtonList || holdableButtonList || doubleTapableButtonList) {
                 paragraph spanSmBldBr('NOTICE:', sCLRRED) +
