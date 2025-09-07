@@ -82,8 +82,8 @@ export default class HubitatPlatform {
         try {
             this.logManager.logInfo(`Fetching ${platformName} Devices. NOTICE: This may take a moment if you have a large number of devices being loaded!`);
 
-            // Setup refresh interval
-            setInterval(this.refreshDevices.bind(this), this.config.client.polling_seconds * 1000);
+            // Setup refresh interval and store reference
+            this._refreshInterval = setInterval(this.refreshDevices.bind(this), this.config.client.polling_seconds * 1000);
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
@@ -329,7 +329,30 @@ export default class HubitatPlatform {
      */
     async handleShutdown() {
         this.logManager.logBrightBlue(`${platformDesc} Platform Shutdown`);
-        this.client.dispose();
+
+        try {
+            // Stop refresh interval
+            if (this._refreshInterval) {
+                clearInterval(this._refreshInterval);
+            }
+
+            // Cleanup components
+            this.client.dispose();
+            this.accessoryManager.dispose();
+
+            // Remove all event listeners
+            this.appEvts.removeAllListeners();
+
+            // Clear accessory cache
+            this._cachedAccessories.clear();
+
+            // Close web server if running
+            if (this.webServer && this.webServer.close) {
+                await this.webServer.close();
+            }
+        } catch (error) {
+            this.logManager.logError("Error during shutdown:", error);
+        }
     }
 
     /**

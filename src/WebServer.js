@@ -3,6 +3,8 @@
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
 import express from "express";
 import bodyParser from "body-parser";
+import rateLimit from "express-rate-limit";
+import crypto from "crypto";
 
 const webApp = express();
 
@@ -24,6 +26,19 @@ export class WebServer {
         this.configManager.onConfigUpdate((newConfig) => {
             this.config = newConfig;
             this.logManager.logDebug("WebServer config updated");
+        });
+
+        // Add rate limiter configuration
+        this.limiter = rateLimit({
+            windowMs: 15 * 60 * 1000, // 15 minutes
+            max: 100, // limit each IP to 100 requests per windowMs
+            message: "Too many requests from this IP, please try again later.",
+        });
+
+        this.updateLimiter = rateLimit({
+            windowMs: 1 * 60 * 1000, // 1 minute
+            max: 30, // limit updates to 30 per minute
+            message: "Too many update requests, please slow down.",
         });
     }
 
@@ -48,9 +63,23 @@ export class WebServer {
         }
     }
 
+    secureCompare(a, b) {
+        if (!a || !b || a.length !== b.length) return false;
+        try {
+            return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+        } catch (e) {
+            return false;
+        }
+    }
+
     configureMiddleware() {
         webApp.use(bodyParser.urlencoded({ extended: false }));
         webApp.use(bodyParser.json());
+
+        // Add general rate limiting
+        webApp.use(this.limiter);
+
+        // Add CORS headers
         webApp.use((req, res, next) => {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -238,9 +267,23 @@ export class WebServer {
         if (this.config.client.validateTokenId !== true) {
             return true;
         }
-        if (app_id && access_token && this.config.client.app_id && this.config.client.access_token && access_token === this.config.client.access_token && parseInt(app_id) === parseInt(this.config.client.app_id)) {
-            return true;
+
+        // Convert to strings for comparison
+        const providedToken = String(access_token || "");
+        const configToken = String(this.config.client.access_token || "");
+        const providedId = String(app_id || "");
+        const configId = String(this.config.client.app_id || "");
+
+        if (providedToken && providedId && configToken && configId) {
+            // Use secure comparison for token
+            const tokenMatch = this.secureCompare(providedToken, configToken);
+            const idMatch = providedId === configId;
+
+            if (tokenMatch && idMatch) {
+                return true;
+            }
         }
+
         this.logManager.logError(`(${src}) | We received a request from a client that didn't provide a valid access_token and app_id`);
         return false;
     }

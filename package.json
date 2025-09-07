@@ -1,27 +1,29 @@
 {
     "dependencies": {
-        "@homebridge/plugin-ui-utils": "^2.0.1",
-        "axios": "^1.7.9",
-        "body-parser": "^1.20.3",
-        "chalk": "^5.4.1",
+        "@homebridge/plugin-ui-utils": "^2.1.0",
+        "axios": "^1.11.0",
+        "body-parser": "^2.2.0",
+        "chalk": "^5.6.0",
+        "crypto": "^1.0.1",
         "compare-versions": "^6.1.1",
-        "express": "^4.21.2",
+        "express": "^5.1.0",
         "hap-nodejs-community-types": "0.3.1",
         "lodash": "^4.17.21",
         "os": "0.1.2",
-        "portfinder-sync": "^0.0.2"
+        "portfinder-sync": "^0.0.2",
+        "express-rate-limit": "^8.1.0"
     },
     "devDependencies": {
-        "@snyk/protect": "^1.1295.2",
-        "@types/node": "^22.12.0",
-        "cheerio": "1.0.0",
-        "eslint": "^9.19.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-prettier": "^5.2.3",
-        "hap-nodejs": "^1.1.0",
+        "@snyk/protect": "^1.1299.0",
+        "@types/node": "^24.3.1",
+        "cheerio": "1.1.2",
+        "eslint": "^9.35.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "hap-nodejs": "^1.2.0",
         "homebridge": "^2.0.0-beta.23",
-        "lint-staged": "^15.4.3",
-        "prettier": "^3.4.2"
+        "lint-staged": "^16.1.6",
+        "prettier": "^3.6.2"
     },
     "description": "Hubitat plugin for HomeBridge/HomeKit",
     "engines": {
@@ -70,6 +72,6 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "3.0.0-beta.2",
+    "version": "3.0.0",
     "synk": true
 }

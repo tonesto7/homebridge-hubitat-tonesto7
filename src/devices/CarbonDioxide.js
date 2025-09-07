@@ -30,7 +30,7 @@ export class CarbonDioxide {
 
     _configureCo2Level(accessory, svc, devData) {
         accessory.getOrAddCharacteristic(svc, this.Characteristic.CarbonDioxideLevel, {
-            getHandler: () => this._getCo2Level(devData.attributes.carbonDioxidcarbonDioxideeMeasurement),
+            getHandler: () => this._getCo2Level(devData.attributes.carbonDioxideMeasurement),
         });
     }
 

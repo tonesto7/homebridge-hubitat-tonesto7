@@ -688,4 +688,29 @@ export class AccessoryManager {
     toTitleCase(str) {
         return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     }
+
+    /**
+     * Clean up all timers and clear maps
+     */
+    cleanupTimers() {
+        // Clear all pending command timers
+        for (const timer of this._commandTimers.values()) {
+            clearTimeout(timer);
+        }
+        this._commandTimers.clear();
+        this._lastCommandTimes.clear();
+    }
+
+    /**
+     * Dispose of the AccessoryManager
+     */
+    dispose() {
+        this.cleanupTimers();
+        // Clear device handlers
+        for (const handler of Object.values(this.deviceHandlers)) {
+            if (typeof handler.dispose === "function") {
+                handler.dispose();
+            }
+        }
+    }
 }

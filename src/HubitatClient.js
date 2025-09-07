@@ -5,6 +5,8 @@
 
 import { platformName, platformDesc, pluginVersion } from "./StaticConst.js";
 import axios from "axios";
+import http from "http";
+import https from "https";
 
 export default class HubitatClient {
     /**
@@ -54,6 +56,27 @@ export default class HubitatClient {
             this.config = newConfig;
             this.logManager.logDebug("HubitatClient config updated");
         });
+
+        // Configure axios with connection pooling
+        this.axiosInstance = axios.create({
+            httpAgent: new http.Agent({
+                keepAlive: true,
+                maxSockets: 10,
+                keepAliveMsecs: 1000,
+                timeout: 30000,
+            }),
+            httpsAgent: new https.Agent({
+                keepAlive: true,
+                maxSockets: 10,
+                keepAliveMsecs: 1000,
+                timeout: 30000,
+            }),
+        });
+
+        // Attribute update batching
+        this.attributeUpdateQueue = new Map(); // deviceId -> Set of updates
+        this.attributeBatchTimer = null;
+        this.attributeBatchDelay = 100;
     }
 
     registerEventListeners() {
@@ -196,9 +219,12 @@ export default class HubitatClient {
             this.retryConfig.failures.delete(`${endpoint}_time`);
         }
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
         for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
             try {
-                const response = await axios({
+                const response = await this.axiosInstance({
                     method,
                     url: `${baseUrl}${this.config.client.app_id}/${endpoint}`,
                     params: { access_token: this.config.client.access_token },
@@ -209,16 +235,25 @@ export default class HubitatClient {
                     },
                     data,
                     timeout,
+                    signal: controller.signal,
                 });
 
+                clearTimeout(timeoutId);
                 this.retryConfig.failures.delete(endpoint);
                 return response;
             } catch (error) {
+                clearTimeout(timeoutId);
+
+                if (error.name === "AbortError" || error.code === "ECONNABORTED") {
+                    error.message = `Request timeout after ${timeout}ms`;
+                }
+
                 if (this.isNonRetryableError(error) || attempt === this.retryConfig.maxRetries) {
                     this.retryConfig.failures.set(endpoint, failures + 1);
                     this.retryConfig.failures.set(`${endpoint}_time`, Date.now());
                     throw error;
                 }
+
                 await new Promise((resolve) => setTimeout(resolve, Math.min(this.retryConfig.baseDelay * Math.pow(2, attempt), this.retryConfig.maxDelay)));
             }
         }
@@ -310,13 +345,26 @@ export default class HubitatClient {
         if (this.commandState.batchTimer) {
             clearTimeout(this.commandState.batchTimer);
         }
+        if (this.attributeBatchTimer) {
+            clearTimeout(this.attributeBatchTimer);
+        }
         for (const timer of this.commandState.timers.values()) {
             clearTimeout(timer);
         }
         this.commandState.queue = [];
         this.commandState.timers.clear();
         this.commandState.lastExecutions.clear();
+        this.attributeUpdateQueue.clear();
         this.appEvts.removeAllListeners();
+
+        // Destroy axios agents
+        if (this.axiosInstance.defaults.httpAgent) {
+            this.axiosInstance.defaults.httpAgent.destroy();
+        }
+        if (this.axiosInstance.defaults.httpsAgent) {
+            this.axiosInstance.defaults.httpsAgent.destroy();
+        }
+
         this.logManager.logDebug("HubitatClient disposed");
     }
 }
