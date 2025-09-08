@@ -1,4 +1,4 @@
-// platform/WebServer.js
+// WebServer.js
 
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
 import { IPMonitor } from "./IPMonitor.js";
@@ -407,42 +407,32 @@ export class WebServer {
 
     setupHealthRoutes() {
         webApp.post("/healthCheck", this.handleHealthCheck.bind(this));
+
+        // Add a simple test endpoint to verify connectivity
+        webApp.get("/healthCheck", (req, res) => {
+            this.logManager.logInfo("Health check GET request received - responding with simple OK");
+            res.send({ status: "OK", message: "Plugin is responding", timestamp: new Date().toISOString() });
+        });
     }
 
     async handleHealthCheck(req, res) {
         const body = JSON.parse(JSON.stringify(req.body));
-        this.logManager.logDebug(`Health check request received from app_id: ${body?.app_id || "unknown"}`);
         
-        if (body && this.isValidRequestor(body.access_token, body.app_id, "healthCheck")) {
-            try {
-                // Get plugin health data
-                const metrics = this.getHealthMetrics();
-                const healthData = {
-                    status: "OK",
-                    pluginVersion: this.versionManager.getVersion(),
-                    nodeVersion: process.version,
-                    uptime: metrics.uptime.formatted,
-                    memory: metrics.memory,
-                    timestamp: new Date().toISOString(),
-                    hubDateTime: body.hubDateTime,
-                    // Add response to Hubitat's health check
-                    app_id: body.app_id,
-                    app_version: body.app_version,
-                };
-
-                const response = { status: "OK", data: healthData };
-                this.logManager.logDebug(`Sending health check response: ${JSON.stringify(response)}`);
-                res.send(response);
-
-                // Log successful health check
-                this.logManager.logDebug(`Health check successful for app_id: ${body.app_id}`);
-            } catch (ex) {
-                this.logManager.logError("HealthCheck Exception:", ex.message);
-                res.send({ status: "Failed", message: ex.message });
-            }
+        if (this.isValidRequestor(body.access_token, body.app_id, "healthCheck")) {
+            const healthData = {
+                status: "OK",
+                pluginVersion: this.versionManager.getVersion(),
+                nodeVersion: process.version,
+                uptime: process.uptime(),
+                memory: process.memoryUsage(),
+                timestamp: new Date().toISOString()
+            };
+            
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(healthData));
         } else {
-            this.logManager.logWarn(`Invalid health check request from ${body?.app_id || "unknown"}: missing access_token or app_id`);
-            res.send({ status: "Failed: Missing access_token or app_id" });
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ status: "Failed: Authentication failed" }));
         }
     }
 

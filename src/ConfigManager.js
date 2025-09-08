@@ -45,21 +45,6 @@ export default class ConfigManager {
                 temperature_unit: "F",
                 update_method: "direct",
             },
-            multi_instance: {
-                enabled: true,
-                discovery_enabled: true,
-                instance_id: undefined, // Auto-generated if not provided
-                conflict_resolution: "warn", // "warn", "error", "ignore"
-                health_monitoring: true,
-                persistent_queues: true,
-                connection_pooling: true,
-                instance_name: undefined, // User-friendly name for this instance
-                scan_interval: 300000, // 5 minutes between background scans
-                startup_scan_timeout: 5000, // 5 seconds for initial scan
-                max_scan_failures: 3, // Stop scanning after this many failures
-                scan_on_health_failure: true, // Trigger scan when health issues occur
-                scan_on_connection_loss: true, // Trigger scan when connection lost
-            },
             logging: {
                 debug: false,
                 showChanges: true,
@@ -363,91 +348,12 @@ export default class ConfigManager {
         return { ...this.config }; // Return a copy to prevent accidental mutations
     }
 
-    /**
-     * Generate a unique instance ID for multi-instance support
-     */
-    generateInstanceId() {
-        // Combine app_id, MAC address, port, and random string
-        const networkInterfaces = os.networkInterfaces();
-        let macAddress = 'unknown';
-        
-        // Find the first non-internal network interface with a MAC address
-        for (const [name, interfaces] of Object.entries(networkInterfaces)) {
-            for (const iface of interfaces || []) {
-                if (!iface.internal && iface.mac && iface.mac !== '00:00:00:00:00:00') {
-                    macAddress = iface.mac.replace(/:/g, '');
-                    break;
-                }
-            }
-            if (macAddress !== 'unknown') break;
-        }
-        
-        const appId = this.config.client.app_id || 'default';
-        const port = this.getActivePort() || '8000';
-        const random = Math.random().toString(36).substring(2, 6);
-        
-        // Include app_id and actual port in the ID
-        return `${appId}-${macAddress.substring(0, 6)}-p${port}-${random}`;
-    }
 
-    /**
-     * Initialize instance ID if not set
-     */
-    initializeInstanceId() {
-        if (!this.config.multi_instance.instance_id) {
-            const instanceId = this.generateInstanceId();
-            this.updateConfig({ 'multi_instance.instance_id': instanceId });
-            this.log.info(`Generated new instance ID: ${instanceId}`);
-            return instanceId;
-        }
-        return this.config.multi_instance.instance_id;
-    }
 
-    /**
-     * Get instance configuration
-     */
-    getInstanceConfig() {
-        return {
-            instance_id: this.initializeInstanceId(),
-            instance_name: this.config.multi_instance.instance_name || `Homebridge-${this.config.client.app_id}`,
-            app_id: this.config.client.app_id,
-            ip: this.getActiveIP(),
-            port: this.getActivePort(),
-            discovery_enabled: this.config.multi_instance.discovery_enabled,
-            health_monitoring: this.config.multi_instance.health_monitoring,
-            persistent_queues: this.config.multi_instance.persistent_queues,
-            connection_pooling: this.config.multi_instance.connection_pooling,
-            conflict_resolution: this.config.multi_instance.conflict_resolution
-        };
-    }
 
-    /**
-     * Check if multi-instance features are enabled
-     */
-    isMultiInstanceEnabled() {
-        return this.config.multi_instance.enabled;
-    }
 
-    /**
-     * Check if plugin discovery is enabled
-     */
-    isDiscoveryEnabled() {
-        return this.config.multi_instance.discovery_enabled && this.isMultiInstanceEnabled();
-    }
 
-    /**
-     * Get conflict resolution strategy
-     */
-    getConflictResolution() {
-        return this.config.multi_instance.conflict_resolution || 'warn';
-    }
 
-    /**
-     * Set instance name
-     */
-    setInstanceName(name) {
-        this.updateConfig({ 'multi_instance.instance_name': name });
-    }
 
     getConfigValue(key) {
         return this.config[key];

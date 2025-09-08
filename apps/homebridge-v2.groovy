@@ -1840,24 +1840,14 @@ void endPiston(evt) {
 }
 
 private void checkPluginHealth() {
-    String server = getServerAddress()
-    if (server == sCLN || server == sNLCLN) { return }
+    if (!state.pluginDetails?.pluginIP) return
     
-    // Analyze current health status
-    Map healthStatus = analyzePluginHealth()
-    if (!healthStatus.isOk) {
-        healthStatus.messages.each { String msg ->
-            logWarn("Plugin Health Check: ${msg}")
-        }
-    }
-    
-    // Attempt to contact plugin
-    sendHttpPost('healthCheck', [
+    sendHttpPost("http://${state.pluginDetails.pluginIP}:${state.pluginDetails.pluginPort}/healthCheck", [
         app_id: gtAppId(),
         access_token: getTsVal(sATK),
         app_version: appVersionFLD,
         hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone)
-    ], 'pluginHealthCheck', getBoolSetting('showDebugLogs'))
+    ], 'pluginHealthCheckResponse', getBoolSetting('showDebugLogs'))
 }
 
 // Plugin Health Status Methods
@@ -1866,17 +1856,21 @@ def healthStatus() {
     logTrace('Plugin called healthStatus()')
     def body = request?.JSON
     if (body) {
-        state.pluginDetails = state.pluginDetails ?: [:]
-        state.pluginDetails.lastCheckin = now()
-        state.pluginDetails.pluginHealth = body
+        state.pluginDetails = [
+            pluginIP: body?.ip,
+            pluginPort: body?.port,
+            version: body?.pluginVersion,
+            memory: body?.memory,
+            uptime: body?.uptime,
+            lastCheckin: now()
+        ]
+        remTsVal(sSVR)
+        updCodeVerMap('plugin', body?.pluginVersion ?: sNULL)
+        activateDirectUpdates()
+        updTsVal('lastDirectUpdsEnabled')
     }
-    String resultJson = new JsonOutput().toJson([
-        status: 'OK',
-        hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone),
-        appVersion: appVersionFLD,
-        deviceCount: getDeviceCnt()
-    ])
-    compressedRender contentType: sAPPJSON, data: resultJson
+    String resultJson = new JsonOutput().toJson([status: 'OK'])
+    render contentType: sAPPJSON, data: resultJson
 }
 
 private Map analyzePluginHealth() {
@@ -1907,7 +1901,7 @@ private Map analyzePluginHealth() {
         result.messages.push("Plugin hasn't communicated in ${diffMins} minutes")
     }
 
-    // Check memory usage warning if available (disabled)
+    // Check memory usage if available
     // if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
     //     Double memoryUsagePercent = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB) * 100
     //     if (memoryUsagePercent > 85) {
@@ -2249,7 +2243,10 @@ def changeHandler(evt) {
         case 'hsmAlert':
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = 'alarmSystemStatus'
-            if (value?.toString()?.startsWith('intrusion')) {
+            if (value?.toString() in ['intrusion-delay', 'intrusion-night-delay']) {
+                // Suppress sending during entry delay
+                sendEvt = false
+            } else if (value?.toString()?.startsWith('intrusion')) {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getAlarmIntrusionMode(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else if (value?.toString() == 'cancel') {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
@@ -2380,63 +2377,10 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
 }
 
 void asyncHttpCmdResp(response, Map data) {
-    String src = data?.src ? (String)data.src : 'Unknown'
-    def resp = response?.getData()
-    Integer status = response?.getStatus()
-
-    // Handle health check responses specifically
-    if (src == 'pluginHealthCheck') {
-        if (status == 200) {
-            // Parse JSON response for health check
-            def respData = null
-            try {
-                respData = resp ? new groovy.json.JsonSlurper().parseText(resp) : null
-            } catch (Exception e) {
-                logWarn("Failed to parse health check response: ${e.message}")
-                respData = null
-            }
-            
-            if (respData?.status == 'OK') {
-                // Update lastCheckin timestamp for successful health checks
-                state.pluginDetails = state.pluginDetails ?: [:]
-                Long previousLastCheckin = state.pluginDetails.lastCheckin ?: 0
-                state.pluginDetails.lastCheckin = now()
-                state.pluginDetails.lastHealthCheck = now()
-                
-                // Only log "communication restored" if there was a significant gap in communication
-                Long diffMs = now() - previousLastCheckin
-                Long diffMins = diffMs / 60000
-                if (diffMins > 5) { // Only if more than 5 minutes since last checkin
-                    logInfo("Plugin health check successful - communication restored")
-                } else {
-                    logDebug("Plugin health check successful")
-                }
-                
-                // Update plugin health data if available
-                if (respData?.data) {
-                    state.pluginDetails.pluginHealth = respData.data
-                }
-            } else {
-                logWarn("Plugin health check failed: ${respData?.message ?: 'Unknown error'}")
-            }
-        } else {
-            logWarn("Plugin health check request failed with status: ${status}")
-        }
-    }
-    
-    // Handle plugin status responses
-    if (src == 'updatePluginStatus') {
-        if (status == 200 && resp?.status == 'OK') {
-            // Update lastCheckin for successful plugin status updates
-            state.pluginDetails = state.pluginDetails ?: [:]
-            state.pluginDetails.lastCheckin = now()
-            logDebug("Plugin status update successful")
-        }
-    }
-    
-    // Existing debug logging
     if (getTsVal(sDBG) == sTRUE && bIs(data, 'evtLog')) {
-        logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${status} | Data: ${data}")
+        def resp = response?.getData()
+        String src = data?.src ? (String)data.src : 'Unknown'
+        logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
         logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (wnow() - (Long)data.execDt) : 0}ms)")
     }
 }
@@ -2652,157 +2596,6 @@ def registerPluginForUpdates() {
     compressedRender contentType: sAPPJSON, data: resultJson
 }
 
-/**
- * Enhanced plugin registration with discovery support
- */
-def registerPlugin() {
-    logTrace('Plugin called registerPlugin()')
-    def body = request.JSON
-    String pluginId = body?.plugin_id ?: generatePluginId(body)
-    
-    // Initialize plugin registry if not exists
-    if (!state.pluginRegistry) {
-        state.pluginRegistry = [:]
-    }
-    
-    // Register or update plugin
-    state.pluginRegistry[pluginId] = [
-        plugin_id: pluginId,
-        app_id: body?.app_id ?: app.id,
-        pluginIP: body?.pluginIp ?: body?.ip,
-        pluginPort: body?.pluginPort ?: body?.port,
-        version: body?.pluginVersion ?: body?.version,
-        capabilities: body?.capabilities ?: [],
-        memory: body?.memory,
-        uptime: body?.uptime,
-        lastCheckin: now(),
-        registered: now()
-    ]
-    
-    // Update legacy pluginDetails for backwards compatibility
-    state.pluginDetails = state.pluginRegistry[pluginId]
-    
-    logInfo("Registered plugin: ${pluginId} at ${state.pluginRegistry[pluginId].pluginIP}:${state.pluginRegistry[pluginId].pluginPort}")
-    
-    remTsVal(sSVR)
-    updCodeVerMap('plugin', (String)body?.pluginVersion ?: body?.version ?: sNULL)
-    activateDirectUpdates()
-    updTsVal('lastDirectUpdsEnabled')
-    
-    String resultJson = new JsonOutput().toJson([
-        status: 'OK',
-        plugin_id: pluginId,
-        registered: true,
-        app_id: app.id
-    ])
-    compressedRender contentType: sAPPJSON, data: resultJson
-}
-
-/**
- * Get list of discovered/registered plugins
- */
-def getDiscoveredPlugins() {
-    logTrace('Plugin called getDiscoveredPlugins()')
-    
-    def plugins = state.pluginRegistry ?: [:]
-    def pluginList = plugins.collect { pluginId, pluginData ->
-        return [
-            plugin_id: pluginId,
-            ip: pluginData.pluginIP,
-            port: pluginData.pluginPort,
-            app_id: pluginData.app_id,
-            version: pluginData.version,
-            capabilities: pluginData.capabilities ?: [],
-            last_checkin: pluginData.lastCheckin,
-            uptime: pluginData.uptime
-        ]
-    }
-    
-    String resultJson = new JsonOutput().toJson([
-        status: 'OK',
-        plugins: pluginList,
-        count: pluginList.size(),
-        app_id: app.id
-    ])
-    compressedRender contentType: sAPPJSON, data: resultJson
-}
-
-/**
- * Discover plugins on the network via HTTP calls to plugin discovery endpoints
- */
-def discoverPlugins() {
-    logTrace('Plugin called discoverPlugins()')
-    def body = request.JSON
-    Integer timeout = body?.timeout ?: 5000
-    
-    // This would typically scan the network for plugins
-    // For now, return registered plugins and attempt to health check them
-    def plugins = state.pluginRegistry ?: [:]
-    def activePlugins = []
-    
-    plugins.each { pluginId, pluginData ->
-        try {
-            // Attempt to ping the plugin to verify it's alive
-            def uri = "http://${pluginData.pluginIP}:${pluginData.pluginPort}/pluginTest"
-            
-            httpGet([
-                uri: uri,
-                timeout: Math.min(timeout / 1000, 10)
-            ]) { resp ->
-                if (resp.status == 200) {
-                    activePlugins.add([
-                        plugin_id: pluginId,
-                        ip: pluginData.pluginIP,
-                        port: pluginData.pluginPort,
-                        app_id: pluginData.app_id,
-                        version: pluginData.version,
-                        capabilities: pluginData.capabilities ?: [],
-                        status: 'active',
-                        last_response: now()
-                    ])
-                    
-                    // Update last checkin
-                    state.pluginRegistry[pluginId].lastCheckin = now()
-                }
-            }
-        } catch (Exception ex) {
-            logWarn("Plugin ${pluginId} at ${pluginData.pluginIP}:${pluginData.pluginPort} is not responding: ${ex.message}")
-            activePlugins.add([
-                plugin_id: pluginId,
-                ip: pluginData.pluginIP,
-                port: pluginData.pluginPort,
-                app_id: pluginData.app_id,
-                version: pluginData.version,
-                capabilities: pluginData.capabilities ?: [],
-                status: 'inactive',
-                last_error: ex.message
-            ])
-        }
-    }
-    
-    String resultJson = new JsonOutput().toJson([
-        status: 'OK',
-        discovered_plugins: activePlugins,
-        active_count: activePlugins.findAll { it.status == 'active' }.size(),
-        total_count: activePlugins.size(),
-        scan_timeout: timeout
-    ])
-    compressedRender contentType: sAPPJSON, data: resultJson
-}
-
-/**
- * Generate a unique plugin ID based on IP, port, and app details
- */
-private String generatePluginId(body) {
-    String ip = body?.pluginIp ?: body?.ip ?: 'unknown'
-    String port = body?.pluginPort ?: body?.port ?: '8000'
-    String appId = body?.app_id ?: app.id
-    
-    // Create a simple hash-like identifier
-    String identifier = "${ip}-${port}-${appId}".replaceAll('[^a-zA-Z0-9\\-]', '')
-    return "homebridge-hubitat-${identifier}".take(50) // Limit length
-}
-
 mappings {
     path('/devices')                        { action: [GET: 'getAllData']           }
     path('/alldevices')                     { action: [GET: 'renderDevices']        }
@@ -2814,8 +2607,6 @@ mappings {
     path('/deviceCmds')                     { action: [POST: 'deviceCommands']      }
     path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }
     path('/registerPluginForUpdates')       { action: [POST: 'registerPluginForUpdates'] }
-    path('/discoveryPlugins')               { action: [GET: 'getDiscoveredPlugins', POST: 'discoverPlugins'] }
-    path('/registerPlugin')                 { action: [POST: 'registerPlugin']      }
 }
 
 /**********************************************

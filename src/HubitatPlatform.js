@@ -298,7 +298,7 @@ export default class HubitatPlatform {
         const startTime = Date.now();
         try {
             this.logManager.logDebug(`Processing update for device ${update.name || update.deviceid}: ${update.attribute} = ${update.value}`);
-            
+
             const accessory = this.getAccessoryFromCache(update.deviceid);
             if (!accessory) {
                 this.logManager.logWarn(`No accessory found for device ${update.deviceid}`);
@@ -322,11 +322,11 @@ export default class HubitatPlatform {
             }
 
             await this.addAccessoryToCache(accessory);
-            
+
             // Record metrics for successful update
             const processingTime = Date.now() - startTime;
             this.metricsManager.recordDeviceUpdate(update, processingTime);
-            
+
             return true;
         } catch (error) {
             this.logManager.logError(`Error in processDeviceAttributeUpdate:`, error);
@@ -363,7 +363,7 @@ export default class HubitatPlatform {
             // Cleanup components
             this.client.dispose();
             this.accessoryManager.dispose();
-            
+
             // Save and cleanup metrics
             if (this.metricsManager) {
                 await this.metricsManager.dispose();
@@ -503,31 +503,24 @@ export default class HubitatPlatform {
      */
     validateHealthCheckResponse(response) {
         this.logManager.logDebug(`Validating health check response: ${JSON.stringify(response)}`);
-        
-        if (!response || !response.data) {
-            this.logManager.logDebug(`Health check validation failed: response=${!!response}, data=${!!response?.data}`);
-            return { valid: false, reason: "No response data" };
+
+        // The response from updatePluginStatus() is already the data object, not wrapped in a data property
+        if (!response) {
+            this.logManager.logDebug(`Health check validation failed: no response`);
+            return { valid: false, reason: "No response" };
         }
 
-        const { data } = response;
-        if (data.status !== "OK") {
-            this.logManager.logDebug(`Health check validation failed: status=${data.status}`);
-            return { valid: false, reason: `Invalid status: ${data.status}` };
+        // Check if response has the expected structure from updatePluginStatus
+        // The response should contain fields like version, isLocal, accCount, memory, uptime
+        if (typeof response !== "object") {
+            this.logManager.logDebug(`Health check validation failed: response is not an object`);
+            return { valid: false, reason: "Invalid response format" };
         }
 
-        if (!data.pluginVersion || !data.timestamp) {
-            this.logManager.logDebug(`Health check validation failed: pluginVersion=${!!data.pluginVersion}, timestamp=${!!data.timestamp}`);
-            return { valid: false, reason: "Missing required fields" };
-        }
-
-        // Check if response is recent (within last 10 minutes)
-        const responseTime = new Date(data.timestamp).getTime();
-        const now = Date.now();
-        if (now - responseTime > 600000) {
-            // 10 minutes
-            return { valid: false, reason: "Response too old" };
-        }
-
+        // For updatePluginStatus responses, we just need to verify it's a valid object
+        // The actual health check is whether the request succeeded (no error thrown)
+        // and we got a response object back
+        this.logManager.logDebug(`Health check validation successful: received valid response object`);
         return { valid: true };
     }
 }
