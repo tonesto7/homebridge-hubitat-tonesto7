@@ -12,6 +12,7 @@ import { WebServer } from "./WebServer.js";
 import { LogManager } from "./LogManager.js";
 import { VersionManager } from "./VersionManager.js";
 import { AccessoryManager } from "./AccessoryManager.js";
+import { MetricsManager } from "./MetricsManager.js";
 import events from "events";
 
 export default class HubitatPlatform {
@@ -67,6 +68,7 @@ export default class HubitatPlatform {
         // Initialize components
         this.client = new HubitatClient(this);
         this.accessoryManager = new AccessoryManager(this);
+        this.metricsManager = new MetricsManager(this);
         this.webServer = new WebServer(this);
         this.unknownCapabilities = [];
 
@@ -293,10 +295,12 @@ export default class HubitatPlatform {
      * @param {Object} update - The attribute update data
      */
     async processDeviceAttributeUpdate(update) {
+        const startTime = Date.now();
         try {
             const accessory = this.getAccessoryFromCache(update.deviceid);
             if (!accessory) {
                 this.logManager.logWarn(`No accessory found for device ${update.deviceid}`);
+                this.metricsManager.recordError();
                 return false;
             }
 
@@ -316,9 +320,15 @@ export default class HubitatPlatform {
             }
 
             await this.addAccessoryToCache(accessory);
+            
+            // Record metrics for successful update
+            const processingTime = Date.now() - startTime;
+            this.metricsManager.recordDeviceUpdate(update, processingTime);
+            
             return true;
         } catch (error) {
             this.logManager.logError(`Error in processDeviceAttributeUpdate:`, error);
+            this.metricsManager.recordError();
             return false;
         }
     }

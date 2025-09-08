@@ -17,6 +17,7 @@ export class WebServer {
         this.logManager = platform.logManager;
         this.configManager = platform.configManager;
         this.versionManager = platform.versionManager;
+        this.metricsManager = platform.metricsManager;
         this.config = platform.config;
         this.homebridge = platform.homebridge;
         this.appEvts = platform.appEvts;
@@ -124,6 +125,7 @@ export class WebServer {
         this.setupDeviceRoutes();
         this.setupHealthRoutes();
         this.setupMonitoringRoutes();
+        this.setupMetricsRoutes();
     }
 
     /**
@@ -299,6 +301,11 @@ export class WebServer {
 
             // Add to queue instead of processing immediately
             this.queueDeviceUpdate(newChange);
+            
+            // Record queue metrics
+            if (this.metricsManager) {
+                this.metricsManager.recordQueueMetrics({ queued: true, queueSize: this.updateQueue.length });
+            }
 
             // Send immediate response to Hubitat
             res.send({
@@ -333,6 +340,9 @@ export class WebServer {
             }
         } else {
             this.logManager.logWarn(`Update queue full (${this.maxQueueSize}) - dropping update for ${update.name}`);
+            if (this.metricsManager) {
+                this.metricsManager.recordQueueMetrics({ dropped: true });
+            }
         }
     }
 
@@ -348,6 +358,11 @@ export class WebServer {
             const batch = this.updateQueue.splice(0, this.batchSize);
 
             this.logManager.logDebug(`Processing batch of ${batch.length} device updates (${this.updateQueue.length} remaining)`);
+            
+            // Record batch processing metrics
+            if (this.metricsManager) {
+                this.metricsManager.recordQueueMetrics({ processed: batch.length, queueSize: this.updateQueue.length });
+            }
 
             // Process this batch in parallel
             const promises = batch.map((update) =>
@@ -560,6 +575,656 @@ export class WebServer {
                 batchSize: this.batchSize,
             },
         };
+    }
+
+    setupMetricsRoutes() {
+        // Get metrics API endpoint
+        webApp.get("/metrics/api", (req, res) => {
+            if (this.metricsManager) {
+                const metrics = this.metricsManager.getAllMetrics();
+                res.json(metrics);
+            } else {
+                res.status(503).json({ error: "Metrics not available" });
+            }
+        });
+        
+        // Reset metrics endpoint
+        webApp.post("/metrics/reset", (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "metrics/reset")) {
+                if (this.metricsManager) {
+                    this.metricsManager.resetMetrics();
+                    res.send({ status: "OK", message: "Metrics reset successfully" });
+                } else {
+                    res.send({ status: "Failed", message: "Metrics manager not initialized" });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
+        });
+        
+        // Serve metrics dashboard HTML page
+        webApp.get("/metrics", (req, res) => {
+            const ip = this.configManager.getActiveIP();
+            const port = this.config.server.direct_port;
+            const dashboardHTML = this.getMetricsDashboardHTML(ip, port);
+            res.send(dashboardHTML);
+        });
+    }
+    
+    getMetricsDashboardHTML(ip, port) {
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homebridge Hubitat Metrics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            color: #333;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stat-card .change {
+            color: #4CAF50;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .chart-wrapper.small {
+            height: 300px;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+        }
+        
+        .devices-table {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .devices-table h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .error {
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: opacity 0.3s ease;
+            float: right;
+        }
+        
+        .refresh-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="refresh-btn" onclick="refreshMetrics()">Refresh</button>
+            <h1>Homebridge Hubitat Metrics</h1>
+            <p class="subtitle">Real-time device update metrics and performance monitoring</p>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="label">Total Updates</div>
+                <div class="value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Updates/Min</div>
+                <div class="value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Active Devices</div>
+                <div class="value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Avg Processing</div>
+                <div class="value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Queue Size</div>
+                <div class="value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Errors</div>
+                <div class="value">-</div>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <div class="chart-container">
+                <h2>Top 10 Most Active Devices</h2>
+                <div class="chart-wrapper">
+                    <canvas id="topDevicesChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>Attribute Distribution</h2>
+                <div class="chart-wrapper">
+                    <canvas id="attributesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h2>Updates Over Time (Last 24 Hours)</h2>
+            <div class="chart-wrapper small">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="grid-2">
+            <div class="chart-container">
+                <h2>Processing Time Distribution</h2>
+                <div class="chart-wrapper small">
+                    <canvas id="processingChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>Queue Metrics</h2>
+                <div class="chart-wrapper small">
+                    <canvas id="queueChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="devices-table">
+            <h2>Device Details</h2>
+            <table id="devicesTable">
+                <thead>
+                    <tr>
+                        <th>Device Name</th>
+                        <th>Total Updates</th>
+                        <th>Avg Processing (ms)</th>
+                        <th>Last Update</th>
+                        <th>Activity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        let charts = {};
+        let metricsData = null;
+        
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/metrics/api');
+                if (!response.ok) throw new Error('Failed to fetch metrics');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                return null;
+            }
+        }
+        
+        function updateStats(data) {
+            const stats = [
+                { label: 'Total Updates', value: data.system.totalUpdates.toLocaleString() },
+                { label: 'Updates/Min', value: data.system.updatesPerMinute.toLocaleString() },
+                { label: 'Active Devices', value: data.devices.length.toLocaleString() },
+                { label: 'Avg Processing', value: data.processing.avg.toFixed(2) + ' ms' },
+                { label: 'Queue Size', value: data.system.maxQueueSize.toLocaleString() },
+                { label: 'Errors', value: data.system.errors.toLocaleString() }
+            ];
+            
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = stats.map(stat => \`
+                <div class="stat-card">
+                    <div class="label">\${stat.label}</div>
+                    <div class="value">\${stat.value}</div>
+                </div>
+            \`).join('');
+        }
+        
+        function createTopDevicesChart(data) {
+            const ctx = document.getElementById('topDevicesChart').getContext('2d');
+            
+            if (charts.topDevices) {
+                charts.topDevices.destroy();
+            }
+            
+            const topDevices = data.topDevices.slice(0, 10);
+            
+            charts.topDevices = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topDevices.map(d => d.deviceName),
+                    datasets: [{
+                        label: 'Updates (Last Hour)',
+                        data: topDevices.map(d => d.count),
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createAttributesChart(data) {
+            const ctx = document.getElementById('attributesChart').getContext('2d');
+            
+            if (charts.attributes) {
+                charts.attributes.destroy();
+            }
+            
+            const topAttributes = data.attributes.slice(0, 8);
+            
+            charts.attributes = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topAttributes.map(a => a.attribute),
+                    datasets: [{
+                        data: topAttributes.map(a => a.count),
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(244, 143, 177, 0.8)',
+                            'rgba(255, 167, 38, 0.8)',
+                            'rgba(66, 165, 245, 0.8)',
+                            'rgba(102, 187, 106, 0.8)',
+                            'rgba(255, 202, 40, 0.8)',
+                            'rgba(141, 110, 184, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createTimelineChart(data) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            if (charts.timeline) {
+                charts.timeline.destroy();
+            }
+            
+            const hourlyData = data.hourly || [];
+            const hours = [];
+            const updates = [];
+            
+            for (let i = 0; i < 24; i++) {
+                const hour = new Date();
+                hour.setHours(hour.getHours() - (23 - i));
+                hours.push(hour.getHours() + ':00');
+                
+                const hourData = hourlyData.find(h => h.hour === hour.getHours());
+                updates.push(hourData ? hourData.updates : 0);
+            }
+            
+            charts.timeline = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [{
+                        label: 'Updates',
+                        data: updates,
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createProcessingChart(data) {
+            const ctx = document.getElementById('processingChart').getContext('2d');
+            
+            if (charts.processing) {
+                charts.processing.destroy();
+            }
+            
+            charts.processing = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Min', 'Avg', 'Median', 'P95', 'P99', 'Max'],
+                    datasets: [{
+                        label: 'Processing Time (ms)',
+                        data: [
+                            data.processing.min,
+                            data.processing.avg,
+                            data.processing.median,
+                            data.processing.p95,
+                            data.processing.p99,
+                            data.processing.max
+                        ],
+                        backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createQueueChart(data) {
+            const ctx = document.getElementById('queueChart').getContext('2d');
+            
+            if (charts.queue) {
+                charts.queue.destroy();
+            }
+            
+            charts.queue = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Queued', 'Processed', 'Dropped', 'Max Size'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [
+                            data.system.totalQueued,
+                            data.system.totalProcessed,
+                            data.system.droppedUpdates,
+                            data.system.maxQueueSize
+                        ],
+                        backgroundColor: [
+                            'rgba(66, 165, 245, 0.8)',
+                            'rgba(102, 187, 106, 0.8)',
+                            'rgba(244, 67, 54, 0.8)',
+                            'rgba(255, 167, 38, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateDevicesTable(data) {
+            const tbody = document.querySelector('#devicesTable tbody');
+            const devices = data.devices.sort((a, b) => b.totalUpdates - a.totalUpdates);
+            const maxUpdates = Math.max(...devices.map(d => d.totalUpdates));
+            
+            tbody.innerHTML = devices.map(device => {
+                const lastUpdate = device.lastUpdate ? 
+                    new Date(device.lastUpdate).toLocaleString() : 'Never';
+                const percentage = (device.totalUpdates / maxUpdates) * 100;
+                
+                return \`
+                    <tr>
+                        <td>\${device.deviceName}</td>
+                        <td>\${device.totalUpdates.toLocaleString()}</td>
+                        <td>\${device.avgProcessingTime.toFixed(2)} ms</td>
+                        <td>\${lastUpdate}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: \${percentage}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                \`;
+            }).join('');
+        }
+        
+        async function updateDashboard() {
+            const data = await fetchMetrics();
+            if (!data) {
+                document.body.innerHTML = '<div class="error">Failed to load metrics. Please refresh the page.</div>';
+                return;
+            }
+            
+            metricsData = data;
+            
+            updateStats(data);
+            createTopDevicesChart(data);
+            createAttributesChart(data);
+            createTimelineChart(data);
+            createProcessingChart(data);
+            createQueueChart(data);
+            updateDevicesTable(data);
+        }
+        
+        async function refreshMetrics() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.disabled = true;
+            btn.textContent = 'Refreshing...';
+            
+            await updateDashboard();
+            
+            btn.disabled = false;
+            btn.textContent = 'Refresh';
+        }
+        
+        // Initial load
+        updateDashboard();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(updateDashboard, 30000);
+    </script>
+</body>
+</html>`;
     }
 
     async dispose() {

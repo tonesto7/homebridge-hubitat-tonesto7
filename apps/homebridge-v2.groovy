@@ -278,6 +278,14 @@ def appButtonHandler(String buttonName) {
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         appCssOverrideUI()
+        section(sectHead('Plugin Monitoring & Analytics')) {
+            String metricsUrl = getPluginMetricsUrl()
+            if (metricsUrl) {
+                href url: metricsUrl, style: sEXTNRL, required: false, title: inTS('Metrics Dashboard', 'graph'), description: inputFooter('View device update metrics and performance stats', sCLRGRY, true)
+            } else {
+                paragraph spanSm('Metrics dashboard will be available once the plugin is connected and running.', sCLRGRY)
+            }
+        }
         section(sectHead('Plugin Configuration Options')) {
             input 'consider_fan_by_name',   sBOOL, title: inTS('Use the word Fan in device name to determine if device is a Fan?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'consider_light_by_name', sBOOL, title: inTS('Use the word Light in device name to determine if device is a Light?', sCMD), required: false, defaultValue: false, submitOnChange: true
@@ -2874,6 +2882,32 @@ def appFooter() {
     section() {
         // paragraph htmlLine('orange')
         paragraph spanSm("<div style='text-align:center;'><b><u>Homebridge Hubitat</u></b><br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target='_blank'><img width='120' height='120' src='https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png'></a><br><br>Please consider donating if you find this integration useful.</div>", sCLRORG)
+    }
+}
+
+/**
+ * Get the plugin metrics URL if available
+ */
+String getPluginMetricsUrl() {
+    try {
+        def pluginRegistry = state.pluginRegistry ?: [:]
+        if (pluginRegistry.isEmpty()) {
+            return null
+        }
+        
+        // Get the first registered plugin (most recent or primary)
+        def firstPlugin = pluginRegistry.values().first()
+        String pluginIP = firstPlugin?.pluginIP
+        String pluginPort = firstPlugin?.pluginPort
+        
+        if (pluginIP && pluginPort) {
+            return "http://${pluginIP}:${pluginPort}/metrics"
+        }
+        
+        return null
+    } catch (Exception ex) {
+        logError("Error getting plugin metrics URL: ${ex.message}")
+        return null
     }
 }
 
