@@ -1899,13 +1899,13 @@ private Map analyzePluginHealth() {
         result.messages.push("Plugin hasn't communicated in ${diffMins} minutes")
     }
 
-    // Check memory usage warning if available
-    if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
-        Double memoryUsagePercent = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB) * 100
-        if (memoryUsagePercent > 85) {
-            result.messages.push("Plugin memory usage is high: ${pluginDetails.memory.heapUsedMB}MB/${pluginDetails.memory.heapTotalMB}MB (${Math.round(memoryUsagePercent)}%)")
-        }
-    }
+    // Check memory usage warning if available (disabled)
+    // if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
+    //     Double memoryUsagePercent = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB) * 100
+    //     if (memoryUsagePercent > 85) {
+    //         result.messages.push("Plugin memory usage is high: ${pluginDetails.memory.heapUsedMB}MB/${pluginDetails.memory.heapTotalMB}MB (${Math.round(memoryUsagePercent)}%)")
+    //     }
+    // }
 
     result.isOk = result.messages.size() == 0
     return result
