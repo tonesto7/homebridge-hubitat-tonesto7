@@ -1,4 +1,14 @@
-## _**v3.0.0**_ (9-07-2025)
+## [3.0.1] - 2025-09-08
+
+- [NEW] **Smart Health Monitoring**: Added intelligent health checks that automatically detect and recover from connection issues
+- [NEW] **Better Performance**: Implemented device update batching and improved connection pooling for faster, more reliable communication
+- [NEW] **Enhanced Reliability**: Added circuit breaker protection to prevent cascading failures and improve overall stability
+- [UPDATE] **Health Check Timing**: Synchronized monitoring intervals with Hubitat app for better coordination
+- [UPDATE] **Connection Management**: Improved connection handling with better keep-alive settings and increased capacity
+- [FIX] **Memory Warnings**: Removed unnecessary memory usage alerts that were causing false warnings
+- [FIX] **Connection Issues**: Resolved stability problems that could cause intermittent communication failures
+
+## [3.0.0] - 2025-09-07
 
 - [NEW] Modular system with 30+ specialized device handlers (see src/devices).
 - [NEW] Centralized configuration management restructured for better performance, reliability, and clarity.
