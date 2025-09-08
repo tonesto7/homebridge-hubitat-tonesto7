@@ -52,6 +52,15 @@ export default class HubitatPlatform {
         this.appEvts.setMaxListeners(50);
         this._cachedAccessories = new Map();
 
+        // Add health check monitoring
+        this.healthCheckMonitor = {
+            lastSuccessfulCheck: null,
+            consecutiveFailures: 0,
+            maxConsecutiveFailures: 3,
+            checkInterval: 300000, // 5 minutes
+            isHealthy: true,
+        };
+
         // Set max listeners for Identify characteristic
         this.api.hap.Characteristic.Identify.setMaxListeners(50);
 
@@ -468,5 +477,35 @@ export default class HubitatPlatform {
             return displayName;
         }
         return `${displayName} ${appendedStr}`;
+    }
+
+    /**
+     * Validate health check response
+     * @param {Object} response - Health check response
+     * @returns {Object} Validation result
+     */
+    validateHealthCheckResponse(response) {
+        if (!response || !response.data) {
+            return { valid: false, reason: "No response data" };
+        }
+
+        const { data } = response;
+        if (data.status !== "OK") {
+            return { valid: false, reason: `Invalid status: ${data.status}` };
+        }
+
+        if (!data.pluginVersion || !data.timestamp) {
+            return { valid: false, reason: "Missing required fields" };
+        }
+
+        // Check if response is recent (within last 10 minutes)
+        const responseTime = new Date(data.timestamp).getTime();
+        const now = Date.now();
+        if (now - responseTime > 600000) {
+            // 10 minutes
+            return { valid: false, reason: "Response too old" };
+        }
+
+        return { valid: true };
     }
 }

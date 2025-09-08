@@ -26,12 +26,12 @@ export class WebServer {
 
         // Initialize IP monitoring (will be set up later with client)
         this.ipMonitor = null;
-        
+
         // Health monitor will be initialized later when client is available
         this.healthMonitor = null;
 
         // Initialize persistent queue for device updates
-        this.deviceUpdateQueue = new PersistentQueue(platform, 'device-updates');
+        this.deviceUpdateQueue = new PersistentQueue(platform, "device-updates");
 
         // Subscribe to config updates
         this.configManager.onConfigUpdate((newConfig) => {
@@ -113,17 +113,17 @@ export class WebServer {
             const platform = {
                 logManager: this.logManager,
                 configManager: this.configManager,
-                config: this.config
+                config: this.config,
             };
-            
+
             // Initialize IP monitoring
             this.ipMonitor = new IPMonitor(platform, hubitatClient);
             this.ipMonitor.startMonitoring();
-            
+
             // Initialize health monitoring (simplified - no discovery integration)
             this.healthMonitor = new HealthMonitor(platform, hubitatClient);
             this.healthMonitor.startMonitoring();
-            
+
             this.logManager.logInfo("IP monitoring and health monitoring initialized");
         }
     }
@@ -278,7 +278,7 @@ export class WebServer {
 
             // Add to queue instead of processing immediately
             this.queueDeviceUpdate(newChange);
-            
+
             // Send immediate response to Hubitat
             res.send({
                 evtSource: `Homebridge_${platformName}_${this.config.client.app_id}`,
@@ -303,12 +303,12 @@ export class WebServer {
         const updateData = {
             ...update,
             queuedAt: Date.now(),
-            source: 'hubitat_app'
+            source: "hubitat_app",
         };
 
         // Add to persistent queue with normal priority
         const queued = await this.deviceUpdateQueue.enqueue(updateData, 0);
-        
+
         if (!queued) {
             this.logManager.logWarn(`Failed to queue device update for ${update.name} - queue may be full`);
         } else {
@@ -318,7 +318,7 @@ export class WebServer {
         // Also add to legacy queue for immediate processing if needed
         if (this.updateQueue.length < this.maxQueueSize) {
             this.updateQueue.push(update);
-            
+
             // If not processing and no timer set, start batch processing after collection delay
             if (!this.isProcessingQueue && !this.batchTimer) {
                 this.batchTimer = setTimeout(() => {
@@ -339,24 +339,24 @@ export class WebServer {
         while (this.updateQueue.length > 0) {
             // Take a batch of updates (up to batchSize)
             const batch = this.updateQueue.splice(0, this.batchSize);
-            
+
             this.logManager.logDebug(`Processing batch of ${batch.length} device updates (${this.updateQueue.length} remaining)`);
-            
+
             // Process this batch in parallel
-            const promises = batch.map(update => 
-                this.processDeviceAttributeUpdate(update).catch(error => {
+            const promises = batch.map((update) =>
+                this.processDeviceAttributeUpdate(update).catch((error) => {
                     this.logManager.logError(`Failed to process update for ${update.name}:`, error);
-                })
+                }),
             );
-            
+
             await Promise.all(promises);
-            
+
             // If more updates remain, wait before processing next batch
             if (this.updateQueue.length > 0) {
-                await new Promise(resolve => setTimeout(resolve, this.batchDelay));
+                await new Promise((resolve) => setTimeout(resolve, this.batchDelay));
             }
         }
-        
+
         this.isProcessingQueue = false;
     }
 
@@ -403,33 +403,38 @@ export class WebServer {
                     memory: metrics.memory,
                     timestamp: new Date().toISOString(),
                     hubDateTime: body.hubDateTime,
+                    // Add response to Hubitat's health check
+                    app_id: body.app_id,
+                    app_version: body.app_version,
                 };
 
                 res.send({ status: "OK", data: healthData });
+
+                // Log successful health check
+                this.logManager.logDebug(`Health check successful for app_id: ${body.app_id}`);
             } catch (ex) {
                 this.logManager.logError("HealthCheck Exception:", ex.message);
                 res.send({ status: "Failed", message: ex.message });
             }
         } else {
+            this.logManager.logWarn(`Invalid health check request from ${body?.app_id || "unknown"}`);
             res.send({ status: "Failed: Missing access_token or app_id" });
         }
     }
-
 
     setupMonitoringRoutes() {
         // Get health status
         webApp.get("/monitoring/health", (req, res) => {
             if (this.healthMonitor) {
                 const healthStatus = this.healthMonitor.getHealthStatus();
-                const connectionStats = this.getAllCachedAccessories().length > 0 ? 
-                    this.configManager.getConfig() : null;
-                
+                const connectionStats = this.getAllCachedAccessories().length > 0 ? this.configManager.getConfig() : null;
+
                 res.send({
                     status: "OK",
                     health: healthStatus,
                     uptime: process.uptime(),
                     memory: process.memoryUsage(),
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             } else {
                 res.send({
@@ -437,7 +442,7 @@ export class WebServer {
                     health: { isHealthy: true, message: "Health monitoring not initialized" },
                     uptime: process.uptime(),
                     memory: process.memoryUsage(),
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             }
         });
@@ -482,7 +487,7 @@ export class WebServer {
             res.send({
                 status: "OK",
                 message: "Connection statistics available via health endpoint",
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
         });
 
@@ -492,7 +497,7 @@ export class WebServer {
             res.send({
                 status: "OK",
                 queues: queueStats,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
         });
 
@@ -503,13 +508,13 @@ export class WebServer {
                 res.send({
                     status: "OK",
                     ip_monitoring: ipStatus,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             } else {
                 res.send({
                     status: "OK",
                     ip_monitoring: { message: "IP monitoring not initialized" },
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             }
         });
@@ -539,16 +544,16 @@ export class WebServer {
             if (body && this.isValidRequestor(body.access_token, body.app_id, "monitoring/clear-queue")) {
                 try {
                     await this.deviceUpdateQueue.clear();
-                    res.send({ 
-                        status: "OK", 
+                    res.send({
+                        status: "OK",
                         message: "Persistent queue cleared",
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
                     });
                 } catch (error) {
-                    res.send({ 
-                        status: "Failed", 
+                    res.send({
+                        status: "Failed",
                         message: error.message,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
                     });
                 }
             } else {
@@ -564,10 +569,10 @@ export class WebServer {
         // Process persistent queue items
         setInterval(async () => {
             const readyItems = this.deviceUpdateQueue.getReadyItems(this.batchSize);
-            
+
             if (readyItems.length > 0) {
                 this.logManager.logDebug(`Processing ${readyItems.length} persistent queue items`);
-                
+
                 for (const item of readyItems) {
                     try {
                         await this.processDeviceAttributeUpdate(item.data);
@@ -594,8 +599,8 @@ export class WebServer {
                 size: this.updateQueue.length,
                 maxSize: this.maxQueueSize,
                 isProcessing: this.isProcessingQueue,
-                batchSize: this.batchSize
-            }
+                batchSize: this.batchSize,
+            },
         };
     }
 
@@ -604,17 +609,17 @@ export class WebServer {
         if (this.ipMonitor) {
             this.ipMonitor.dispose();
         }
-        
+
         // Clean up health monitoring
         if (this.healthMonitor) {
             this.healthMonitor.dispose();
         }
-        
+
         // Clean up persistent queue
         if (this.deviceUpdateQueue) {
             await this.deviceUpdateQueue.dispose();
         }
-        
+
         // Clear any timers
         if (this.batchTimer) {
             clearTimeout(this.batchTimer);

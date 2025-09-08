@@ -2372,10 +2372,45 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
 }
 
 void asyncHttpCmdResp(response, Map data) {
+    String src = data?.src ? (String)data.src : 'Unknown'
+    def resp = response?.getData()
+    Integer status = response?.getStatus()
+
+    // Handle health check responses specifically
+    if (src == 'pluginHealthCheck') {
+        if (status == 200) {
+            if (resp?.status == 'OK') {
+                // Update lastCheckin timestamp for successful health checks
+                state.pluginDetails = state.pluginDetails ?: [:]
+                state.pluginDetails.lastCheckin = now()
+                state.pluginDetails.lastHealthCheck = now()
+                logInfo("Plugin health check successful - communication restored")
+                
+                // Update plugin health data if available
+                if (resp?.data) {
+                    state.pluginDetails.pluginHealth = resp.data
+                }
+            } else {
+                logWarn("Plugin health check failed: ${resp?.message ?: 'Unknown error'}")
+            }
+        } else {
+            logWarn("Plugin health check request failed with status: ${status}")
+        }
+    }
+    
+    // Handle plugin status responses
+    if (src == 'updatePluginStatus') {
+        if (status == 200 && resp?.status == 'OK') {
+            // Update lastCheckin for successful plugin status updates
+            state.pluginDetails = state.pluginDetails ?: [:]
+            state.pluginDetails.lastCheckin = now()
+            logDebug("Plugin status update successful")
+        }
+    }
+    
+    // Existing debug logging
     if (getTsVal(sDBG) == sTRUE && bIs(data, 'evtLog')) {
-        def resp = response?.getData() // || null
-        String src = data?.src ? (String)data.src : 'Unknown'
-        logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+        logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${status} | Data: ${data}")
         logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (wnow() - (Long)data.execDt) : 0}ms)")
     }
 }

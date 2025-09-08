@@ -10,7 +10,7 @@ export class HealthMonitor {
         this.config = platform.config;
         this.hubitatClient = hubitatClient;
         this.pluginDiscovery = pluginDiscovery;
-        
+
         // Health monitoring state
         this.healthState = {
             isHealthy: true,
@@ -24,7 +24,7 @@ export class HealthMonitor {
 
         // Health check configuration
         this.healthConfig = {
-            checkInterval: 60000, // Check every minute
+            checkInterval: 300000, // Check every 5 minutes (synchronized with Hubitat app)
             failureThreshold: 3, // Consider unhealthy after 3 consecutive failures
             timeoutThreshold: 10000, // Consider slow if response > 10s
             recoveryRequiredChecks: 2, // Require 2 successful checks to recover
@@ -39,6 +39,17 @@ export class HealthMonitor {
             retryAttempt: 0,
             lastRetryTime: 0,
             backoffDelay: this.healthConfig.retryBaseDelay,
+        };
+
+        // Circuit breaker state
+        this.circuitBreaker = {
+            state: "CLOSED", // CLOSED, OPEN, HALF_OPEN
+            failureCount: 0,
+            lastFailureTime: 0,
+            failureThreshold: 5,
+            recoveryTimeout: 60000, // 1 minute
+            successCount: 0,
+            successThreshold: 3,
         };
 
         // Connection quality tracking
@@ -62,10 +73,10 @@ export class HealthMonitor {
      */
     startMonitoring() {
         this.logManager.logInfo("Health monitoring started");
-        
+
         // Perform initial health check
         this.performHealthCheck();
-        
+
         // Schedule regular health checks
         this.healthCheckInterval = setInterval(() => {
             this.performHealthCheck();
@@ -80,12 +91,12 @@ export class HealthMonitor {
             clearInterval(this.healthCheckInterval);
             this.healthCheckInterval = null;
         }
-        
+
         if (this.retryTimeout) {
             clearTimeout(this.retryTimeout);
             this.retryTimeout = null;
         }
-        
+
         this.logManager.logInfo("Health monitoring stopped");
     }
 
@@ -93,6 +104,18 @@ export class HealthMonitor {
      * Perform a health check
      */
     async performHealthCheck() {
+        // Check circuit breaker state
+        if (this.circuitBreaker.state === "OPEN") {
+            if (Date.now() - this.circuitBreaker.lastFailureTime > this.circuitBreaker.recoveryTimeout) {
+                this.circuitBreaker.state = "HALF_OPEN";
+                this.circuitBreaker.successCount = 0;
+                this.logManager.logInfo("Circuit breaker moving to HALF_OPEN state");
+            } else {
+                this.logManager.logDebug("Circuit breaker is OPEN - skipping health check");
+                return;
+            }
+        }
+
         const startTime = Date.now();
         this.healthState.totalChecks++;
 
@@ -100,24 +123,25 @@ export class HealthMonitor {
             // Use the plugin status endpoint for health check
             const response = await this.hubitatClient.updatePluginStatus();
             const responseTime = Date.now() - startTime;
-            
+
             this.healthState.lastResponseTime = responseTime;
             this.updateAverageResponseTime(responseTime);
 
-            if (response && response.status !== 'error') {
+            if (response && response.status !== "error") {
                 this.handleSuccessfulCheck(responseTime);
+                this.resetCircuitBreaker();
             } else {
-                throw new Error(`Health check failed: ${response?.message || 'Unknown error'}`);
+                throw new Error(`Health check failed: ${response?.message || "Unknown error"}`);
             }
-
         } catch (error) {
             const responseTime = Date.now() - startTime;
             this.handleFailedCheck(error, responseTime);
+            this.handleCircuitBreakerFailure();
         }
-        
+
         // Update connection quality score
         this.updateConnectionQuality();
-        
+
         // Log health status periodically
         if (this.healthState.totalChecks % 10 === 0) {
             this.logHealthStatus();
@@ -130,10 +154,10 @@ export class HealthMonitor {
     handleSuccessfulCheck(responseTime) {
         this.healthState.lastSuccessfulCheck = Date.now();
         this.healthState.consecutiveFailures = 0;
-        
+
         const wasUnhealthy = !this.healthState.isHealthy;
         this.healthState.isHealthy = true;
-        
+
         // Reset retry state on success
         if (this.retryState.isRetrying) {
             this.retryState.isRetrying = false;
@@ -141,19 +165,19 @@ export class HealthMonitor {
             this.retryState.backoffDelay = this.healthConfig.retryBaseDelay;
             this.logManager.logSuccess("Connection recovered successfully");
         }
-        
+
         if (wasUnhealthy) {
             this.logManager.logSuccess(`Health check passed - connection recovered (${responseTime}ms)`);
         }
-        
+
         // Add to recent checks for quality tracking
         this.connectionQuality.recentChecks.push({
             timestamp: Date.now(),
             success: true,
             responseTime: responseTime,
-            slow: responseTime > this.healthConfig.timeoutThreshold
+            slow: responseTime > this.healthConfig.timeoutThreshold,
         });
-        
+
         // Keep only recent checks
         if (this.connectionQuality.recentChecks.length > this.connectionQuality.maxRecentChecks) {
             this.connectionQuality.recentChecks.shift();
@@ -166,37 +190,37 @@ export class HealthMonitor {
     handleFailedCheck(error, responseTime) {
         this.healthState.consecutiveFailures++;
         this.healthState.totalFailures++;
-        
+
         // Add to recent checks
         this.connectionQuality.recentChecks.push({
             timestamp: Date.now(),
             success: false,
             responseTime: responseTime,
-            error: error.message
+            error: error.message,
         });
-        
+
         if (this.connectionQuality.recentChecks.length > this.connectionQuality.maxRecentChecks) {
             this.connectionQuality.recentChecks.shift();
         }
-        
+
         // Check if we should mark as unhealthy
         if (this.healthState.consecutiveFailures >= this.healthConfig.failureThreshold) {
             const wasHealthy = this.healthState.isHealthy;
             this.healthState.isHealthy = false;
-            
+
             if (wasHealthy) {
                 this.logManager.logError(`Health check failed ${this.healthState.consecutiveFailures} times - marking connection as unhealthy`);
                 this.logManager.logError(`Last error: ${error.message}`);
-                
+
                 // Trigger discovery scan if configured
                 if (this.config.multi_instance?.scan_on_health_failure && this.pluginDiscovery) {
                     this.logManager.logInfo("Triggering discovery scan due to health failure");
-                    this.pluginDiscovery.triggerDiscoveryScan("health_failure").catch(err => {
+                    this.pluginDiscovery.triggerDiscoveryScan("health_failure").catch((err) => {
                         this.logManager.logError(`Discovery scan failed: ${err.message}`);
                     });
                 }
             }
-            
+
             // Start auto-retry if not already retrying
             if (!this.retryState.isRetrying) {
                 this.startAutoRetry();
@@ -214,22 +238,19 @@ export class HealthMonitor {
             this.logManager.logError(`Max retry attempts (${this.healthConfig.maxRetryAttempts}) reached - stopping auto-retry`);
             return;
         }
-        
+
         this.retryState.isRetrying = true;
         this.retryState.retryAttempt++;
         this.retryState.lastRetryTime = Date.now();
-        
+
         this.logManager.logInfo(`Starting auto-retry attempt ${this.retryState.retryAttempt}/${this.healthConfig.maxRetryAttempts} in ${this.retryState.backoffDelay}ms`);
-        
+
         this.retryTimeout = setTimeout(async () => {
             await this.performRecoveryAttempt();
-            
+
             // Exponential backoff for next retry
-            this.retryState.backoffDelay = Math.min(
-                this.retryState.backoffDelay * 2,
-                this.healthConfig.retryMaxDelay
-            );
-            
+            this.retryState.backoffDelay = Math.min(this.retryState.backoffDelay * 2, this.healthConfig.retryMaxDelay);
+
             // If still unhealthy and under max attempts, schedule next retry
             if (!this.healthState.isHealthy && this.retryState.retryAttempt < this.healthConfig.maxRetryAttempts) {
                 this.startAutoRetry();
@@ -242,29 +263,27 @@ export class HealthMonitor {
      */
     async performRecoveryAttempt() {
         this.logManager.logInfo(`Attempting recovery (attempt ${this.retryState.retryAttempt})`);
-        
+
         try {
             // Try to re-register with Hubitat
             const response = await this.hubitatClient.registerForDirectUpdates();
-            if (response && response.status !== 'error') {
+            if (response && response.status !== "error") {
                 this.logManager.logSuccess("Recovery attempt successful");
                 return true;
             } else {
-                throw new Error('Registration failed');
+                throw new Error("Registration failed");
             }
         } catch (error) {
             this.logManager.logError(`Recovery attempt ${this.retryState.retryAttempt} failed: ${error.message}`);
-            
+
             // Trigger discovery scan on connection loss if configured
-            if (this.config.multi_instance?.scan_on_connection_loss && 
-                this.pluginDiscovery && 
-                this.retryState.retryAttempt === this.healthConfig.maxRetryAttempts) {
+            if (this.config.multi_instance?.scan_on_connection_loss && this.pluginDiscovery && this.retryState.retryAttempt === this.healthConfig.maxRetryAttempts) {
                 this.logManager.logInfo("Triggering discovery scan due to connection loss");
-                this.pluginDiscovery.triggerDiscoveryScan("connection_loss").catch(err => {
+                this.pluginDiscovery.triggerDiscoveryScan("connection_loss").catch((err) => {
                     this.logManager.logError(`Discovery scan failed: ${err.message}`);
                 });
             }
-            
+
             return false;
         }
     }
@@ -277,7 +296,7 @@ export class HealthMonitor {
             this.healthState.avgResponseTime = newTime;
         } else {
             // Moving average with weight of 0.1 for new value
-            this.healthState.avgResponseTime = (this.healthState.avgResponseTime * 0.9) + (newTime * 0.1);
+            this.healthState.avgResponseTime = this.healthState.avgResponseTime * 0.9 + newTime * 0.1;
         }
     }
 
@@ -286,23 +305,20 @@ export class HealthMonitor {
      */
     updateConnectionQuality() {
         if (this.connectionQuality.recentChecks.length === 0) return;
-        
+
         const recent = this.connectionQuality.recentChecks;
-        const successRate = recent.filter(check => check.success).length / recent.length;
-        const avgResponseTime = recent
-            .filter(check => check.success)
-            .reduce((sum, check) => sum + check.responseTime, 0) / 
-            recent.filter(check => check.success).length || 0;
-        
+        const successRate = recent.filter((check) => check.success).length / recent.length;
+        const avgResponseTime = recent.filter((check) => check.success).reduce((sum, check) => sum + check.responseTime, 0) / recent.filter((check) => check.success).length || 0;
+
         // Calculate score based on success rate and response times
         let score = successRate * 70; // 70% weight for success rate
-        
+
         // Add response time component (30% weight)
         if (avgResponseTime > 0) {
-            const responseScore = Math.max(0, 30 - (avgResponseTime / 1000 * 5)); // Penalty for slow responses
+            const responseScore = Math.max(0, 30 - (avgResponseTime / 1000) * 5); // Penalty for slow responses
             score += responseScore;
         }
-        
+
         this.connectionQuality.score = Math.round(Math.max(0, Math.min(100, score)));
     }
 
@@ -311,9 +327,8 @@ export class HealthMonitor {
      */
     logHealthStatus() {
         const uptime = Date.now() - this.healthState.lastSuccessfulCheck;
-        const successRate = this.healthState.totalChecks > 0 ? 
-            ((this.healthState.totalChecks - this.healthState.totalFailures) / this.healthState.totalChecks * 100).toFixed(1) : 100;
-        
+        const successRate = this.healthState.totalChecks > 0 ? (((this.healthState.totalChecks - this.healthState.totalFailures) / this.healthState.totalChecks) * 100).toFixed(1) : 100;
+
         this.logManager.logInfo(`Health Status - Healthy: ${this.healthState.isHealthy}, Quality: ${this.connectionQuality.score}%, Success Rate: ${successRate}%, Avg Response: ${Math.round(this.healthState.avgResponseTime)}ms`);
     }
 
@@ -322,8 +337,7 @@ export class HealthMonitor {
      */
     getHealthStatus() {
         const timeSinceLastSuccess = Date.now() - this.healthState.lastSuccessfulCheck;
-        const successRate = this.healthState.totalChecks > 0 ? 
-            (this.healthState.totalChecks - this.healthState.totalFailures) / this.healthState.totalChecks * 100 : 100;
+        const successRate = this.healthState.totalChecks > 0 ? ((this.healthState.totalChecks - this.healthState.totalFailures) / this.healthState.totalChecks) * 100 : 100;
 
         return {
             isHealthy: this.healthState.isHealthy,
@@ -361,6 +375,48 @@ export class HealthMonitor {
         this.connectionQuality.recentChecks = [];
         this.connectionQuality.score = 100;
         this.logManager.logInfo("Health statistics reset");
+    }
+
+    /**
+     * Handle circuit breaker failure
+     */
+    handleCircuitBreakerFailure() {
+        this.circuitBreaker.failureCount++;
+        this.circuitBreaker.lastFailureTime = Date.now();
+
+        if (this.circuitBreaker.failureCount >= this.circuitBreaker.failureThreshold) {
+            this.circuitBreaker.state = "OPEN";
+            this.logManager.logError(`Circuit breaker opened after ${this.circuitBreaker.failureCount} failures`);
+        }
+    }
+
+    /**
+     * Reset circuit breaker on success
+     */
+    resetCircuitBreaker() {
+        if (this.circuitBreaker.state === "HALF_OPEN") {
+            this.circuitBreaker.successCount++;
+            if (this.circuitBreaker.successCount >= this.circuitBreaker.successThreshold) {
+                this.circuitBreaker.state = "CLOSED";
+                this.circuitBreaker.failureCount = 0;
+                this.logManager.logInfo("Circuit breaker closed - service recovered");
+            }
+        } else {
+            this.circuitBreaker.failureCount = 0;
+        }
+    }
+
+    /**
+     * Get circuit breaker status
+     */
+    getCircuitBreakerStatus() {
+        return {
+            state: this.circuitBreaker.state,
+            failureCount: this.circuitBreaker.failureCount,
+            successCount: this.circuitBreaker.successCount,
+            lastFailureTime: this.circuitBreaker.lastFailureTime,
+            timeSinceLastFailure: this.circuitBreaker.lastFailureTime ? Date.now() - this.circuitBreaker.lastFailureTime : null,
+        };
     }
 
     /**

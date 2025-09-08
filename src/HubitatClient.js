@@ -19,6 +19,7 @@ export default class HubitatClient {
      * @param {Function} params.getAccessoryCount - Function to get accessory count
      */
     constructor(platform) {
+        this.platform = platform;
         this.logManager = platform.logManager;
         this.versionManager = platform.versionManager;
         this.configManager = platform.configManager;
@@ -59,23 +60,26 @@ export default class HubitatClient {
 
         // Enhanced connection pooling configuration
         this.connectionConfig = {
-            maxSockets: 15,
-            maxFreeSockets: 5,
+            maxSockets: 20, // Increase from 15
+            maxFreeSockets: 10, // Increase from 5
             timeout: 30000,
-            keepAliveMsecs: 2000,
+            keepAliveMsecs: 5000, // Increase from 2000
             keepAlive: true,
-            maxSocketsPerHost: 10,
+            maxSocketsPerHost: 15, // Increase from 10
+            // Add connection cleanup
+            freeSocketTimeout: 30000, // Close idle sockets after 30s
+            maxCachedSessions: 10,
         };
 
         // Configure axios with enhanced connection pooling
         this.httpAgent = new http.Agent({
             ...this.connectionConfig,
-            scheduling: 'fifo', // Use FIFO scheduling for fairness
+            scheduling: "fifo", // Use FIFO scheduling for fairness
         });
 
         this.httpsAgent = new https.Agent({
             ...this.connectionConfig,
-            scheduling: 'fifo',
+            scheduling: "fifo",
         });
 
         this.axiosInstance = axios.create({
@@ -97,6 +101,7 @@ export default class HubitatClient {
         // Monitor connection pool stats every 30 seconds
         this.statsInterval = setInterval(() => {
             this.updateConnectionStats();
+            this.cleanupIdleConnections();
         }, 30000);
 
         // Attribute update batching
@@ -111,7 +116,34 @@ export default class HubitatClient {
     }
 
     async handleUpdatePluginStatus() {
-        await this.updatePluginStatus();
+        try {
+            const response = await this.updatePluginStatus();
+
+            // Validate health check response if this is a health check
+            if (this.platform && this.platform.validateHealthCheckResponse) {
+                const validation = this.platform.validateHealthCheckResponse(response);
+
+                if (validation.valid) {
+                    this.platform.healthCheckMonitor.lastSuccessfulCheck = Date.now();
+                    this.platform.healthCheckMonitor.consecutiveFailures = 0;
+                    this.platform.healthCheckMonitor.isHealthy = true;
+                    this.logManager.logDebug("Health check validation successful");
+                } else {
+                    this.platform.healthCheckMonitor.consecutiveFailures++;
+                    this.logManager.logWarn(`Health check validation failed: ${validation.reason}`);
+
+                    if (this.platform.healthCheckMonitor.consecutiveFailures >= this.platform.healthCheckMonitor.maxConsecutiveFailures) {
+                        this.platform.healthCheckMonitor.isHealthy = false;
+                        this.logManager.logError("Plugin marked as unhealthy due to repeated validation failures");
+                    }
+                }
+            }
+        } catch (error) {
+            if (this.platform && this.platform.healthCheckMonitor) {
+                this.platform.healthCheckMonitor.consecutiveFailures++;
+                this.logManager.logError("Health check failed:", error);
+            }
+        }
     }
 
     async handleRegisterForDirectUpdates() {
@@ -245,27 +277,27 @@ export default class HubitatClient {
             let freeSockets = 0;
 
             // Count active HTTP sockets
-            Object.values(httpSockets).forEach(socketArray => {
+            Object.values(httpSockets).forEach((socketArray) => {
                 if (Array.isArray(socketArray)) {
                     activeSockets += socketArray.length;
                 }
             });
 
             // Count free HTTP sockets
-            Object.values(httpFreeSockets).forEach(socketArray => {
+            Object.values(httpFreeSockets).forEach((socketArray) => {
                 if (Array.isArray(socketArray)) {
                     freeSockets += socketArray.length;
                 }
             });
 
             // Count HTTPS sockets
-            Object.values(httpsTotalSockets).forEach(socketArray => {
+            Object.values(httpsTotalSockets).forEach((socketArray) => {
                 if (Array.isArray(socketArray)) {
                     activeSockets += socketArray.length;
                 }
             });
 
-            Object.values(httpsFreeSockets).forEach(socketArray => {
+            Object.values(httpsFreeSockets).forEach((socketArray) => {
                 if (Array.isArray(socketArray)) {
                     freeSockets += socketArray.length;
                 }
@@ -284,9 +316,51 @@ export default class HubitatClient {
         return {
             ...this.connectionStats,
             uptime: Date.now() - this.connectionStats.lastReset,
-            errorRate: this.connectionStats.totalRequests > 0 ? 
-                (this.connectionStats.errors / this.connectionStats.totalRequests * 100).toFixed(2) + '%' : '0%'
+            errorRate: this.connectionStats.totalRequests > 0 ? ((this.connectionStats.errors / this.connectionStats.totalRequests) * 100).toFixed(2) + "%" : "0%",
         };
+    }
+
+    /**
+     * Clean up idle connections
+     */
+    cleanupIdleConnections() {
+        try {
+            const now = Date.now();
+            const httpSockets = this.httpAgent.sockets || {};
+            const httpsSockets = this.httpsAgent.sockets || {};
+
+            let cleanedCount = 0;
+
+            // Clean up idle HTTP connections
+            Object.values(httpSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    socketArray.forEach((socket) => {
+                        if (socket._idleTimeout && now - socket._idleStart > this.connectionConfig.freeSocketTimeout) {
+                            socket.destroy();
+                            cleanedCount++;
+                        }
+                    });
+                }
+            });
+
+            // Clean up idle HTTPS connections
+            Object.values(httpsSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    socketArray.forEach((socket) => {
+                        if (socket._idleTimeout && now - socket._idleStart > this.connectionConfig.freeSocketTimeout) {
+                            socket.destroy();
+                            cleanedCount++;
+                        }
+                    });
+                }
+            });
+
+            if (cleanedCount > 0) {
+                this.logManager.logDebug(`Cleaned up ${cleanedCount} idle connections`);
+            }
+        } catch (error) {
+            this.logManager.logError("Error cleaning up idle connections:", error);
+        }
     }
 
     async makeRequest({ method, endpoint, data = null, additionalHeaders = {}, timeout = 10000 }) {
@@ -311,7 +385,7 @@ export default class HubitatClient {
         for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
             try {
                 const startTime = Date.now();
-                
+
                 const response = await this.axiosInstance({
                     method,
                     url: `${baseUrl}${this.config.client.app_id}/${endpoint}`,
@@ -319,7 +393,7 @@ export default class HubitatClient {
                     headers: {
                         "Content-Type": "application/json",
                         isLocal: !this.config.client.use_cloud,
-                        "Connection": "keep-alive", // Explicitly request keep-alive
+                        Connection: "keep-alive", // Explicitly request keep-alive
                         ...additionalHeaders,
                     },
                     data,
@@ -329,12 +403,12 @@ export default class HubitatClient {
 
                 clearTimeout(timeoutId);
                 this.retryConfig.failures.delete(endpoint);
-                
+
                 const responseTime = Date.now() - startTime;
                 if (responseTime > 5000) {
                     this.logManager.logWarn(`Slow request to ${endpoint}: ${responseTime}ms`);
                 }
-                
+
                 return response;
             } catch (error) {
                 clearTimeout(timeoutId);
@@ -351,10 +425,7 @@ export default class HubitatClient {
                 }
 
                 // Exponential backoff with jitter
-                const backoffDelay = Math.min(
-                    this.retryConfig.baseDelay * Math.pow(2, attempt), 
-                    this.retryConfig.maxDelay
-                );
+                const backoffDelay = Math.min(this.retryConfig.baseDelay * Math.pow(2, attempt), this.retryConfig.maxDelay);
                 const jitter = Math.random() * 100;
                 await new Promise((resolve) => setTimeout(resolve, backoffDelay + jitter));
             }
