@@ -61,6 +61,9 @@ export default class HubitatPlatform {
         this.webServer = new WebServer(this);
         this.unknownCapabilities = [];
 
+        // Initialize health monitoring with client reference
+        this.webServer.initializeHealthMonitoring(this.client);
+
         // Log platform info
         this.logManager.logInfo(`Homebridge Version: ${api.version}`);
         this.logManager.logInfo(`Plugin Version: ${this.versionManager.getVersion()}`);

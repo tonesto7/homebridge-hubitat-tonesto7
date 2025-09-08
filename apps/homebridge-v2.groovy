@@ -3,7 +3,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018-2024 Anthony Santilli
+ *  Copyright 2018-2025 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 
@@ -2591,6 +2591,157 @@ def registerPluginForUpdates() {
     compressedRender contentType: sAPPJSON, data: resultJson
 }
 
+/**
+ * Enhanced plugin registration with discovery support
+ */
+def registerPlugin() {
+    logTrace('Plugin called registerPlugin()')
+    def body = request.JSON
+    String pluginId = body?.plugin_id ?: generatePluginId(body)
+    
+    // Initialize plugin registry if not exists
+    if (!state.pluginRegistry) {
+        state.pluginRegistry = [:]
+    }
+    
+    // Register or update plugin
+    state.pluginRegistry[pluginId] = [
+        plugin_id: pluginId,
+        app_id: body?.app_id ?: app.id,
+        pluginIP: body?.pluginIp ?: body?.ip,
+        pluginPort: body?.pluginPort ?: body?.port,
+        version: body?.pluginVersion ?: body?.version,
+        capabilities: body?.capabilities ?: [],
+        memory: body?.memory,
+        uptime: body?.uptime,
+        lastCheckin: now(),
+        registered: now()
+    ]
+    
+    // Update legacy pluginDetails for backwards compatibility
+    state.pluginDetails = state.pluginRegistry[pluginId]
+    
+    logInfo("Registered plugin: ${pluginId} at ${state.pluginRegistry[pluginId].pluginIP}:${state.pluginRegistry[pluginId].pluginPort}")
+    
+    remTsVal(sSVR)
+    updCodeVerMap('plugin', (String)body?.pluginVersion ?: body?.version ?: sNULL)
+    activateDirectUpdates()
+    updTsVal('lastDirectUpdsEnabled')
+    
+    String resultJson = new JsonOutput().toJson([
+        status: 'OK',
+        plugin_id: pluginId,
+        registered: true,
+        app_id: app.id
+    ])
+    compressedRender contentType: sAPPJSON, data: resultJson
+}
+
+/**
+ * Get list of discovered/registered plugins
+ */
+def getDiscoveredPlugins() {
+    logTrace('Plugin called getDiscoveredPlugins()')
+    
+    def plugins = state.pluginRegistry ?: [:]
+    def pluginList = plugins.collect { pluginId, pluginData ->
+        return [
+            plugin_id: pluginId,
+            ip: pluginData.pluginIP,
+            port: pluginData.pluginPort,
+            app_id: pluginData.app_id,
+            version: pluginData.version,
+            capabilities: pluginData.capabilities ?: [],
+            last_checkin: pluginData.lastCheckin,
+            uptime: pluginData.uptime
+        ]
+    }
+    
+    String resultJson = new JsonOutput().toJson([
+        status: 'OK',
+        plugins: pluginList,
+        count: pluginList.size(),
+        app_id: app.id
+    ])
+    compressedRender contentType: sAPPJSON, data: resultJson
+}
+
+/**
+ * Discover plugins on the network via HTTP calls to plugin discovery endpoints
+ */
+def discoverPlugins() {
+    logTrace('Plugin called discoverPlugins()')
+    def body = request.JSON
+    Integer timeout = body?.timeout ?: 5000
+    
+    // This would typically scan the network for plugins
+    // For now, return registered plugins and attempt to health check them
+    def plugins = state.pluginRegistry ?: [:]
+    def activePlugins = []
+    
+    plugins.each { pluginId, pluginData ->
+        try {
+            // Attempt to ping the plugin to verify it's alive
+            def uri = "http://${pluginData.pluginIP}:${pluginData.pluginPort}/pluginTest"
+            
+            httpGet([
+                uri: uri,
+                timeout: Math.min(timeout / 1000, 10)
+            ]) { resp ->
+                if (resp.status == 200) {
+                    activePlugins.add([
+                        plugin_id: pluginId,
+                        ip: pluginData.pluginIP,
+                        port: pluginData.pluginPort,
+                        app_id: pluginData.app_id,
+                        version: pluginData.version,
+                        capabilities: pluginData.capabilities ?: [],
+                        status: 'active',
+                        last_response: now()
+                    ])
+                    
+                    // Update last checkin
+                    state.pluginRegistry[pluginId].lastCheckin = now()
+                }
+            }
+        } catch (Exception ex) {
+            logWarn("Plugin ${pluginId} at ${pluginData.pluginIP}:${pluginData.pluginPort} is not responding: ${ex.message}")
+            activePlugins.add([
+                plugin_id: pluginId,
+                ip: pluginData.pluginIP,
+                port: pluginData.pluginPort,
+                app_id: pluginData.app_id,
+                version: pluginData.version,
+                capabilities: pluginData.capabilities ?: [],
+                status: 'inactive',
+                last_error: ex.message
+            ])
+        }
+    }
+    
+    String resultJson = new JsonOutput().toJson([
+        status: 'OK',
+        discovered_plugins: activePlugins,
+        active_count: activePlugins.findAll { it.status == 'active' }.size(),
+        total_count: activePlugins.size(),
+        scan_timeout: timeout
+    ])
+    compressedRender contentType: sAPPJSON, data: resultJson
+}
+
+/**
+ * Generate a unique plugin ID based on IP, port, and app details
+ */
+private String generatePluginId(body) {
+    String ip = body?.pluginIp ?: body?.ip ?: 'unknown'
+    String port = body?.pluginPort ?: body?.port ?: '8000'
+    String appId = body?.app_id ?: app.id
+    
+    // Create a simple hash-like identifier
+    String identifier = "${ip}-${port}-${appId}".replaceAll('[^a-zA-Z0-9\\-]', '')
+    return "homebridge-hubitat-${identifier}".take(50) // Limit length
+}
+
 mappings {
     path('/devices')                        { action: [GET: 'getAllData']           }
     path('/alldevices')                     { action: [GET: 'renderDevices']        }
@@ -2602,6 +2753,8 @@ mappings {
     path('/deviceCmds')                     { action: [POST: 'deviceCommands']      }
     path('/:id/attribute/:attribute')       { action: [GET: 'deviceAttribute']      }
     path('/registerPluginForUpdates')       { action: [POST: 'registerPluginForUpdates'] }
+    path('/discoveryPlugins')               { action: [GET: 'getDiscoveredPlugins', POST: 'discoverPlugins'] }
+    path('/registerPlugin')                 { action: [POST: 'registerPlugin']      }
 }
 
 /**********************************************

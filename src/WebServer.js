@@ -1,6 +1,9 @@
 // platform/WebServer.js
 
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
+import { PluginDiscovery } from "./PluginDiscovery.js";
+import { HealthMonitor } from "./HealthMonitor.js";
+import { PersistentQueue } from "./PersistentQueue.js";
 import express from "express";
 import bodyParser from "body-parser";
 import crypto from "crypto";
@@ -21,20 +24,32 @@ export class WebServer {
         this.processDeviceAttributeUpdate = platform.processDeviceAttributeUpdate.bind(platform);
         this.refreshDevices = platform.refreshDevices.bind(platform);
 
+        // Initialize plugin discovery
+        this.pluginDiscovery = new PluginDiscovery(platform);
+        
+        // Health monitor will be initialized later when client is available
+        this.healthMonitor = null;
+
+        // Initialize persistent queue for device updates
+        this.deviceUpdateQueue = new PersistentQueue(platform, 'device-updates');
+
         // Subscribe to config updates
         this.configManager.onConfigUpdate((newConfig) => {
             this.config = newConfig;
             this.logManager.logDebug("WebServer config updated");
         });
 
-        // Initialize device update queue for handling updates
+        // Legacy queue properties for backward compatibility
         this.updateQueue = [];
         this.isProcessingQueue = false;
-        this.maxQueueSize = 1000; // Maximum number of updates to queue
-        this.batchSize = 15; // Process updates in batches of 15
-        this.batchDelay = 100; // 100ms delay between batches
-        this.collectionDelay = 10; // Small delay to collect simultaneous updates
+        this.maxQueueSize = 1000;
+        this.batchSize = 15;
+        this.batchDelay = 100;
+        this.collectionDelay = 10;
         this.batchTimer = null;
+
+        // Start processing device updates from persistent queue
+        this.startDeviceUpdateProcessing();
     }
 
     async initialize() {
@@ -50,6 +65,12 @@ export class WebServer {
             webApp.listen(port, () => {
                 this.logManager.logInfo(`Direct Connect Active | Listening at ${ip}:${port}`);
             });
+
+            // Start plugin discovery advertising
+            this.pluginDiscovery.startAdvertising();
+
+            // Start periodic discovery scanning
+            this.pluginDiscovery.startPeriodicScanning();
 
             return { status: "OK" };
         } catch (ex) {
@@ -85,6 +106,24 @@ export class WebServer {
         this.setupConfigurationRoutes();
         this.setupDeviceRoutes();
         this.setupHealthRoutes();
+        this.setupDiscoveryRoutes();
+        this.setupMonitoringRoutes();
+    }
+
+    /**
+     * Initialize health monitoring with client reference
+     */
+    initializeHealthMonitoring(hubitatClient) {
+        if (!this.healthMonitor && hubitatClient) {
+            const platform = {
+                logManager: this.logManager,
+                configManager: this.configManager,
+                config: this.config
+            };
+            this.healthMonitor = new HealthMonitor(platform, hubitatClient, this.pluginDiscovery);
+            this.healthMonitor.startMonitoring();
+            this.logManager.logInfo("Health monitoring initialized");
+        }
     }
 
     setupBasicRoutes() {
@@ -257,8 +296,24 @@ export class WebServer {
         }
     }
 
-    queueDeviceUpdate(update) {
-        // Add update to queue if not at max capacity
+    async queueDeviceUpdate(update) {
+        // Enhanced device update with persistent queue
+        const updateData = {
+            ...update,
+            queuedAt: Date.now(),
+            source: 'hubitat_app'
+        };
+
+        // Add to persistent queue with normal priority
+        const queued = await this.deviceUpdateQueue.enqueue(updateData, 0);
+        
+        if (!queued) {
+            this.logManager.logWarn(`Failed to queue device update for ${update.name} - queue may be full`);
+        } else {
+            this.logManager.logDebug(`Queued device update for ${update.name} (attribute: ${update.attribute})`);
+        }
+
+        // Also add to legacy queue for immediate processing if needed
         if (this.updateQueue.length < this.maxQueueSize) {
             this.updateQueue.push(update);
             
@@ -269,8 +324,6 @@ export class WebServer {
                     this.processBatchUpdates();
                 }, this.collectionDelay);
             }
-        } else {
-            this.logManager.logWarn(`Update queue full (${this.maxQueueSize}), dropping update for ${update.name}`);
         }
     }
 
@@ -357,6 +410,247 @@ export class WebServer {
             }
         } else {
             res.send({ status: "Failed: Missing access_token or app_id" });
+        }
+    }
+
+    setupDiscoveryRoutes() {
+        // Get plugin discovery information
+        webApp.get("/discovery/info", (req, res) => {
+            const pluginInfo = this.pluginDiscovery.getPluginInfo();
+            res.send({
+                status: "OK",
+                plugin: pluginInfo,
+                discovered_plugins: this.pluginDiscovery.getDiscoveredPlugins()
+            });
+        });
+
+        // Discover other plugins on network
+        webApp.post("/discovery/scan", async (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "discovery/scan")) {
+                try {
+                    const timeout = body.timeout || 5000;
+                    const plugins = await this.pluginDiscovery.discoverPlugins(timeout);
+                    
+                    res.send({
+                        status: "OK",
+                        plugins: plugins,
+                        count: plugins.length,
+                        scan_timeout: timeout
+                    });
+                } catch (error) {
+                    this.logManager.logError("Plugin discovery scan error:", error);
+                    res.send({ status: "Failed", message: error.message });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
+        });
+
+        // Register plugin with specific capabilities
+        webApp.post("/discovery/register", (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "discovery/register")) {
+                try {
+                    // This could be used by Hubitat app to register what capabilities it needs
+                    this.logManager.logInfo(`Plugin registration request from app_id: ${body.app_id}`);
+                    
+                    const pluginInfo = this.pluginDiscovery.getPluginInfo();
+                    res.send({
+                        status: "OK",
+                        plugin_registered: true,
+                        plugin_id: pluginInfo.id,
+                        capabilities: pluginInfo.capabilities
+                    });
+                } catch (error) {
+                    this.logManager.logError("Plugin registration error:", error);
+                    res.send({ status: "Failed", message: error.message });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
+        });
+    }
+
+    setupMonitoringRoutes() {
+        // Get health status
+        webApp.get("/monitoring/health", (req, res) => {
+            if (this.healthMonitor) {
+                const healthStatus = this.healthMonitor.getHealthStatus();
+                const connectionStats = this.getAllCachedAccessories().length > 0 ? 
+                    this.configManager.getConfig() : null;
+                
+                res.send({
+                    status: "OK",
+                    health: healthStatus,
+                    uptime: process.uptime(),
+                    memory: process.memoryUsage(),
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                res.send({
+                    status: "OK",
+                    health: { isHealthy: true, message: "Health monitoring not initialized" },
+                    uptime: process.uptime(),
+                    memory: process.memoryUsage(),
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        // Trigger manual health check
+        webApp.post("/monitoring/healthcheck", async (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "monitoring/healthcheck")) {
+                if (this.healthMonitor) {
+                    try {
+                        const healthStatus = await this.healthMonitor.triggerHealthCheck();
+                        res.send({ status: "OK", health: healthStatus });
+                    } catch (error) {
+                        res.send({ status: "Failed", message: error.message });
+                    }
+                } else {
+                    res.send({ status: "Failed", message: "Health monitoring not initialized" });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
+        });
+
+        // Reset health statistics
+        webApp.post("/monitoring/reset", (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "monitoring/reset")) {
+                if (this.healthMonitor) {
+                    this.healthMonitor.resetStats();
+                    res.send({ status: "OK", message: "Health statistics reset" });
+                } else {
+                    res.send({ status: "Failed", message: "Health monitoring not initialized" });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
+        });
+
+        // Get connection pool statistics
+        webApp.get("/monitoring/connections", (req, res) => {
+            // This would need to be passed from the client, for now return basic info
+            res.send({
+                status: "OK",
+                message: "Connection statistics available via health endpoint",
+                timestamp: new Date().toISOString()
+            });
+        });
+
+        // Get queue statistics
+        webApp.get("/monitoring/queues", (req, res) => {
+            const queueStats = this.getQueueStats();
+            res.send({
+                status: "OK",
+                queues: queueStats,
+                timestamp: new Date().toISOString()
+            });
+        });
+
+        // Get discovery scan statistics
+        webApp.get("/monitoring/discovery", (req, res) => {
+            const scanStats = this.pluginDiscovery.getScanStats();
+            const discoveredPlugins = this.pluginDiscovery.getDiscoveredPlugins();
+            
+            res.send({
+                status: "OK",
+                scanning: scanStats,
+                discovered_plugins: discoveredPlugins,
+                plugin_id: this.pluginDiscovery.pluginId,
+                timestamp: new Date().toISOString()
+            });
+        });
+
+        // Clear persistent queue (admin operation)
+        webApp.post("/monitoring/clear-queue", async (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "monitoring/clear-queue")) {
+                try {
+                    await this.deviceUpdateQueue.clear();
+                    res.send({ 
+                        status: "OK", 
+                        message: "Persistent queue cleared",
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (error) {
+                    res.send({ 
+                        status: "Failed", 
+                        message: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
+        });
+    }
+
+    /**
+     * Start processing device updates from persistent queue
+     */
+    startDeviceUpdateProcessing() {
+        // Process persistent queue items
+        setInterval(async () => {
+            const readyItems = this.deviceUpdateQueue.getReadyItems(this.batchSize);
+            
+            if (readyItems.length > 0) {
+                this.logManager.logDebug(`Processing ${readyItems.length} persistent queue items`);
+                
+                for (const item of readyItems) {
+                    try {
+                        await this.processDeviceAttributeUpdate(item.data);
+                        this.deviceUpdateQueue.markCompleted(item.id);
+                        this.logManager.logDebug(`Successfully processed queue item ${item.id}`);
+                    } catch (error) {
+                        this.deviceUpdateQueue.markFailed(item.id, error);
+                        this.logManager.logError(`Failed to process queue item ${item.id}:`, error);
+                    }
+                }
+            }
+        }, this.batchDelay * 2); // Process less frequently than legacy queue
+
+        this.logManager.logInfo("Device update processing from persistent queue started");
+    }
+
+    /**
+     * Get queue statistics for monitoring
+     */
+    getQueueStats() {
+        return {
+            persistent: this.deviceUpdateQueue.getStats(),
+            legacy: {
+                size: this.updateQueue.length,
+                maxSize: this.maxQueueSize,
+                isProcessing: this.isProcessingQueue,
+                batchSize: this.batchSize
+            }
+        };
+    }
+
+    async dispose() {
+        // Clean up plugin discovery resources
+        if (this.pluginDiscovery) {
+            this.pluginDiscovery.dispose();
+        }
+        
+        // Clean up health monitoring
+        if (this.healthMonitor) {
+            this.healthMonitor.dispose();
+        }
+        
+        // Clean up persistent queue
+        if (this.deviceUpdateQueue) {
+            await this.deviceUpdateQueue.dispose();
+        }
+        
+        // Clear any timers
+        if (this.batchTimer) {
+            clearTimeout(this.batchTimer);
         }
     }
 }
