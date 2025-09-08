@@ -3,10 +3,11 @@
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
 import { IPMonitor } from "./IPMonitor.js";
 import { HealthMonitor } from "./HealthMonitor.js";
-import { PersistentQueue } from "./PersistentQueue.js";
 import express from "express";
 import bodyParser from "body-parser";
 import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
 
 const webApp = express();
 
@@ -30,8 +31,6 @@ export class WebServer {
         // Health monitor will be initialized later when client is available
         this.healthMonitor = null;
 
-        // Initialize persistent queue for device updates
-        this.deviceUpdateQueue = new PersistentQueue(platform, "device-updates");
 
         // Subscribe to config updates
         this.configManager.onConfigUpdate((newConfig) => {
@@ -48,12 +47,13 @@ export class WebServer {
         this.collectionDelay = 10;
         this.batchTimer = null;
 
-        // Start processing device updates from persistent queue
-        this.startDeviceUpdateProcessing();
     }
 
     async initialize() {
         try {
+            // Clean up old persistent queue files if they exist
+            await this.cleanupOldQueueFiles();
+            
             const ip = this.configManager.getActiveIP();
             const port = await this.configManager.findAvailablePort();
             this.logManager.logInfo("WebServer Initiated...");
@@ -72,6 +72,27 @@ export class WebServer {
         } catch (ex) {
             this.logManager.logError("WebServerInit Exception: ", ex.message);
             return { status: ex.message };
+        }
+    }
+
+    async cleanupOldQueueFiles() {
+        try {
+            // Old queue files were stored in .homebridge/hubitat-queue/
+            const queueDir = path.join(process.cwd(), '.homebridge', 'hubitat-queue');
+            
+            // Check if the directory exists
+            try {
+                await fs.access(queueDir);
+                
+                // Remove the entire queue directory and its contents
+                await fs.rm(queueDir, { recursive: true, force: true });
+                this.logManager.logInfo("Cleaned up old persistent queue files from previous version");
+            } catch (error) {
+                // Directory doesn't exist, nothing to clean up
+                this.logManager.logDebug("No old persistent queue files found to clean up");
+            }
+        } catch (error) {
+            this.logManager.logWarn(`Error cleaning up old queue files: ${error.message}`);
         }
     }
 
@@ -299,23 +320,7 @@ export class WebServer {
     }
 
     async queueDeviceUpdate(update) {
-        // Enhanced device update with persistent queue
-        const updateData = {
-            ...update,
-            queuedAt: Date.now(),
-            source: "hubitat_app",
-        };
-
-        // Add to persistent queue with normal priority
-        const queued = await this.deviceUpdateQueue.enqueue(updateData, 0);
-
-        if (!queued) {
-            this.logManager.logWarn(`Failed to queue device update for ${update.name} - queue may be full`);
-        } else {
-            this.logManager.logDebug(`Queued device update for ${update.name} (attribute: ${update.attribute})`);
-        }
-
-        // Also add to legacy queue for immediate processing if needed
+        // Use memory-based queue for all updates
         if (this.updateQueue.length < this.maxQueueSize) {
             this.updateQueue.push(update);
 
@@ -326,6 +331,8 @@ export class WebServer {
                     this.processBatchUpdates();
                 }, this.collectionDelay);
             }
+        } else {
+            this.logManager.logWarn(`Update queue full (${this.maxQueueSize}) - dropping update for ${update.name}`);
         }
     }
 
@@ -538,63 +545,14 @@ export class WebServer {
             }
         });
 
-        // Clear persistent queue (admin operation)
-        webApp.post("/monitoring/clear-queue", async (req, res) => {
-            const body = JSON.parse(JSON.stringify(req.body));
-            if (body && this.isValidRequestor(body.access_token, body.app_id, "monitoring/clear-queue")) {
-                try {
-                    await this.deviceUpdateQueue.clear();
-                    res.send({
-                        status: "OK",
-                        message: "Persistent queue cleared",
-                        timestamp: new Date().toISOString(),
-                    });
-                } catch (error) {
-                    res.send({
-                        status: "Failed",
-                        message: error.message,
-                        timestamp: new Date().toISOString(),
-                    });
-                }
-            } else {
-                res.send({ status: "Failed: Missing access_token or app_id" });
-            }
-        });
     }
 
-    /**
-     * Start processing device updates from persistent queue
-     */
-    startDeviceUpdateProcessing() {
-        // Process persistent queue items
-        setInterval(async () => {
-            const readyItems = this.deviceUpdateQueue.getReadyItems(this.batchSize);
-
-            if (readyItems.length > 0) {
-                this.logManager.logDebug(`Processing ${readyItems.length} persistent queue items`);
-
-                for (const item of readyItems) {
-                    try {
-                        await this.processDeviceAttributeUpdate(item.data);
-                        this.deviceUpdateQueue.markCompleted(item.id);
-                        this.logManager.logDebug(`Successfully processed queue item ${item.id}`);
-                    } catch (error) {
-                        this.deviceUpdateQueue.markFailed(item.id, error);
-                        this.logManager.logError(`Failed to process queue item ${item.id}:`, error);
-                    }
-                }
-            }
-        }, this.batchDelay * 2); // Process less frequently than legacy queue
-
-        this.logManager.logInfo("Device update processing from persistent queue started");
-    }
 
     /**
      * Get queue statistics for monitoring
      */
     getQueueStats() {
         return {
-            persistent: this.deviceUpdateQueue.getStats(),
             legacy: {
                 size: this.updateQueue.length,
                 maxSize: this.maxQueueSize,
@@ -615,10 +573,6 @@ export class WebServer {
             this.healthMonitor.dispose();
         }
 
-        // Clean up persistent queue
-        if (this.deviceUpdateQueue) {
-            await this.deviceUpdateQueue.dispose();
-        }
 
         // Clear any timers
         if (this.batchTimer) {
