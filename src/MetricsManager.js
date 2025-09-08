@@ -107,6 +107,9 @@ export class MetricsManager {
         }
         
         // Update attribute count for this device
+        if (!(deviceMetric.attributes instanceof Map)) {
+            deviceMetric.attributes = new Map(Object.entries(deviceMetric.attributes || {}));
+        }
         const attrCount = deviceMetric.attributes.get(attribute) || 0;
         deviceMetric.attributes.set(attribute, attrCount + 1);
         
@@ -262,7 +265,7 @@ export class MetricsManager {
                 totalUpdates: device.totalUpdates,
                 avgProcessingTime: device.avgProcessingTime,
                 lastUpdate: device.lastUpdate,
-                attributes: Array.from(device.attributes.entries()).map(([attr, count]) => ({
+                attributes: Array.from((device.attributes instanceof Map ? device.attributes : new Map(Object.entries(device.attributes || {}))).entries()).map(([attr, count]) => ({
                     attribute: attr,
                     count: count
                 }))
@@ -294,6 +297,12 @@ export class MetricsManager {
             // Restore device metrics
             if (saved.deviceMetrics) {
                 this.deviceMetrics = new Map(saved.deviceMetrics);
+                // Ensure each device's attributes is a Map
+                for (const [deviceId, deviceData] of this.deviceMetrics) {
+                    if (deviceData.attributes && !(deviceData.attributes instanceof Map)) {
+                        deviceData.attributes = new Map(Object.entries(deviceData.attributes));
+                    }
+                }
             }
             
             // Restore attribute metrics
@@ -330,7 +339,15 @@ export class MetricsManager {
             
             const data = {
                 systemMetrics: this.systemMetrics,
-                deviceMetrics: Array.from(this.deviceMetrics.entries()),
+                deviceMetrics: Array.from(this.deviceMetrics.entries()).map(([deviceId, deviceData]) => [
+                    deviceId,
+                    {
+                        ...deviceData,
+                        attributes: deviceData.attributes instanceof Map ? 
+                            Object.fromEntries(deviceData.attributes) : 
+                            deviceData.attributes
+                    }
+                ]),
                 attributeMetrics: Array.from(this.attributeMetrics.entries()),
                 hourlyMetrics: this.hourlyMetrics,
                 savedAt: Date.now()

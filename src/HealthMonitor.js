@@ -127,11 +127,13 @@ export class HealthMonitor {
             this.healthState.lastResponseTime = responseTime;
             this.updateAverageResponseTime(responseTime);
 
-            if (response && response.status !== "error") {
+            // The updatePluginStatus method returns the response data directly
+            // If we get here without an error, the health check was successful
+            if (response && typeof response === "object") {
                 this.handleSuccessfulCheck(responseTime);
                 this.resetCircuitBreaker();
             } else {
-                throw new Error(`Health check failed: ${response?.message || "Unknown error"}`);
+                throw new Error(`Health check failed: Invalid response format`);
             }
         } catch (error) {
             const responseTime = Date.now() - startTime;
