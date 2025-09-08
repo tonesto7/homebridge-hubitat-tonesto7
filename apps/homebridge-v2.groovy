@@ -281,7 +281,7 @@ def pluginConfigPage() {
         section(sectHead('Plugin Monitoring & Analytics')) {
             String metricsUrl = getPluginMetricsUrl()
             if (metricsUrl) {
-                href url: metricsUrl, style: sEXTNRL, required: false, title: inTS('Metrics Dashboard', 'graph'), description: inputFooter('View device update metrics and performance stats', sCLRGRY, true)
+                href url: metricsUrl, style: sEXTNRL, required: false, title: inTS('Metrics Dashboard', sINFO), description: inputFooter('View device update metrics and performance stats', sCLRGRY, true)
             } else {
                 paragraph spanSm('Metrics dashboard will be available once the plugin is connected and running.', sCLRGRY)
             }
@@ -2890,20 +2890,13 @@ def appFooter() {
  */
 String getPluginMetricsUrl() {
     try {
-        def pluginRegistry = state.pluginRegistry ?: [:]
-        if (pluginRegistry.isEmpty()) {
-            return null
-        }
-        
-        // Get the first registered plugin (most recent or primary)
-        def firstPlugin = pluginRegistry.values().first()
-        String pluginIP = firstPlugin?.pluginIP
-        String pluginPort = firstPlugin?.pluginPort
-        
+        def pluginDetails = state.pluginDetails ?: [:]
+        String pluginIP = pluginDetails.pluginIP
+        String pluginPort = pluginDetails.pluginPort
+
         if (pluginIP && pluginPort) {
             return "http://${pluginIP}:${pluginPort}/metrics"
         }
-        
         return null
     } catch (Exception ex) {
         logError("Error getting plugin metrics URL: ${ex.message}")

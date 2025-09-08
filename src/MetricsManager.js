@@ -3,10 +3,18 @@
  * @description Manages metrics collection for device updates and system performance
  */
 
+import fs from 'fs/promises';
+import path from 'path';
+
 export class MetricsManager {
     constructor(platform) {
         this.logManager = platform.logManager;
         this.configManager = platform.configManager;
+        
+        // Persistence settings
+        this.metricsFile = path.join(process.cwd(), '.homebridge', 'hubitat-metrics.json');
+        this.saveInterval = 5 * 60 * 1000; // Save every 5 minutes
+        this.saveTimer = null;
         
         // Device metrics storage
         this.deviceMetrics = new Map(); // deviceId -> metrics
@@ -31,12 +39,18 @@ export class MetricsManager {
         this.hourlyMetrics = [];
         this.dailyMetrics = [];
         
-        // Initialize hourly collection
-        this.startHourlyCollection();
-        
         // Device activity tracking for top devices
         this.deviceActivityWindow = [];
         this.activityWindowSize = 1000; // Keep last 1000 updates for activity analysis
+        
+        // Start hourly collection immediately (synchronous)
+        this.startHourlyCollection();
+        this.startPeriodicSaving();
+        
+        // Load saved data asynchronously (don't block constructor)
+        this.loadMetrics().catch(error => {
+            this.logManager.logWarn(`MetricsManager async initialization error: ${error.message}`);
+        });
         
         this.logManager.logDebug("MetricsManager initialized");
     }
@@ -51,6 +65,8 @@ export class MetricsManager {
         const deviceId = update.deviceid;
         const deviceName = update.name || 'Unknown Device';
         const attribute = update.attribute;
+        
+        this.logManager.logDebug(`Recording metrics for device ${deviceName} (${deviceId}): ${attribute} = ${update.value}`);
         
         // Update system metrics
         this.systemMetrics.totalUpdates++;
@@ -256,10 +272,90 @@ export class MetricsManager {
         };
     }
     
+    
     /**
-     * Reset metrics
+     * Load metrics from persistent storage
      */
-    resetMetrics() {
+    async loadMetrics() {
+        try {
+            const data = await fs.readFile(this.metricsFile, 'utf8');
+            const saved = JSON.parse(data);
+            
+            // Restore system metrics (but update timestamps)
+            if (saved.systemMetrics) {
+                this.systemMetrics = {
+                    ...saved.systemMetrics,
+                    startTime: saved.systemMetrics.startTime || Date.now(),
+                    // Keep last reset time from saved data
+                    lastResetTime: saved.systemMetrics.lastResetTime || Date.now()
+                };
+            }
+            
+            // Restore device metrics
+            if (saved.deviceMetrics) {
+                this.deviceMetrics = new Map(saved.deviceMetrics);
+            }
+            
+            // Restore attribute metrics
+            if (saved.attributeMetrics) {
+                this.attributeMetrics = new Map(saved.attributeMetrics);
+            }
+            
+            // Restore hourly metrics (keep only recent ones)
+            if (saved.hourlyMetrics) {
+                const now = new Date();
+                const cutoff = now.getTime() - (25 * 60 * 60 * 1000); // 25 hours ago
+                this.hourlyMetrics = saved.hourlyMetrics.filter(h => h.timestamp > cutoff);
+            }
+            
+            // Don't restore device activity window - it's meant to be recent activity only
+            
+            this.logManager.logInfo(`Loaded metrics: ${this.systemMetrics.totalUpdates} total updates, ${this.deviceMetrics.size} devices`);
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                this.logManager.logWarn(`Error loading metrics: ${error.message}`);
+            }
+            // File doesn't exist or is corrupted - start fresh
+        }
+    }
+    
+    /**
+     * Save metrics to persistent storage
+     */
+    async saveMetrics() {
+        try {
+            // Ensure .homebridge directory exists
+            const homebridgeDir = path.dirname(this.metricsFile);
+            await fs.mkdir(homebridgeDir, { recursive: true });
+            
+            const data = {
+                systemMetrics: this.systemMetrics,
+                deviceMetrics: Array.from(this.deviceMetrics.entries()),
+                attributeMetrics: Array.from(this.attributeMetrics.entries()),
+                hourlyMetrics: this.hourlyMetrics,
+                savedAt: Date.now()
+            };
+            
+            await fs.writeFile(this.metricsFile, JSON.stringify(data, null, 2));
+            this.logManager.logDebug(`Metrics saved to ${this.metricsFile}`);
+        } catch (error) {
+            this.logManager.logError(`Error saving metrics: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Start periodic saving of metrics
+     */
+    startPeriodicSaving() {
+        this.saveTimer = setInterval(() => {
+            this.saveMetrics();
+        }, this.saveInterval);
+    }
+    
+    /**
+     * Reset metrics and clear persisted data
+     */
+    async resetMetrics() {
         this.deviceMetrics.clear();
         this.attributeMetrics.clear();
         this.systemMetrics.totalUpdates = 0;
@@ -274,7 +370,17 @@ export class MetricsManager {
         };
         this.deviceActivityWindow = [];
         this.hourlyMetrics = [];
-        this.logManager.logInfo("Metrics have been reset");
+        
+        // Clear persisted data
+        try {
+            await fs.unlink(this.metricsFile);
+            this.logManager.logInfo("Metrics have been reset and persisted data cleared");
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                this.logManager.logWarn(`Error clearing persisted metrics: ${error.message}`);
+            }
+            this.logManager.logInfo("Metrics have been reset");
+        }
     }
     
     /**
@@ -379,8 +485,15 @@ export class MetricsManager {
     /**
      * Dispose of the metrics manager
      */
-    dispose() {
-        // Clear any intervals or timers if needed
+    async dispose() {
+        // Save final metrics before disposing
+        await this.saveMetrics();
+        
+        // Clear timers
+        if (this.saveTimer) {
+            clearInterval(this.saveTimer);
+        }
+        
         this.logManager.logDebug("MetricsManager disposed");
     }
 }

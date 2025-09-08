@@ -32,7 +32,6 @@ export class WebServer {
         // Health monitor will be initialized later when client is available
         this.healthMonitor = null;
 
-
         // Subscribe to config updates
         this.configManager.onConfigUpdate((newConfig) => {
             this.config = newConfig;
@@ -47,14 +46,13 @@ export class WebServer {
         this.batchDelay = 100;
         this.collectionDelay = 10;
         this.batchTimer = null;
-
     }
 
     async initialize() {
         try {
             // Clean up old persistent queue files if they exist
             await this.cleanupOldQueueFiles();
-            
+
             const ip = this.configManager.getActiveIP();
             const port = await this.configManager.findAvailablePort();
             this.logManager.logInfo("WebServer Initiated...");
@@ -79,12 +77,12 @@ export class WebServer {
     async cleanupOldQueueFiles() {
         try {
             // Old queue files were stored in .homebridge/hubitat-queue/
-            const queueDir = path.join(process.cwd(), '.homebridge', 'hubitat-queue');
-            
+            const queueDir = path.join(process.cwd(), ".homebridge", "hubitat-queue");
+
             // Check if the directory exists
             try {
                 await fs.access(queueDir);
-                
+
                 // Remove the entire queue directory and its contents
                 await fs.rm(queueDir, { recursive: true, force: true });
                 this.logManager.logInfo("Cleaned up old persistent queue files from previous version");
@@ -301,7 +299,7 @@ export class WebServer {
 
             // Add to queue instead of processing immediately
             this.queueDeviceUpdate(newChange);
-            
+
             // Record queue metrics
             if (this.metricsManager) {
                 this.metricsManager.recordQueueMetrics({ queued: true, queueSize: this.updateQueue.length });
@@ -358,7 +356,7 @@ export class WebServer {
             const batch = this.updateQueue.splice(0, this.batchSize);
 
             this.logManager.logDebug(`Processing batch of ${batch.length} device updates (${this.updateQueue.length} remaining)`);
-            
+
             // Record batch processing metrics
             if (this.metricsManager) {
                 this.metricsManager.recordQueueMetrics({ processed: batch.length, queueSize: this.updateQueue.length });
@@ -413,6 +411,8 @@ export class WebServer {
 
     async handleHealthCheck(req, res) {
         const body = JSON.parse(JSON.stringify(req.body));
+        this.logManager.logDebug(`Health check request received from app_id: ${body?.app_id || "unknown"}`);
+        
         if (body && this.isValidRequestor(body.access_token, body.app_id, "healthCheck")) {
             try {
                 // Get plugin health data
@@ -430,7 +430,9 @@ export class WebServer {
                     app_version: body.app_version,
                 };
 
-                res.send({ status: "OK", data: healthData });
+                const response = { status: "OK", data: healthData };
+                this.logManager.logDebug(`Sending health check response: ${JSON.stringify(response)}`);
+                res.send(response);
 
                 // Log successful health check
                 this.logManager.logDebug(`Health check successful for app_id: ${body.app_id}`);
@@ -439,7 +441,7 @@ export class WebServer {
                 res.send({ status: "Failed", message: ex.message });
             }
         } else {
-            this.logManager.logWarn(`Invalid health check request from ${body?.app_id || "unknown"}`);
+            this.logManager.logWarn(`Invalid health check request from ${body?.app_id || "unknown"}: missing access_token or app_id`);
             res.send({ status: "Failed: Missing access_token or app_id" });
         }
     }
@@ -559,9 +561,7 @@ export class WebServer {
                 res.send({ status: "Failed: Missing access_token or app_id" });
             }
         });
-
     }
-
 
     /**
      * Get queue statistics for monitoring
@@ -587,13 +587,13 @@ export class WebServer {
                 res.status(503).json({ error: "Metrics not available" });
             }
         });
-        
+
         // Reset metrics endpoint
-        webApp.post("/metrics/reset", (req, res) => {
+        webApp.post("/metrics/reset", async (req, res) => {
             const body = JSON.parse(JSON.stringify(req.body));
             if (body && this.isValidRequestor(body.access_token, body.app_id, "metrics/reset")) {
                 if (this.metricsManager) {
-                    this.metricsManager.resetMetrics();
+                    await this.metricsManager.resetMetrics();
                     res.send({ status: "OK", message: "Metrics reset successfully" });
                 } else {
                     res.send({ status: "Failed", message: "Metrics manager not initialized" });
@@ -602,16 +602,16 @@ export class WebServer {
                 res.send({ status: "Failed: Missing access_token or app_id" });
             }
         });
-        
+
         // Serve metrics dashboard HTML page
         webApp.get("/metrics", (req, res) => {
             const ip = this.configManager.getActiveIP();
-            const port = this.config.server.direct_port;
+            const port = this.configManager.getActivePort();
             const dashboardHTML = this.getMetricsDashboardHTML(ip, port);
             res.send(dashboardHTML);
         });
     }
-    
+
     getMetricsDashboardHTML(ip, port) {
         return `<!DOCTYPE html>
 <html lang="en">
@@ -1220,8 +1220,8 @@ export class WebServer {
         // Initial load
         updateDashboard();
         
-        // Auto-refresh every 30 seconds
-        setInterval(updateDashboard, 30000);
+        // Auto-refresh every 10 seconds for more responsive updates
+        setInterval(updateDashboard, 10000);
     </script>
 </body>
 </html>`;
@@ -1237,7 +1237,6 @@ export class WebServer {
         if (this.healthMonitor) {
             this.healthMonitor.dispose();
         }
-
 
         // Clear any timers
         if (this.batchTimer) {

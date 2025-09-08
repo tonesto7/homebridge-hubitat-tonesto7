@@ -297,6 +297,8 @@ export default class HubitatPlatform {
     async processDeviceAttributeUpdate(update) {
         const startTime = Date.now();
         try {
+            this.logManager.logDebug(`Processing update for device ${update.name || update.deviceid}: ${update.attribute} = ${update.value}`);
+            
             const accessory = this.getAccessoryFromCache(update.deviceid);
             if (!accessory) {
                 this.logManager.logWarn(`No accessory found for device ${update.deviceid}`);
@@ -361,6 +363,11 @@ export default class HubitatPlatform {
             // Cleanup components
             this.client.dispose();
             this.accessoryManager.dispose();
+            
+            // Save and cleanup metrics
+            if (this.metricsManager) {
+                await this.metricsManager.dispose();
+            }
 
             // Remove all event listeners
             this.appEvts.removeAllListeners();
@@ -495,16 +502,21 @@ export default class HubitatPlatform {
      * @returns {Object} Validation result
      */
     validateHealthCheckResponse(response) {
+        this.logManager.logDebug(`Validating health check response: ${JSON.stringify(response)}`);
+        
         if (!response || !response.data) {
+            this.logManager.logDebug(`Health check validation failed: response=${!!response}, data=${!!response?.data}`);
             return { valid: false, reason: "No response data" };
         }
 
         const { data } = response;
         if (data.status !== "OK") {
+            this.logManager.logDebug(`Health check validation failed: status=${data.status}`);
             return { valid: false, reason: `Invalid status: ${data.status}` };
         }
 
         if (!data.pluginVersion || !data.timestamp) {
+            this.logManager.logDebug(`Health check validation failed: pluginVersion=${!!data.pluginVersion}, timestamp=${!!data.timestamp}`);
             return { valid: false, reason: "Missing required fields" };
         }
 
