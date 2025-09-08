@@ -171,7 +171,7 @@ export class AccessoryManager {
             {
                 name: "switch",
                 test: (accessory) => accessory.hasCapability("Switch") && !accessory.hasLightLabel(),
-                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl", "Fan", "FanControl", "LightBulb", "Bulb", "Outlet", "Button"],
+                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl", "Fan", "FanControl", "LightBulb", "Bulb", "Outlet", "Button", "Valve"],
                 excludeAttributes: ["position", "level", "windowShade"],
             },
             {
