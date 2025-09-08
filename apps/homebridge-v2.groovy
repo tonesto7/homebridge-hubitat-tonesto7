@@ -2379,19 +2379,37 @@ void asyncHttpCmdResp(response, Map data) {
     // Handle health check responses specifically
     if (src == 'pluginHealthCheck') {
         if (status == 200) {
-            if (resp?.status == 'OK') {
+            // Parse JSON response for health check
+            def respData = null
+            try {
+                respData = resp ? new groovy.json.JsonSlurper().parseText(resp) : null
+            } catch (Exception e) {
+                logWarn("Failed to parse health check response: ${e.message}")
+                respData = null
+            }
+            
+            if (respData?.status == 'OK') {
                 // Update lastCheckin timestamp for successful health checks
                 state.pluginDetails = state.pluginDetails ?: [:]
+                Long previousLastCheckin = state.pluginDetails.lastCheckin ?: 0
                 state.pluginDetails.lastCheckin = now()
                 state.pluginDetails.lastHealthCheck = now()
-                logInfo("Plugin health check successful - communication restored")
+                
+                // Only log "communication restored" if there was a significant gap in communication
+                Long diffMs = now() - previousLastCheckin
+                Long diffMins = diffMs / 60000
+                if (diffMins > 5) { // Only if more than 5 minutes since last checkin
+                    logInfo("Plugin health check successful - communication restored")
+                } else {
+                    logDebug("Plugin health check successful")
+                }
                 
                 // Update plugin health data if available
-                if (resp?.data) {
-                    state.pluginDetails.pluginHealth = resp.data
+                if (respData?.data) {
+                    state.pluginDetails.pluginHealth = respData.data
                 }
             } else {
-                logWarn("Plugin health check failed: ${resp?.message ?: 'Unknown error'}")
+                logWarn("Plugin health check failed: ${respData?.message ?: 'Unknown error'}")
             }
         } else {
             logWarn("Plugin health check request failed with status: ${status}")
