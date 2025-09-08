@@ -1,7 +1,7 @@
 // platform/WebServer.js
 
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
-import { PluginDiscovery } from "./PluginDiscovery.js";
+import { IPMonitor } from "./IPMonitor.js";
 import { HealthMonitor } from "./HealthMonitor.js";
 import { PersistentQueue } from "./PersistentQueue.js";
 import express from "express";
@@ -24,8 +24,8 @@ export class WebServer {
         this.processDeviceAttributeUpdate = platform.processDeviceAttributeUpdate.bind(platform);
         this.refreshDevices = platform.refreshDevices.bind(platform);
 
-        // Initialize plugin discovery
-        this.pluginDiscovery = new PluginDiscovery(platform);
+        // Initialize IP monitoring (will be set up later with client)
+        this.ipMonitor = null;
         
         // Health monitor will be initialized later when client is available
         this.healthMonitor = null;
@@ -66,11 +66,7 @@ export class WebServer {
                 this.logManager.logInfo(`Direct Connect Active | Listening at ${ip}:${port}`);
             });
 
-            // Start plugin discovery advertising
-            this.pluginDiscovery.startAdvertising();
-
-            // Start periodic discovery scanning
-            this.pluginDiscovery.startPeriodicScanning();
+            // IP monitoring will be started when client is initialized
 
             return { status: "OK" };
         } catch (ex) {
@@ -106,7 +102,6 @@ export class WebServer {
         this.setupConfigurationRoutes();
         this.setupDeviceRoutes();
         this.setupHealthRoutes();
-        this.setupDiscoveryRoutes();
         this.setupMonitoringRoutes();
     }
 
@@ -120,9 +115,16 @@ export class WebServer {
                 configManager: this.configManager,
                 config: this.config
             };
-            this.healthMonitor = new HealthMonitor(platform, hubitatClient, this.pluginDiscovery);
+            
+            // Initialize IP monitoring
+            this.ipMonitor = new IPMonitor(platform, hubitatClient);
+            this.ipMonitor.startMonitoring();
+            
+            // Initialize health monitoring (simplified - no discovery integration)
+            this.healthMonitor = new HealthMonitor(platform, hubitatClient);
             this.healthMonitor.startMonitoring();
-            this.logManager.logInfo("Health monitoring initialized");
+            
+            this.logManager.logInfo("IP monitoring and health monitoring initialized");
         }
     }
 
@@ -413,64 +415,6 @@ export class WebServer {
         }
     }
 
-    setupDiscoveryRoutes() {
-        // Get plugin discovery information
-        webApp.get("/discovery/info", (req, res) => {
-            const pluginInfo = this.pluginDiscovery.getPluginInfo();
-            res.send({
-                status: "OK",
-                plugin: pluginInfo,
-                discovered_plugins: this.pluginDiscovery.getDiscoveredPlugins()
-            });
-        });
-
-        // Discover other plugins on network
-        webApp.post("/discovery/scan", async (req, res) => {
-            const body = JSON.parse(JSON.stringify(req.body));
-            if (body && this.isValidRequestor(body.access_token, body.app_id, "discovery/scan")) {
-                try {
-                    const timeout = body.timeout || 5000;
-                    const plugins = await this.pluginDiscovery.discoverPlugins(timeout);
-                    
-                    res.send({
-                        status: "OK",
-                        plugins: plugins,
-                        count: plugins.length,
-                        scan_timeout: timeout
-                    });
-                } catch (error) {
-                    this.logManager.logError("Plugin discovery scan error:", error);
-                    res.send({ status: "Failed", message: error.message });
-                }
-            } else {
-                res.send({ status: "Failed: Missing access_token or app_id" });
-            }
-        });
-
-        // Register plugin with specific capabilities
-        webApp.post("/discovery/register", (req, res) => {
-            const body = JSON.parse(JSON.stringify(req.body));
-            if (body && this.isValidRequestor(body.access_token, body.app_id, "discovery/register")) {
-                try {
-                    // This could be used by Hubitat app to register what capabilities it needs
-                    this.logManager.logInfo(`Plugin registration request from app_id: ${body.app_id}`);
-                    
-                    const pluginInfo = this.pluginDiscovery.getPluginInfo();
-                    res.send({
-                        status: "OK",
-                        plugin_registered: true,
-                        plugin_id: pluginInfo.id,
-                        capabilities: pluginInfo.capabilities
-                    });
-                } catch (error) {
-                    this.logManager.logError("Plugin registration error:", error);
-                    res.send({ status: "Failed", message: error.message });
-                }
-            } else {
-                res.send({ status: "Failed: Missing access_token or app_id" });
-            }
-        });
-    }
 
     setupMonitoringRoutes() {
         // Get health status
@@ -552,18 +496,41 @@ export class WebServer {
             });
         });
 
-        // Get discovery scan statistics
-        webApp.get("/monitoring/discovery", (req, res) => {
-            const scanStats = this.pluginDiscovery.getScanStats();
-            const discoveredPlugins = this.pluginDiscovery.getDiscoveredPlugins();
-            
-            res.send({
-                status: "OK",
-                scanning: scanStats,
-                discovered_plugins: discoveredPlugins,
-                plugin_id: this.pluginDiscovery.pluginId,
-                timestamp: new Date().toISOString()
-            });
+        // Get IP monitoring status
+        webApp.get("/monitoring/ip", (req, res) => {
+            if (this.ipMonitor) {
+                const ipStatus = this.ipMonitor.getStatus();
+                res.send({
+                    status: "OK",
+                    ip_monitoring: ipStatus,
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                res.send({
+                    status: "OK",
+                    ip_monitoring: { message: "IP monitoring not initialized" },
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        // Force IP check
+        webApp.post("/monitoring/check-ip", async (req, res) => {
+            const body = JSON.parse(JSON.stringify(req.body));
+            if (body && this.isValidRequestor(body.access_token, body.app_id, "monitoring/check-ip")) {
+                if (this.ipMonitor) {
+                    try {
+                        await this.ipMonitor.forceIPCheck();
+                        res.send({ status: "OK", message: "IP check completed" });
+                    } catch (error) {
+                        res.send({ status: "Failed", message: error.message });
+                    }
+                } else {
+                    res.send({ status: "Failed", message: "IP monitoring not initialized" });
+                }
+            } else {
+                res.send({ status: "Failed: Missing access_token or app_id" });
+            }
         });
 
         // Clear persistent queue (admin operation)
@@ -633,9 +600,9 @@ export class WebServer {
     }
 
     async dispose() {
-        // Clean up plugin discovery resources
-        if (this.pluginDiscovery) {
-            this.pluginDiscovery.dispose();
+        // Clean up IP monitoring
+        if (this.ipMonitor) {
+            this.ipMonitor.dispose();
         }
         
         // Clean up health monitoring

@@ -45,13 +45,18 @@ export class PluginDiscovery {
      * Generate unique plugin ID using ConfigManager's instance ID
      */
     generatePluginId() {
+        // Always include app_id and port for clarity
+        const appId = this.config.client.app_id || 'default';
+        const port = this.configManager.getActivePort() || '8000';
+        
         // Use the ConfigManager's instance ID if multi-instance is enabled
         if (this.configManager.isMultiInstanceEnabled()) {
             const instanceConfig = this.configManager.getInstanceConfig();
-            return `homebridge-hubitat-${instanceConfig.instance_id}`;
+            // Instance ID already includes app_id and port, so just use it
+            return `hb-${instanceConfig.instance_id}`;
         }
         
-        // Fallback to legacy method
+        // Fallback to simpler format
         const networkInterfaces = os.networkInterfaces();
         let macAddress = 'unknown';
         
@@ -59,21 +64,15 @@ export class PluginDiscovery {
         for (const [name, interfaces] of Object.entries(networkInterfaces)) {
             for (const iface of interfaces || []) {
                 if (!iface.internal && iface.mac && iface.mac !== '00:00:00:00:00:00') {
-                    macAddress = iface.mac.replace(/:/g, '');
+                    macAddress = iface.mac.replace(/:/g, '').substring(0, 6);
                     break;
                 }
             }
             if (macAddress !== 'unknown') break;
         }
         
-        const port = this.configManager.getActivePort();
-        const appId = this.config.client.app_id || 'default';
-        
-        // Create hash of MAC + port + app_id for unique ID
-        const identifier = `${macAddress}-${port}-${appId}`;
-        const hash = crypto.createHash('md5').update(identifier).digest('hex').substring(0, 8);
-        
-        return `homebridge-hubitat-${hash}`;
+        // Create readable ID with app_id and port
+        return `hb-${appId}-${macAddress}-p${port}`;
     }
 
     /**

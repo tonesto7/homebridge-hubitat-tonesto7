@@ -367,7 +367,7 @@ export default class ConfigManager {
      * Generate a unique instance ID for multi-instance support
      */
     generateInstanceId() {
-        // Combine MAC address, current timestamp, and random string
+        // Combine app_id, MAC address, port, and random string
         const networkInterfaces = os.networkInterfaces();
         let macAddress = 'unknown';
         
@@ -382,11 +382,12 @@ export default class ConfigManager {
             if (macAddress !== 'unknown') break;
         }
         
-        const timestamp = Date.now().toString(36);
-        const random = Math.random().toString(36).substring(2, 8);
+        const appId = this.config.client.app_id || 'default';
         const port = this.getActivePort() || '8000';
+        const random = Math.random().toString(36).substring(2, 6);
         
-        return `${macAddress.substring(0, 6)}-${timestamp}-${random}-${port}`;
+        // Include app_id and actual port in the ID
+        return `${appId}-${macAddress.substring(0, 6)}-p${port}-${random}`;
     }
 
     /**
