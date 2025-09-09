@@ -746,6 +746,95 @@ export class WebServer {
             background: #667eea;
             color: white;
         }
+
+
+        .history-stats {
+            background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: #555;
+            text-align: center;
+        }
+
+        .history-entry {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .history-entry.event {
+            border-left: 4px solid #667eea;
+        }
+
+        .history-entry.command {
+            border-left: 4px solid #4CAF50;
+        }
+
+        .history-time {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .history-type {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .history-type.event {
+            background: #667eea;
+            color: white;
+        }
+
+        .history-type.command {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .history-details {
+            margin-top: 6px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .devices-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+
+            .device-filters {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .device-filters input,
+            .device-filters select {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .history-filters {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+            }
+
+            .history-filters select {
+                min-width: auto;
+                width: 100%;
+            }
+        }
         
         .stats-grid {
             display: grid;
@@ -823,11 +912,60 @@ export class WebServer {
             margin-bottom: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-        
-        .devices-table h2 {
-            color: #333;
+
+        .devices-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .devices-header h2 {
+            color: #333;
+            margin: 0;
             font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .device-filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .device-filters input,
+        .device-filters select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+            min-width: 120px;
+        }
+
+        .device-filters input {
+            min-width: 200px;
+        }
+
+        .device-filters input:focus,
+        .device-filters select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .device-stats {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #495057;
+            text-align: center;
         }
         
         table {
@@ -1015,7 +1153,31 @@ export class WebServer {
             padding: 20px;
             display: flex;
             justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .modal-header .history-filters {
+            display: flex;
+            gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .modal-header .history-filters select {
+            padding: 4px 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            min-width: 100px;
+        }
+
+        .modal-header .history-filters select option {
+            background: white;
+            color: #333;
         }
         
         .modal-body {
@@ -1193,6 +1355,23 @@ export class WebServer {
         body.dark-mode .devices-table,
         body.dark-mode .error-console {
             background: rgba(52, 73, 94, 0.95);
+            color: #ecf0f1;
+        }
+
+        body.dark-mode .device-filters input,
+        body.dark-mode .device-filters select {
+            background: #34495e;
+            border-color: #7f8c8d;
+            color: #ecf0f1;
+        }
+
+        body.dark-mode .device-filters input::placeholder {
+            color: #bdc3c7;
+        }
+
+        body.dark-mode .device-stats {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            border-color: #7f8c8d;
             color: #ecf0f1;
         }
         
@@ -1386,7 +1565,31 @@ export class WebServer {
         </div>
         
         <div class="devices-table">
-            <h2>Device Details</h2>
+            <div class="devices-header">
+                <h2>Device Details</h2>
+                <div class="device-filters">
+                    <input type="text" id="deviceNameFilter" placeholder="Filter by device name..." oninput="updateDeviceFilters()">
+                    <select id="deviceSortBy" onchange="updateDeviceFilters()">
+                        <option value="updates">Sort by Updates</option>
+                        <option value="commands">Sort by Commands</option>
+                        <option value="successRate">Sort by Success Rate</option>
+                        <option value="responseTime">Sort by Response Time</option>
+                        <option value="lastActivity">Sort by Last Activity</option>
+                        <option value="name">Sort by Name</option>
+                    </select>
+                    <select id="deviceSortOrder" onchange="updateDeviceFilters()">
+                        <option value="desc">Descending</option>
+                        <option value="asc">Ascending</option>
+                    </select>
+                    <select id="deviceLimit" onchange="updateDeviceFilters()">
+                        <option value="all">Show All</option>
+                        <option value="25">Top 25</option>
+                        <option value="50">Top 50</option>
+                        <option value="100">Top 100</option>
+                    </select>
+                </div>
+            </div>
+            <div class="device-stats" id="deviceStats"></div>
             <table id="devicesTable">
                 <thead>
                     <tr>
@@ -1426,6 +1629,12 @@ export class WebServer {
         let metricsData = null;
         let currentView = 'individual';
         let currentInstanceId = null;
+        let currentDeviceFilters = {
+            nameFilter: '',
+            sortBy: 'updates',
+            sortOrder: 'desc',
+            limit: 'all'
+        };
 
         async function fetchMetrics(endpoint = '/metrics/api') {
             try {
@@ -1782,12 +1991,18 @@ export class WebServer {
         
         function updateDevicesTable(data) {
             const tbody = document.querySelector('#devicesTable tbody');
-            const devices = data.devices.sort((a, b) => b.totalUpdates - a.totalUpdates);
-            
-            tbody.innerHTML = devices.map(device => {
+            const statsDiv = document.getElementById('deviceStats');
+
+            // Apply filters, sorting, and limiting
+            let filteredDevices = applyDeviceFilters(data.devices);
+
+            // Update statistics
+            statsDiv.innerHTML = \`<strong>Showing \${filteredDevices.length}</strong> of <strong>\${data.devices.length}</strong> total devices\`;
+
+            tbody.innerHTML = filteredDevices.map(device => {
                 const lastActivity = Math.max(device.lastUpdate || 0, device.lastCommand || 0);
                 const lastActivityStr = lastActivity ? new Date(lastActivity).toLocaleString() : 'Never';
-                
+
                 return \`
                     <tr>
                         <td>\${device.deviceName}</td>
@@ -1804,6 +2019,86 @@ export class WebServer {
                     </tr>
                 \`;
             }).join('');
+        }
+
+        function applyDeviceFilters(devices) {
+            let filtered = [...devices];
+
+            // Apply name filter
+            if (currentDeviceFilters.nameFilter) {
+                const filter = currentDeviceFilters.nameFilter.toLowerCase();
+                filtered = filtered.filter(device =>
+                    device.deviceName.toLowerCase().includes(filter)
+                );
+            }
+
+            // Apply sorting
+            filtered.sort((a, b) => {
+                let aValue, bValue;
+
+                switch (currentDeviceFilters.sortBy) {
+                    case 'updates':
+                        aValue = a.totalUpdates;
+                        bValue = b.totalUpdates;
+                        break;
+                    case 'commands':
+                        aValue = a.totalCommands;
+                        bValue = b.totalCommands;
+                        break;
+                    case 'successRate':
+                        aValue = a.commandSuccessRate;
+                        bValue = b.commandSuccessRate;
+                        break;
+                    case 'responseTime':
+                        aValue = a.avgResponseTime;
+                        bValue = b.avgResponseTime;
+                        break;
+                    case 'lastActivity':
+                        aValue = Math.max(a.lastUpdate || 0, a.lastCommand || 0);
+                        bValue = Math.max(b.lastUpdate || 0, b.lastCommand || 0);
+                        break;
+                    case 'name':
+                        aValue = a.deviceName.toLowerCase();
+                        bValue = b.deviceName.toLowerCase();
+                        break;
+                    default:
+                        aValue = a.totalUpdates;
+                        bValue = b.totalUpdates;
+                }
+
+                if (currentDeviceFilters.sortOrder === 'asc') {
+                    return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+                } else {
+                    return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+                }
+            });
+
+            // Apply limit
+            if (currentDeviceFilters.limit !== 'all') {
+                const limit = parseInt(currentDeviceFilters.limit);
+                filtered = filtered.slice(0, limit);
+            }
+
+            return filtered;
+        }
+
+        function updateDeviceFilters() {
+            const nameFilter = document.getElementById('deviceNameFilter');
+            const sortBy = document.getElementById('deviceSortBy');
+            const sortOrder = document.getElementById('deviceSortOrder');
+            const limit = document.getElementById('deviceLimit');
+
+            if (nameFilter && sortBy && sortOrder && limit) {
+                currentDeviceFilters.nameFilter = nameFilter.value;
+                currentDeviceFilters.sortBy = sortBy.value;
+                currentDeviceFilters.sortOrder = sortOrder.value;
+                currentDeviceFilters.limit = limit.value;
+
+                // Re-render the devices table with new filters
+                if (metricsData) {
+                    updateDevicesTable(metricsData);
+                }
+            }
         }
         
         function updateErrorConsole(data) {
@@ -1851,46 +2146,136 @@ export class WebServer {
             errorLog.scrollTop = errorLog.scrollHeight;
         }
         
+        let currentHistoryFilters = {
+            timeWindow: 1, // hours
+            typeFilter: 'all', // all, event, command
+            limit: 50
+        };
+
         async function showDeviceHistory(deviceId, deviceName) {
+            // Store current device ID for filter updates
+            window.currentDeviceId = deviceId;
+            window.currentDeviceName = deviceName;
+
             const modal = document.getElementById('deviceModal');
             const modalTitle = document.getElementById('modalTitle');
             const modalBody = document.getElementById('modalBody');
-            
-            modalTitle.textContent = \`History: \${deviceName}\`;
+
+            modalTitle.innerHTML = \`History: \${deviceName}\`;
+
+            // Add filter controls to modal header
+            const modalHeader = document.querySelector('.modal-header');
+            if (!modalHeader.querySelector('.history-filters')) {
+                const filtersDiv = document.createElement('div');
+                filtersDiv.className = 'history-filters';
+                filtersDiv.innerHTML = \`
+                    <select id="historyTimeWindow" onchange="updateHistoryFilters()">
+                        <option value="1">Last Hour</option>
+                        <option value="6">Last 6 Hours</option>
+                        <option value="24" selected>Last 24 Hours</option>
+                        <option value="168">Last 7 Days</option>
+                    </select>
+                    <select id="historyTypeFilter" onchange="updateHistoryFilters()">
+                        <option value="all">All Types</option>
+                        <option value="event">Events Only</option>
+                        <option value="command">Commands Only</option>
+                    </select>
+                    <select id="historyLimit" onchange="updateHistoryFilters()">
+                        <option value="25">Last 25</option>
+                        <option value="50" selected>Last 50</option>
+                        <option value="100">Last 100</option>
+                        <option value="500">Last 500</option>
+                    </select>
+                \`;
+                modalHeader.appendChild(filtersDiv);
+            }
+
             modalBody.innerHTML = 'Loading device history...';
             modal.style.display = 'block';
-            
+
+            await loadDeviceHistory(deviceId);
+        }
+
+        async function loadDeviceHistory(deviceId) {
+            const modalBody = document.getElementById('modalBody');
+
             try {
                 const response = await fetch(\`/metrics/device-history?deviceId=\${deviceId}\`);
                 const history = await response.json();
-                
+
                 if (history.length === 0) {
                     modalBody.innerHTML = '<div style="text-align: center; color: #888; margin-top: 50px;">No history available for this device</div>';
                     return;
                 }
-                
-                // Sort history by timestamp with newest first
-                const sortedHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                modalBody.innerHTML = sortedHistory.map(entry => \`
-                    <div class="history-entry \${entry.type}">
-                        <div class="history-time">\${new Date(entry.timestamp).toLocaleString()}</div>
-                        <span class="history-type \${entry.type}">\${entry.type.toUpperCase()}</span>
-                        <div class="history-details">
-                            \${entry.type === 'event' ? \`
-                                <strong>\${entry.attribute}:</strong> \${entry.value}
-                                \${entry.processingTime ? \`<br><small>Processing time: \${entry.processingTime}ms</small>\` : ''}
-                            \` : \`
-                                <strong>Command:</strong> \${entry.command}
-                                \${entry.parameters && entry.parameters.length > 0 ? \`<br><strong>Parameters:</strong> \${entry.parameters.join(', ')}\` : ''}
-                                \${entry.responseTime ? \`<br><small>Response time: \${entry.responseTime}ms</small>\` : ''}
-                                <br><span style="color: \${entry.success ? '#4CAF50' : '#f44336'}">\${entry.success ? 'Success' : 'Failed' + (entry.error ? ': ' + entry.error : '')}</span>
-                            \`}
-                        </div>
+
+                // Apply filters
+                let filteredHistory = applyHistoryFilters(history);
+
+                modalBody.innerHTML = \`
+                    <div class="history-stats" style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px; font-size: 0.9em;">
+                        Showing <strong>\${filteredHistory.length}</strong> of <strong>\${history.length}</strong> total entries
                     </div>
-                \`).join('');
+                    \${filteredHistory.map(entry => \`
+                        <div class="history-entry \${entry.type}">
+                            <div class="history-time">\${new Date(entry.timestamp).toLocaleString()}</div>
+                            <span class="history-type \${entry.type}">\${entry.type.toUpperCase()}</span>
+                            <div class="history-details">
+                                \${entry.type === 'event' ? \`
+                                    <strong>\${entry.attribute}:</strong> \${entry.value}
+                                    \${entry.processingTime ? \`<br><small>Processing time: \${entry.processingTime}ms</small>\` : ''}
+                                \` : \`
+                                    <strong>Command:</strong> \${entry.command}
+                                    \${entry.parameters && entry.parameters.length > 0 ? \`<br><strong>Parameters:</strong> \${entry.parameters.join(', ')}\` : ''}
+                                    \${entry.responseTime ? \`<br><small>Response time: \${entry.responseTime}ms</small>\` : ''}
+                                    <br><span style="color: \${entry.success ? '#4CAF50' : '#f44336'}">\${entry.success ? 'Success' : 'Failed' + (entry.error ? ': ' + entry.error : '')}</span>
+                                \`}
+                            </div>
+                        </div>
+                    \`).join('')}
+                \`;
             } catch (error) {
                 modalBody.innerHTML = '<div style="text-align: center; color: #f44336; margin-top: 50px;">Error loading device history</div>';
+            }
+        }
+
+        function applyHistoryFilters(history) {
+            const now = new Date();
+            const timeWindowMs = currentHistoryFilters.timeWindow * 60 * 60 * 1000;
+            const cutoffTime = now.getTime() - timeWindowMs;
+
+            let filtered = history.filter(entry => {
+                // Time filter
+                const entryTime = new Date(entry.timestamp).getTime();
+                if (entryTime < cutoffTime) return false;
+
+                // Type filter
+                if (currentHistoryFilters.typeFilter !== 'all' && entry.type !== currentHistoryFilters.typeFilter) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Sort by timestamp (newest first) and apply limit
+            return filtered
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, currentHistoryFilters.limit);
+        }
+
+        function updateHistoryFilters() {
+            const timeWindowSelect = document.getElementById('historyTimeWindow');
+            const typeFilterSelect = document.getElementById('historyTypeFilter');
+            const limitSelect = document.getElementById('historyLimit');
+
+            if (timeWindowSelect && typeFilterSelect && limitSelect) {
+                currentHistoryFilters.timeWindow = parseInt(timeWindowSelect.value);
+                currentHistoryFilters.typeFilter = typeFilterSelect.value;
+                currentHistoryFilters.limit = parseInt(limitSelect.value);
+
+                // Re-load history with new filters
+                if (window.currentDeviceId) {
+                    loadDeviceHistory(window.currentDeviceId);
+                }
             }
         }
         
