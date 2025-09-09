@@ -155,6 +155,9 @@ export default class HubitatClient {
 
         const commands = this.commandState.queue.splice(0, this.commandState.batchSize);
         this.commandState.batchTimer = null;
+        const startTime = Date.now();
+        let success = false;
+        let error = null;
 
         try {
             const formattedCommands = commands.map((cmd) => ({
@@ -173,11 +176,29 @@ export default class HubitatClient {
                 },
                 timeout: 5000,
             });
-        } catch (error) {
-            this.handleError("processBatch", error);
-            // Fall back to individual commands
+            success = true;
+        } catch (err) {
+            success = false;
+            error = err.message;
+            this.handleError("processBatch", err);
+            // Fall back to individual commands - metrics will be recorded in sendSingleCommand
             for (const cmd of commands) {
                 await this.sendSingleCommand(cmd.devData, cmd.command, cmd.params);
+            }
+            return; // Skip metrics recording as individual commands will handle it
+        }
+        
+        // Record batch command metrics only if successful
+        if (success && this.platform.metricsManager) {
+            const responseTime = Date.now() - startTime;
+            // Record metrics for each command in the batch
+            for (const cmd of commands) {
+                this.platform.metricsManager.recordCommand({
+                    deviceId: cmd.devData.deviceid,
+                    deviceName: cmd.devData.name,
+                    command: cmd.command,
+                    parameters: cmd.params
+                }, responseTime / commands.length, success, error); // Divide response time among commands
             }
         }
 
@@ -188,6 +209,10 @@ export default class HubitatClient {
     }
 
     async sendSingleCommand(devData, cmd, params) {
+        const startTime = Date.now();
+        let success = false;
+        let error = null;
+        
         try {
             await this.makeRequest({
                 method: "post",
@@ -203,10 +228,24 @@ export default class HubitatClient {
                 },
                 timeout: 5000,
             });
+            success = true;
             return true;
-        } catch (error) {
-            this.handleError("sendSingleCommand", error);
+        } catch (err) {
+            success = false;
+            error = err.message;
+            this.handleError("sendSingleCommand", err);
             return false;
+        } finally {
+            // Record command metrics
+            const responseTime = Date.now() - startTime;
+            if (this.platform.metricsManager) {
+                this.platform.metricsManager.recordCommand({
+                    deviceId: devData.deviceid,
+                    deviceName: devData.name,
+                    command: cmd,
+                    parameters: params
+                }, responseTime, success, error);
+            }
         }
     }
 
@@ -263,6 +302,25 @@ export default class HubitatClient {
 
         this.logManager.logError(`${source} Error | ${errorMessage} | ` + `Details: ${error.response?.data || error.message}`);
         this.logManager.logDebug(`${source} Full Error: ${JSON.stringify(error)}`);
+        
+        // Record error in metrics if available
+        if (this.platform.metricsManager) {
+            this.platform.metricsManager.recordError({
+                message: errorMessage,
+                type: source === 'sendSingleCommand' || source === 'processBatch' ? 'Command Error' : 
+                       source === 'getDevices' ? 'Device Discovery Error' :
+                       source === 'updatePluginStatus' ? 'Plugin Status Error' :
+                       source === 'registerForDirectUpdates' ? 'Registration Error' : 'Client Error',
+                stack: error.stack,
+                context: {
+                    source: source,
+                    statusCode: error.response?.status,
+                    errorCode: error.code,
+                    url: error.config?.url,
+                    method: error.config?.method
+                }
+            });
+        }
     }
 
     updateConnectionStats() {

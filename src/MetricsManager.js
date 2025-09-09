@@ -23,6 +23,7 @@ export class MetricsManager {
         // System metrics
         this.systemMetrics = {
             totalUpdates: 0,
+            totalCommands: 0,
             startTime: Date.now(),
             lastResetTime: Date.now(),
             processingTimes: [],
@@ -34,6 +35,31 @@ export class MetricsManager {
                 droppedUpdates: 0
             }
         };
+        
+        // Command tracking
+        this.commandMetrics = new Map(); // deviceId -> command metrics
+        this.commandActivityWindow = [];
+        
+        // Error logging with context
+        this.errorLog = [];
+        this.maxErrorLogSize = 500;
+        
+        // Device history for modal display
+        this.deviceHistory = new Map(); // deviceId -> array of events/commands
+        this.maxDeviceHistorySize = 100;
+        
+        // Startup grace period - ignore metrics during initial device discovery
+        // Allow configuration override, default to true (enabled)
+        const graceEnabled = this.configManager.getConfig()?.metrics_startup_grace_enabled !== false;
+        this.isInStartupGrace = graceEnabled;
+        this.startupGracePeriod = null; // Will be calculated when ended
+        this.startupGraceTimer = null;
+        
+        if (this.isInStartupGrace) {
+            this.logManager.logInfo('Metrics startup grace period active - device updates will not be counted during initial discovery phase');
+        } else {
+            this.logManager.logInfo('Metrics startup grace period disabled - tracking all device updates immediately');
+        }
         
         // Time-based metrics (last hour, last 24 hours)
         this.hourlyMetrics = [];
@@ -56,11 +82,249 @@ export class MetricsManager {
     }
     
     /**
+     * Record a command sent to Hubitat
+     * @param {Object} commandData - Command information
+     * @param {string} commandData.deviceId - Device ID
+     * @param {string} commandData.deviceName - Device name
+     * @param {string} commandData.command - Command name
+     * @param {Array} commandData.parameters - Command parameters
+     * @param {number} responseTime - Response time in ms
+     * @param {boolean} success - Whether command was successful
+     * @param {string} error - Error message if failed
+     */
+    recordCommand(commandData, responseTime = null, success = true, error = null) {
+        // Skip metrics during startup grace period
+        if (this.isInStartupGrace) {
+            this.logManager.logDebug(`Skipping command metrics during startup grace period for device ${commandData.deviceName || 'Unknown'} (${commandData.deviceId})`);
+            return;
+        }
+        
+        const now = Date.now();
+        const deviceId = commandData.deviceId;
+        const deviceName = commandData.deviceName || 'Unknown Device';
+        const command = commandData.command;
+        
+        this.logManager.logDebug(`Recording command metrics for device ${deviceName} (${deviceId}): ${command}`);
+        
+        // Update system metrics
+        this.systemMetrics.totalCommands++;
+        
+        // Update device command metrics
+        if (!this.commandMetrics.has(deviceId)) {
+            this.commandMetrics.set(deviceId, {
+                deviceId: deviceId,
+                deviceName: deviceName,
+                totalCommands: 0,
+                successfulCommands: 0,
+                failedCommands: 0,
+                commands: new Map(),
+                lastCommand: now,
+                avgResponseTime: 0,
+                responseTimes: []
+            });
+        }
+        
+        const deviceCommandMetric = this.commandMetrics.get(deviceId);
+        deviceCommandMetric.totalCommands++;
+        deviceCommandMetric.lastCommand = now;
+        deviceCommandMetric.deviceName = deviceName;
+        
+        if (success) {
+            deviceCommandMetric.successfulCommands++;
+        } else {
+            deviceCommandMetric.failedCommands++;
+            // Record command error
+            this.recordError({
+                message: error || 'Command failed',
+                type: 'Command Error',
+                deviceId: deviceId,
+                deviceName: deviceName,
+                context: { command, parameters: commandData.parameters }
+            });
+        }
+        
+        if (responseTime !== null) {
+            deviceCommandMetric.responseTimes.push(responseTime);
+            if (deviceCommandMetric.responseTimes.length > 100) {
+                deviceCommandMetric.responseTimes.shift();
+            }
+            deviceCommandMetric.avgResponseTime = this.calculateAverage(deviceCommandMetric.responseTimes);
+        }
+        
+        // Update command count for this device
+        if (!(deviceCommandMetric.commands instanceof Map)) {
+            deviceCommandMetric.commands = new Map(Object.entries(deviceCommandMetric.commands || {}));
+        }
+        const cmdCount = deviceCommandMetric.commands.get(command) || 0;
+        deviceCommandMetric.commands.set(command, cmdCount + 1);
+        
+        // Track command activity
+        const activityEntry = {
+            deviceId: deviceId,
+            deviceName: deviceName,
+            command: command,
+            parameters: commandData.parameters,
+            timestamp: now,
+            type: 'command',
+            success: success,
+            error: error,
+            responseTime: responseTime
+        };
+        
+        this.commandActivityWindow.push(activityEntry);
+        
+        // Maintain window size
+        if (this.commandActivityWindow.length > this.activityWindowSize) {
+            this.commandActivityWindow.shift();
+        }
+        
+        // Add to device history for modal display
+        this.addToDeviceHistory(deviceId, activityEntry);
+    }
+    
+    /**
+     * Add entry to device history
+     * @private
+     */
+    addToDeviceHistory(deviceId, entry) {
+        if (!this.deviceHistory.has(deviceId)) {
+            this.deviceHistory.set(deviceId, []);
+        }
+        
+        const history = this.deviceHistory.get(deviceId);
+        history.push(entry);
+        
+        // Maintain history size per device
+        if (history.length > this.maxDeviceHistorySize) {
+            history.shift();
+        }
+    }
+    
+    /**
+     * Get device history for modal display
+     * @param {string} deviceId - Device ID
+     * @returns {Array} Device history entries
+     */
+    getDeviceHistory(deviceId) {
+        return this.deviceHistory.get(deviceId) || [];
+    }
+    
+    /**
+     * Get error log
+     * @param {Object} options - Filter options
+     * @param {string} options.type - Filter by error type
+     * @param {string} options.deviceId - Filter by device ID
+     * @param {number} options.limit - Limit number of results
+     * @returns {Array} Filtered error log
+     */
+    getErrorLog(options = {}) {
+        let errors = [...this.errorLog];
+        
+        if (options.type) {
+            errors = errors.filter(error => error.type === options.type);
+        }
+        
+        if (options.deviceId) {
+            errors = errors.filter(error => error.deviceId === options.deviceId);
+        }
+        
+        // Sort by most recent first
+        errors.sort((a, b) => b.timestamp - a.timestamp);
+        
+        if (options.limit) {
+            errors = errors.slice(0, options.limit);
+        }
+        
+        return errors;
+    }
+    
+    /**
+     * Clear error log
+     */
+    clearErrorLog() {
+        this.errorLog = [];
+        this.logManager.logInfo('Error log cleared');
+    }
+    
+    /**
+     * Get command statistics
+     * @returns {Object} Command stats
+     */
+    getCommandStats() {
+        const stats = {
+            totalCommands: this.systemMetrics.totalCommands,
+            deviceStats: [],
+            successRate: 0,
+            avgResponseTime: 0
+        };
+        
+        let totalSuccessful = 0;
+        let totalFailed = 0;
+        let allResponseTimes = [];
+        
+        for (const [deviceId, commandMetric] of this.commandMetrics) {
+            totalSuccessful += commandMetric.successfulCommands;
+            totalFailed += commandMetric.failedCommands;
+            allResponseTimes.push(...commandMetric.responseTimes);
+            
+            stats.deviceStats.push({
+                deviceId: commandMetric.deviceId,
+                deviceName: commandMetric.deviceName,
+                totalCommands: commandMetric.totalCommands,
+                successfulCommands: commandMetric.successfulCommands,
+                failedCommands: commandMetric.failedCommands,
+                successRate: commandMetric.totalCommands > 0 ? 
+                    (commandMetric.successfulCommands / commandMetric.totalCommands) * 100 : 0,
+                avgResponseTime: commandMetric.avgResponseTime,
+                lastCommand: commandMetric.lastCommand
+            });
+        }
+        
+        const totalCommands = totalSuccessful + totalFailed;
+        stats.successRate = totalCommands > 0 ? (totalSuccessful / totalCommands) * 100 : 0;
+        stats.avgResponseTime = this.calculateAverage(allResponseTimes);
+        
+        return stats;
+    }
+    
+    /**
+     * Get system health metrics
+     * @returns {Object} System health data
+     */
+    getSystemHealth() {
+        const memoryUsage = process.memoryUsage();
+        const uptime = process.uptime();
+        
+        return {
+            memory: {
+                used: Math.round(memoryUsage.heapUsed / 1024 / 1024), // MB
+                total: Math.round(memoryUsage.heapTotal / 1024 / 1024), // MB
+                rss: Math.round(memoryUsage.rss / 1024 / 1024), // MB
+                external: Math.round(memoryUsage.external / 1024 / 1024) // MB
+            },
+            uptime: {
+                seconds: Math.floor(uptime),
+                formatted: this.formatDuration(uptime * 1000)
+            },
+            errorRate: this.systemMetrics.totalUpdates > 0 ? 
+                (this.systemMetrics.errors / this.systemMetrics.totalUpdates) * 100 : 0,
+            lastErrorTime: this.errorLog.length > 0 ? 
+                this.errorLog[this.errorLog.length - 1].timestamp : null
+        };
+    }
+    
+    /**
      * Record a device update
      * @param {Object} update - The device update object
      * @param {number} processingTime - Time taken to process the update in ms
      */
     recordDeviceUpdate(update, processingTime = null) {
+        // Skip metrics during startup grace period to avoid counting initial device discovery
+        if (this.isInStartupGrace) {
+            this.logManager.logDebug(`Skipping metrics during startup grace period for device ${update.name || 'Unknown'} (${update.deviceid})`);
+            return;
+        }
+        
         const now = Date.now();
         const deviceId = update.deviceid;
         const deviceName = update.name || 'Unknown Device';
@@ -118,27 +382,64 @@ export class MetricsManager {
         this.attributeMetrics.set(attribute, globalAttrCount + 1);
         
         // Track device activity for top devices calculation
-        this.deviceActivityWindow.push({
+        const activityEntry = {
             deviceId: deviceId,
             deviceName: deviceName,
             attribute: attribute,
-            timestamp: now
-        });
+            timestamp: now,
+            type: 'event',
+            value: update.value
+        };
+        
+        this.deviceActivityWindow.push(activityEntry);
         
         // Maintain window size
         if (this.deviceActivityWindow.length > this.activityWindowSize) {
             this.deviceActivityWindow.shift();
         }
         
+        // Add to device history for modal display
+        this.addToDeviceHistory(deviceId, {
+            ...activityEntry,
+            processingTime: processingTime
+        });
+        
         // Update current hour metrics
         this.updateHourlyMetrics();
     }
     
     /**
-     * Record an error
+     * Record an error with context
+     * @param {Object} errorData - Error information
+     * @param {string} errorData.message - Error message
+     * @param {string} errorData.type - Error type/category
+     * @param {string} errorData.deviceId - Device ID if device-related
+     * @param {string} errorData.deviceName - Device name if device-related
+     * @param {string} errorData.stack - Stack trace
+     * @param {Object} errorData.context - Additional context
      */
-    recordError() {
+    recordError(errorData = {}) {
         this.systemMetrics.errors++;
+        
+        const errorEntry = {
+            timestamp: Date.now(),
+            message: errorData.message || 'Unknown error',
+            type: errorData.type || 'General',
+            deviceId: errorData.deviceId || null,
+            deviceName: errorData.deviceName || null,
+            stack: errorData.stack || null,
+            context: errorData.context || {},
+            id: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        };
+        
+        this.errorLog.push(errorEntry);
+        
+        // Maintain error log size
+        if (this.errorLog.length > this.maxErrorLogSize) {
+            this.errorLog.shift();
+        }
+        
+        this.logManager.logDebug(`Recorded error: ${errorEntry.type} - ${errorEntry.message}`);
     }
     
     /**
@@ -163,25 +464,67 @@ export class MetricsManager {
     /**
      * Get top devices by activity
      * @param {number} limit - Number of top devices to return
+     * @param {number} windowHours - Time window in hours (default 1)
      * @returns {Array} Array of top devices with their metrics
      */
-    getTopDevices(limit = 10) {
+    getTopDevices(limit = 10, windowHours = 1) {
         const deviceCounts = new Map();
         const now = Date.now();
-        const windowStart = now - (60 * 60 * 1000); // Last hour
+        const windowStart = now - (windowHours * 60 * 60 * 1000);
         
-        // Count recent activity
-        this.deviceActivityWindow.forEach(activity => {
+        // Count recent activity from both events and commands
+        const allActivity = [...this.deviceActivityWindow, ...this.commandActivityWindow];
+        
+        allActivity.forEach(activity => {
             if (activity.timestamp > windowStart) {
                 const count = deviceCounts.get(activity.deviceId) || { 
                     deviceId: activity.deviceId, 
                     deviceName: activity.deviceName, 
-                    count: 0 
+                    count: 0,
+                    events: 0,
+                    commands: 0
                 };
                 count.count++;
+                if (activity.type === 'event') {
+                    count.events++;
+                } else if (activity.type === 'command') {
+                    count.commands++;
+                }
                 deviceCounts.set(activity.deviceId, count);
             }
         });
+        
+        // If window is too large for activity window, also check stored device metrics
+        if (windowHours > 1) {
+            for (const [deviceId, metrics] of this.deviceMetrics) {
+                if (!deviceCounts.has(deviceId) && metrics.lastUpdate > windowStart) {
+                    deviceCounts.set(deviceId, {
+                        deviceId: deviceId,
+                        deviceName: metrics.deviceName,
+                        count: Math.ceil(metrics.totalUpdates / 24), // Estimate activity
+                        events: Math.ceil(metrics.totalUpdates / 24),
+                        commands: 0
+                    });
+                }
+            }
+            
+            // Add command data for longer windows
+            for (const [deviceId, commandMetrics] of this.commandMetrics) {
+                const existing = deviceCounts.get(deviceId);
+                if (existing && commandMetrics.lastCommand > windowStart) {
+                    existing.commands += Math.ceil(commandMetrics.totalCommands / 24); // Estimate
+                    existing.count += existing.commands;
+                } else if (!existing && commandMetrics.lastCommand > windowStart) {
+                    deviceCounts.set(deviceId, {
+                        deviceId: deviceId,
+                        deviceName: commandMetrics.deviceName,
+                        count: Math.ceil(commandMetrics.totalCommands / 24),
+                        events: 0,
+                        commands: Math.ceil(commandMetrics.totalCommands / 24)
+                    });
+                }
+            }
+        }
         
         // Sort and return top devices
         return Array.from(deviceCounts.values())
@@ -189,11 +532,15 @@ export class MetricsManager {
             .slice(0, limit)
             .map(device => {
                 const metrics = this.deviceMetrics.get(device.deviceId);
+                const commandMetrics = this.commandMetrics.get(device.deviceId);
                 return {
                     ...device,
-                    totalUpdates: metrics ? metrics.totalUpdates : device.count,
+                    totalUpdates: metrics ? metrics.totalUpdates : device.events,
+                    totalCommands: commandMetrics ? commandMetrics.totalCommands : device.commands,
                     avgProcessingTime: metrics ? metrics.avgProcessingTime : 0,
-                    lastUpdate: metrics ? metrics.lastUpdate : null
+                    avgResponseTime: commandMetrics ? commandMetrics.avgResponseTime : 0,
+                    lastUpdate: metrics ? metrics.lastUpdate : null,
+                    lastCommand: commandMetrics ? commandMetrics.lastCommand : null
                 };
             });
     }
@@ -248,30 +595,90 @@ export class MetricsManager {
         return {
             system: {
                 totalUpdates: this.systemMetrics.totalUpdates,
+                totalCommands: this.systemMetrics.totalCommands,
                 errors: this.systemMetrics.errors,
                 uptime: this.formatDuration(uptime),
                 uptimeMs: uptime,
                 uptimeSinceReset: this.formatDuration(uptimeSince),
                 uptimeSinceResetMs: uptimeSince,
                 updatesPerMinute: this.calculateUpdatesPerMinute(),
+                commandsPerMinute: this.calculateCommandsPerMinute(),
+                isInStartupGrace: this.isInStartupGrace,
+                startupGracePeriod: this.startupGracePeriod,
                 ...this.systemMetrics.queueMetrics
             },
             processing: this.getProcessingStats(),
-            topDevices: this.getTopDevices(10),
+            commands: this.getCommandStats(),
+            systemHealth: this.getSystemHealth(),
+            topDevices: this.getTopDevices(10, 1), // Default 1 hour window
             attributes: this.getAttributeStats(),
-            devices: Array.from(this.deviceMetrics.values()).map(device => ({
-                deviceId: device.deviceId,
-                deviceName: device.deviceName,
-                totalUpdates: device.totalUpdates,
-                avgProcessingTime: device.avgProcessingTime,
-                lastUpdate: device.lastUpdate,
-                attributes: Array.from((device.attributes instanceof Map ? device.attributes : new Map(Object.entries(device.attributes || {}))).entries()).map(([attr, count]) => ({
-                    attribute: attr,
-                    count: count
-                }))
-            })),
+            devices: Array.from(this.deviceMetrics.values()).map(device => {
+                const commandData = this.commandMetrics.get(device.deviceId) || {};
+                return {
+                    deviceId: device.deviceId,
+                    deviceName: device.deviceName,
+                    totalUpdates: device.totalUpdates,
+                    totalCommands: commandData.totalCommands || 0,
+                    commandSuccessRate: commandData.totalCommands > 0 ? 
+                        ((commandData.successfulCommands || 0) / commandData.totalCommands) * 100 : 0,
+                    avgProcessingTime: device.avgProcessingTime,
+                    avgResponseTime: commandData.avgResponseTime || 0,
+                    lastUpdate: device.lastUpdate,
+                    lastCommand: commandData.lastCommand || null,
+                    attributes: Array.from((device.attributes instanceof Map ? device.attributes : new Map(Object.entries(device.attributes || {}))).entries()).map(([attr, count]) => ({
+                        attribute: attr,
+                        count: count
+                    }))
+                };
+            }),
+            errors: this.getErrorLog({ limit: 50 }),
+            errorStats: this.getErrorStats(),
             hourly: this.getHourlyStats(),
             timestamp: new Date().toISOString()
+        };
+    }
+    
+    /**
+     * Calculate commands per minute
+     * @private
+     */
+    calculateCommandsPerMinute() {
+        const uptime = Date.now() - this.systemMetrics.lastResetTime;
+        const minutes = uptime / 60000;
+        if (minutes < 1) return this.systemMetrics.totalCommands;
+        return Math.round(this.systemMetrics.totalCommands / minutes);
+    }
+    
+    /**
+     * Get error statistics
+     * @returns {Object} Error stats
+     */
+    getErrorStats() {
+        const errorTypes = new Map();
+        const deviceErrors = new Map();
+        
+        this.errorLog.forEach(error => {
+            // Count by type
+            const typeCount = errorTypes.get(error.type) || 0;
+            errorTypes.set(error.type, typeCount + 1);
+            
+            // Count by device
+            if (error.deviceId) {
+                const deviceCount = deviceErrors.get(error.deviceId) || {
+                    deviceId: error.deviceId,
+                    deviceName: error.deviceName,
+                    count: 0
+                };
+                deviceCount.count++;
+                deviceErrors.set(error.deviceId, deviceCount);
+            }
+        });
+        
+        return {
+            totalErrors: this.errorLog.length,
+            recentErrors: this.errorLog.filter(e => Date.now() - e.timestamp < 3600000).length, // Last hour
+            errorTypes: Array.from(errorTypes.entries()).map(([type, count]) => ({ type, count })),
+            deviceErrors: Array.from(deviceErrors.values())
         };
     }
     
@@ -290,8 +697,37 @@ export class MetricsManager {
                     ...saved.systemMetrics,
                     startTime: saved.systemMetrics.startTime || Date.now(),
                     // Keep last reset time from saved data
-                    lastResetTime: saved.systemMetrics.lastResetTime || Date.now()
+                    lastResetTime: saved.systemMetrics.lastResetTime || Date.now(),
+                    totalCommands: saved.systemMetrics.totalCommands || 0
                 };
+            }
+            
+            // Restore command metrics
+            if (saved.commandMetrics) {
+                this.commandMetrics = new Map(saved.commandMetrics);
+                // Ensure each command's commands map is a Map
+                for (const [deviceId, commandData] of this.commandMetrics) {
+                    if (commandData.commands && !(commandData.commands instanceof Map)) {
+                        commandData.commands = new Map(Object.entries(commandData.commands));
+                    }
+                }
+            }
+            
+            // Restore error log
+            if (saved.errorLog) {
+                // Keep only recent errors (last 7 days)
+                const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                this.errorLog = saved.errorLog.filter(error => error.timestamp > cutoff);
+            }
+            
+            // Restore device history
+            if (saved.deviceHistory) {
+                this.deviceHistory = new Map(saved.deviceHistory);
+                // Keep only recent history per device
+                const historyLimit = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
+                for (const [deviceId, history] of this.deviceHistory) {
+                    this.deviceHistory.set(deviceId, history.filter(entry => entry.timestamp > historyLimit));
+                }
             }
             
             // Restore device metrics
@@ -348,7 +784,18 @@ export class MetricsManager {
                             deviceData.attributes
                     }
                 ]),
+                commandMetrics: Array.from(this.commandMetrics.entries()).map(([deviceId, commandData]) => [
+                    deviceId,
+                    {
+                        ...commandData,
+                        commands: commandData.commands instanceof Map ?
+                            Object.fromEntries(commandData.commands) :
+                            commandData.commands
+                    }
+                ]),
                 attributeMetrics: Array.from(this.attributeMetrics.entries()),
+                errorLog: this.errorLog,
+                deviceHistory: Array.from(this.deviceHistory.entries()),
                 hourlyMetrics: this.hourlyMetrics,
                 savedAt: Date.now()
             };
@@ -376,6 +823,7 @@ export class MetricsManager {
         this.deviceMetrics.clear();
         this.attributeMetrics.clear();
         this.systemMetrics.totalUpdates = 0;
+        this.systemMetrics.totalCommands = 0;
         this.systemMetrics.errors = 0;
         this.systemMetrics.processingTimes = [];
         this.systemMetrics.lastResetTime = Date.now();
@@ -386,6 +834,10 @@ export class MetricsManager {
             droppedUpdates: 0
         };
         this.deviceActivityWindow = [];
+        this.commandActivityWindow = [];
+        this.commandMetrics.clear();
+        this.errorLog = [];
+        this.deviceHistory.clear();
         this.hourlyMetrics = [];
         
         // Clear persisted data
@@ -500,9 +952,33 @@ export class MetricsManager {
     }
     
     /**
+     * End startup grace period (called when platform finishes initial device discovery)
+     */
+    endStartupGracePeriod() {
+        if (this.isInStartupGrace) {
+            this.isInStartupGrace = false;
+            this.startupGracePeriod = Date.now() - this.systemMetrics.startTime; // Calculate actual duration
+            this.logManager.logInfo(`Metrics startup grace period ended after ${Math.round(this.startupGracePeriod / 1000)}s - now tracking all device updates`);
+        }
+    }
+    
+    /**
+     * Check if currently in startup grace period
+     * @returns {boolean}
+     */
+    isInStartupGracePeriod() {
+        return this.isInStartupGrace;
+    }
+    
+    /**
      * Dispose of the metrics manager
      */
     async dispose() {
+        // End startup grace period if still active
+        if (this.isInStartupGrace) {
+            this.endStartupGracePeriod();
+        }
+        
         // Save final metrics before disposing
         await this.saveMetrics();
         

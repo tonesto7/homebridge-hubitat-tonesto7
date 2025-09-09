@@ -571,7 +571,14 @@ export class WebServer {
         // Get metrics API endpoint
         webApp.get("/metrics/api", (req, res) => {
             if (this.metricsManager) {
+                const windowHours = req.query.window ? parseInt(req.query.window) : 1;
                 const metrics = this.metricsManager.getAllMetrics();
+                
+                // Update top devices with specified time window
+                if (windowHours !== 1) {
+                    metrics.topDevices = this.metricsManager.getTopDevices(10, windowHours);
+                }
+                
                 res.json(metrics);
             } else {
                 res.status(503).json({ error: "Metrics not available" });
@@ -594,15 +601,38 @@ export class WebServer {
         });
 
         // Serve metrics dashboard HTML page
-        webApp.get("/metrics", (req, res) => {
-            const ip = this.configManager.getActiveIP();
-            const port = this.configManager.getActivePort();
-            const dashboardHTML = this.getMetricsDashboardHTML(ip, port);
+        webApp.get("/metrics", (_req, res) => {
+            const dashboardHTML = this.getMetricsDashboardHTML();
             res.send(dashboardHTML);
+        });
+        
+        // Get device history for modal
+        webApp.get("/metrics/device-history", (req, res) => {
+            const deviceId = req.query.deviceId;
+            if (!deviceId) {
+                return res.status(400).json({ error: "Device ID required" });
+            }
+            
+            if (this.metricsManager) {
+                const history = this.metricsManager.getDeviceHistory(deviceId);
+                res.json(history);
+            } else {
+                res.status(503).json({ error: "Metrics not available" });
+            }
+        });
+        
+        // Clear error log
+        webApp.post("/metrics/clear-errors", (_req, res) => {
+            if (this.metricsManager) {
+                this.metricsManager.clearErrorLog();
+                res.json({ status: "OK", message: "Error log cleared successfully" });
+            } else {
+                res.status(503).json({ error: "Metrics not available" });
+            }
         });
     }
 
-    getMetricsDashboardHTML(ip, port) {
+    getMetricsDashboardHTML() {
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -799,6 +829,348 @@ export class WebServer {
             cursor: not-allowed;
         }
         
+        .error-console {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+        }
+        
+        .error-console h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .error-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .error-filter {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+        
+        .clear-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .clear-btn:hover {
+            background: #d32f2f;
+        }
+        
+        .error-log {
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .error-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 4px;
+        }
+        
+        .error-time {
+            color: #888;
+            font-size: 11px;
+        }
+        
+        .error-type {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        
+        .error-message {
+            color: #fff;
+            margin-top: 4px;
+        }
+        
+        .error-device {
+            color: #4CAF50;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border: none;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+        .history-entry {
+            border-left: 3px solid #667eea;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .history-entry.command {
+            border-left-color: #4CAF50;
+        }
+        
+        .history-entry.error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        
+        .history-time {
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .history-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .history-type.event {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .history-type.command {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        .history-details {
+            margin-top: 8px;
+            color: #333;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: opacity 0.3s ease;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .time-window-select {
+            float: right;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+        
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .refresh-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .export-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        body.dark-mode {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+        
+        body.dark-mode .header,
+        body.dark-mode .stat-card,
+        body.dark-mode .chart-container,
+        body.dark-mode .devices-table,
+        body.dark-mode .error-console {
+            background: rgba(52, 73, 94, 0.95);
+            color: #ecf0f1;
+        }
+        
+        body.dark-mode .header h1,
+        body.dark-mode .chart-container h2,
+        body.dark-mode .devices-table h2,
+        body.dark-mode .error-console h2 {
+            color: #ecf0f1;
+        }
+        
+        body.dark-mode .stat-card .label {
+            color: #bdc3c7;
+        }
+        
+        body.dark-mode .stat-card .value {
+            color: #ecf0f1;
+        }
+        
+        body.dark-mode th {
+            background: #34495e;
+            color: #ecf0f1;
+            border-bottom-color: #4a6741;
+        }
+        
+        body.dark-mode td {
+            border-bottom-color: #4a6741;
+            color: #ecf0f1;
+        }
+        
+        body.dark-mode tbody tr:hover {
+            background: rgba(52, 73, 94, 0.7);
+        }
+        
+        body.dark-mode .modal-content {
+            background-color: #34495e;
+            color: #ecf0f1;
+        }
+        
+        body.dark-mode .history-entry {
+            background: #2c3e50;
+            color: #ecf0f1;
+        }
+        
+        body.dark-mode .history-entry.error {
+            background: #722f37;
+        }
+        
         @media (max-width: 768px) {
             .grid-2 {
                 grid-template-columns: 1fr;
@@ -813,9 +1185,36 @@ export class WebServer {
 <body>
     <div class="container">
         <div class="header">
-            <button class="refresh-btn" onclick="refreshMetrics()">Refresh</button>
-            <h1>Homebridge Hubitat Metrics</h1>
-            <p class="subtitle">Real-time device update metrics and performance monitoring</p>
+            <div class="controls-bar">
+                <div>
+                    <h1 style="margin: 0;">Homebridge Hubitat Metrics</h1>
+                    <p class="subtitle" style="margin: 5px 0 0 0;">Advanced device monitoring and performance analytics</p>
+                </div>
+                <div class="refresh-controls">
+                    <div class="auto-refresh">
+                        <span>Auto-refresh:</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoRefreshToggle" checked onchange="toggleAutoRefresh()">
+                            <span class="slider"></span>
+                        </label>
+                        <select id="refreshInterval" onchange="updateRefreshInterval()">
+                            <option value="5000">5s</option>
+                            <option value="10000" selected>10s</option>
+                            <option value="30000">30s</option>
+                            <option value="60000">1m</option>
+                        </select>
+                    </div>
+                    <div class="export-controls">
+                        <button class="btn" onclick="exportData('csv')">Export CSV</button>
+                        <button class="btn" onclick="exportData('json')">Export JSON</button>
+                        <label class="toggle-switch" title="Dark Mode">
+                            <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                            <span class="slider"></span>
+                        </label>
+                        <button class="refresh-btn" onclick="refreshMetrics()">Refresh</button>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="stats-grid" id="statsGrid">
@@ -847,7 +1246,15 @@ export class WebServer {
         
         <div class="grid-2">
             <div class="chart-container">
-                <h2>Top 10 Most Active Devices</h2>
+                <h2>
+                    Top 10 Most Active Devices
+                    <select id="timeWindowSelect" class="time-window-select" onchange="updateTimeWindow()">
+                        <option value="1">Last Hour</option>
+                        <option value="6">Last 6 Hours</option>
+                        <option value="24">Last 24 Hours</option>
+                        <option value="168">Last 7 Days</option>
+                    </select>
+                </h2>
                 <div class="chart-wrapper">
                     <canvas id="topDevicesChart"></canvas>
                 </div>
@@ -868,18 +1275,36 @@ export class WebServer {
             </div>
         </div>
         
+        <div class="error-console">
+            <h2>
+                Error Console
+                <div class="error-controls">
+                    <select class="error-filter" id="errorTypeFilter">
+                        <option value="">All Error Types</option>
+                    </select>
+                    <select class="error-filter" id="errorDeviceFilter">
+                        <option value="">All Devices</option>
+                    </select>
+                    <button class="clear-btn" onclick="clearErrorLog()">Clear Errors</button>
+                </div>
+            </h2>
+            <div class="error-log" id="errorLog">
+                Loading error log...
+            </div>
+        </div>
+        
         <div class="grid-2">
             <div class="chart-container">
-                <h2>Processing Time Distribution</h2>
+                <h2>Command Performance</h2>
                 <div class="chart-wrapper small">
-                    <canvas id="processingChart"></canvas>
+                    <canvas id="commandChart"></canvas>
                 </div>
             </div>
             
             <div class="chart-container">
-                <h2>Queue Metrics</h2>
+                <h2>System Health</h2>
                 <div class="chart-wrapper small">
-                    <canvas id="queueChart"></canvas>
+                    <canvas id="systemHealthChart"></canvas>
                 </div>
             </div>
         </div>
@@ -890,18 +1315,33 @@ export class WebServer {
                 <thead>
                     <tr>
                         <th>Device Name</th>
-                        <th>Total Updates</th>
-                        <th>Avg Processing (ms)</th>
-                        <th>Last Update</th>
-                        <th>Activity</th>
+                        <th>Updates</th>
+                        <th>Commands</th>
+                        <th>Success Rate</th>
+                        <th>Avg Response (ms)</th>
+                        <th>Last Activity</th>
+                        <th>History</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td colspan="5" style="text-align: center;">Loading...</td>
+                        <td colspan="7" style="text-align: center;">Loading...</td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+    
+    <!-- Device History Modal -->
+    <div id="deviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Device History</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Loading...
+            </div>
         </div>
     </div>
     
@@ -921,25 +1361,41 @@ export class WebServer {
         }
         
         function updateStats(data) {
+            const commandSuccessRate = data.commands.totalCommands > 0 ? 
+                ((data.commands.totalCommands - data.commands.deviceStats.reduce((sum, d) => sum + d.failedCommands, 0)) / data.commands.totalCommands * 100).toFixed(1) : 0;
+                
             const stats = [
                 { label: 'Total Updates', value: data.system.totalUpdates.toLocaleString() },
-                { label: 'Updates/Min', value: data.system.updatesPerMinute.toLocaleString() },
+                { label: 'Total Commands', value: data.system.totalCommands.toLocaleString() },
                 { label: 'Active Devices', value: data.devices.length.toLocaleString() },
-                { label: 'Avg Processing', value: data.processing.avg.toFixed(2) + ' ms' },
-                { label: 'Queue Size', value: data.system.maxQueueSize.toLocaleString() },
-                { label: 'Errors', value: data.system.errors.toLocaleString() }
+                { label: 'Command Success', value: commandSuccessRate + '%' },
+                { label: 'Memory Usage', value: data.systemHealth.memory.used + 'MB' },
+                { label: 'Recent Errors', value: data.errorStats.recentErrors.toLocaleString() }
             ];
             
             const statsGrid = document.getElementById('statsGrid');
-            statsGrid.innerHTML = stats.map(stat => \`
+            let html = stats.map(stat => \`
                 <div class="stat-card">
                     <div class="label">\${stat.label}</div>
                     <div class="value">\${stat.value}</div>
                 </div>
             \`).join('');
+            
+            // Add startup grace period indicator if active
+            if (data.system.isInStartupGrace) {
+                html += \`
+                    <div class="stat-card" style="border-left: 4px solid #ff9800; background: rgba(255, 152, 0, 0.1);">
+                        <div class="label">Startup Grace</div>
+                        <div class="value">Active</div>
+                        <div class="change" style="color: #ff9800; font-size: 0.8em;">Metrics paused during device discovery</div>
+                    </div>
+                \`;
+            }
+            
+            statsGrid.innerHTML = html;
         }
         
-        function createTopDevicesChart(data) {
+        function createTopDevicesChart(data, windowHours = 1) {
             const ctx = document.getElementById('topDevicesChart').getContext('2d');
             
             if (charts.topDevices) {
@@ -947,16 +1403,25 @@ export class WebServer {
             }
             
             const topDevices = data.topDevices.slice(0, 10);
+            const windowLabel = windowHours === 1 ? 'Last Hour' : 
+                              windowHours === 6 ? 'Last 6 Hours' :
+                              windowHours === 24 ? 'Last 24 Hours' : 'Last 7 Days';
             
             charts.topDevices = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: topDevices.map(d => d.deviceName),
                     datasets: [{
-                        label: 'Updates (Last Hour)',
-                        data: topDevices.map(d => d.count),
+                        label: \`Events (\${windowLabel})\`,
+                        data: topDevices.map(d => d.events || 0),
                         backgroundColor: 'rgba(102, 126, 234, 0.8)',
                         borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: \`Commands (\${windowLabel})\`,
+                        data: topDevices.map(d => d.commands || 0),
+                        backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                        borderColor: 'rgba(76, 175, 80, 1)',
                         borderWidth: 1
                     }]
                 },
@@ -965,11 +1430,16 @@ export class WebServer {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'top'
                         }
                     },
                     scales: {
+                        x: {
+                            stacked: true
+                        },
                         y: {
+                            stacked: true,
                             beginAtZero: true
                         }
                     }
@@ -1065,30 +1535,30 @@ export class WebServer {
             });
         }
         
-        function createProcessingChart(data) {
-            const ctx = document.getElementById('processingChart').getContext('2d');
+        // createProcessingChart function removed - replaced with command performance chart
+        
+        function createCommandChart(data) {
+            const ctx = document.getElementById('commandChart').getContext('2d');
             
-            if (charts.processing) {
-                charts.processing.destroy();
+            if (charts.command) {
+                charts.command.destroy();
             }
             
-            charts.processing = new Chart(ctx, {
-                type: 'bar',
+            const commandData = data.commands;
+            const totalSuccessful = commandData.totalCommands - commandData.deviceStats.reduce((sum, d) => sum + d.failedCommands, 0);
+            const totalFailed = commandData.deviceStats.reduce((sum, d) => sum + d.failedCommands, 0);
+            
+            charts.command = new Chart(ctx, {
+                type: 'doughnut',
                 data: {
-                    labels: ['Min', 'Avg', 'Median', 'P95', 'P99', 'Max'],
+                    labels: ['Successful', 'Failed', 'Avg Response Time (ms)'],
                     datasets: [{
-                        label: 'Processing Time (ms)',
-                        data: [
-                            data.processing.min,
-                            data.processing.avg,
-                            data.processing.median,
-                            data.processing.p95,
-                            data.processing.p99,
-                            data.processing.max
-                        ],
-                        backgroundColor: 'rgba(118, 75, 162, 0.8)',
-                        borderColor: 'rgba(118, 75, 162, 1)',
-                        borderWidth: 1
+                        data: [totalSuccessful, totalFailed, commandData.avgResponseTime],
+                        backgroundColor: [
+                            'rgba(102, 187, 106, 0.8)',
+                            'rgba(244, 67, 54, 0.8)',
+                            'rgba(255, 167, 38, 0.8)'
+                        ]
                     }]
                 },
                 options: {
@@ -1096,42 +1566,39 @@ export class WebServer {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                            position: 'right'
                         }
                     }
                 }
             });
         }
         
-        function createQueueChart(data) {
-            const ctx = document.getElementById('queueChart').getContext('2d');
+        function createSystemHealthChart(data) {
+            const ctx = document.getElementById('systemHealthChart').getContext('2d');
             
-            if (charts.queue) {
-                charts.queue.destroy();
+            if (charts.systemHealth) {
+                charts.systemHealth.destroy();
             }
             
-            charts.queue = new Chart(ctx, {
+            const health = data.systemHealth;
+            
+            charts.systemHealth = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Queued', 'Processed', 'Dropped', 'Max Size'],
+                    labels: ['Memory Used', 'Memory Total', 'Error Rate %', 'Uptime (hrs)'],
                     datasets: [{
-                        label: 'Count',
+                        label: 'System Health',
                         data: [
-                            data.system.totalQueued,
-                            data.system.totalProcessed,
-                            data.system.droppedUpdates,
-                            data.system.maxQueueSize
+                            health.memory.used,
+                            health.memory.total,
+                            health.errorRate,
+                            health.uptime.seconds / 3600
                         ],
                         backgroundColor: [
+                            'rgba(244, 143, 177, 0.8)',
                             'rgba(66, 165, 245, 0.8)',
-                            'rgba(102, 187, 106, 0.8)',
-                            'rgba(244, 67, 54, 0.8)',
-                            'rgba(255, 167, 38, 0.8)'
+                            health.errorRate > 5 ? 'rgba(244, 67, 54, 0.8)' : 'rgba(102, 187, 106, 0.8)',
+                            'rgba(102, 126, 234, 0.8)'
                         ]
                     }]
                 },
@@ -1155,27 +1622,138 @@ export class WebServer {
         function updateDevicesTable(data) {
             const tbody = document.querySelector('#devicesTable tbody');
             const devices = data.devices.sort((a, b) => b.totalUpdates - a.totalUpdates);
-            const maxUpdates = Math.max(...devices.map(d => d.totalUpdates));
             
             tbody.innerHTML = devices.map(device => {
-                const lastUpdate = device.lastUpdate ? 
-                    new Date(device.lastUpdate).toLocaleString() : 'Never';
-                const percentage = (device.totalUpdates / maxUpdates) * 100;
+                const lastActivity = Math.max(device.lastUpdate || 0, device.lastCommand || 0);
+                const lastActivityStr = lastActivity ? new Date(lastActivity).toLocaleString() : 'Never';
                 
                 return \`
                     <tr>
                         <td>\${device.deviceName}</td>
                         <td>\${device.totalUpdates.toLocaleString()}</td>
-                        <td>\${device.avgProcessingTime.toFixed(2)} ms</td>
-                        <td>\${lastUpdate}</td>
+                        <td>\${device.totalCommands.toLocaleString()}</td>
+                        <td>\${device.commandSuccessRate.toFixed(1)}%</td>
+                        <td>\${device.avgResponseTime.toFixed(2)} ms</td>
+                        <td>\${lastActivityStr}</td>
                         <td>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: \${percentage}%"></div>
-                            </div>
+                            <button class="btn" onclick="showDeviceHistory('\${device.deviceId}', '\${device.deviceName}')">
+                                History
+                            </button>
                         </td>
                     </tr>
                 \`;
             }).join('');
+        }
+        
+        function updateErrorConsole(data) {
+            const errorLog = document.getElementById('errorLog');
+            const typeFilter = document.getElementById('errorTypeFilter');
+            const deviceFilter = document.getElementById('errorDeviceFilter');
+            
+            // Update filter options
+            const types = [...new Set(data.errorStats.errorTypes.map(e => e.type))];
+            const currentTypeValue = typeFilter.value;
+            typeFilter.innerHTML = '<option value="">All Error Types</option>' + 
+                types.map(type => \`<option value="\${type}" \${type === currentTypeValue ? 'selected' : ''}>\${type}</option>\`).join('');
+            
+            const devices = data.errorStats.deviceErrors;
+            const currentDeviceValue = deviceFilter.value;
+            deviceFilter.innerHTML = '<option value="">All Devices</option>' + 
+                devices.map(device => \`<option value="\${device.deviceId}" \${device.deviceId === currentDeviceValue ? 'selected' : ''}>\${device.deviceName}</option>\`).join('');
+            
+            // Filter and display errors
+            let filteredErrors = data.errors;
+            
+            if (typeFilter.value) {
+                filteredErrors = filteredErrors.filter(error => error.type === typeFilter.value);
+            }
+            
+            if (deviceFilter.value) {
+                filteredErrors = filteredErrors.filter(error => error.deviceId === deviceFilter.value);
+            }
+            
+            if (filteredErrors.length === 0) {
+                errorLog.innerHTML = '<div style="color: #888; text-align: center; margin-top: 50px;">No errors found</div>';
+                return;
+            }
+            
+            errorLog.innerHTML = filteredErrors.map(error => \`
+                <div class="error-entry">
+                    <div class="error-time">\${new Date(error.timestamp).toLocaleString()}</div>
+                    <div class="error-type">[\${error.type}]</div>
+                    <div class="error-message">\${error.message}</div>
+                    \${error.deviceName ? \`<div class="error-device">Device: \${error.deviceName}</div>\` : ''}
+                </div>
+            \`).join('');
+            
+            // Scroll to bottom
+            errorLog.scrollTop = errorLog.scrollHeight;
+        }
+        
+        async function showDeviceHistory(deviceId, deviceName) {
+            const modal = document.getElementById('deviceModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalTitle.textContent = \`History: \${deviceName}\`;
+            modalBody.innerHTML = 'Loading device history...';
+            modal.style.display = 'block';
+            
+            try {
+                const response = await fetch(\`/metrics/device-history?deviceId=\${deviceId}\`);
+                const history = await response.json();
+                
+                if (history.length === 0) {
+                    modalBody.innerHTML = '<div style="text-align: center; color: #888; margin-top: 50px;">No history available for this device</div>';
+                    return;
+                }
+                
+                modalBody.innerHTML = history.map(entry => \`
+                    <div class="history-entry \${entry.type}">
+                        <div class="history-time">\${new Date(entry.timestamp).toLocaleString()}</div>
+                        <span class="history-type \${entry.type}">\${entry.type.toUpperCase()}</span>
+                        <div class="history-details">
+                            \${entry.type === 'event' ? \`
+                                <strong>\${entry.attribute}:</strong> \${entry.value}
+                                \${entry.processingTime ? \`<br><small>Processing time: \${entry.processingTime}ms</small>\` : ''}
+                            \` : \`
+                                <strong>Command:</strong> \${entry.command}
+                                \${entry.parameters && entry.parameters.length > 0 ? \`<br><strong>Parameters:</strong> \${entry.parameters.join(', ')}\` : ''}
+                                \${entry.responseTime ? \`<br><small>Response time: \${entry.responseTime}ms</small>\` : ''}
+                                <br><span style="color: \${entry.success ? '#4CAF50' : '#f44336'}">\${entry.success ? 'Success' : 'Failed' + (entry.error ? ': ' + entry.error : '')}</span>
+                            \`}
+                        </div>
+                    </div>
+                \`).join('');
+            } catch (error) {
+                modalBody.innerHTML = '<div style="text-align: center; color: #f44336; margin-top: 50px;">Error loading device history</div>';
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('deviceModal').style.display = 'none';
+        }
+        
+        async function clearErrorLog() {
+            if (!confirm('Are you sure you want to clear all error logs?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/metrics/clear-errors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                if (response.ok) {
+                    await updateDashboard();
+                } else {
+                    alert('Failed to clear error log');
+                }
+            } catch (error) {
+                alert('Error clearing error log: ' + error.message);
+            }
         }
         
         async function updateDashboard() {
@@ -1188,12 +1766,13 @@ export class WebServer {
             metricsData = data;
             
             updateStats(data);
-            createTopDevicesChart(data);
+            createTopDevicesChart(data, currentTimeWindow);
             createAttributesChart(data);
             createTimelineChart(data);
-            createProcessingChart(data);
-            createQueueChart(data);
+            createCommandChart(data);
+            createSystemHealthChart(data);
             updateDevicesTable(data);
+            updateErrorConsole(data);
         }
         
         async function refreshMetrics() {
@@ -1210,8 +1789,149 @@ export class WebServer {
         // Initial load
         updateDashboard();
         
-        // Auto-refresh every 10 seconds for more responsive updates
-        setInterval(updateDashboard, 10000);
+        // Auto-refresh configuration
+        let autoRefreshInterval;
+        let currentRefreshRate = 10000; // 10 seconds
+        let currentTimeWindow = 1; // 1 hour
+        
+        // Start auto-refresh
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(updateDashboard, currentRefreshRate);
+        }
+        
+        // Initial auto-refresh
+        startAutoRefresh();
+        
+        // UI Control Functions
+        function toggleAutoRefresh() {
+            const toggle = document.getElementById('autoRefreshToggle');
+            if (toggle.checked) {
+                startAutoRefresh();
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        }
+        
+        function updateRefreshInterval() {
+            const select = document.getElementById('refreshInterval');
+            currentRefreshRate = parseInt(select.value);
+            const toggle = document.getElementById('autoRefreshToggle');
+            if (toggle.checked) {
+                startAutoRefresh();
+            }
+        }
+        
+        function updateTimeWindow() {
+            const select = document.getElementById('timeWindowSelect');
+            currentTimeWindow = parseInt(select.value);
+            
+            // Fetch updated data with new time window
+            fetchMetricsWithTimeWindow(currentTimeWindow).then(data => {
+                if (data) {
+                    metricsData = data;
+                    createTopDevicesChart(data, currentTimeWindow);
+                }
+            });
+        }
+        
+        async function fetchMetricsWithTimeWindow(windowHours) {
+            try {
+                const response = await fetch(\`/metrics/api?window=\${windowHours}\`);
+                if (!response.ok) throw new Error('Failed to fetch metrics');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching metrics with time window:', error);
+                return null;
+            }
+        }
+        
+        function toggleDarkMode() {
+            const toggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+            
+            if (toggle.checked) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        }
+        
+        function exportData(format) {
+            if (!metricsData) {
+                alert('No data available to export');
+                return;
+            }
+            
+            let filename, content, mimeType;
+            
+            if (format === 'csv') {
+                filename = \`metrics_\${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv\`;
+                content = convertToCSV(metricsData);
+                mimeType = 'text/csv';
+            } else {
+                filename = \`metrics_\${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json\`;
+                content = JSON.stringify(metricsData, null, 2);
+                mimeType = 'application/json';
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function convertToCSV(data) {
+            let csv = 'Device Name,Total Updates,Total Commands,Success Rate %,Avg Processing Time (ms),Avg Response Time (ms),Last Update,Last Command\\n';
+            
+            data.devices.forEach(device => {
+                const lastUpdate = device.lastUpdate ? new Date(device.lastUpdate).toISOString() : '';
+                const lastCommand = device.lastCommand ? new Date(device.lastCommand).toISOString() : '';
+                csv += \`"\${device.deviceName}",\${device.totalUpdates},\${device.totalCommands},\${device.commandSuccessRate.toFixed(2)},\${device.avgProcessingTime.toFixed(2)},\${device.avgResponseTime.toFixed(2)},"\${lastUpdate}","\${lastCommand}"\\n\`;
+            });
+            
+            return csv;
+        }
+        
+        // Modal event handlers
+        window.onclick = function(event) {
+            const modal = document.getElementById('deviceModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        // Initialize UI state from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dark mode
+            const darkMode = localStorage.getItem('darkMode');
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            if (darkMode === 'enabled') {
+                darkModeToggle.checked = true;
+                document.body.classList.add('dark-mode');
+            }
+            
+            // Error filter event handlers
+            document.getElementById('errorTypeFilter').addEventListener('change', function() {
+                if (metricsData) updateErrorConsole(metricsData);
+            });
+            
+            document.getElementById('errorDeviceFilter').addEventListener('change', function() {
+                if (metricsData) updateErrorConsole(metricsData);
+            });
+        });
     </script>
 </body>
 </html>`;
