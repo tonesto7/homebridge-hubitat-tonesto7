@@ -1,12 +1,14 @@
 ## [3.0.1] - 2025-09-08
 
-- [NEW] **Smart Health Monitoring**: Added intelligent health checks that automatically detect and recover from connection issues
+- [NEW] **Advanced Metrics & Analytics Dashboard**: Complete metrics collection system with persistent storage, command tracking, device history, and real-time monitoring
 - [NEW] **Better Performance**: Implemented device update batching and improved connection pooling for faster, more reliable communication
-- [NEW] **Enhanced Reliability**: Added circuit breaker protection to prevent cascading failures and improve overall stability
+- [UPDATE] **Queue System Optimization**: Switched from persistent file-based queue to memory-based queue for better performance and reliability
 - [UPDATE] **Health Check Timing**: Synchronized monitoring intervals with Hubitat app for better coordination
-- [UPDATE] **Connection Management**: Improved connection handling with better keep-alive settings and increased capacity
-- [FIX] **Memory Warnings**: Removed unnecessary memory usage alerts that were causing false warnings
-- [FIX] **Connection Issues**: Resolved stability problems that could cause intermittent communication failures
+- [FIX] **Water Valve Accessory**: Fixed issue where switch service was incorrectly assigned when device has Valve capability
+- [FIX] **Memory Management**: Optimized queue cleanup and removed old persistent queue files for better resource usage
+- [FIX] **Platform Registration**: Fixed the issue where the platform was not registering correctly as a dynamic platform which prevented device changes after startup
+- [REMOVE] **Legacy Queue Implementation**: Cleaned up old persistent queue system files and switched to memory-based approach
+
 
 ## [3.0.0] - 2025-09-07
 
