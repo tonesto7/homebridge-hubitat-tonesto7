@@ -24,12 +24,7 @@ V2 of this plugin is a complete rewrite of the homebridge-hubitat-tonesto7 plugi
 ![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/tonesto7/homebridge-hubitat-tonesto7?label=Latest%20Hubitat%20App%20Version&sort=semver&style=for-the-badge)
 
 ## Credits
-Big thanks for @Areson for his help/motivation in rewriting this.
-Another shout out to @nh.schotfam for your help on the optimizations for hubitat.
-
-I also wanted to mention the following projects I referenced for inspiration for a few minor items and fixes:
-* [homebridge-wink3](https://github.com/sibartlett/homebridge-wink3)
-* [homebridge-hubconnect-hubitat](https://github.com/danTapps/homebridge-hubitat-hubconnect)
+Another shout-out to @nh.schotfam for your help on the optimizations for hubitat.
 
 ## Change Log:
 
@@ -44,12 +39,12 @@ I also wanted to mention the following projects I referenced for inspiration for
 #### Direct Updates from Hubitat
  * Device/location events are almost real-time.
  * This option allows the hub to send updates directly to your homebridge-hubitat-tonesto7 installation.
- * The hub must be able to send an http packet to your device so make sure to allow incoming traffic on the applicable port.
+ * The hub must be able to send an HTTP packet to your device, so make sure to allow incoming traffic on the applicable port.
  * The port used for this can be configured by the `direct_port` setting and defaults to `8000`.
- * The program will attempt to determine your IP address automatically, but that can be overridden by `direct_ip` which is useful if you have multiple addresses.
- * The plugin and hubitat will continue to function when you lose internet (with the exception of controlling any cloud based devices).
+ * The program will attempt to determine your IP address automatically, but that can be overridden by `direct_ip`, which is useful if you have multiple addresses.
+ * The plugin and hubitat will continue to function when you lose internet (except for controlling any cloud-based devices).
 
-When properly setup, you should see something like this in your Homebridge startup immediately after the PIN:
+When properly set up, you should see something like this in your Homebridge startup immediately after the PIN:
 ```
 [11/25/2019, 4:44:46 PM] [Hubitat-v2] Devices to Remove: (0) []
 [11/25/2019, 4:44:46 PM] [Hubitat-v2] Devices to Update: (40)
@@ -81,11 +76,11 @@ Installation comes in two parts:
   * Paste in this URL: `https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/apps/homebridge-v2.groovy`
 * Click the **`Import`** button
    * Click `OK` on the confirmation prompt
-* Click **`Save`** and wait for the spining wheel to disappear and the page refreshes
+* Click **`Save`** and wait for the spinning wheel to disappear, and the page will refresh
 * Click on the `OAUTH` button:
    * Click **`Enable OAuth in App`**
    * Click **`Update`** at the bottom.
-   * (If you are upgrading from a previous version of this project, OAuth will likely already be enabled and you can safely disregard this step)
+   * (If you are upgrading from a previous version of this project, OAuth will likely already be enabled, and you can safely disregard this step)
 
 ## 2. Hubitat App Configuration
 
@@ -94,9 +89,9 @@ Installation comes in two parts:
 * **Configuring the App:**
 
    In **`Define Device Types`** there are 8 inputs that can be used to force a device to be discovered as a specific type in HomeKit.
-   **NOTE:** Do not select the same device in more that one input. If you select a device here, do not select that same device in the other device inputs on the previous page.
+   **NOTE:** Do not select the same device in more than one input. If you select a device here, do not select that same device in the other device inputs on the previous page.
 
-   For any other devices you would like to add that weren't added in the previous step, just tap on the input next to an appropriate device group and then select each device you would like to use. (The same devices can be selected in any of the Sensor, Switch, Other inputs)
+   For any other devices you would like to add that weren't added in the previous step, just tap on the input next to an appropriate device group and then select each device you would like to use. (The same devices can be selected in any of the Sensor, Switch, or Other inputs)
     * There are several categories here because of the way Hubitat assigns capabilities. You might not see your device in one, but might in another.
     * Almost all devices contain the Refresh capability and are under the "Other Devices" group.
     * Some sensors don't have a refresh and are under the "Sensor Devices" group.
@@ -111,11 +106,11 @@ Installation comes in two parts:
 
 ## 3. Homebridge Plugin Installation:
 
-***NOTICE:*** I highly recommend using [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x) to manage your homebridge instance, plugin and configs. This will allow you to use the web based form to configure this plugin.
+***NOTICE:*** I highly recommend using [homebridge-config-ui-x](https://github.com/oznu/homebridge-config-ui-x) to manage your homebridge instance, plugin and configs. This will allow you to use the web-based form to configure this plugin.
 
  1. Install homebridge using: `npm i -g homebridge` (For Homebridge Install: [Homebridge Instructions](https://github.com/nfarina/homebridge/blob/master/README.md))
  2. Install Hubitat plugin using: `npm i -g homebridge-hubitat-tonesto7`
- 3. Update your configuration file using the config generator inside the Hubitat App as the template to copy/paste into platform section of the Homebridge config.json.
+ 3. Update your configuration file using the config generator inside the Hubitat App as the template to copy/paste into the platform section of the Homebridge config.json.
 
 ### Config.json Settings Example
 
@@ -193,20 +188,20 @@ Installation comes in two parts:
 
  * __<u>`adaptive_lighting_offset`</u>__  _Optional_ | _Default: `0`_
     
-    Defines a custom temperature adjustment factor. This can be used to define a linear deviation from the HomeKit Controller defined ColorTemperature schedule. For example supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.
+    Defines a custom temperature adjustment factor. This can be used to define a linear deviation from the HomeKit Controller-defined ColorTemperature schedule. For example, supplying a value of -10 will reduce the ColorTemperature, which is calculated from the transition schedule, by 10 mired for every change.
 
  * __<u>`consider_fan_by_name`</u>__  _Optional_ | _Default: `true`_
     
-    By default the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.
+    By default, the plugin will identify a fan device by using a devices label, and whether it has Fan in the label.
 
  * __<u>`consider_light_by_name`</u>__  _Optional_ | _Default: `false`_
     
-    By default the plugin will identify a light device by using a devices label, and whether it has Light in the label.
+    By defaul,t the plugin will identify a light device by using a devices label, and whether it has Light in the label.
 
  * __<u>`excluded_capabilities`</u>__ _Optional_ | _Default: '{}' (None)_
 
     NOTICE: The Hubitat app offers many inputs to help filter out device capabilities. Only use this if the available inputs don't meet your needs. Specify the Hubitat device by ID and the associated capabilities you want the plugin to ignore.
-    This prevents a Hubitat device creating unwanted or redundant HomeKit accessories.
+    This prevents a Hubitat device from creating unwanted or redundant HomeKit accessories.
 
  * __<u>`logConfig`</u>__ _Optional_
     
@@ -221,7 +216,7 @@ Installation comes in two parts:
     Logs device event changes received from Hubitat.
 
 
-## Frequently Asked Question:
+## Frequently Asked Questions:
 
  ***Q:*** Can this support Axis Blinds?
 ***A:*** Maybe, it can support any device that has the windowShade capability and/or level attributes.
@@ -236,3 +231,4 @@ Installation comes in two parts:
 </p>
 
 [![PayPal Donations](https://img.shields.io/badge/donate-paypal-green.svg?style=for-the-badge)](https://www.paypal.com/donate?hosted_button_id=5GMA6C3RTLXH6)
+
