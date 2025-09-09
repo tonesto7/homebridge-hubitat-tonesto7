@@ -72,7 +72,7 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "3.0.1",
+    "version": "3.0.2",
     "changelog": "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG.md",
     "synk": true
 }
