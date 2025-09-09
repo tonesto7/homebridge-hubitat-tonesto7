@@ -1708,7 +1708,10 @@ export class WebServer {
                     return;
                 }
                 
-                modalBody.innerHTML = history.map(entry => \`
+                // Sort history by timestamp with newest first
+                const sortedHistory = history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                modalBody.innerHTML = sortedHistory.map(entry => \`
                     <div class="history-entry \${entry.type}">
                         <div class="history-time">\${new Date(entry.timestamp).toLocaleString()}</div>
                         <span class="history-type \${entry.type}">\${entry.type.toUpperCase()}</span>
