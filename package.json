@@ -67,12 +67,13 @@
     "preferGlobal": true,
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/https://github.com/tonesto7/homebridge-hubitat-tonesto7.git"
+        "url": "https://github.com/tonesto7/homebridge-hubitat-tonesto7.git"
     },
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
     "version": "3.0.3",
+    "directory": "Homebridge Hubitat (Tonesto7)",
     "changelog": "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG.md",
     "synk": true
 }
