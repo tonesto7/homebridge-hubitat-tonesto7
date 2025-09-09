@@ -35,7 +35,7 @@ export class LogManager {
 
         try {
             return `${message} ${args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg)).join(" ")}`;
-        } catch (e) {
+        } catch (_) {
             return `${message} ${args.join(" ")}`;
         }
     }
@@ -60,10 +60,6 @@ export class LogManager {
         } else {
             this.log.debug(this.formatMessage(message, ...args));
         }
-    }
-
-    logSuccess(message, ...args) {
-        this.log.info(chalk.green(this.formatMessage(message, ...args)));
     }
 
     // Additional color methods not provided by Homebridge

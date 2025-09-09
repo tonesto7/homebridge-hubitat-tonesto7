@@ -24,7 +24,7 @@ export class Light {
 
         // Configure effects if supported
         if (accessory.hasAttribute("lightEffects") && accessory.hasCommand("setEffect") && this.config.features.led_effects.enabled) {
-            this._configureEffects(accessory, devData);
+            this._configureEffects(accessory);
         }
 
         return accessory;
@@ -83,7 +83,10 @@ export class Light {
             const offset = this.config.features.adaptive_lighting.offset || 0;
             const controlMode = this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC;
             if (svc) {
-                accessory.adaptiveLightingController = new this.api.hap.AdaptiveLightingController(svc, { controllerMode: controlMode, customTemperatureAdjustment: offset });
+                accessory.adaptiveLightingController = new this.api.hap.AdaptiveLightingController(svc, {
+                    controllerMode: controlMode,
+                    customTemperatureAdjustment: offset,
+                });
                 accessory.adaptiveLightingController.on("update", (evt) => {
                     this.logManager.logDebug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
                 });
@@ -149,7 +152,7 @@ export class Light {
         }
     };
 
-    _configureEffects(accessory, devData) {
+    _configureEffects(accessory) {
         const televisionService = accessory.getOrAddService(this.Service.Television, accessory.displayName + " Effects");
 
         // Basic TV characteristics
@@ -225,9 +228,18 @@ export class Light {
         const characteristics = [
             { char: this.Characteristic.Identifier, value: parseInt(effectNumber) },
             { char: this.Characteristic.ConfiguredName, value: effectName },
-            { char: this.Characteristic.IsConfigured, value: this.Characteristic.IsConfigured.CONFIGURED },
-            { char: this.Characteristic.InputSourceType, value: this.Characteristic.InputSourceType.APPLICATION },
-            { char: this.Characteristic.CurrentVisibilityState, value: this.Characteristic.CurrentVisibilityState.SHOWN },
+            {
+                char: this.Characteristic.IsConfigured,
+                value: this.Characteristic.IsConfigured.CONFIGURED,
+            },
+            {
+                char: this.Characteristic.InputSourceType,
+                value: this.Characteristic.InputSourceType.APPLICATION,
+            },
+            {
+                char: this.Characteristic.CurrentVisibilityState,
+                value: this.Characteristic.CurrentVisibilityState.SHOWN,
+            },
             { char: this.Characteristic.Name, value: effectName },
         ];
 

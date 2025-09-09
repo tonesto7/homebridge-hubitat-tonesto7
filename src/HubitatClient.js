@@ -3,7 +3,7 @@
  * @description Manages communication with the Hubitat hub and handles command batching
  */
 
-import { platformName, platformDesc, pluginVersion } from "./StaticConst.js";
+import { platformName, pluginVersion } from "./StaticConst.js";
 import axios from "axios";
 import http from "http";
 import https from "https";
@@ -19,6 +19,7 @@ export default class HubitatClient {
      * @param {Function} params.getAccessoryCount - Function to get accessory count
      */
     constructor(platform) {
+        this.platform = platform;
         this.logManager = platform.logManager;
         this.versionManager = platform.versionManager;
         this.configManager = platform.configManager;
@@ -57,21 +58,51 @@ export default class HubitatClient {
             this.logManager.logDebug("HubitatClient config updated");
         });
 
-        // Configure axios with connection pooling
-        this.axiosInstance = axios.create({
-            httpAgent: new http.Agent({
-                keepAlive: true,
-                maxSockets: 10,
-                keepAliveMsecs: 1000,
-                timeout: 30000,
-            }),
-            httpsAgent: new https.Agent({
-                keepAlive: true,
-                maxSockets: 10,
-                keepAliveMsecs: 1000,
-                timeout: 30000,
-            }),
+        // Enhanced connection pooling configuration
+        this.connectionConfig = {
+            maxSockets: 20, // Increase from 15
+            maxFreeSockets: 10, // Increase from 5
+            timeout: 30000,
+            keepAliveMsecs: 5000, // Increase from 2000
+            keepAlive: true,
+            maxSocketsPerHost: 15, // Increase from 10
+            // Add connection cleanup
+            freeSocketTimeout: 30000, // Close idle sockets after 30s
+            maxCachedSessions: 10,
+        };
+
+        // Configure axios with enhanced connection pooling
+        this.httpAgent = new http.Agent({
+            ...this.connectionConfig,
+            scheduling: "fifo", // Use FIFO scheduling for fairness
         });
+
+        this.httpsAgent = new https.Agent({
+            ...this.connectionConfig,
+            scheduling: "fifo",
+        });
+
+        this.axiosInstance = axios.create({
+            httpAgent: this.httpAgent,
+            httpsAgent: this.httpsAgent,
+            // Add connection pool monitoring
+            timeout: 30000,
+        });
+
+        // Connection pool monitoring
+        this.connectionStats = {
+            totalRequests: 0,
+            activeConnections: 0,
+            pooledConnections: 0,
+            errors: 0,
+            lastReset: Date.now(),
+        };
+
+        // Monitor connection pool stats every 30 seconds
+        this.statsInterval = setInterval(() => {
+            this.updateConnectionStats();
+            this.cleanupIdleConnections();
+        }, 30000);
 
         // Attribute update batching
         this.attributeUpdateQueue = new Map(); // deviceId -> Set of updates
@@ -85,7 +116,34 @@ export default class HubitatClient {
     }
 
     async handleUpdatePluginStatus() {
-        await this.updatePluginStatus();
+        try {
+            const response = await this.updatePluginStatus();
+
+            // Validate health check response if this is a health check
+            if (this.platform && this.platform.validateHealthCheckResponse) {
+                const validation = this.platform.validateHealthCheckResponse(response);
+
+                if (validation.valid) {
+                    this.platform.healthCheckMonitor.lastSuccessfulCheck = Date.now();
+                    this.platform.healthCheckMonitor.consecutiveFailures = 0;
+                    this.platform.healthCheckMonitor.isHealthy = true;
+                    this.logManager.logDebug("Health check validation successful");
+                } else {
+                    this.platform.healthCheckMonitor.consecutiveFailures++;
+                    this.logManager.logWarn(`Health check validation failed: ${validation.reason}`);
+
+                    if (this.platform.healthCheckMonitor.consecutiveFailures >= this.platform.healthCheckMonitor.maxConsecutiveFailures) {
+                        this.platform.healthCheckMonitor.isHealthy = false;
+                        this.logManager.logError("Plugin marked as unhealthy due to repeated validation failures");
+                    }
+                }
+            }
+        } catch (error) {
+            if (this.platform && this.platform.healthCheckMonitor) {
+                this.platform.healthCheckMonitor.consecutiveFailures++;
+                this.logManager.logError("Health check failed:", error);
+            }
+        }
     }
 
     async handleRegisterForDirectUpdates() {
@@ -97,6 +155,9 @@ export default class HubitatClient {
 
         const commands = this.commandState.queue.splice(0, this.commandState.batchSize);
         this.commandState.batchTimer = null;
+        const startTime = Date.now();
+        let success = false;
+        let error = null;
 
         try {
             const formattedCommands = commands.map((cmd) => ({
@@ -115,11 +176,34 @@ export default class HubitatClient {
                 },
                 timeout: 5000,
             });
-        } catch (error) {
-            this.handleError("processBatch", error);
-            // Fall back to individual commands
+            success = true;
+        } catch (err) {
+            success = false;
+            error = err.message;
+            this.handleError("processBatch", err);
+            // Fall back to individual commands - metrics will be recorded in sendSingleCommand
             for (const cmd of commands) {
                 await this.sendSingleCommand(cmd.devData, cmd.command, cmd.params);
+            }
+            return; // Skip metrics recording as individual commands will handle it
+        }
+
+        // Record batch command metrics only if successful
+        if (success && this.platform.metricsManager) {
+            const responseTime = Date.now() - startTime;
+            // Record metrics for each command in the batch
+            for (const cmd of commands) {
+                this.platform.metricsManager.recordCommand(
+                    {
+                        deviceId: cmd.devData.deviceid,
+                        deviceName: cmd.devData.name,
+                        command: cmd.command,
+                        parameters: cmd.params,
+                    },
+                    responseTime / commands.length,
+                    success,
+                    error,
+                ); // Divide response time among commands
             }
         }
 
@@ -130,6 +214,10 @@ export default class HubitatClient {
     }
 
     async sendSingleCommand(devData, cmd, params) {
+        const startTime = Date.now();
+        let success = false;
+        let error = null;
+
         try {
             await this.makeRequest({
                 method: "post",
@@ -145,10 +233,29 @@ export default class HubitatClient {
                 },
                 timeout: 5000,
             });
+            success = true;
             return true;
-        } catch (error) {
-            this.handleError("sendSingleCommand", error);
+        } catch (err) {
+            success = false;
+            error = err.message;
+            this.handleError("sendSingleCommand", err);
             return false;
+        } finally {
+            // Record command metrics
+            const responseTime = Date.now() - startTime;
+            if (this.platform.metricsManager) {
+                this.platform.metricsManager.recordCommand(
+                    {
+                        deviceId: devData.deviceid,
+                        deviceName: devData.name,
+                        command: cmd,
+                        parameters: params,
+                    },
+                    responseTime,
+                    success,
+                    error,
+                );
+            }
         }
     }
 
@@ -205,14 +312,132 @@ export default class HubitatClient {
 
         this.logManager.logError(`${source} Error | ${errorMessage} | ` + `Details: ${error.response?.data || error.message}`);
         this.logManager.logDebug(`${source} Full Error: ${JSON.stringify(error)}`);
+
+        // Record error in metrics if available
+        if (this.platform.metricsManager) {
+            this.platform.metricsManager.recordError({
+                message: errorMessage,
+                type: source === "sendSingleCommand" || source === "processBatch" ? "Command Error" : source === "getDevices" ? "Device Discovery Error" : source === "updatePluginStatus" ? "Plugin Status Error" : source === "registerForDirectUpdates" ? "Registration Error" : "Client Error",
+                stack: error.stack,
+                context: {
+                    source: source,
+                    statusCode: error.response?.status,
+                    errorCode: error.code,
+                    url: error.config?.url,
+                    method: error.config?.method,
+                },
+            });
+        }
+    }
+
+    updateConnectionStats() {
+        try {
+            // Get HTTP agent stats
+            const httpSockets = this.httpAgent.sockets || {};
+            const httpFreeSockets = this.httpAgent.freeSockets || {};
+            const httpsTotalSockets = this.httpsAgent.sockets || {};
+            const httpsFreeSockets = this.httpsAgent.freeSockets || {};
+
+            let activeSockets = 0;
+            let freeSockets = 0;
+
+            // Count active HTTP sockets
+            Object.values(httpSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    activeSockets += socketArray.length;
+                }
+            });
+
+            // Count free HTTP sockets
+            Object.values(httpFreeSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    freeSockets += socketArray.length;
+                }
+            });
+
+            // Count HTTPS sockets
+            Object.values(httpsTotalSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    activeSockets += socketArray.length;
+                }
+            });
+
+            Object.values(httpsFreeSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    freeSockets += socketArray.length;
+                }
+            });
+
+            this.connectionStats.activeConnections = activeSockets;
+            this.connectionStats.pooledConnections = freeSockets;
+
+            this.logManager.logDebug(`Connection pool stats - Active: ${activeSockets}, Pooled: ${freeSockets}, Total requests: ${this.connectionStats.totalRequests}, Errors: ${this.connectionStats.errors}`);
+        } catch (error) {
+            this.logManager.logError("Error updating connection stats:", error);
+        }
+    }
+
+    getConnectionStats() {
+        return {
+            ...this.connectionStats,
+            uptime: Date.now() - this.connectionStats.lastReset,
+            errorRate: this.connectionStats.totalRequests > 0 ? ((this.connectionStats.errors / this.connectionStats.totalRequests) * 100).toFixed(2) + "%" : "0%",
+        };
+    }
+
+    /**
+     * Clean up idle connections
+     */
+    cleanupIdleConnections() {
+        try {
+            const now = Date.now();
+            const httpSockets = this.httpAgent.sockets || {};
+            const httpsSockets = this.httpsAgent.sockets || {};
+
+            let cleanedCount = 0;
+
+            // Clean up idle HTTP connections
+            Object.values(httpSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    socketArray.forEach((socket) => {
+                        if (socket._idleTimeout && now - socket._idleStart > this.connectionConfig.freeSocketTimeout) {
+                            socket.destroy();
+                            cleanedCount++;
+                        }
+                    });
+                }
+            });
+
+            // Clean up idle HTTPS connections
+            Object.values(httpsSockets).forEach((socketArray) => {
+                if (Array.isArray(socketArray)) {
+                    socketArray.forEach((socket) => {
+                        if (socket._idleTimeout && now - socket._idleStart > this.connectionConfig.freeSocketTimeout) {
+                            socket.destroy();
+                            cleanedCount++;
+                        }
+                    });
+                }
+            });
+
+            if (cleanedCount > 0) {
+                this.logManager.logDebug(`Cleaned up ${cleanedCount} idle connections`);
+            }
+        } catch (error) {
+            this.logManager.logError("Error cleaning up idle connections:", error);
+        }
     }
 
     async makeRequest({ method, endpoint, data = null, additionalHeaders = {}, timeout = 10000 }) {
         const baseUrl = this.config.client.use_cloud ? this.config.client.app_url_cloud : this.config.client.app_url_local;
         const failures = this.retryConfig.failures.get(endpoint) || 0;
 
+        // Increment request counter
+        this.connectionStats.totalRequests++;
+
         if (failures >= this.retryConfig.failureThreshold) {
             if (Date.now() - (this.retryConfig.failures.get(`${endpoint}_time`) || 0) < this.retryConfig.resetTimeout) {
+                this.connectionStats.errors++;
                 throw new Error(`Too many failures for endpoint: ${endpoint}`);
             }
             this.retryConfig.failures.delete(endpoint);
@@ -224,6 +449,8 @@ export default class HubitatClient {
 
         for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
             try {
+                const startTime = Date.now();
+
                 const response = await this.axiosInstance({
                     method,
                     url: `${baseUrl}${this.config.client.app_id}/${endpoint}`,
@@ -231,6 +458,7 @@ export default class HubitatClient {
                     headers: {
                         "Content-Type": "application/json",
                         isLocal: !this.config.client.use_cloud,
+                        Connection: "keep-alive", // Explicitly request keep-alive
                         ...additionalHeaders,
                     },
                     data,
@@ -240,9 +468,16 @@ export default class HubitatClient {
 
                 clearTimeout(timeoutId);
                 this.retryConfig.failures.delete(endpoint);
+
+                const responseTime = Date.now() - startTime;
+                if (responseTime > 5000) {
+                    this.logManager.logWarn(`Slow request to ${endpoint}: ${responseTime}ms`);
+                }
+
                 return response;
             } catch (error) {
                 clearTimeout(timeoutId);
+                this.connectionStats.errors++;
 
                 if (error.name === "AbortError" || error.code === "ECONNABORTED") {
                     error.message = `Request timeout after ${timeout}ms`;
@@ -254,7 +489,10 @@ export default class HubitatClient {
                     throw error;
                 }
 
-                await new Promise((resolve) => setTimeout(resolve, Math.min(this.retryConfig.baseDelay * Math.pow(2, attempt), this.retryConfig.maxDelay)));
+                // Exponential backoff with jitter
+                const backoffDelay = Math.min(this.retryConfig.baseDelay * Math.pow(2, attempt), this.retryConfig.maxDelay);
+                const jitter = Math.random() * 100;
+                await new Promise((resolve) => setTimeout(resolve, backoffDelay + jitter));
             }
         }
     }
@@ -342,6 +580,7 @@ export default class HubitatClient {
     }
 
     dispose() {
+        // Clear command batching timers
         if (this.commandState.batchTimer) {
             clearTimeout(this.commandState.batchTimer);
         }
@@ -351,13 +590,32 @@ export default class HubitatClient {
         for (const timer of this.commandState.timers.values()) {
             clearTimeout(timer);
         }
+
+        // Clear connection monitoring
+        if (this.statsInterval) {
+            clearInterval(this.statsInterval);
+        }
+
+        // Clean up state
         this.commandState.queue = [];
         this.commandState.timers.clear();
         this.commandState.lastExecutions.clear();
         this.attributeUpdateQueue.clear();
         this.appEvts.removeAllListeners();
 
-        // Destroy axios agents
+        // Log final connection stats
+        const finalStats = this.getConnectionStats();
+        this.logManager.logInfo(`Final connection stats - Requests: ${finalStats.totalRequests}, Errors: ${finalStats.errors}, Error rate: ${finalStats.errorRate}`);
+
+        // Destroy connection agents
+        if (this.httpAgent) {
+            this.httpAgent.destroy();
+        }
+        if (this.httpsAgent) {
+            this.httpsAgent.destroy();
+        }
+
+        // Clean up axios instance
         if (this.axiosInstance.defaults.httpAgent) {
             this.axiosInstance.defaults.httpAgent.destroy();
         }

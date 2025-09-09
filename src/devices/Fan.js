@@ -104,7 +104,7 @@ export class Fan {
                 if (Array.isArray(supported) && supported.length) {
                     return supported.filter((speed) => speed !== "off" && speed !== "on" && speed !== "auto");
                 }
-            } catch (e) {
+            } catch (_) {
                 this.logManager.logWarn(`Failed to parse supportedFanSpeeds for ${accessory.displayName}`);
             }
         }
@@ -166,11 +166,13 @@ export class Fan {
                 svc.getCharacteristic(this.Characteristic.Active).updateValue(this._getActiveState(value));
                 svc.getCharacteristic(this.Characteristic.CurrentFanState).updateValue(this._getCurrentFanState(value));
                 break;
-            case "speed": {
-                // const supportedSpeeds = this._getSupportedSpeeds(accessory);
-                // svc.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this._speedToRotationSpeed(value, supportedSpeeds));
-                // break;
-            }
+            case "speed":
+                {
+                    // const supportedSpeeds = this._getSupportedSpeeds(accessory);
+                    // svc.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this._speedToRotationSpeed(value, supportedSpeeds));
+                    // break;
+                }
+                break;
             case "level":
                 svc.getCharacteristic(this.Characteristic.RotationSpeed).updateValue(this._getLevelValue(value));
                 break;
