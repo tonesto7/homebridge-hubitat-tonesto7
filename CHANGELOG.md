@@ -1,3 +1,7 @@
+## [3.0.3] - 2025-09-08
+- [UPDATE] **Metrics Dashboard**: Added aggregated metrics view and instance-specific metrics view
+
+
 ## [3.0.1] - 2025-09-08
 
 - [NEW] **Advanced Metrics & Analytics Dashboard**: Complete metrics collection system with persistent storage, command tracking, device history, and real-time monitoring

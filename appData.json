@@ -2,7 +2,7 @@
     "appDataVer": "1.2",
     "versions": {
         "mainApp": "3.0.1",
-        "plugin": "3.0.1"
+        "plugin": "3.0.3"
     },
     "settings": {
         "disableSentry": true
