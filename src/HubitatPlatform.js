@@ -12,6 +12,7 @@ import { WebServer } from "./WebServer.js";
 import { LogManager } from "./LogManager.js";
 import { VersionManager } from "./VersionManager.js";
 import { AccessoryManager } from "./AccessoryManager.js";
+import { MetricsManager } from "./MetricsManager.js";
 import events from "events";
 
 export default class HubitatPlatform {
@@ -52,14 +53,27 @@ export default class HubitatPlatform {
         this.appEvts.setMaxListeners(50);
         this._cachedAccessories = new Map();
 
+        // Add health check monitoring
+        this.healthCheckMonitor = {
+            lastSuccessfulCheck: null,
+            consecutiveFailures: 0,
+            maxConsecutiveFailures: 3,
+            checkInterval: 300000, // 5 minutes
+            isHealthy: true,
+        };
+
         // Set max listeners for Identify characteristic
         this.api.hap.Characteristic.Identify.setMaxListeners(50);
 
         // Initialize components
         this.client = new HubitatClient(this);
         this.accessoryManager = new AccessoryManager(this);
+        this.metricsManager = new MetricsManager(this);
         this.webServer = new WebServer(this);
         this.unknownCapabilities = [];
+
+        // Initialize health monitoring with client reference
+        this.webServer.initializeHealthMonitoring(this.client);
 
         // Log platform info
         this.logManager.logInfo(`Homebridge Version: ${api.version}`);
@@ -87,6 +101,11 @@ export default class HubitatPlatform {
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
+            
+            // End metrics startup grace period now that initial device discovery is complete
+            if (this.metricsManager) {
+                this.metricsManager.endStartupGracePeriod();
+            }
 
             // Initialize web server
             const webServerResult = await this.webServer.initialize();
@@ -281,10 +300,14 @@ export default class HubitatPlatform {
      * @param {Object} update - The attribute update data
      */
     async processDeviceAttributeUpdate(update) {
+        const startTime = Date.now();
         try {
+            this.logManager.logDebug(`Processing update for device ${update.name || update.deviceid}: ${update.attribute} = ${update.value}`);
+
             const accessory = this.getAccessoryFromCache(update.deviceid);
             if (!accessory) {
                 this.logManager.logWarn(`No accessory found for device ${update.deviceid}`);
+                this.metricsManager.recordError();
                 return false;
             }
 
@@ -304,9 +327,15 @@ export default class HubitatPlatform {
             }
 
             await this.addAccessoryToCache(accessory);
+
+            // Record metrics for successful update
+            const processingTime = Date.now() - startTime;
+            this.metricsManager.recordDeviceUpdate(update, processingTime);
+
             return true;
         } catch (error) {
             this.logManager.logError(`Error in processDeviceAttributeUpdate:`, error);
+            this.metricsManager.recordError();
             return false;
         }
     }
@@ -339,6 +368,11 @@ export default class HubitatPlatform {
             // Cleanup components
             this.client.dispose();
             this.accessoryManager.dispose();
+
+            // Save and cleanup metrics
+            if (this.metricsManager) {
+                await this.metricsManager.dispose();
+            }
 
             // Remove all event listeners
             this.appEvts.removeAllListeners();
@@ -465,5 +499,33 @@ export default class HubitatPlatform {
             return displayName;
         }
         return `${displayName} ${appendedStr}`;
+    }
+
+    /**
+     * Validate health check response
+     * @param {Object} response - Health check response
+     * @returns {Object} Validation result
+     */
+    validateHealthCheckResponse(response) {
+        this.logManager.logDebug(`Validating health check response: ${JSON.stringify(response)}`);
+
+        // The response from updatePluginStatus() is already the data object, not wrapped in a data property
+        if (!response) {
+            this.logManager.logDebug(`Health check validation failed: no response`);
+            return { valid: false, reason: "No response" };
+        }
+
+        // Check if response has the expected structure from updatePluginStatus
+        // The response should contain fields like version, isLocal, accCount, memory, uptime
+        if (typeof response !== "object") {
+            this.logManager.logDebug(`Health check validation failed: response is not an object`);
+            return { valid: false, reason: "Invalid response format" };
+        }
+
+        // For updatePluginStatus responses, we just need to verify it's a valid object
+        // The actual health check is whether the request succeeded (no error thrown)
+        // and we got a response object back
+        this.logManager.logDebug(`Health check validation successful: received valid response object`);
+        return { valid: true };
     }
 }

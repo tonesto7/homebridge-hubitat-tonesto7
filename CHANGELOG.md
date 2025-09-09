@@ -1,4 +1,16 @@
-## _**v3.0.0**_ (9-07-2025)
+## [3.0.1] - 2025-09-08
+
+- [NEW] **Advanced Metrics & Analytics Dashboard**: Complete metrics collection system with persistent storage, command tracking, device history, and real-time monitoring
+- [NEW] **Better Performance**: Implemented device update batching and improved connection pooling for faster, more reliable communication
+- [UPDATE] **Queue System Optimization**: Switched from persistent file-based queue to memory-based queue for better performance and reliability
+- [UPDATE] **Health Check Timing**: Synchronized monitoring intervals with Hubitat app for better coordination
+- [FIX] **Water Valve Accessory**: Fixed issue where switch service was incorrectly assigned when device has Valve capability
+- [FIX] **Memory Management**: Optimized queue cleanup and removed old persistent queue files for better resource usage
+- [FIX] **Platform Registration**: Fixed the issue where the platform was not registering correctly as a dynamic platform which prevented device changes after startup
+- [REMOVE] **Legacy Queue Implementation**: Cleaned up old persistent queue system files and switched to memory-based approach
+
+
+## [3.0.0] - 2025-09-07
 
 - [NEW] Modular system with 30+ specialized device handlers (see src/devices).
 - [NEW] Centralized configuration management restructured for better performance, reliability, and clarity.

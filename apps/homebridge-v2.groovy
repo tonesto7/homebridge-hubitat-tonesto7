@@ -3,7 +3,7 @@
  *  Homebridge Hubitat Interface
  *  App footer inspired from Hubitat Package Manager (Thanks @dman2306)
  *
- *  Copyright 2018-2024 Anthony Santilli
+ *  Copyright 2018-2025 Anthony Santilli
  *  Contributions by @nh.schottfam
  */
 
@@ -57,7 +57,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '3.0.1'
-//@Field static final String appModifiedFLD = '9-7-2025'
+//@Field static final String appModifiedFLD = '9-8-2025'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -278,6 +278,14 @@ def appButtonHandler(String buttonName) {
 def pluginConfigPage() {
     return dynamicPage(name: 'pluginConfigPage', title: sBLANK, install: false, uninstall: false) {
         appCssOverrideUI()
+        section(sectHead('Plugin Monitoring & Analytics')) {
+            String metricsUrl = getPluginMetricsUrl()
+            if (metricsUrl) {
+                href url: metricsUrl, style: sEXTNRL, required: false, title: inTS('Metrics Dashboard', sINFO), description: inputFooter('View device update metrics and performance stats', sCLRGRY, true)
+            } else {
+                paragraph spanSm('Metrics dashboard will be available once the plugin is connected and running.', sCLRGRY)
+            }
+        }
         section(sectHead('Plugin Configuration Options')) {
             input 'consider_fan_by_name',   sBOOL, title: inTS('Use the word Fan in device name to determine if device is a Fan?', sCMD), required: false, defaultValue: true, submitOnChange: true
             input 'consider_light_by_name', sBOOL, title: inTS('Use the word Light in device name to determine if device is a Light?', sCMD), required: false, defaultValue: false, submitOnChange: true
@@ -1832,24 +1840,14 @@ void endPiston(evt) {
 }
 
 private void checkPluginHealth() {
-    String server = getServerAddress()
-    if (server == sCLN || server == sNLCLN) { return }
+    if (!state.pluginDetails?.pluginIP) return
     
-    // Analyze current health status
-    Map healthStatus = analyzePluginHealth()
-    if (!healthStatus.isOk) {
-        healthStatus.messages.each { String msg ->
-            logWarn("Plugin Health Check: ${msg}")
-        }
-    }
-    
-    // Attempt to contact plugin
-    sendHttpPost('healthCheck', [
+    sendHttpPost("http://${state.pluginDetails.pluginIP}:${state.pluginDetails.pluginPort}/healthCheck", [
         app_id: gtAppId(),
         access_token: getTsVal(sATK),
         app_version: appVersionFLD,
         hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone)
-    ], 'pluginHealthCheck', getBoolSetting('showDebugLogs'))
+    ], 'pluginHealthCheckResponse', getBoolSetting('showDebugLogs'))
 }
 
 // Plugin Health Status Methods
@@ -1858,17 +1856,21 @@ def healthStatus() {
     logTrace('Plugin called healthStatus()')
     def body = request?.JSON
     if (body) {
-        state.pluginDetails = state.pluginDetails ?: [:]
-        state.pluginDetails.lastCheckin = now()
-        state.pluginDetails.pluginHealth = body
+        state.pluginDetails = [
+            pluginIP: body?.ip,
+            pluginPort: body?.port,
+            version: body?.pluginVersion,
+            memory: body?.memory,
+            uptime: body?.uptime,
+            lastCheckin: now()
+        ]
+        remTsVal(sSVR)
+        updCodeVerMap('plugin', body?.pluginVersion ?: sNULL)
+        activateDirectUpdates()
+        updTsVal('lastDirectUpdsEnabled')
     }
-    String resultJson = new JsonOutput().toJson([
-        status: 'OK',
-        hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone),
-        appVersion: appVersionFLD,
-        deviceCount: getDeviceCnt()
-    ])
-    compressedRender contentType: sAPPJSON, data: resultJson
+    String resultJson = new JsonOutput().toJson([status: 'OK'])
+    render contentType: sAPPJSON, data: resultJson
 }
 
 private Map analyzePluginHealth() {
@@ -1899,13 +1901,13 @@ private Map analyzePluginHealth() {
         result.messages.push("Plugin hasn't communicated in ${diffMins} minutes")
     }
 
-    // Check memory usage warning if available
-    if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
-        Double memoryUsagePercent = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB) * 100
-        if (memoryUsagePercent > 85) {
-            result.messages.push("Plugin memory usage is high: ${pluginDetails.memory.heapUsedMB}MB/${pluginDetails.memory.heapTotalMB}MB (${Math.round(memoryUsagePercent)}%)")
-        }
-    }
+    // Check memory usage if available
+    // if (pluginDetails?.memory?.heapUsedMB != null && pluginDetails?.memory?.heapTotalMB != null) {
+    //     Double memoryUsagePercent = (pluginDetails.memory.heapUsedMB / pluginDetails.memory.heapTotalMB) * 100
+    //     if (memoryUsagePercent > 85) {
+    //         result.messages.push("Plugin memory usage is high: ${pluginDetails.memory.heapUsedMB}MB/${pluginDetails.memory.heapTotalMB}MB (${Math.round(memoryUsagePercent)}%)")
+    //     }
+    // }
 
     result.isOk = result.messages.size() == 0
     return result
@@ -2241,7 +2243,10 @@ def changeHandler(evt) {
         case 'hsmAlert':
             deviceid = "alarmSystemStatus_${location?.id}"
             attr = 'alarmSystemStatus'
-            if (value?.toString()?.startsWith('intrusion')) {
+            if (value?.toString() in ['intrusion-delay', 'intrusion-night-delay']) {
+                // Suppress sending during entry delay
+                sendEvt = false
+            } else if (value?.toString()?.startsWith('intrusion')) {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getAlarmIntrusionMode(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
             } else if (value?.toString() == 'cancel') {
                 sendItems.push([evtSource: src, evtDeviceName: deviceName, evtDeviceId: deviceid, evtAttr: attr, evtValue: getSecurityStatus(), evtUnit: evt?.unit ?: sBLANK, evtDate: dt])
@@ -2373,7 +2378,7 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
 
 void asyncHttpCmdResp(response, Map data) {
     if (getTsVal(sDBG) == sTRUE && bIs(data, 'evtLog')) {
-        def resp = response?.getData() // || null
+        def resp = response?.getData()
         String src = data?.src ? (String)data.src : 'Unknown'
         logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
         logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (wnow() - (Long)data.execDt) : 0}ms)")
@@ -2668,6 +2673,25 @@ def appFooter() {
     section() {
         // paragraph htmlLine('orange')
         paragraph spanSm("<div style='text-align:center;'><b><u>Homebridge Hubitat</u></b><br><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RVFJTG8H86SK8&source=url' target='_blank'><img width='120' height='120' src='https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/images/donation_qr.png'></a><br><br>Please consider donating if you find this integration useful.</div>", sCLRORG)
+    }
+}
+
+/**
+ * Get the plugin metrics URL if available
+ */
+String getPluginMetricsUrl() {
+    try {
+        def pluginDetails = state.pluginDetails ?: [:]
+        String pluginIP = pluginDetails.pluginIP
+        String pluginPort = pluginDetails.pluginPort
+
+        if (pluginIP && pluginPort) {
+            return "http://${pluginIP}:${pluginPort}/metrics"
+        }
+        return null
+    } catch (Exception ex) {
+        logError("Error getting plugin metrics URL: ${ex.message}")
+        return null
     }
 }
 

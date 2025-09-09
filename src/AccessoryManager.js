@@ -171,7 +171,7 @@ export class AccessoryManager {
             {
                 name: "switch",
                 test: (accessory) => accessory.hasCapability("Switch") && !accessory.hasLightLabel(),
-                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl", "Fan", "FanControl", "LightBulb", "Bulb", "Outlet", "Button"],
+                excludeCapabilities: ["WindowShade", "DoorControl", "GarageDoorControl", "Fan", "FanControl", "LightBulb", "Bulb", "Outlet", "Button", "Valve"],
                 excludeAttributes: ["position", "level", "windowShade"],
             },
             {
@@ -436,7 +436,7 @@ export class AccessoryManager {
                 }
 
                 // Ensure params is an array and filter out null/undefined
-                const validParams = Array.isArray(params) ? params.filter((p) => p != null) : [params].filter((p) => p != null);
+                const validParams = Array.isArray(params) ? params.filter((p) => p !== null) : [params].filter((p) => p !== null);
 
                 // Execute the command (check for trailing debounce)
                 const executeCommand = async () => {

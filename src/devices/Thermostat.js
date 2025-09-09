@@ -108,7 +108,10 @@ export class Thermostat {
                 const temp = this._convertFromHomeKitTemp(this._clampValue(value, minCoolingThresholdCelcius, maxCoolingThresholdCelcius));
                 accessory.sendCommand("setCoolingSetpoint", [temp]);
             },
-            props: { minValue: minCoolingThresholdCelcius, maxValue: maxCoolingThresholdCelcius },
+            props: {
+                minValue: minCoolingThresholdCelcius,
+                maxValue: maxCoolingThresholdCelcius,
+            },
         });
 
         // Heating Threshold (0-25°C)
@@ -123,7 +126,10 @@ export class Thermostat {
                 const temp = this._convertFromHomeKitTemp(this._clampValue(value, minHeatingThresholdCelcius, maxHeatingThresholdCelcius));
                 accessory.sendCommand("setHeatingSetpoint", [temp]);
             },
-            props: { minValue: minHeatingThresholdCelcius, maxValue: maxHeatingThresholdCelcius },
+            props: {
+                minValue: minHeatingThresholdCelcius,
+                maxValue: maxHeatingThresholdCelcius,
+            },
         });
     }
 
@@ -309,12 +315,13 @@ export class Thermostat {
         if (!tstatSvc) return;
 
         switch (attribute) {
-            case "temperature":
+            case "temperature": {
                 const currentTemp = this._convertToHomeKitTemp(value);
                 tstatSvc.getCharacteristic(this.Characteristic.CurrentTemperature).updateValue(this._clampValue(currentTemp, 0, 100));
                 break;
+            }
 
-            case "thermostatMode":
+            case "thermostatMode": {
                 // Update target state
                 tstatSvc.getCharacteristic(this.Characteristic.TargetHeatingCoolingState).updateValue(this._getTargetState(value));
 
@@ -325,8 +332,9 @@ export class Thermostat {
                     tstatSvc.getCharacteristic(this.Characteristic.TargetTemperature).updateValue(this._clampValue(targetTemp, 10, 38));
                 }
                 break;
+            }
 
-            case "coolingSetpoint":
+            case "coolingSetpoint": {
                 const coolTemp = this._convertToHomeKitTemp(value);
                 // Update cooling threshold
                 tstatSvc.getCharacteristic(this.Characteristic.CoolingThresholdTemperature).updateValue(this._clampValue(coolTemp, 10, 35));
@@ -336,8 +344,9 @@ export class Thermostat {
                     tstatSvc.getCharacteristic(this.Characteristic.TargetTemperature).updateValue(this._clampValue(coolTemp, 10, 38));
                 }
                 break;
+            }
 
-            case "heatingSetpoint":
+            case "heatingSetpoint": {
                 const heatTemp = this._convertToHomeKitTemp(value);
                 // Update heating threshold
                 tstatSvc.getCharacteristic(this.Characteristic.HeatingThresholdTemperature).updateValue(this._clampValue(heatTemp, 0, 25));
@@ -347,6 +356,7 @@ export class Thermostat {
                     tstatSvc.getCharacteristic(this.Characteristic.TargetTemperature).updateValue(this._clampValue(heatTemp, 10, 38));
                 }
                 break;
+            }
 
             case "thermostatOperatingState":
                 tstatSvc.getCharacteristic(this.Characteristic.CurrentHeatingCoolingState).updateValue(this._getCurrentState(value));
@@ -356,7 +366,7 @@ export class Thermostat {
                 tstatSvc.getCharacteristic(this.Characteristic.CurrentRelativeHumidity).updateValue(this._clampValue(parseInt(value), 0, 100));
                 break;
 
-            case "thermostatFanMode":
+            case "thermostatFanMode": {
                 const fanSvc = accessory.getService(this.Service.Fanv2);
                 if (fanSvc) {
                     fanSvc.getCharacteristic(this.Characteristic.Active).updateValue(this._getFanActive(value));
@@ -364,6 +374,7 @@ export class Thermostat {
                     fanSvc.getCharacteristic(this.Characteristic.TargetFanState).updateValue(this._getTargetFanState(value));
                 }
                 break;
+            }
             default:
                 this.logManager.logWarn(`Thermostat | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);
         }

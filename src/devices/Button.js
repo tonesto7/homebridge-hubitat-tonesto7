@@ -74,7 +74,7 @@ export class Button {
         if (!Button.relevantAttributes.includes(attribute)) return;
 
         switch (attribute) {
-            case "button":
+            case "button": {
                 const buttonNumber = data?.buttonNumber;
                 if (!buttonNumber) return;
 
@@ -97,10 +97,12 @@ export class Button {
                 }
                 svc.getCharacteristic(this.Characteristic.ProgrammableSwitchEvent).updateValue(eventValue);
                 break;
-            case "numberOfButtons":
+            }
+            case "numberOfButtons": {
                 const buttonCount = Math.min(Math.max(value, 1), 10);
                 this.logManager.logDebug(`Button | ${accessory.displayName} | Number of buttons updated to ${buttonCount}`);
                 break;
+            }
 
             default:
                 this.logManager.logWarn(`Button | ${accessory.displayName} | Unhandled attribute update: ${attribute} = ${value}`);

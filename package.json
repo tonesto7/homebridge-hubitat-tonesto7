@@ -3,15 +3,15 @@
         "@homebridge/plugin-ui-utils": "^2.1.0",
         "axios": "^1.11.0",
         "body-parser": "^2.2.0",
-        "chalk": "^5.6.0",
-        "crypto": "^1.0.1",
+        "chalk": "^5.6.2",
         "compare-versions": "^6.1.1",
+        "crypto": "^1.0.1",
         "express": "^5.1.0",
+        "express-rate-limit": "^8.1.0",
         "hap-nodejs-community-types": "0.3.1",
         "lodash": "^4.17.21",
         "os": "0.1.2",
-        "portfinder-sync": "^0.0.2",
-        "express-rate-limit": "^8.1.0"
+        "portfinder-sync": "^0.0.2"
     },
     "devDependencies": {
         "@snyk/protect": "^1.1299.0",
@@ -72,6 +72,7 @@
     "bugs": {
         "url": "http://github.com/tonesto7/homebridge-hubitat-tonesto7/issues"
     },
-    "version": "3.0.0",
+    "version": "3.0.1",
+    "changelog": "https://raw.githubusercontent.com/tonesto7/homebridge-hubitat-tonesto7/master/CHANGELOG.md",
     "synk": true
 }

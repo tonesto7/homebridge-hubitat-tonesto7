@@ -1,3 +1,7 @@
+## _**v3.0.1**_ (9-08-2025)
+- [UPDATE] **Plugin Status Monitoring**: Improved plugin health validation and connection status tracking
+- [FIX] **Memory Usage Warnings**: Disabled unnecessary memory usage warning checks
+
 ## _**v3.0.0**_ (9-07-2025)
 
 - [NEW] Added device filter management pages for granular device capability control
