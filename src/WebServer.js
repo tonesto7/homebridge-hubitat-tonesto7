@@ -3,6 +3,7 @@
 import { pluginName, platformName, platformDesc } from "./StaticConst.js";
 import { IPMonitor } from "./IPMonitor.js";
 import { HealthMonitor } from "./HealthMonitor.js";
+import { AggregatedMetricsManager } from "./MetricsManager.js";
 import express from "express";
 import bodyParser from "body-parser";
 import crypto from "crypto";
@@ -18,6 +19,7 @@ export class WebServer {
         this.configManager = platform.configManager;
         this.versionManager = platform.versionManager;
         this.metricsManager = platform.metricsManager;
+        this.aggregatedMetricsManager = new AggregatedMetricsManager();
         this.config = platform.config;
         this.homebridge = platform.homebridge;
         this.appEvts = platform.appEvts;
@@ -569,7 +571,7 @@ export class WebServer {
     }
 
     setupMetricsRoutes() {
-        // Get metrics API endpoint
+        // Get individual instance metrics API endpoint
         webApp.get("/metrics/api", (req, res) => {
             if (this.metricsManager) {
                 const windowHours = req.query.window ? parseInt(req.query.window) : 1;
@@ -583,6 +585,45 @@ export class WebServer {
                 res.json(metrics);
             } else {
                 res.status(503).json({ error: "Metrics not available" });
+            }
+        });
+
+        // Get aggregated metrics from all instances
+        webApp.get("/metrics/aggregated", async (req, res) => {
+            try {
+                await this.aggregatedMetricsManager.refreshMetrics();
+                const aggregatedMetrics = this.aggregatedMetricsManager.getAggregatedMetrics();
+                res.json(aggregatedMetrics);
+            } catch (error) {
+                res.status(500).json({ error: "Failed to load aggregated metrics", details: error.message });
+            }
+        });
+
+        // Get metrics for a specific instance
+        webApp.get("/metrics/instance/:instanceId", async (req, res) => {
+            try {
+                const { instanceId } = req.params;
+                await this.aggregatedMetricsManager.refreshMetrics();
+                const instanceMetrics = this.aggregatedMetricsManager.getInstanceMetrics(instanceId);
+
+                if (instanceMetrics) {
+                    res.json(instanceMetrics);
+                } else {
+                    res.status(404).json({ error: `Instance ${instanceId} not found` });
+                }
+            } catch (error) {
+                res.status(500).json({ error: "Failed to load instance metrics", details: error.message });
+            }
+        });
+
+        // List all available instances
+        webApp.get("/metrics/instances", async (req, res) => {
+            try {
+                await this.aggregatedMetricsManager.refreshMetrics();
+                const instanceIds = this.aggregatedMetricsManager.getInstanceIds();
+                res.json({ instances: instanceIds });
+            } catch (error) {
+                res.status(500).json({ error: "Failed to list instances", details: error.message });
             }
         });
 
@@ -677,6 +718,33 @@ export class WebServer {
         .header .subtitle {
             color: #666;
             font-size: 1.1em;
+        }
+
+        .view-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .view-btn.active {
+            background: #667eea;
+            color: white;
         }
         
         .stats-grid {
@@ -1190,6 +1258,13 @@ export class WebServer {
                 <div>
                     <h1 style="margin: 0;">Homebridge Hubitat Metrics</h1>
                     <p class="subtitle" style="margin: 5px 0 0 0;">Advanced device monitoring and performance analytics</p>
+                    <div class="view-controls" style="margin-top: 10px;">
+                        <button class="view-btn active" onclick="switchView('individual')">Individual Instance</button>
+                        <button class="view-btn" onclick="switchView('aggregated')">Aggregated View</button>
+                        <select id="instanceSelect" style="display: inline-block; margin-left: 10px; padding: 5px; border-radius: 4px;" onchange="switchInstance()">
+                            <option value="">Current Instance</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="refresh-controls">
                     <div class="auto-refresh">
@@ -1349,8 +1424,93 @@ export class WebServer {
     <script>
         let charts = {};
         let metricsData = null;
-        
-        async function fetchMetrics() {
+        let currentView = 'individual';
+        let currentInstanceId = null;
+
+        async function fetchMetrics(endpoint = '/metrics/api') {
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) throw new Error('Failed to fetch metrics');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+                return null;
+            }
+        }
+
+        async function fetchAggregatedMetrics() {
+            return await fetchMetrics('/metrics/aggregated');
+        }
+
+        async function fetchInstanceMetrics(instanceId) {
+            return await fetchMetrics(\`/metrics/instance/\${instanceId}\`);
+        }
+
+        async function fetchAvailableInstances() {
+            try {
+                const response = await fetch('/metrics/instances');
+                if (!response.ok) throw new Error('Failed to fetch instances');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching instances:', error);
+                return { instances: [] };
+            }
+        }
+
+        async function switchView(viewType) {
+            currentView = viewType;
+
+            // Update button states
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(\`[onclick="switchView('\${viewType}')"]\`).classList.add('active');
+
+            // Show/hide instance selector
+            const instanceSelect = document.getElementById('instanceSelect');
+            if (viewType === 'individual') {
+                instanceSelect.style.display = 'inline-block';
+                currentInstanceId = null; // Reset to current instance
+                await updateDashboard();
+            } else if (viewType === 'aggregated') {
+                instanceSelect.style.display = 'none';
+                currentInstanceId = null;
+                await updateDashboard();
+            }
+        }
+
+        async function switchInstance() {
+            const instanceSelect = document.getElementById('instanceSelect');
+            const selectedInstance = instanceSelect.value;
+
+            if (selectedInstance) {
+                currentInstanceId = selectedInstance;
+                await updateDashboard();
+            }
+        }
+
+        async function loadInstanceSelector() {
+            const instances = await fetchAvailableInstances();
+            const instanceSelect = document.getElementById('instanceSelect');
+
+            // Clear existing options
+            instanceSelect.innerHTML = '';
+
+            // Add "Current Instance" option
+            const currentOption = document.createElement('option');
+            currentOption.value = '';
+            currentOption.textContent = 'Current Instance';
+            instanceSelect.appendChild(currentOption);
+
+            // Add available instances
+            instances.instances.forEach(instanceId => {
+                const option = document.createElement('option');
+                option.value = instanceId;
+                option.textContent = \`Instance \${instanceId}\`;
+                instanceSelect.appendChild(option);
+            });
+        }
+
+        // Original fetchMetrics function
+        async function fetchMetricsOriginal() {
             try {
                 const response = await fetch('/metrics/api');
                 if (!response.ok) throw new Error('Failed to fetch metrics');
@@ -1761,12 +1921,21 @@ export class WebServer {
         }
         
         async function updateDashboard() {
-            const data = await fetchMetrics();
+            let data = null;
+
+            if (currentView === 'aggregated') {
+                data = await fetchAggregatedMetrics();
+            } else if (currentView === 'individual' && currentInstanceId) {
+                data = await fetchInstanceMetrics(currentInstanceId);
+            } else {
+                data = await fetchMetrics('/metrics/api');
+            }
+
             if (!data) {
                 document.body.innerHTML = '<div class="error">Failed to load metrics. Please refresh the page.</div>';
                 return;
             }
-            
+
             metricsData = data;
             
             updateStats(data);
@@ -1791,8 +1960,9 @@ export class WebServer {
         }
         
         // Initial load
+        loadInstanceSelector();
         updateDashboard();
-        
+
         // Auto-refresh configuration
         let autoRefreshInterval;
         let currentRefreshRate = 10000; // 10 seconds

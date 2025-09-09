@@ -6,13 +6,172 @@
 import fs from "fs/promises";
 import path from "path";
 
+/**
+ * AggregatedMetricsManager - Combines metrics from multiple plugin instances
+ */
+export class AggregatedMetricsManager {
+    constructor() {
+        this.metricsDir = path.join(process.cwd(), ".homebridge");
+        this.instanceMetrics = new Map(); // instanceId -> metrics data
+        this.lastUpdate = null;
+    }
+
+    /**
+     * Load metrics from all instance files
+     */
+    async loadAllInstanceMetrics() {
+        try {
+            const files = await fs.readdir(this.metricsDir);
+            const metricsFiles = files.filter((file) => file.startsWith("hubitat-metrics-") && file.endsWith(".json"));
+
+            for (const file of metricsFiles) {
+                const instanceId = file.replace("hubitat-metrics-", "").replace(".json", "");
+                try {
+                    const filePath = path.join(this.metricsDir, file);
+                    const data = await fs.readFile(filePath, "utf8");
+                    const metrics = JSON.parse(data);
+                    this.instanceMetrics.set(instanceId, metrics);
+                } catch (error) {
+                    console.warn(`Failed to load metrics for instance ${instanceId}:`, error.message);
+                }
+            }
+
+            this.lastUpdate = new Date().toISOString();
+        } catch (error) {
+            console.error("Failed to load instance metrics:", error.message);
+        }
+    }
+
+    /**
+     * Get aggregated metrics from all instances
+     */
+    getAggregatedMetrics() {
+        const aggregated = {
+            aggregated: true,
+            lastUpdate: this.lastUpdate,
+            instances: {},
+            summary: {
+                totalInstances: this.instanceMetrics.size,
+                totalUpdates: 0,
+                totalCommands: 0,
+                totalErrors: 0,
+                totalDevices: 0,
+                instancesOnline: 0,
+            },
+            combined: {
+                system: {},
+                devices: [],
+                attributes: {},
+                errors: [],
+                hourly: [],
+            },
+        };
+
+        // Process each instance's metrics
+        for (const [instanceId, metrics] of this.instanceMetrics) {
+            aggregated.instances[instanceId] = metrics;
+
+            // Aggregate system metrics
+            if (metrics.system) {
+                aggregated.summary.totalUpdates += metrics.system.totalUpdates || 0;
+                aggregated.summary.totalCommands += metrics.system.totalCommands || 0;
+                aggregated.summary.totalErrors += metrics.system.errors || 0;
+                aggregated.summary.instancesOnline++;
+            }
+
+            // Aggregate devices
+            if (metrics.devices) {
+                aggregated.summary.totalDevices += metrics.devices.length;
+                aggregated.combined.devices.push(
+                    ...metrics.devices.map((device) => ({
+                        ...device,
+                        instanceId: instanceId,
+                    })),
+                );
+            }
+
+            // Aggregate attributes
+            if (metrics.attributes) {
+                for (const attr of metrics.attributes) {
+                    const key = `${attr.attribute}`;
+                    if (!aggregated.combined.attributes[key]) {
+                        aggregated.combined.attributes[key] = { attribute: attr.attribute, count: 0 };
+                    }
+                    aggregated.combined.attributes[key].count += attr.count;
+                }
+            }
+
+            // Aggregate errors
+            if (metrics.errors) {
+                aggregated.combined.errors.push(
+                    ...metrics.errors.map((error) => ({
+                        ...error,
+                        instanceId: instanceId,
+                    })),
+                );
+            }
+
+            // Combine hourly data
+            if (metrics.hourly) {
+                aggregated.combined.hourly.push(
+                    ...metrics.hourly.map((hour) => ({
+                        ...hour,
+                        instanceId: instanceId,
+                    })),
+                );
+            }
+        }
+
+        // Convert attributes object to array and sort
+        aggregated.combined.attributes = Object.values(aggregated.combined.attributes).sort((a, b) => b.count - a.count);
+
+        // Sort combined devices by total updates
+        aggregated.combined.devices.sort((a, b) => b.totalUpdates - a.totalUpdates);
+
+        // Sort and limit errors (most recent first)
+        aggregated.combined.errors.sort((a, b) => b.timestamp - a.timestamp);
+        aggregated.combined.errors = aggregated.combined.errors.slice(0, 100);
+
+        // Sort hourly data by timestamp
+        aggregated.combined.hourly.sort((a, b) => b.timestamp - a.timestamp);
+
+        return aggregated;
+    }
+
+    /**
+     * Get metrics for a specific instance
+     * @param {string} instanceId - Instance ID to get metrics for
+     */
+    getInstanceMetrics(instanceId) {
+        return this.instanceMetrics.get(instanceId) || null;
+    }
+
+    /**
+     * Get list of all instance IDs
+     */
+    getInstanceIds() {
+        return Array.from(this.instanceMetrics.keys());
+    }
+
+    /**
+     * Refresh metrics from all instances
+     */
+    async refreshMetrics() {
+        await this.loadAllInstanceMetrics();
+    }
+}
+
 export class MetricsManager {
-    constructor(platform) {
+    constructor(platform, instanceId = null) {
         this.logManager = platform.logManager;
         this.configManager = platform.configManager;
 
-        // Persistence settings
-        this.metricsFile = path.join(process.cwd(), ".homebridge", "hubitat-metrics.json");
+        // Instance identification
+        this.instanceId = instanceId || platform.config?.client?.app_id || "default";
+        this.instanceName = platform.config?.name || `Hubitat-${this.instanceId}`;
+
+        // Persistence settings - instance-specific file
+        this.metricsFile = path.join(process.cwd(), ".homebridge", `hubitat-metrics-${this.instanceId}.json`);
         this.saveInterval = 5 * 60 * 1000; // Save every 5 minutes
         this.saveTimer = null;
 
@@ -590,6 +749,16 @@ export class MetricsManager {
         const uptimeSince = now - this.systemMetrics.lastResetTime;
 
         return {
+            instance: {
+                id: this.instanceId,
+                name: this.instanceName,
+                config: {
+                    app_id: this.configManager.getConfig()?.client?.app_id,
+                    app_url_local: this.configManager.getConfig()?.client?.app_url_local,
+                    app_url_cloud: this.configManager.getConfig()?.client?.app_url_cloud,
+                    use_cloud: this.configManager.getConfig()?.client?.use_cloud,
+                },
+            },
             system: {
                 totalUpdates: this.systemMetrics.totalUpdates,
                 totalCommands: this.systemMetrics.totalCommands,
