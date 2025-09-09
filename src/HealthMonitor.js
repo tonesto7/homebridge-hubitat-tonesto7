@@ -7,36 +7,36 @@ export class HealthMonitor {
     constructor(platform, hubitatClient) {
         this.logManager = platform.logManager;
         this.hubitatClient = hubitatClient;
-        
+
         this.healthState = {
             isHealthy: true,
             lastCheck: Date.now(),
-            consecutiveFailures: 0
+            consecutiveFailures: 0,
         };
-        
+
         this.config = {
             checkInterval: 300000, // 5 minutes
-            maxFailures: 3
+            maxFailures: 3,
         };
-        
+
         this.healthCheckInterval = null;
     }
-    
+
     /**
      * Start health monitoring
      */
     startMonitoring() {
         this.logManager.logInfo("Health monitoring started");
-        
+
         // Perform initial health check
         this.performHealthCheck();
-        
+
         // Schedule regular health checks
         this.healthCheckInterval = setInterval(() => {
             this.performHealthCheck();
         }, this.config.checkInterval);
     }
-    
+
     /**
      * Stop health monitoring
      */
@@ -47,7 +47,7 @@ export class HealthMonitor {
         }
         this.logManager.logInfo("Health monitoring stopped");
     }
-    
+
     /**
      * Perform a health check
      */
@@ -60,16 +60,16 @@ export class HealthMonitor {
         } catch (error) {
             this.healthState.consecutiveFailures++;
             this.healthState.lastCheck = Date.now();
-            
+
             if (this.healthState.consecutiveFailures >= this.config.maxFailures) {
                 this.healthState.isHealthy = false;
-                this.logManager.logError(`Plugin marked unhealthy after ${this.healthState.consecutiveFailures} failures`);
+                this.logManager.logError(`Plugin marked unhealthy after ${this.healthState.consecutiveFailures} failures: ${error.message}`);
             } else {
-                this.logManager.logWarning(`Health check failed (attempt ${this.healthState.consecutiveFailures}/${this.config.maxFailures})`);
+                this.logManager.logWarning(`Health check failed (attempt ${this.healthState.consecutiveFailures}/${this.config.maxFailures}): ${error.message}`);
             }
         }
     }
-    
+
     /**
      * Get current health status
      */
@@ -78,10 +78,10 @@ export class HealthMonitor {
             isHealthy: this.healthState.isHealthy,
             lastCheck: this.healthState.lastCheck,
             consecutiveFailures: this.healthState.consecutiveFailures,
-            timeSinceLastCheck: Date.now() - this.healthState.lastCheck
+            timeSinceLastCheck: Date.now() - this.healthState.lastCheck,
         };
     }
-    
+
     /**
      * Check if connection is healthy
      */

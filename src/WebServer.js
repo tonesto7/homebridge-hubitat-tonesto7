@@ -86,7 +86,7 @@ export class WebServer {
                 // Remove the entire queue directory and its contents
                 await fs.rm(queueDir, { recursive: true, force: true });
                 this.logManager.logInfo("Cleaned up old persistent queue files from previous version");
-            } catch (error) {
+            } catch (_) {
                 // Directory doesn't exist, nothing to clean up
                 this.logManager.logDebug("No old persistent queue files found to clean up");
             }
@@ -99,7 +99,7 @@ export class WebServer {
         if (!a || !b || a.length !== b.length) return false;
         try {
             return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
-        } catch (e) {
+        } catch (_) {
             return false;
         }
     }
@@ -417,7 +417,7 @@ export class WebServer {
 
     async handleHealthCheck(req, res) {
         const body = JSON.parse(JSON.stringify(req.body));
-        
+
         if (this.isValidRequestor(body.access_token, body.app_id, "healthCheck")) {
             const healthData = {
                 status: "OK",
@@ -425,9 +425,9 @@ export class WebServer {
                 nodeVersion: process.version,
                 uptime: process.uptime(),
                 memory: process.memoryUsage(),
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             };
-            
+
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(healthData));
         } else {
@@ -441,12 +441,13 @@ export class WebServer {
         webApp.get("/monitoring/health", (req, res) => {
             if (this.healthMonitor) {
                 const healthStatus = this.healthMonitor.getHealthStatus();
-                const connectionStats = this.getAllCachedAccessories().length > 0 ? this.configManager.getConfig() : null;
+                const accessoryCount = this.getAllCachedAccessories().length;
 
                 res.send({
                     status: "OK",
                     health: healthStatus,
                     uptime: process.uptime(),
+                    accessoryCount: accessoryCount,
                     memory: process.memoryUsage(),
                     timestamp: new Date().toISOString(),
                 });
@@ -573,12 +574,12 @@ export class WebServer {
             if (this.metricsManager) {
                 const windowHours = req.query.window ? parseInt(req.query.window) : 1;
                 const metrics = this.metricsManager.getAllMetrics();
-                
+
                 // Update top devices with specified time window
                 if (windowHours !== 1) {
                     metrics.topDevices = this.metricsManager.getTopDevices(10, windowHours);
                 }
-                
+
                 res.json(metrics);
             } else {
                 res.status(503).json({ error: "Metrics not available" });
@@ -605,14 +606,14 @@ export class WebServer {
             const dashboardHTML = this.getMetricsDashboardHTML();
             res.send(dashboardHTML);
         });
-        
+
         // Get device history for modal
         webApp.get("/metrics/device-history", (req, res) => {
             const deviceId = req.query.deviceId;
             if (!deviceId) {
                 return res.status(400).json({ error: "Device ID required" });
             }
-            
+
             if (this.metricsManager) {
                 const history = this.metricsManager.getDeviceHistory(deviceId);
                 res.json(history);
@@ -620,7 +621,7 @@ export class WebServer {
                 res.status(503).json({ error: "Metrics not available" });
             }
         });
-        
+
         // Clear error log
         webApp.post("/metrics/clear-errors", (_req, res) => {
             if (this.metricsManager) {

@@ -77,7 +77,7 @@ export default class ConfigManager {
     isLegacyConfig(config) {
         // Check if config has any of the old top-level properties
         const legacyProps = ["app_id", "app_url_local", "app_url_cloud", "access_token", "polling_seconds", "round_levels", "adaptive_lighting"];
-        return legacyProps.some((prop) => config.hasOwnProperty(prop));
+        return legacyProps.some((prop) => Object.prototype.hasOwnProperty.call(config, prop));
     }
 
     // Convert old flat config to new nested structure
@@ -347,13 +347,6 @@ export default class ConfigManager {
     getConfig() {
         return { ...this.config }; // Return a copy to prevent accidental mutations
     }
-
-
-
-
-
-
-
 
     getConfigValue(key) {
         return this.config[key];

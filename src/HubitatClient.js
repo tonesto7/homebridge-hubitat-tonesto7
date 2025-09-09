@@ -3,7 +3,7 @@
  * @description Manages communication with the Hubitat hub and handles command batching
  */
 
-import { platformName, platformDesc, pluginVersion } from "./StaticConst.js";
+import { platformName, pluginVersion } from "./StaticConst.js";
 import axios from "axios";
 import http from "http";
 import https from "https";
@@ -187,18 +187,23 @@ export default class HubitatClient {
             }
             return; // Skip metrics recording as individual commands will handle it
         }
-        
+
         // Record batch command metrics only if successful
         if (success && this.platform.metricsManager) {
             const responseTime = Date.now() - startTime;
             // Record metrics for each command in the batch
             for (const cmd of commands) {
-                this.platform.metricsManager.recordCommand({
-                    deviceId: cmd.devData.deviceid,
-                    deviceName: cmd.devData.name,
-                    command: cmd.command,
-                    parameters: cmd.params
-                }, responseTime / commands.length, success, error); // Divide response time among commands
+                this.platform.metricsManager.recordCommand(
+                    {
+                        deviceId: cmd.devData.deviceid,
+                        deviceName: cmd.devData.name,
+                        command: cmd.command,
+                        parameters: cmd.params,
+                    },
+                    responseTime / commands.length,
+                    success,
+                    error,
+                ); // Divide response time among commands
             }
         }
 
@@ -212,7 +217,7 @@ export default class HubitatClient {
         const startTime = Date.now();
         let success = false;
         let error = null;
-        
+
         try {
             await this.makeRequest({
                 method: "post",
@@ -239,12 +244,17 @@ export default class HubitatClient {
             // Record command metrics
             const responseTime = Date.now() - startTime;
             if (this.platform.metricsManager) {
-                this.platform.metricsManager.recordCommand({
-                    deviceId: devData.deviceid,
-                    deviceName: devData.name,
-                    command: cmd,
-                    parameters: params
-                }, responseTime, success, error);
+                this.platform.metricsManager.recordCommand(
+                    {
+                        deviceId: devData.deviceid,
+                        deviceName: devData.name,
+                        command: cmd,
+                        parameters: params,
+                    },
+                    responseTime,
+                    success,
+                    error,
+                );
             }
         }
     }
@@ -302,23 +312,20 @@ export default class HubitatClient {
 
         this.logManager.logError(`${source} Error | ${errorMessage} | ` + `Details: ${error.response?.data || error.message}`);
         this.logManager.logDebug(`${source} Full Error: ${JSON.stringify(error)}`);
-        
+
         // Record error in metrics if available
         if (this.platform.metricsManager) {
             this.platform.metricsManager.recordError({
                 message: errorMessage,
-                type: source === 'sendSingleCommand' || source === 'processBatch' ? 'Command Error' : 
-                       source === 'getDevices' ? 'Device Discovery Error' :
-                       source === 'updatePluginStatus' ? 'Plugin Status Error' :
-                       source === 'registerForDirectUpdates' ? 'Registration Error' : 'Client Error',
+                type: source === "sendSingleCommand" || source === "processBatch" ? "Command Error" : source === "getDevices" ? "Device Discovery Error" : source === "updatePluginStatus" ? "Plugin Status Error" : source === "registerForDirectUpdates" ? "Registration Error" : "Client Error",
                 stack: error.stack,
                 context: {
                     source: source,
                     statusCode: error.response?.status,
                     errorCode: error.code,
                     url: error.config?.url,
-                    method: error.config?.method
-                }
+                    method: error.config?.method,
+                },
             });
         }
     }
