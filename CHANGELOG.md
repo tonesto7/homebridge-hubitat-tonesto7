@@ -1,6 +1,6 @@
 ## [3.0.5] - 2025-09-12
-- [UPDATE] **Metrics Dashboard**: Added aggregated metrics view and instance-specific metrics view
-- [FIX] **Fixed**: Fixed issue where device display name was causing errors when no longer available
+
+- [FIX] **Adaptive Lighting**: Fixed issue where adaptive lighting wasn't being properly restored from cache after a reboot
 
 ## [3.0.3] - 2025-09-08
 - [UPDATE] **Metrics Dashboard**: Added aggregated metrics view and instance-specific metrics view
