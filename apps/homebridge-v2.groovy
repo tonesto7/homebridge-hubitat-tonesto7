@@ -56,8 +56,8 @@ preferences {
 }
 
 // STATICALLY DEFINED VARIABLES
-@Field static final String appVersionFLD  = '3.0.4'
-//@Field static final String appModifiedFLD = '9-8-2025'
+@Field static final String appVersionFLD  = '3.0.5'
+//@Field static final String appModifiedFLD = '9-12-2025'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -489,7 +489,7 @@ private String getCapFilterDesc() {
         if (settings.sensorAllowTemp) {
             desc += spanSmBldBr('Exclude These Sensors:', sCLR4D9)
             settings.sensorAllowTemp.sort { it.displayName }.each { dev ->
-                desc += spanSmBr("${sBULLET} ${dev.displayName}", sCLR4D9)
+                desc += spanSmBr("${sBULLET} ${dev?.displayName}", sCLR4D9)
         }
             desc += lineBr()
     }
@@ -502,7 +502,7 @@ private String getCapFilterDesc() {
         if (settings[k] && settings[k].size()) {
             desc += spanSmBldBr("${capName}:", sCLR4D9)
             settings[k].sort { it.displayName }.each { dev ->
-                desc += spanSmBr("${sBULLET} ${dev.displayName}", sCLR4D9)
+                desc += spanSmBr("${sBULLET} ${dev?.displayName}", sCLR4D9)
         }
             desc += lineBr()
     }
@@ -519,7 +519,7 @@ private String getCapFilterDesc() {
         perDev.each { String devId, caps ->
             def dev = settings.tempDeviceList?.find { it.id == devId }
             if (dev) {
-                desc += spanSmBr("${sBULLET} ${dev.displayName}: [${caps.join(', ')}]", sCLR4D9)
+                desc += spanSmBr("${sBULLET} ${dev?.displayName}: [${caps.join(', ')}]", sCLR4D9)
             }
         }
         desc += lineBr()
@@ -563,7 +563,7 @@ private String getCustAttrFilterDesc() {
         perDev.each { String devId, attrs ->
             def dev = settings.tempDeviceList?.find { it.id == devId }
             if (dev) {
-                desc += spanSmBr("${sBULLET} ${dev.displayName}: [${attrs.join(', ')}]", sCLR4D9)
+                desc += spanSmBr("${sBULLET} ${dev?.displayName}: [${attrs.join(', ')}]", sCLR4D9)
             }
         }
         app.removeSetting('tempDeviceList')
@@ -726,7 +726,7 @@ def deviceFiltersPage() {
                         String desc = attrCount > 0 ? spanSm("Attributes: ${filterData.attributes}") : sBLANK
                         desc += capCount > 0 ? (attrCount > 0 ? lineBr() : sBLANK) + spanSm("Capabilities: ${filterData.capabilities}") : sBLANK
                         desc += cmdCount > 0 ? (capCount > 0 || attrCount > 0 ? lineBr() : sBLANK) + spanSm("Commands: ${filterData.commands}") : sBLANK
-                        href(name: "deviceFilterEdit${devId}", page: 'deviceFiltersActionPage', title: inTS("${dev.displayName}"), description: desc + inputFooter(sTTM, sCLRGRY), state: 'complete', params: [deviceId: devId, action: 'edit'])
+                        href(name: "deviceFilterEdit${devId}", page: 'deviceFiltersActionPage', title: inTS("${dev?.displayName}"), description: desc + inputFooter(sTTM, sCLRGRY), state: 'complete', params: [deviceId: devId, action: 'edit'])
                     } else {
                         paragraph "Device with ID ${devId} not found."
                     }
@@ -779,7 +779,7 @@ def deviceFiltersActionPage(params) {
 
                 if (action == 'remove') {
                     section(sectHead('Confirm Removal')) {
-                        paragraph spanSmBldBr("Are you sure you want to remove the filters for ${device.displayName}?", sCLRRED)
+                        paragraph spanSmBldBr("Are you sure you want to remove the filters for ${device?.displayName}?", sCLRRED)
                         input name: 'confirmRemove', type: sBOOL, title: inTS('Confirm Removal', 'reset'), defaultValue: false, submitOnChange: false
 
                         if (getBoolSetting('confirmRemove')) {
@@ -789,7 +789,7 @@ def deviceFiltersActionPage(params) {
                         }
                     }
                 } else {
-                    section(sectHead("${actionMap[action].header} ${device.displayName}")) {
+                    section(sectHead("${actionMap[action].header} ${device?.displayName}")) {
                         // paragraph spanSmBr(actionMap[action].desc, sCLR4D9)
 
                         // Attribute selection
@@ -1188,7 +1188,7 @@ private Map getDeviceDebugMap(dev) {
     if (dev) {
         try {
             r = [:]
-            r.name = dev.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK)
+            r.name = dev?.displayName?.toString()?.replaceAll("[#\$()!%&@^']", sBLANK)
             r.basename = dev.getName()
             r.deviceid = gtDevId(dev)
             r.status = dev.getStatus()
@@ -1227,7 +1227,7 @@ private Boolean markDeviceUnavailable(dev) {
             Long inactiveTime = useLongWait ? 172800000 * 2 : 86400000 // 2 days for smoke and CO detectors, 1 day for everything else
             def lastActTime = new Date().time - lastAct.time
             if (lastActTime > inactiveTime) {
-                // logWarn("Device: ${dev.displayName} has been marked as unavailable due to inactivity")
+                // logWarn("Device: ${dev?.displayName} has been marked as unavailable due to inactivity")
                 return true
             }
         }
