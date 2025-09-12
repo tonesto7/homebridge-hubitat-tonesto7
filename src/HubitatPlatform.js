@@ -101,7 +101,7 @@ export default class HubitatPlatform {
 
             // Initial device refresh
             await this.refreshDevices("First Launch");
-            
+
             // End metrics startup grace period now that initial device discovery is complete
             if (this.metricsManager) {
                 this.metricsManager.endStartupGracePeriod();

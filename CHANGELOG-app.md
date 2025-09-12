@@ -1,3 +1,7 @@
+## _**v3.0.5**_ (9-12-2025)
+
+- [FIX] **Adaptive Lighting**: Fixed issue where adaptive lighting wasn't being properly restored from cache after a reboot
+
 ## _**v3.0.1**_ (9-08-2025)
 - [UPDATE] **Plugin Status Monitoring**: Improved plugin health validation and connection status tracking
 - [FIX] **Memory Usage Warnings**: Disabled unnecessary memory usage warning checks

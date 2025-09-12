@@ -79,24 +79,32 @@ export class Light {
     _configureAdaptiveLighting = (accessory, svc) => {
         const canUseAL = accessory.hasAttribute("level") && accessory.hasAttribute("colorTemperature") && this.config.features.adaptive_lighting.enabled !== false && !accessory.hasDeviceFlag("light_no_al");
 
-        if (canUseAL && !this._getAdaptiveLightingController(accessory)) {
-            const offset = this.config.features.adaptive_lighting.offset || 0;
-            const controlMode = this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC;
-            if (svc) {
-                accessory.adaptiveLightingController = new this.api.hap.AdaptiveLightingController(svc, {
-                    controllerMode: controlMode,
-                    customTemperatureAdjustment: offset,
-                });
-                accessory.adaptiveLightingController.on("update", (evt) => {
-                    this.logManager.logDebug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
-                });
-                accessory.adaptiveLightingController.on("disable", (evt) => {
-                    this.logManager.logDebug(`${accessory.displayName} | Adaptive Lighting Controller Disabled Event: `, evt);
-                });
+        if (canUseAL) {
+            const existingController = this._getAdaptiveLightingController(accessory);
+            if (!existingController) {
+                const offset = this.config.features.adaptive_lighting.offset || 0;
+                const controlMode = this.api.hap.AdaptiveLightingControllerMode.AUTOMATIC;
+                if (svc) {
+                    accessory.adaptiveLightingController = new this.api.hap.AdaptiveLightingController(svc, {
+                        controllerMode: controlMode,
+                        customTemperatureAdjustment: offset,
+                    });
+                    accessory.adaptiveLightingController.on("update", (evt) => {
+                        this.logManager.logDebug(`[${accessory.context.deviceData.name}] Adaptive Lighting Controller Update Event: `, evt);
+                    });
+                    accessory.adaptiveLightingController.on("disable", (evt) => {
+                        this.logManager.logDebug(`${accessory.displayName} | Adaptive Lighting Controller Disabled Event: `, evt);
+                    });
+                    this.logManager.logInfo(`Adaptive Lighting Supported | Assigning Adaptive Lighting Controller to ${accessory.displayName}`);
+                } else {
+                    this.logManager.logError(`${accessory.displayName} | Unable to add adaptiveLightingController because the required service parameter was missing...`);
+                }
+            }
+            
+            // Always configure the controller (for both new and existing controllers)
+            // This ensures proper restoration of adaptive lighting state after reboots
+            if (accessory.adaptiveLightingController) {
                 accessory.configureController(accessory.adaptiveLightingController);
-                this.logManager.logInfo(`Adaptive Lighting Supported | Assigning Adaptive Lighting Controller to ${accessory.displayName}`);
-            } else {
-                this.logManager.logError(`${accessory.displayName} | Unable to add adaptiveLightingController because the required service parameter was missing...`);
             }
         } else if (!canUseAL && this._getAdaptiveLightingController(accessory)) {
             this._removeAdaptiveLightingController(accessory);

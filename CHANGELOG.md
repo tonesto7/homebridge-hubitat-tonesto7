@@ -1,3 +1,7 @@
+## [3.0.5] - 2025-09-12
+- [UPDATE] **Metrics Dashboard**: Added aggregated metrics view and instance-specific metrics view
+- [FIX] **Fixed**: Fixed issue where device display name was causing errors when no longer available
+
 ## [3.0.3] - 2025-09-08
 - [UPDATE] **Metrics Dashboard**: Added aggregated metrics view and instance-specific metrics view
 
