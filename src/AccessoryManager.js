@@ -50,23 +50,7 @@ export class AccessoryManager {
         this.config = platform.config;
         this.api = platform.api;
 
-        // Command management
-        this._commandTimers = new Map();
-        this._lastCommandTimes = new Map();
-
-        // Default command debounce configuration
-        this.defaultCmdDebounceConfig = {
-            setLevel: { delay: 600, trailing: true },
-            setVolume: { delay: 600, trailing: true },
-            setSpeed: { delay: 600, trailing: true },
-            setSaturation: { delay: 600, trailing: true },
-            setHue: { delay: 600, trailing: true },
-            setColorTemperature: { delay: 600, trailing: true },
-            setHeatingSetpoint: { delay: 600, trailing: true },
-            setCoolingSetpoint: { delay: 600, trailing: true },
-            setThermostatSetpoint: { delay: 600, trailing: true },
-            setThermostatMode: { delay: 600, trailing: true },
-        };
+        // Command management handled by HubitatClient
 
         // Initialize device handlers and tests
         this.deviceHandlers = {
@@ -415,57 +399,14 @@ export class AccessoryManager {
             return characteristic;
         };
 
-        // Command handling with debouncing
+        // Command handling - delegate to HubitatClient batching
         accessory.sendCommand = async (command, params = []) => {
             try {
-                // Get the command debounce config
-                const cmdConfig = this.defaultCmdDebounceConfig[command];
-                const delay = cmdConfig?.delay || 300;
-                const trailing = cmdConfig?.trailing || false;
-
-                // Get the time since the last command
-                const now = Date.now();
-                const lastTime = this._lastCommandTimes.get(command) || 0;
-                const timeSinceLastCommand = now - lastTime;
-
-                // Clear any existing timer for this command
-                const existingTimer = this._commandTimers.get(command);
-                if (existingTimer) {
-                    clearTimeout(existingTimer);
-                    this._commandTimers.delete(command);
-                }
-
                 // Ensure params is an array and filter out null/undefined
                 const validParams = Array.isArray(params) ? params.filter((p) => p !== null) : [params].filter((p) => p !== null);
 
-                // Execute the command (check for trailing debounce)
-                const executeCommand = async () => {
-                    this._lastCommandTimes.set(command, Date.now());
-                    return await this.platform.client.sendHubitatCommand(accessory.context.deviceData, command, validParams);
-                };
-
-                // If trailing or time since last command is less than delay, set a timer
-                if (trailing || timeSinceLastCommand < delay) {
-                    return new Promise((resolve, reject) => {
-                        const timer = setTimeout(
-                            async () => {
-                                try {
-                                    const result = await executeCommand();
-                                    resolve(result);
-                                } catch (error) {
-                                    reject(error);
-                                } finally {
-                                    this._commandTimers.delete(command);
-                                }
-                            },
-                            trailing ? delay : Math.max(0, delay - timeSinceLastCommand),
-                        );
-                        this._commandTimers.set(command, timer);
-                    });
-                }
-
-                // Otherwise, execute the command immediately
-                return await executeCommand();
+                // Send command through HubitatClient's batching system
+                return await this.platform.client.sendHubitatCommand(accessory.context.deviceData, command, validParams);
             } catch (error) {
                 this.logManager.logError(`Error executing command ${command} for device ${accessory.context.deviceData.name}:`, error);
                 throw error;
@@ -691,14 +632,11 @@ export class AccessoryManager {
 
     /**
      * Clean up all timers and clear maps
+     * Command timers are now handled by HubitatClient
      */
     cleanupTimers() {
-        // Clear all pending command timers
-        for (const timer of this._commandTimers.values()) {
-            clearTimeout(timer);
-        }
-        this._commandTimers.clear();
-        this._lastCommandTimes.clear();
+        // No command timers to clean up in AccessoryManager
+        // HubitatClient handles its own timer cleanup
     }
 
     /**

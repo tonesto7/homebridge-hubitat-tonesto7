@@ -105,7 +105,7 @@ export class Light {
             // This ensures proper restoration of adaptive lighting state after reboots
             if (accessory.adaptiveLightingController) {
                 const controllerId = accessory.adaptiveLightingController.controllerId();
-                if (!accessory.controllers[controllerId]) {
+                if (!accessory.controllers || !accessory.controllers[controllerId]) {
                     accessory.configureController(accessory.adaptiveLightingController);
                 }
             }
