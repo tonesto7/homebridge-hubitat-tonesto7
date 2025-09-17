@@ -1,3 +1,8 @@
+## [3.0.6] - 2025-09-17
+
+- [FIX] **Device Command Batching**: Fixed issue where device commands were not being batched correctly
+- [FIX] **Adaptive Lighting**: Fixed issue where adaptive lighting wasn't being properly restored from cache after a reboot
+
 ## [3.0.5] - 2025-09-12
 
 - [FIX] **Adaptive Lighting**: Fixed issue where adaptive lighting wasn't being properly restored from cache after a reboot

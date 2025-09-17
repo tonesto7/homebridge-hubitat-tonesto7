@@ -1,3 +1,7 @@
+## _**v3.0.6**_ (9-17-2025)
+
+- [UPDATE] **Minimum Plugin Version**: Set to v3.0.6 of the plugin
+
 ## _**v3.0.5**_ (9-12-2025)
 
 - [UPDATE] **Metrics Dashboard**: Added aggregated metrics view and instance-specific metrics view
