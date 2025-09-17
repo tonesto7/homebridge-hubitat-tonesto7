@@ -100,11 +100,14 @@ export class Light {
                     this.logManager.logError(`${accessory.displayName} | Unable to add adaptiveLightingController because the required service parameter was missing...`);
                 }
             }
-            
-            // Always configure the controller (for both new and existing controllers)
+
+            // Configure the controller if it's not already configured
             // This ensures proper restoration of adaptive lighting state after reboots
             if (accessory.adaptiveLightingController) {
-                accessory.configureController(accessory.adaptiveLightingController);
+                const controllerId = accessory.adaptiveLightingController.controllerId();
+                if (!accessory.controllers[controllerId]) {
+                    accessory.configureController(accessory.adaptiveLightingController);
+                }
             }
         } else if (!canUseAL && this._getAdaptiveLightingController(accessory)) {
             this._removeAdaptiveLightingController(accessory);

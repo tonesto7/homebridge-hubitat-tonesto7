@@ -344,9 +344,15 @@ export default class HubitatPlatform {
      * Configure an accessory during platform initialization
      * @param {PlatformAccessory} accessory - The accessory to configure
      */
-    configureAccessory(accessory) {
+    async configureAccessory(accessory) {
         const deviceId = accessory.context.deviceData?.deviceid;
         if (deviceId) {
+            // Reconfigure the accessory to restore controllers like adaptive lighting
+            try {
+                await this.accessoryManager.configureAccessory(accessory);
+            } catch (error) {
+                this.logManager.logError(`Error reconfiguring restored accessory ${accessory.displayName}:`, error);
+            }
             this.addAccessoryToCache(accessory);
         } else {
             this.logManager.logWarn(`Accessory ${accessory.displayName} is missing deviceData.deviceid`);

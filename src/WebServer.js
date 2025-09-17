@@ -511,9 +511,11 @@ export class WebServer {
         // Get queue statistics
         webApp.get("/monitoring/queues", (req, res) => {
             const queueStats = this.getQueueStats();
+            const commandQueueStats = this.platform.client.getCommandQueueStats();
             res.send({
                 status: "OK",
                 queues: queueStats,
+                commandQueue: commandQueueStats,
                 timestamp: new Date().toISOString(),
             });
         });

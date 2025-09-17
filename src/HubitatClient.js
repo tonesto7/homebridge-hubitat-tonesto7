@@ -37,6 +37,10 @@ export default class HubitatClient {
             batchSize: 10,
             batchDelay: 25,
             maxBatchDelay: 100,
+            isProcessing: false,
+            totalQueued: 0,
+            totalProcessed: 0,
+            totalBatches: 0,
         };
 
         // Retry configuration
@@ -151,13 +155,31 @@ export default class HubitatClient {
     }
 
     async processBatch() {
-        if (!this.commandState.queue.length) return;
+        // Prevent concurrent batch processing
+        if (this.commandState.isProcessing) {
+            this.logManager.logDebug("Batch processing already in progress, skipping");
+            return;
+        }
+
+        if (!this.commandState.queue.length) {
+            this.commandState.batchTimer = null;
+            return;
+        }
+
+        // Set processing flag and clear timer
+        this.commandState.isProcessing = true;
+        this.commandState.batchTimer = null;
 
         const commands = this.commandState.queue.splice(0, this.commandState.batchSize);
-        this.commandState.batchTimer = null;
         const startTime = Date.now();
         let success = false;
         let error = null;
+
+        // Update statistics
+        this.commandState.totalBatches++;
+        this.commandState.totalProcessed += commands.length;
+
+        this.logManager.logDebug(`Processing batch of ${commands.length} commands (${this.commandState.queue.length} remaining in queue) | Total batches: ${this.commandState.totalBatches}, Total processed: ${this.commandState.totalProcessed}`);
 
         try {
             const formattedCommands = commands.map((cmd) => ({
@@ -177,15 +199,24 @@ export default class HubitatClient {
                 timeout: 5000,
             });
             success = true;
+            this.logManager.logDebug(`Successfully processed batch of ${commands.length} commands`);
         } catch (err) {
             success = false;
             error = err.message;
             this.handleError("processBatch", err);
+            this.logManager.logWarn(`Batch processing failed, falling back to individual commands for ${commands.length} commands`);
+
             // Fall back to individual commands - metrics will be recorded in sendSingleCommand
             for (const cmd of commands) {
-                await this.sendSingleCommand(cmd.devData, cmd.command, cmd.params);
+                try {
+                    await this.sendSingleCommand(cmd.devData, cmd.command, cmd.params);
+                } catch (singleErr) {
+                    this.logManager.logError(`Failed to send individual command ${cmd.command} to device ${cmd.devData.name}:`, singleErr);
+                }
             }
-            return; // Skip metrics recording as individual commands will handle it
+        } finally {
+            // Always clear processing flag
+            this.commandState.isProcessing = false;
         }
 
         // Record batch command metrics only if successful
@@ -208,7 +239,7 @@ export default class HubitatClient {
         }
 
         // Process remaining queue if any
-        if (this.commandState.queue.length) {
+        if (this.commandState.queue.length > 0) {
             this.scheduleBatchProcessing();
         }
     }
@@ -266,12 +297,19 @@ export default class HubitatClient {
             // Add command to batch queue
             this.commandState.queue.push({ devData, command: cmd, params });
             this.commandState.lastExecutions.set(cmd, Date.now());
+            this.commandState.totalQueued++;
+
+            this.logManager.logDebug(`Command queued. Queue size: ${this.commandState.queue.length}, Processing: ${this.commandState.isProcessing}, Total queued: ${this.commandState.totalQueued}`);
 
             // If queue reaches batch size, process immediately
             if (this.commandState.queue.length >= this.commandState.batchSize) {
+                this.logManager.logDebug(`Queue reached batch size (${this.commandState.batchSize}), processing immediately`);
                 await this.processBatch();
             } else {
-                this.scheduleBatchProcessing();
+                // Only schedule if not already processing
+                if (!this.commandState.isProcessing) {
+                    this.scheduleBatchProcessing();
+                }
             }
 
             return true;
@@ -282,9 +320,23 @@ export default class HubitatClient {
     }
 
     scheduleBatchProcessing() {
-        if (this.commandState.batchTimer) return;
+        // Don't schedule if already processing or timer exists
+        if (this.commandState.isProcessing || this.commandState.batchTimer) {
+            return;
+        }
 
-        this.commandState.batchTimer = setTimeout(() => this.processBatch(), Math.min(this.commandState.batchDelay, this.commandState.maxBatchDelay));
+        // Don't schedule if queue is empty
+        if (this.commandState.queue.length === 0) {
+            return;
+        }
+
+        this.commandState.batchTimer = setTimeout(
+            () => {
+                this.commandState.batchTimer = null;
+                this.processBatch();
+            },
+            Math.min(this.commandState.batchDelay, this.commandState.maxBatchDelay),
+        );
     }
 
     handleError(source, error) {
@@ -382,6 +434,19 @@ export default class HubitatClient {
             ...this.connectionStats,
             uptime: Date.now() - this.connectionStats.lastReset,
             errorRate: this.connectionStats.totalRequests > 0 ? ((this.connectionStats.errors / this.connectionStats.totalRequests) * 100).toFixed(2) + "%" : "0%",
+        };
+    }
+
+    getCommandQueueStats() {
+        return {
+            queueSize: this.commandState.queue.length,
+            isProcessing: this.commandState.isProcessing,
+            batchSize: this.commandState.batchSize,
+            batchDelay: this.commandState.batchDelay,
+            totalQueued: this.commandState.totalQueued,
+            totalProcessed: this.commandState.totalProcessed,
+            totalBatches: this.commandState.totalBatches,
+            hasTimer: !!this.commandState.batchTimer,
         };
     }
 
@@ -583,6 +648,7 @@ export default class HubitatClient {
         // Clear command batching timers
         if (this.commandState.batchTimer) {
             clearTimeout(this.commandState.batchTimer);
+            this.commandState.batchTimer = null;
         }
         if (this.attributeBatchTimer) {
             clearTimeout(this.attributeBatchTimer);
@@ -600,6 +666,7 @@ export default class HubitatClient {
         this.commandState.queue = [];
         this.commandState.timers.clear();
         this.commandState.lastExecutions.clear();
+        this.commandState.isProcessing = false;
         this.attributeUpdateQueue.clear();
         this.appEvts.removeAllListeners();
 
