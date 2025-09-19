@@ -2281,9 +2281,11 @@ def changeHandler(evt) {
                 if ((String)evt.value == 'pistonList') {
                     List<Map> p; p = (List<Map>)webCoREFLD?.pistons ?: []
                     Map d = evt.jsonData ?: [:]
-                    if (d.id && d.pistons && (d.pistons.is(List))) {
+                    //if (evtLog) { logDebug("got webCoRE islist: ${d.pistons.is(List)} ${d}") }
+                    if (d.id && d.pistons) {
+                        List<Map> pl = d.pistons as List<Map>
                         p.removeAll { it.iid == d.id }
-                        p += ((List<Map>)d.pistons).collect { [iid:d.id] + it }.sort { (String)it.name }
+                        p += pl.collect { [iid:d.id] + it }.sort { (String)it.n }
                         def a = webCoREFLD?.cbk
                         webCoREFLD = [cbk: a, updated: wnow(), pistons: p]
                         updTsVal(sLASTWU)
@@ -2296,7 +2298,7 @@ def changeHandler(evt) {
                         Map rt = getPistonById(id)
                         if (rt && rt.id) {
                             sendEvt = true
-                            sendItems.push([evtSource: 'PISTON', evtDeviceName: "Piston - ${rt.name}", evtDeviceId: rt.id, evtAttr: sSW, evtValue: 'off', evtUnit: sBLANK, evtDate: dt])
+                            sendItems.push([evtSource: 'PISTON', evtDeviceName: "Piston - ${rt.n}", evtDeviceId: rt.id, evtAttr: sSW, evtValue: 'off', evtUnit: sBLANK, evtDate: dt])
                         }
                     }
                     break
@@ -2378,9 +2380,20 @@ void sendHttpPost(String path, Map body, String src=sBLANK, Boolean evtLog, Stri
 
 void asyncHttpCmdResp(response, Map data) {
     if (getTsVal(sDBG) == sTRUE && bIs(data, 'evtLog')) {
-        def resp = response?.getData()
-        String src = data?.src ? (String)data.src : 'Unknown'
-        logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
+        def resp
+        String src
+        try {
+            resp = response?.getData()
+        } catch(e){
+            resp = null	
+        }
+        src = data?.src ? (String)data.src : 'Unknown'
+        Integer status = response?.getStatus()
+        String msg = sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}"
+        if(status >=300)
+            logWarn(msg)
+        else 
+            logDebug(sASYNCCR + " | Src: ${src} | Resp: ${resp} | Status: ${response?.getStatus()} | Data: ${data}")
         logDebug("Send to plugin Completed | Process Time: (${data?.execDt ? (wnow() - (Long)data.execDt) : 0}ms)")
     }
 }
@@ -2490,7 +2503,7 @@ private void webCoRE_poll(Boolean now = false) {
 }
 
 static List webCoRE_list() {
-    return ((List<Map>)webCoREFLD?.pistons)?.sort { it?.name }?.collect { [(it?.id): ((String)it?.aname)?.replaceAll('<[^>]*>', sBLANK)] }
+    return ((List<Map>)webCoREFLD?.pistons)?.sort { it?.n }?.collect { [(it?.id): ((String)it?.a)?.replaceAll('<[^>]*>', sBLANK)] }
 }
 
 static Map getPistonById(String rId) {
@@ -2498,7 +2511,7 @@ static Map getPistonById(String rId) {
 }
 
 static Map getPistonByName(String name) {
-    return ((List<Map>)webCoREFLD?.pistons)?.find { it?.name == name }
+    return ((List<Map>)webCoREFLD?.pistons)?.find { it?.n == name }
 }
 
 void settingUpdate(String name, String value, String type=sNULL) {
