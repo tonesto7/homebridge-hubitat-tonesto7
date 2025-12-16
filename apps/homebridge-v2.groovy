@@ -585,7 +585,7 @@ private String getCustAttrFilterDesc() {
 }
 
 private void inputDupeValidation() {
-    Map<String,Map<String,List>> clnUp = (['d': [:], 'o': [:]]) as Map<String, Map<String, List>>
+    Map<String,Map<String,List>> clnUp = (['d': [:], 'o': [:]])
     Map<String,String> dMap
     dMap = [:] + deviceSettingKeys()
     dMap.remove('pushableButtonList'); dMap.remove('holdableButtonList'); dMap.remove('doubleTapableButtonList')
