@@ -57,7 +57,7 @@ preferences {
 
 // STATICALLY DEFINED VARIABLES
 @Field static final String appVersionFLD  = '3.0.6'
-//@Field static final String appModifiedFLD = '9-17-2025'
+//@Field static final String appModifiedFLD = '12-14-2025'
 @Field static final String branchFLD      = 'master'
 @Field static final String platformFLD    = 'Hubitat'
 @Field static final String pluginNameFLD  = 'Hubitat-v2'
@@ -196,7 +196,7 @@ def mainPage() {
     if (getBoolSetting('enableWebCoRE') && !webCoREFLD) { webCoRE_init() }
     // return dynamicPage(name: 'mainPage', nextPage: (isInst ? 'confirmPage' : sBLANK), install: !isInst, uninstall: true) {
     return dynamicPage(name: 'mainPage', nextPage: sBLANK, install: true, uninstall: true) {
-        appCssOverrideUI()
+        //appCssOverrideUI()
         appInfoSect()
         // section("restart plugin") {
         //     input name: 'restartPluginButton', type: 'button', title: 'Restart Homebridge Plugin'
@@ -468,8 +468,9 @@ private void resetCapFilters() {
 
 private Boolean capFiltersSelected() {
     Map cFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
-    Map perDev = cFilters?.perDevice ?: [:]
-    List<String> global = cFilters?.global ?: []
+    Map<String,Object> perDev = cFilters?.perDevice ? cFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = cFilters?.global ? cFilters.global as List<String> : []
+
     if (perDev && perDev?.keySet()?.size() || global && global?.size()) {
         return true
     }
@@ -481,7 +482,7 @@ private void setupTempDeviceSetting(List<String> deviceIds) {
 }
 
 private String getCapFilterDesc() {
-    String desc = ''
+    String desc; desc = ''
 
     // Handle noTempFromContactWater
     if (getBoolSetting('noTempFromContactWater')) {
@@ -510,13 +511,13 @@ private String getCapFilterDesc() {
 
     // Handle custom capability filters
     Map cFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: sBLANK)
-    Map perDev = cFilters?.perDevice ?: [:]
-    List<String> global = cFilters?.global ?: []
+    Map<String,Object> perDev = cFilters?.perDevice ? cFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = cFilters?.global ? cFilters.global as List<String> : []
 
     if (perDev && perDev.keySet()?.size()) {
         setupTempDeviceSetting(perDev.keySet() as List<String>)
         desc += spanSmBldBr('Per-Device Custom Capabilities:', sCLR4D9)
-        perDev.each { String devId, caps ->
+        perDev.each { String devId, Object caps ->
             def dev = settings.tempDeviceList?.find { it.id == devId }
             if (dev) {
                 desc += spanSmBr("${sBULLET} ${dev?.displayName}: [${caps.join(', ')}]", sCLR4D9)
@@ -540,22 +541,26 @@ private void resetAttrFilters() {
     settingRemove('customAttrFilters')
 }
 
+
 private Boolean deviceFiltersSelected() {
-    return state.deviceFiltersMap?.keySet()?.size() > 0 ? true : false
+    return ((Map<String,Map>)state.deviceFiltersMap)?.keySet()?.size() > 0
 }
+
 
 private Boolean attrFiltersSelected() {
     Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
-    Map perDev = cFilters?.perDevice ?: [:]
-    List<String> global = cFilters?.global ?: []
+    Map<String,Object> perDev = cFilters?.perDevice ? cFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = cFilters?.global ? cFilters.global as List<String> : []
+
     return ((perDev && perDev.keySet()?.size()) || (global && global.size()))
 }
 
 private String getCustAttrFilterDesc() {
-    String desc = ''
+    String desc; desc = ''
+
     Map cFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: sBLANK)
-    Map perDev = cFilters?.perDevice ?: [:]
-    List<String> global = cFilters?.global ?: []
+    Map<String,Object> perDev = cFilters?.perDevice ? cFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = cFilters?.global ? cFilters.global as List<String> : []
 
     if (perDev && perDev.keySet()?.size()) {
         setupTempDeviceSetting(perDev.keySet() as List<String>)
@@ -580,7 +585,7 @@ private String getCustAttrFilterDesc() {
 }
 
 private void inputDupeValidation() {
-    Map<String,Map<String,List>> clnUp = ['d': [:], 'o': [:]]
+    Map<String,Map<String,List>> clnUp = (['d': [:], 'o': [:]]) as Map<String, Map<String, List>>
     Map<String,String> dMap
     dMap = [:] + deviceSettingKeys()
     dMap.remove('pushableButtonList'); dMap.remove('holdableButtonList'); dMap.remove('doubleTapableButtonList')
@@ -598,7 +603,7 @@ private void inputDupeValidation() {
                     secItems?.retainAll(priItems)
                     if (secItems?.size()) {
                         clnUp.d[k2] = clnUp?.d[k2] ?: []
-                        clnUp.d[k2] = (clnUp?.d[k2] + secItems)?.unique()
+                        clnUp.d[k2] = (clnUp.d[k2] + secItems).unique()
                     }
                 }
             }
@@ -699,6 +704,7 @@ private static String kvListToHtmlTable(List tabList, String color=sCLRGRY) {
     return str
 }
 
+
 def deviceFiltersPage() {
     // Initialize deviceFilters in state if not already present
     state.deviceFiltersMap = state.deviceFiltersMap ?: [:]
@@ -716,14 +722,15 @@ def deviceFiltersPage() {
         section(sectHead('Configured Device Filters')) {
             if (state.deviceFiltersMap.size() > 0) {
                 // List existing device filters
-                state.deviceFiltersMap.each { String devId, filterData ->
+                ((Map<String,Map>)state.deviceFiltersMap).each { String devId, filterData ->
                     def dev = settings.allFilterDevices.find { it.id == devId }
                     log.debug "dev(${devId}): ${dev}"
                     if (dev) {
-                        def attrCount = filterData.attributes?.size() ?: 0
-                        def capCount = filterData.capabilities?.size() ?: 0
-                        def cmdCount = filterData.commands?.size() ?: 0
-                        String desc = attrCount > 0 ? spanSm("Attributes: ${filterData.attributes}") : sBLANK
+                        Integer attrCount = ((List)filterData.attributes)?.size() ?: 0
+                        Integer capCount = ((List)filterData.capabilities)?.size() ?: 0
+                        Integer cmdCount = ((List)filterData.commands)?.size() ?: 0
+                        String desc
+                        desc = attrCount > 0 ? spanSm("Attributes: ${filterData.attributes}") : sBLANK
                         desc += capCount > 0 ? (attrCount > 0 ? lineBr() : sBLANK) + spanSm("Capabilities: ${filterData.capabilities}") : sBLANK
                         desc += cmdCount > 0 ? (capCount > 0 || attrCount > 0 ? lineBr() : sBLANK) + spanSm("Commands: ${filterData.commands}") : sBLANK
                         href(name: "deviceFilterEdit${devId}", page: 'deviceFiltersActionPage', title: inTS("${dev?.displayName}"), description: desc + inputFooter(sTTM, sCLRGRY), state: 'complete', params: [deviceId: devId, action: 'edit'])
@@ -742,14 +749,14 @@ def deviceFiltersPage() {
 
         section(sectHead('Reset Filters')) {
             input 'deviceFilterReset', sBOOL, title: inTS('Clear All Device Filters?', 'reset'), required: false, defaultValue: false, submitOnChange: true
-            if (getBoolSetting('deviceFilterReset')) { settingUpdate('deviceFilterReset', sFALSE, sBOOL); state.deviceFiltersMap = [:]; }
+            if (getBoolSetting('deviceFilterReset')) { settingUpdate('deviceFilterReset', sFALSE, sBOOL); state.deviceFiltersMap = [:] }
         }
     }
 }
 
 def deviceFiltersActionPage(params) {
     log.debug "deviceFilterEditPage | params: ${params}"
-    String deviceId = params?.deviceId
+    String deviceId; deviceId = params?.deviceId
     String action = params?.action
 
     Map actionMap = [
@@ -775,7 +782,7 @@ def deviceFiltersActionPage(params) {
             def device = action == 'add' ? settings.selectedFilterDev : settings.allFilterDevices.find { it.id == deviceId }
             if (device) {
                 // Get existing filter data if editing
-                Map filterData = state.deviceFiltersMap[deviceId] ?: [:]
+                Map filterData = (state.deviceFiltersMap[deviceId] ?: [:]) as Map
 
                 if (action == 'remove') {
                     section(sectHead('Confirm Removal')) {
@@ -783,7 +790,7 @@ def deviceFiltersActionPage(params) {
                         input name: 'confirmRemove', type: sBOOL, title: inTS('Confirm Removal', 'reset'), defaultValue: false, submitOnChange: false
 
                         if (getBoolSetting('confirmRemove')) {
-                            state.deviceFiltersMap.remove(deviceId)
+                            ((Map)state.deviceFiltersMap).remove(deviceId)
                             app.removeSetting('confirmRemove')
                             return deviceFiltersPage()
                         }
@@ -837,7 +844,7 @@ def deviceFilterEditPage(params) {
             String devId = device.id
 
             // Retrieve existing filter data if any
-            Map filterData = state.deviceFiltersMap[devId] ?: [attributes: [], capabilities: [], commands: [], name: device.displayName]
+            Map filterData = (state.deviceFiltersMap[devId] ?: [attributes: [], capabilities: [], commands: [], name: device.displayName]) as Map
 
             section(sectHead("Configure Filters for ${device.displayName}")) {
                 // Attribute selection
@@ -851,7 +858,7 @@ def deviceFilterEditPage(params) {
 
                 // Save or Remove options
                 input name: 'saveDeviceFilter', type: 'bool', title: inTS('Save Filter'), defaultValue: false, submitOnChange: true
-                if (state.deviceFiltersMap.containsKey(devId)) {
+                if (((Map)state.deviceFiltersMap).containsKey(devId)) {
                     input name: 'removeDeviceFilter', type: 'bool', title: inTS('Remove Device Filter'), defaultValue: false, submitOnChange: true
                 }
 
@@ -880,8 +887,8 @@ def deviceFilterEditPage(params) {
 }
 
 private String getDeviceFiltersDesc() {
-    String desc = ''
-    state.deviceFiltersMap.each { String devId, Map filterData ->
+    String desc; desc = ''
+    (Map<String,Map>)state.deviceFiltersMap.each { String devId, Map filterData ->
         desc += spanSmBld("${filterData.name}", sCLR4D9) + lineBr()
 
         if (filterData.attributes?.size()) {
@@ -1219,7 +1226,7 @@ private Map getDeviceDebugMap(dev) {
     return r
 }
 
-private Boolean markDeviceUnavailable(dev) {
+private static Boolean markDeviceUnavailable(dev) {
     if (dev) {
         def lastAct = dev.getLastActivity()
         if (lastAct) {
@@ -1419,9 +1426,10 @@ private List renderDevices() {
     return devList
 }
 
-private String sanitizeName(String name) {
+private static String sanitizeName(String name) {
     // Remove all characters except alphanumerics, spaces, and apostrophes
-    String sanitized = name
+    String sanitized
+    sanitized = name
         .replaceAll(/[^a-zA-Z0-9 ']/, '')
         .trim()
         .replaceAll(/^[^a-zA-Z0-9]+/, '') // Remove leading non-alphanumeric characters
@@ -1744,7 +1752,10 @@ def deviceCommands() {
     return results
 }
 
-private processCmd(String devId, String command, List params) {
+private processCmd(String idevId, String icommand, List params) {
+    String devId; devId = idevId
+    String command; command = icommand
+
     Long execDt = wnow()
     Boolean shw = getBoolSetting('showCmdLogs')
 
@@ -1846,7 +1857,7 @@ private void checkPluginHealth() {
         app_id: gtAppId(),
         access_token: getTsVal(sATK),
         app_version: appVersionFLD,
-        hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone)
+        hubDateTime: new Date().format('yyyy-MM-dd HH:mm:ss z', (TimeZone)location.timeZone)
     ], 'pluginHealthCheckResponse', getBoolSetting('showDebugLogs'))
 }
 
@@ -1862,7 +1873,7 @@ def healthStatus() {
             version: body?.pluginVersion,
             memory: body?.memory,
             uptime: body?.uptime,
-            lastCheckin: now()
+            lastCheckin: wnow()
         ]
         remTsVal(sSVR)
         updCodeVerMap('plugin', body?.pluginVersion ?: sNULL)
@@ -1880,7 +1891,7 @@ private Map analyzePluginHealth() {
     ]
 
     Map pluginDetails = state.pluginDetails ?: [:]
-    Long lastCheckin = pluginDetails.lastCheckin ?: 0
+    Long lastCheckin = (pluginDetails.lastCheckin ?: 0L ) as Long
 
     // Check if plugin has ever connected
     if (!lastCheckin) {
@@ -1889,9 +1900,9 @@ private Map analyzePluginHealth() {
     }
 
     // Check time since last communication
-    Long diffMs = now() - lastCheckin
-    Long diffMins = diffMs / 60000
-    Long diffHours = diffMins / 60
+    Long diffMs = wnow() - lastCheckin
+    Long diffMins = (diffMs / 60000) as Long
+    Long diffHours = (diffMins / 60) as Long
 
     if (diffHours > 24) {
         result.messages.push("Plugin hasn't communicated in ${Math.round(diffHours/24)} days")
@@ -1929,11 +1940,13 @@ def deviceAttribute() {
     compressedRender contentType: sAPPJSON, data: resultJson, code: code
 }
 
+
 static Map findVirtPistonDevice(id) {
     Map aa = getPistonById("${id}".toString())
     /* groovylint-disable-next-line ReturnsNullInsteadOfEmptyCollection */
     return aa ?: null
 }
+
 
 Map<String,Integer> deviceCapabilityList(device) {
     String devid = gtDevId(device)
@@ -1955,7 +1968,7 @@ Map<String,Integer> deviceCapabilityList(device) {
     if (isDeviceInInput('tstatList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 }; capItems?.remove('ThermostatFanMode') }
     if (isDeviceInInput('tstatFanList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 } }
     if (isDeviceInInput('tstatCoolList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 }; capItems.remove('ThermostatHeatingSetpoint') }
-    if (isDeviceInInput('tstatHeatList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 };; capItems.remove('ThermostatCoolingSetpoint') }
+    if (isDeviceInInput('tstatHeatList', devid)) { ['Thermostat', 'ThermostatOperatingState'].each { String cap -> capItems[cap] = 1 }; capItems.remove('ThermostatCoolingSetpoint') }
 
     if (getBoolSetting('noTempFromContactWater') && capItems['TemperatureMeasurement'] && (capItems['ContactSensor'] || capItems['WaterSensor'])) {
         Boolean remTemp; remTemp = true
@@ -1981,14 +1994,18 @@ Map<String,Integer> deviceCapabilityList(device) {
 
     // Apply custom capability filters
     Map customFilters = parseCustomFilterStr(getStrSetting('customCapFilters') ?: '')
-    customFilters.global?.each { cap -> capItems.remove(cap) }
-    customFilters.perDevice?.get(devid)?.each { cap -> capItems.remove(cap) }
+    Map<String,Object> perDev = customFilters?.perDevice ? customFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = customFilters?.global ? customFilters.global as List<String> : []
+
+    global?.each { cap -> capItems.remove(cap) }
+    perDev?.get(devid)?.each { cap -> capItems.remove(cap) }
 
     // Apply state.deviceFiltersMap
-    state.deviceFiltersMap?.get(devid)?.capabilities?.each { cap -> capItems.remove(cap) }
+    ((List)((Map<String,Map>)state.deviceFiltersMap)?.get(devid)?.capabilities)?.each { cap -> capItems.remove(cap) }
 
     return capItems?.sort { (String)it.key }
 }
+
 
 Map<String,Integer> deviceCommandList(device) {
     String devid = gtDevId(device)
@@ -2016,19 +2033,23 @@ Map<String,Integer> deviceCommandList(device) {
 
     // Apply custom command filters
     Map customFilters = parseCustomFilterStr(getStrSetting('customCmdFilters') ?: '')
-    customFilters.global?.each { cmd -> cmds.remove(cmd) }
-    customFilters.perDevice?.get(devid)?.each { cmd -> cmds.remove(cmd) }
+    Map<String,Object> perDev = customFilters?.perDevice ? customFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = customFilters?.global ? customFilters.global as List<String> : []
+
+    global?.each { cmd -> cmds.remove(cmd) }
+    perDev?.get(devid)?.each { cmd -> cmds.remove(cmd) }
 
     // Apply state.deviceFiltersMap
-    state.deviceFiltersMap?.get(devid)?.commands?.each { cmd -> cmds.remove(cmd) }
+    ((List)((Map<String,Map>)state.deviceFiltersMap)?.get(devid)?.commands)?.each { cmd -> cmds.remove(cmd) }
     return cmds
 }
 
-private Map parseCustomFilterStr(String text) {
-    Map result = [
+
+private static Map<String,Object> parseCustomFilterStr(String text) {
+    Map<String,Object> result = [
         perDevice: [:],
         global: []
-    ]
+    ] as Map<String, Object>
 
     // Match sections either inside [ ] or standalone without brackets.
     java.util.regex.Matcher matcher = text =~ /\[([^\]]+)\]|([^,\[]+)(?=\s*,|$)/
@@ -2052,6 +2073,7 @@ private Map parseCustomFilterStr(String text) {
     return result
 }
 
+
 Map<String,Object> deviceAttributeList(device) {
     String devid = gtDevId(device)
     if (!device || !devid) { return [:] }
@@ -2071,8 +2093,8 @@ Map<String,Object> deviceAttributeList(device) {
     if (!isDeviceInInput('holdableButtonList', devid)) { atts.remove('held') }
     if (!isDeviceInInput('doubleTapableButtonList', devid)) { atts.remove('doubleTapped') }
 
-    if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['cool', 'off'] }
-    if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = supportedThermostatModes ?: ['heat', 'off'] }
+    if (isDeviceInInput('tstatCoolList', devid)) { atts.remove('heatingSetpoint'); atts.remove('heatingSetpointRange'); atts['supportedThermostatModes'] = atts['supportedThermostatModes'] ?: ['cool', 'off'] }
+    if (isDeviceInInput('tstatHeatList', devid)) { atts.remove('coolingSetpoint'); atts.remove('coolingSetpointRange'); atts['supportedThermostatModes'] = atts['supportedThermostatModes'] ?: ['heat', 'off'] }
     if (isDeviceInInput('removeColorControl', devid)) { ['RGB', 'color', 'colorName', 'hue', 'saturation'].each { atts.remove(it) } }
     if (isDeviceInInput('removeColorTemperature', devid)) { atts.remove('colorTemperature') }
     if (isDeviceInInput('removeLightEffects', devid)) { ['effectName', 'lightEffects'].each { atts.remove(it) } }
@@ -2083,11 +2105,14 @@ Map<String,Object> deviceAttributeList(device) {
 
     // Apply custom attribute filters
     Map customFilters = parseCustomFilterStr(getStrSetting('customAttrFilters') ?: '')
-    customFilters.global?.each { attr -> atts.remove(attr) }
-    customFilters.perDevice?.get(devid)?.each { attr -> atts.remove(attr) }
+    Map<String,Object> perDev = customFilters?.perDevice ? customFilters.perDevice as Map<String,Object> : [:]
+    List<String> global = customFilters?.global ? customFilters.global as List<String> : []
+
+    global?.each { attr -> atts.remove(attr) }
+    perDev?.get(devid)?.each { attr -> atts.remove(attr) }
 
     // Apply state.deviceFiltersMap
-    state.deviceFiltersMap?.get(devid)?.attributes?.each { attr -> atts.remove(attr) }
+    ((List)((Map<String,Map>)state.deviceFiltersMap)?.get(devid)?.attributes)?.each { attr -> atts.remove(attr) }
 
     return atts
 }
@@ -2182,10 +2207,13 @@ Boolean isDeviceInInput(String setKey, String devId) {
 void registerChangeHandler(List devices, Boolean showlog=false) {
     devices?.each { device ->
         String devid = gtDevId(device)
-        List<String> theAtts = ((List)device.getSupportedAttributes())?.collect { (String)it.name }?.unique()
+        Map<String,Object> attrMap = deviceAttributeList(device)
+        List<String> theAtts = attrMap.collect{ (String)it.key }?.unique()
+        //List<String> theAtts = ((List)device.getSupportedAttributes())?.collect { (String)it.name }?.unique()
         if (showlog) { log.debug "atts: ${theAtts}" }
         theAtts?.each { String att ->
             if (allowedListFLD.attributes.contains(att)) {
+                // this is a capability filter
                 if (getBoolSetting('noTempFromContactWater') && att == 'temperature' && (device.hasAttribute('contact') || device.hasAttribute('water'))) {
                     Boolean skipAtt; skipAtt = true
                     if (getListSetting('sensorAllowTemp')) {
@@ -2193,6 +2221,7 @@ void registerChangeHandler(List devices, Boolean showlog=false) {
                     }
                     if (skipAtt) { return }
                 }
+
                 attMapFLD.each { String k, String v -> if (att == k && isDeviceInInput("remove${v}".toString(), devid)) { return } }
                 if (
                     (att == 'pushed' && !isDeviceInInput('pushableButtonList', devid)) ||
@@ -2384,7 +2413,7 @@ void asyncHttpCmdResp(response, Map data) {
         String src
         try {
             resp = response?.getData()
-        } catch(e){
+        } catch(ignored){
             resp = null	
         }
         src = data?.src ? (String)data.src : 'Unknown'
@@ -2436,7 +2465,7 @@ String getPluginStatusDesc() {
 
         // Include the lastCheckin Timestamp to local date/time
         Long lastCheckin = state?.pluginDetails?.lastCheckin ?: 0
-        out += spanSmBld(" ${sBULLET} Last Checkin:", sCLRGRY) + spanSmBr(" ${lastCheckin ? new Date(lastCheckin).format('MM/dd/yyyy hh:mm:ss a', location?.timeZone) : 'Never'}", sCLRGRY)
+        out += spanSmBld(" ${sBULLET} Last Checkin:", sCLRGRY) + spanSmBr(" ${lastCheckin ? new Date(lastCheckin).format('MM/dd/yyyy hh:mm:ss a', (TimeZone)location.timeZone) : 'Never'}", sCLRGRY)
 
         // Include Polling Interval
         Integer pollingInterval = settings.polling_seconds ?: 900
@@ -2582,7 +2611,7 @@ def pluginStatus() {
     pluginDetails.isLocal = body?.isLocal ?: false
     pluginDetails.memory = body?.memory ?: null
     pluginDetails.uptime = body?.uptime ?: null
-    pluginDetails.lastCheckin = now()
+    pluginDetails.lastCheckin = wnow()
     state.pluginDetails = pluginDetails
 
     if (body?.version) { updCodeVerMap('plugin', (String)body?.version) }
@@ -2599,7 +2628,7 @@ def registerPluginForUpdates() {
         version: body?.pluginVersion ?: null,
         memory: body?.memory ?: null,
         uptime: body?.uptime ?: null,
-        lastCheckin: now()
+        lastCheckin: wnow()
     ]
     remTsVal(sSVR)
     updCodeVerMap('plugin', (String)body?.pluginVersion ?: sNULL)
@@ -2994,7 +3023,7 @@ private List<Map> getCmdHistory() {
 
     List<Map> his; his = getMemStoreItem('cmdHistory')
     if (his == null) { his = [] }
-    List<Map> newHis = [] + his
+    List<Map> newHis = [] + his as List<Map>
 
     releaseTheLock(sHMLF)
     return newHis
@@ -3006,7 +3035,7 @@ private List<Map> getEvtHistory() {
 
     List<Map> his; his = getMemStoreItem('evtHistory')
     if (his == null) { his = [] }
-    List<Map> newHis = [] + his
+    List<Map> newHis = [] + his as List<Map>
 
     releaseTheLock(sHMLF)
     return newHis
@@ -3054,11 +3083,13 @@ static void mb(String meth=sNULL) {
 @Field static final String sHMLF = 'theHistMapLockFLD'
 @Field static Semaphore histMapLockFLD = new Semaphore(1)
 
+
 @CompileStatic
 static Integer getSemaNum(String name) {
     //log.warn 'unrecognized lock name...'
     return (name == sHMLF) ? 0 : 0
 }
+
 
 @CompileStatic
 static Semaphore getSema(Integer snum) {
@@ -3120,7 +3151,7 @@ static void releaseTheLock(String qname) {
     sema.release()
 }
 
-String gtDevId(dev) { return (String)dev.getId() }
+static String gtDevId(dev) { return (String)dev.getId() }
 
 String gtAppId() { return ((Long)app.getId()).toString() }
 
@@ -3149,6 +3180,7 @@ private Boolean getBoolDefSetting(String name, Boolean defVal=true) {
     }
     return getBoolSetting(name)
 }
+
 
 def appCssOverrideUI() {
     String css = '''<style>
