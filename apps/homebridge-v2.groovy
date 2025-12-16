@@ -888,19 +888,19 @@ def deviceFilterEditPage(params) {
 
 private String getDeviceFiltersDesc() {
     String desc; desc = ''
-    (Map<String,Map>)state.deviceFiltersMap.each { String devId, Map filterData ->
+    (Map<String,Map>)state.deviceFiltersMap?.each { String devId, Map filterData ->
         desc += spanSmBld("${filterData.name}", sCLR4D9) + lineBr()
 
-        if (filterData.attributes?.size()) {
-            desc += spanSm(" ${sBULLET} Attributes: [${filterData.attributes.join(', ')}]", sCLR4D9) + lineBr()
+        if (((List)filterData.attributes)?.size()) {
+            desc += spanSm(" ${sBULLET} Attributes: [${((List)filterData.attributes).join(', ')}]", sCLR4D9) + lineBr()
         }
 
-        if (filterData.capabilities?.size()) {
-            desc += spanSm(" ${sBULLET} Capabilities: [${filterData.capabilities.join(', ')}]", sCLR4D9) + lineBr()
+        if (((List)filterData.capabilities)?.size()) {
+            desc += spanSm(" ${sBULLET} Capabilities: [${((List)filterData.capabilities).join(', ')}]", sCLR4D9) + lineBr()
         }
 
-        if (filterData.commands?.size()) {
-            desc += spanSm(" ${sBULLET} Commands: [${filterData.commands.join(', ')}]", sCLR4D9) + lineBr()
+        if (((List)filterData.commands)?.size()) {
+            desc += spanSm(" ${sBULLET} Commands: [${((List)filterData.commands).join(', ')}]", sCLR4D9) + lineBr()
         }
     }
     return desc
